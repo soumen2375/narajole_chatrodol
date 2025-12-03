@@ -9,6 +9,7 @@
       "DOM",
       "DOM.Iterable"
     ],
+    "baseUrl": "src",
     "skipLibCheck": true,
     "types": [
       "node"

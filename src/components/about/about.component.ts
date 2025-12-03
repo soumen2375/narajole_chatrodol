@@ -22,7 +22,7 @@ export class AboutComponent {
     { name: 'সুরজিৎ বেরা', role: 'যুগ্ম সম্পাদক', img: 'https://picsum.photos/200/200?random=1' },
     { name: 'শুভজিৎ কুন্ডু', role: 'কোষাধ্যক্ষ', img: 'https://picsum.photos/200/200?random=1' },
     { name: 'পবিত্র সাঁতরা', role: 'সহ-কোষাধ্যক্ষ', img: 'https://picsum.photos/200/200?random=1' },
-    { name: 'সৌমেন  মাইতি', role: 'ডিজিটাল অপারেশনস ও কমপ্লায়েন্স সম্পাদক', img: 'https://picsum.photos/200/200?random=1' },
+    { name: 'সৌমেন  মাইতি', role: 'ডিজিটাল অপারেশনস ও কমপ্লায়েন্স সম্পাদক', img: 'src/assets/images/soumen.jpg' },
     { name: 'প্রবাল ভুঁইয়া', role: 'এক্সেকিউশন ও রিসোর্স ম্যানেজার', img: 'https://picsum.photos/200/200?random=1' }
   ];
 }

@@ -54,7 +54,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
       @for (member of teamMembers; track member.name) {
       <div class="flex flex-col items-center text-center p-4 bg-gray-50 rounded-md shadow-sm">
-        <img [ngSrc]="member.img" [alt]="member.name" width="150" height="150"
+        <img [ngSrc]="member.img" [alt]="member.name" title="image" width="150" height="150"
           class="rounded-full w-32 h-32 object-cover border-4 border-blue-200 mb-4">
         <h3 class="text-xl font-semibold text-gray-900 mb-1" [style.fontFamily]="headerFont()">{{ member.name }}</h3>
         <p class="text-blue-600" [style.fontFamily]="bodyFont()">{{ member.role }}</p>
