@@ -16,13 +16,13 @@ export class AboutComponent {
   bodyFont = computed(() => this.siteSettings().bodyFont);
 
   teamMembers = [
-    { name: 'সায়ন সামন্ত', role: 'সভাপতি', img: 'https://picsum.photos/200/200?random=1' },
-    { name: 'শুভদীপ ঘোড়াই', role: 'সহ-সভাপতি', img: 'https://picsum.photos/200/200?random=1' },
-    { name: 'স্বরূপ সামন্ত', role: 'সাধারণ সম্পাদক', img: 'https://picsum.photos/200/200?random=1' },
-    { name: 'সুরজিৎ বেরা', role: 'যুগ্ম সম্পাদক', img: 'https://picsum.photos/200/200?random=1' },
-    { name: 'শুভজিৎ কুন্ডু', role: 'কোষাধ্যক্ষ', img: 'https://picsum.photos/200/200?random=1' },
-    { name: 'পবিত্র সাঁতরা', role: 'সহ-কোষাধ্যক্ষ', img: 'https://picsum.photos/200/200?random=1' },
-    { name: 'সৌমেন  মাইতি', role: 'ডিজিটাল অপারেশনস ও কমপ্লায়েন্স সম্পাদক', img: 'src/assets/images/soumen.jpg' },
-    { name: 'প্রবাল ভুঁইয়া', role: 'এক্সেকিউশন ও রিসোর্স ম্যানেজার', img: 'https://picsum.photos/200/200?random=1' }
+    { name: 'সায়ন সামন্ত', role: 'সভাপতি', img: 'src/assets/images/members/sayan.jpg' },
+    { name: 'শুভদীপ ঘোড়াই', role: 'সহ-সভাপতি', img: 'src/assets/images/members/subhadip.jpg' },
+    { name: 'স্বরূপ সামন্ত', role: 'সাধারণ সম্পাদক', img: 'src/assets/images/members/swarup.jpg' },
+    { name: 'সুরজিৎ বেরা', role: 'যুগ্ম সম্পাদক', img: 'src/assets/images/members/surajit.jpg' },
+    { name: 'শুভজিৎ কুন্ডু', role: 'কোষাধ্যক্ষ', img: 'src/assets/images/members/subhajit.jpg' },
+    { name: 'পবিত্র সাঁতরা', role: 'সহ-কোষাধ্যক্ষ', img: 'src/assets/images/members/pabitra.jpg' },
+    { name: 'সৌমেন  মাইতি', role: 'ডিজিটাল অপারেশনস ও কমপ্লায়েন্স সম্পাদক', img: 'src/assets/images/members/soumen.jpg' },
+    { name: 'প্রবাল ভুঁইয়া', role: 'এক্সেকিউশন ও রিসোর্স ম্যানেজার', img: 'src/assets/images/members/prabal.jpg' }
   ];
 }
