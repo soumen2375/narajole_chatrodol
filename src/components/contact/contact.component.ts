@@ -6,7 +6,7 @@ import { ContentService } from '../../services/content.service';
 @Component({
   selector: 'app-contact',
   templateUrl: './contact.component.html',
-  styleUrls: [],
+  styleUrls: ['./contact.component.css'],
   imports: [CommonModule, ReactiveFormsModule],
 })
 export class ContactComponent {

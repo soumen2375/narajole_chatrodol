@@ -16,9 +16,13 @@ export class AboutComponent {
   bodyFont = computed(() => this.siteSettings().bodyFont);
 
   teamMembers = [
-    { name: 'আহমেদ ফয়সাল', role: 'সভাপতি', img: 'https://picsum.photos/200/200?random=1' },
-    { name: 'সানিয়া সুলতানা', role: 'সাধারণ সম্পাদক', img: 'https://picsum.photos/200/200?random=2' },
-    { name: 'রবিউল ইসলাম', role: 'কোষাধ্যক্ষ', img: 'https://picsum.photos/200/200?random=3' },
-    { name: 'নাজমা আক্তার', role: 'প্রোগ্রাম ডিরেক্টর', img: 'https://picsum.photos/200/200?random=4' }
+    { name: 'সায়ন সামন্ত', role: 'সভাপতি', img: 'https://picsum.photos/200/200?random=1' },
+    { name: 'শুভদীপ ঘোড়াই', role: 'সহ-সভাপতি', img: 'https://picsum.photos/200/200?random=1' },
+    { name: 'স্বরূপ সামন্ত', role: 'সাধারণ সম্পাদক', img: 'https://picsum.photos/200/200?random=1' },
+    { name: 'সুরজিৎ বেরা', role: 'যুগ্ম সম্পাদক', img: 'https://picsum.photos/200/200?random=1' },
+    { name: 'শুভজিৎ কুন্ডু', role: 'কোষাধ্যক্ষ', img: 'https://picsum.photos/200/200?random=1' },
+    { name: 'পবিত্র সাঁতরা', role: 'সহ-কোষাধ্যক্ষ', img: 'https://picsum.photos/200/200?random=1' },
+    { name: 'সৌমেন  মাইতি', role: 'ডিজিটাল অপারেশনস ও কমপ্লায়েন্স সম্পাদক', img: 'https://picsum.photos/200/200?random=1' },
+    { name: 'প্রবাল ভুঁইয়া', role: 'এক্সেকিউশন ও রিসোর্স ম্যানেজার', img: 'https://picsum.photos/200/200?random=1' }
   ];
 }

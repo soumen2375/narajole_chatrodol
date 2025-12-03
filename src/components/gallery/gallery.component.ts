@@ -27,8 +27,8 @@ export class GalleryComponent {
   ]);
 
   videos = signal([
-    { src: 'https://www.youtube.com/embed/dQw4w9WgXcQ?si=RjK4qM-S_yRz_79s', title: 'আমাদের কার্যক্রমের ঝলক' }, // Rick Astley
-    { src: 'https://www.youtube.com/embed/LXb3EKWsInQ?si=WpDqG-iS51QYd0kF', title: 'ছাত্রদলের স্বেচ্ছাসেবকদের কাজ' } // Short generic video
+    { src: 'https://www.youtube.com/embed/', title: 'আমাদের কার্যক্রমের ঝলক' }, // Rick Astley
+    { src: 'https://www.youtube.com/embed/', title: 'ছাত্রদলের স্বেচ্ছাসেবকদের কাজ' } // Short generic video
   ]);
 
   selectedCategory = signal('All');
