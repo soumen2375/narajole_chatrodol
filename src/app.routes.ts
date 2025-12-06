@@ -19,10 +19,10 @@ export const routes: Routes = [
   { path: 'contact', component: ContactComponent, title: 'নাড়াজোল ছাত্রদল - যোগাযোগ' },
   { path: 'volunteer', component: VolunteerComponent, title: 'নাড়াজোল ছাত্রদল - স্বেচ্ছাসেবক হোন' },
   { path: 'donate', component: DonateComponent, title: 'নাড়াজোল ছাত্রদল - অনুদান' },
-  {
-    path: 'admin',
-    loadChildren: () => import('./components/admin/admin.routes').then(m => m.ADMIN_ROUTES),
-    title: 'worldclass Admin'
-  },
+  // {
+  //   path: 'admin',
+  //   loadChildren: () => import('./components/admin/admin.routes').then(m => m.ADMIN_ROUTES),
+  //   title: 'worldclass Admin'
+  // },
   { path: '**', redirectTo: '' } // Redirect to home for any unknown routes
 ];
