@@ -21,9 +21,10 @@ export class GalleryComponent {
     { src: 'https://picsum.photos/800/600?random=10', alt: 'শিক্ষামূলক শিবির', category: 'শিক্ষা' },
     { src: 'https://picsum.photos/800/600?random=11', alt: 'স্বাস্থ্য শিবির', category: 'স্বাস্থ্য' },
     { src: 'https://picsum.photos/800/600?random=12', alt: 'বৃক্ষরোপণ অভিযান', category: 'পরিবেশ' },
-    { src: 'https://picsum.photos/800/600?random=13', alt: 'সাধারণ সভা', category: 'কার্যক্রম' },
     { src: 'https://picsum.photos/800/600?random=14', alt: 'বই বিতরণ', category: 'শিক্ষা' },
     { src: 'https://picsum.photos/800/600?random=15', alt: 'গ্রাম পরিষ্কার অভিযান', category: 'পরিবেশ' },
+    { src: 'https://picsum.photos/800/600?random=13', alt: 'সাধারণ সভা', category: 'কার্যক্রম' },
+    { src: 'src/assets/images/gallery/khudiram_bose_birthday_01.jpg', alt: 'ক্ষুদিরাম বসুর জন্মদিন', category: 'শুভাগমন', more: 'https://www.facebook.com/share/r/1JEYCmWWne/'}
   ]);
 
   videos = signal([

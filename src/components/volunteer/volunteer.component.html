@@ -127,9 +127,8 @@
                     [class.border-red-500]="volunteerForm.controls['availability'].invalid && volunteerForm.controls['availability'].touched">
               <option value="">নির্বাচন করুন</option>
               <option value="weekdays">সপ্তাহের দিনগুলিতে</option>
-              <option value="weekends">সপ্তাহান্তে</option>
-              <option value="evenings">সন্ধ্যায়</option>
-              <option value="flexible">নমনীয়</option>
+              <option value="weekends">ছুটির দিনগুলোতে</option>
+              <option value="flexible">যেকোনো সময়</option>
             </select>
             @if (volunteerForm.controls['availability'].invalid && volunteerForm.controls['availability'].touched) {
               <p class="mt-1 text-sm text-red-600" [style.fontFamily]="bodyFont()">প্রাপ্যতা আবশ্যক।</p>
