@@ -16,9 +16,9 @@ export class AboutComponent {
   bodyFont = computed(() => this.siteSettings().bodyFont);
 
   teamMembers = [
-    { name: 'সায়ন সামন্ত', role: 'সভাপতি', img: 'src/assets/images/members/sayan.jpg' },
+    { name: 'স্বরূপ সামন্ত', role: 'সভাপতি', img: 'src/assets/images/members/swarup.jpg' },
     { name: 'শুভদীপ ঘোড়াই', role: 'সহ-সভাপতি', img: 'src/assets/images/members/subhadip.jpg' },
-    { name: 'স্বরূপ সামন্ত', role: 'সাধারণ সম্পাদক', img: 'src/assets/images/members/swarup.jpg' },
+    { name: 'সায়ন সামন্ত', role: 'সাধারণ সম্পাদক', img: 'src/assets/images/members/sayan.jpg' },
     { name: 'সুরজিৎ বেরা', role: 'যুগ্ম সম্পাদক', img: 'src/assets/images/members/surajit.jpg' },
     { name: 'শুভজিৎ কুন্ডু', role: 'কোষাধ্যক্ষ', img: 'src/assets/images/members/subhajit.jpg' },
     { name: 'পবিত্র সাঁতরা', role: 'সহ-কোষাধ্যক্ষ', img: 'src/assets/images/members/pabitra.jpg' },
