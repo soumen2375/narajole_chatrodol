@@ -11,10 +11,21 @@
           <span class="block sm:inline"> আপনার বার্তা সফলভাবে পাঠানো হয়েছে।</span>
         </div>
       }
-      <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="space-y-4">
+      <!-- Contact Form -->
+       <iframe name="hidden_iframe" style="display:none;"></iframe>
+
+      <form
+        #googleForm
+        [formGroup]="contactForm"
+        (ngSubmit)="onSubmit()"
+        target="hidden_iframe"
+        method="POST"
+        action="https://docs.google.com/forms/d/e/1FAIpQLSdi8LFI7p559PKKxG6SA5YOWuya9IfkeTNFZHUmHqkMDhUljQ/formResponse"
+        class="space-y-4"
+      >
         <div>
           <label for="name" class="block text-sm font-medium text-gray-700" [style.fontFamily]="bodyFont()">আপনার নাম</label>
-          <input id="name" type="text" formControlName="name"
+          <input id="name" name="entry.1500192950" type="text" formControlName="name"
                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
                  [class.border-red-500]="contactForm.controls['name'].invalid && contactForm.controls['name'].touched">
           @if (contactForm.controls['name'].invalid && contactForm.controls['name'].touched) {
@@ -24,7 +35,7 @@
 
         <div>
           <label for="email" class="block text-sm font-medium text-gray-700" [style.fontFamily]="bodyFont()">আপনার ইমেল</label>
-          <input id="email" type="email" formControlName="email"
+          <input id="email" name="entry.1206822842" type="email" formControlName="email"
                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
                  [class.border-red-500]="contactForm.controls['email'].invalid && contactForm.controls['email'].touched">
           @if (contactForm.controls['email'].hasError('required') && contactForm.controls['email'].touched) {
@@ -36,7 +47,7 @@
 
         <div>
           <label for="subject" class="block text-sm font-medium text-gray-700" [style.fontFamily]="bodyFont()">বিষয়</label>
-          <input id="subject" type="text" formControlName="subject"
+          <input id="subject" type="text" name="entry.769351213" formControlName="subject"
                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
                  [class.border-red-500]="contactForm.controls['subject'].invalid && contactForm.controls['subject'].touched">
           @if (contactForm.controls['subject'].invalid && contactForm.controls['subject'].touched) {
@@ -46,7 +57,7 @@
 
         <div>
           <label for="message" class="block text-sm font-medium text-gray-700" [style.fontFamily]="bodyFont()">আপনার বার্তা</label>
-          <textarea id="message" formControlName="message" rows="5"
+          <textarea id="message" formControlName="message" name="entry.840244615" rows="5"
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
                     [class.border-red-500]="contactForm.controls['message'].invalid && contactForm.controls['message'].touched"></textarea>
           @if (contactForm.controls['message'].invalid && contactForm.controls['message'].touched) {

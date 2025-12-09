@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, ElementRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ContentService } from '../../services/content.service';
@@ -28,17 +28,25 @@ export class ContactComponent {
     });
   }
 
+  @ViewChild('googleForm') googleForm!: ElementRef<HTMLFormElement>;
+
   onSubmit(): void {
     if (this.contactForm.valid) {
-      console.log('Contact form submitted:', this.contactForm.value);
-      // In a real application, you would send this data to a backend service
+
+      console.log('Submitting to Google Forms…');
+
+      this.googleForm.nativeElement.submit();
+
       this.isSubmitted.set(true);
       this.contactForm.reset();
-      // Optionally reset submitted state after a few seconds
+
       setTimeout(() => this.isSubmitted.set(false), 5000);
+
     } else {
       this.contactForm.markAllAsTouched();
       alert('অনুগ্রহ করে ফর্মের সকল তথ্য সঠিকভাবে পূরণ করুন।');
     }
   }
+
+
 }
