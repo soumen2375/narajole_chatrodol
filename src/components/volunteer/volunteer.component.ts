@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ContentService } from '../../services/content.service';
@@ -25,7 +25,7 @@ export class VolunteerComponent {
       // Step 1: Personal Info
       fullName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.pattern('^[0-9]{10,15}$')]],
+      phone: ['', [Validators.required, Validators.pattern('^[6789][0-9]{9}$')]],
       address: ['', Validators.required],
       dateOfBirth: ['', Validators.required],
       gender: ['', Validators.required],
@@ -89,6 +89,8 @@ export class VolunteerComponent {
     this.currentStep.update(step => step - 1);
   }
 
+  @ViewChild('googleForm') googleForm!: ElementRef<HTMLFormElement>;
+
   onSubmit(): void {
     if (this.volunteerForm.invalid) {
       this.volunteerForm.markAllAsTouched();
@@ -96,7 +98,13 @@ export class VolunteerComponent {
       return;
     }
 
+    const formData = new FormData(this.googleForm.nativeElement);
+
+    console.log(Object.fromEntries(formData.entries()));
+
+    this.googleForm.nativeElement.submit();
     console.log('Volunteer Application Submitted:', this.volunteerForm.value);
+
     // In a real application, send this data to a backend.
     this.isSubmitted.set(true);
     this.volunteerForm.reset({
@@ -118,11 +126,11 @@ export class VolunteerComponent {
   }
 
   programOptions = signal([
-    { name: 'বিনামূল্যে শিক্ষাদান', value: 'free_tutoring' },
-    { name: 'স্বাস্থ্য সচেতনতা ও শিবির', value: 'health_camps' },
-    { name: 'পরিবেশ সুরক্ষা', value: 'environmental_drives' },
-    { name: 'নারী ও শিশু উন্নয়ন', value: 'women_child_development' },
-    { name: 'অন্যান্য সামাজিক কর্মসূচি', value: 'other_social_programs' }
+    { name: 'বিনামূল্যে শিক্ষাদান', value: 'Free education' },
+    { name: 'স্বাস্থ্য সচেতনতা ও শিবির', value: 'Health awareness and camps' },
+    { name: 'পরিবেশ সুরক্ষা', value: 'Environmental protection' },
+    { name: 'নারী ও শিশু উন্নয়ন', value: 'Women and Child Development' },
+    { name: 'অন্যান্য সামাজিক কর্মসূচি', value: 'Other social programs' }
   ]);
 
   onProgramChange(event: Event): void {
