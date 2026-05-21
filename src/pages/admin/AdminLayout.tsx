@@ -1,16 +1,17 @@
-import DashboardShell, { type NavItem } from '@/components/layout/DashboardShell';
-
-const items: NavItem[] = [
-  { to: '/admin', label: 'ড্যাশবোর্ড', end: true },
-  { to: '/admin/members', label: 'সদস্য ব্যবস্থাপনা' },
-  { to: '/admin/posts', label: 'পোস্ট ব্যবস্থাপনা' },
-  { to: '/admin/events', label: 'অনুষ্ঠান ও ক্যাম্প' },
-  { to: '/admin/attendance', label: 'উপস্থিতি' },
-  { to: '/admin/contributions', label: 'মাসিক অনুদান' },
-  { to: '/admin/donations', label: 'দান রেকর্ড' },
-  { to: '/admin/messages', label: 'বার্তা ও আবেদন' },
-];
+import DashboardShell from '@/components/layout/DashboardShell';
+import { useT } from '@/i18n';
 
 export default function AdminLayout() {
-  return <DashboardShell title="অ্যাডমিন প্যানেল" items={items} />;
+  const { t } = useT();
+  const items = [
+    { to: '/admin', label: t('a.dashboard'), end: true },
+    { to: '/admin/members', label: t('a.members') },
+    { to: '/admin/posts', label: t('a.posts') },
+    { to: '/admin/events', label: t('a.events') },
+    { to: '/admin/attendance', label: t('a.attendance') },
+    { to: '/admin/contributions', label: t('a.contributions') },
+    { to: '/admin/donations', label: t('a.donations') },
+    { to: '/admin/messages', label: t('a.messages') },
+  ];
+  return <DashboardShell title={t('a.panel')} items={items} panel="admin" />;
 }

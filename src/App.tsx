@@ -26,6 +26,7 @@ import MemberDonations from '@/pages/member/MemberDonations';
 import AdminLayout from '@/pages/admin/AdminLayout';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AdminMembers from '@/pages/admin/AdminMembers';
+import AdminMemberDetail from '@/pages/admin/AdminMemberDetail';
 import AdminPosts from '@/pages/admin/AdminPosts';
 import AdminEvents from '@/pages/admin/AdminEvents';
 import AdminAttendance from '@/pages/admin/AdminAttendance';
@@ -81,6 +82,7 @@ export default function App() {
         >
           <Route index element={<AdminDashboard />} />
           <Route path="members" element={<AdminMembers />} />
+          <Route path="members/:id" element={<AdminMemberDetail />} />
           <Route path="posts" element={<AdminPosts />} />
           <Route path="events" element={<AdminEvents />} />
           <Route path="attendance" element={<AdminAttendance />} />

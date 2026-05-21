@@ -1,18 +1,19 @@
 import { Link } from 'react-router-dom';
-import { ORG } from '@/data/content';
-import { toBengaliDigits } from '@/lib/format';
+import { ORG, name } from '@/data/content';
+import { useFmt } from '@/lib/format';
+import { useT } from '@/i18n';
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const { t, lang } = useT();
+  const fmt = useFmt();
+
   return (
     <footer className="bg-gray-800 py-10 text-gray-300">
       <div className="container mx-auto grid grid-cols-1 gap-8 px-4 md:grid-cols-4 md:px-8">
         <div>
-          <h3 className="mb-4 text-2xl font-bold text-white">{ORG.nameBn}</h3>
-          <p className="mb-4 text-sm leading-relaxed">
-            একটি সামাজিক কল্যাণমূলক পাবলিক চ্যারিটেবল ট্রাস্ট, যা শিক্ষা, স্বাস্থ্য, পরিবেশ ও দরিদ্রসেবার মাধ্যমে
-            সম্প্রদায়ের উন্নতি সাধনে নিবেদিত।
-          </p>
+          <h3 className="mb-4 text-2xl font-bold text-white">{name(lang)}</h3>
+          <p className="mb-4 text-sm leading-relaxed">{t('footer.about')}</p>
           <div className="flex space-x-4">
             <a href={ORG.social.facebook} target="_blank" rel="noreferrer" className="hover:text-white" aria-label="Facebook">
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.99 3.657 9.128 8.438 9.878v-6.987H7.898v-2.89h2.54V9.797c0-2.507 1.492-3.892 3.777-3.892 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.99 22 12z"/></svg>
@@ -27,39 +28,38 @@ export default function Footer() {
         </div>
 
         <div>
-          <h3 className="mb-4 text-xl font-semibold text-white">দ্রুত লিঙ্ক</h3>
+          <h3 className="mb-4 text-xl font-semibold text-white">{t('footer.quickLinks')}</h3>
           <ul className="space-y-2">
-            <li><Link to="/" className="hover:text-white">হোম</Link></li>
-            <li><Link to="/about" className="hover:text-white">আমাদের কথা</Link></li>
-            <li><Link to="/programs" className="hover:text-white">কর্মসূচি</Link></li>
-            <li><Link to="/events" className="hover:text-white">অনুষ্ঠান</Link></li>
-            <li><Link to="/impacts" className="hover:text-white">প্রভাব</Link></li>
+            <li><Link to="/" className="hover:text-white">{t('nav.home')}</Link></li>
+            <li><Link to="/about" className="hover:text-white">{t('nav.about')}</Link></li>
+            <li><Link to="/programs" className="hover:text-white">{t('nav.programs')}</Link></li>
+            <li><Link to="/events" className="hover:text-white">{t('nav.events')}</Link></li>
+            <li><Link to="/impacts" className="hover:text-white">{t('nav.impacts')}</Link></li>
           </ul>
         </div>
 
         <div>
-          <h3 className="mb-4 text-xl font-semibold text-white">জড়িত হন</h3>
+          <h3 className="mb-4 text-xl font-semibold text-white">{t('footer.getInvolved')}</h3>
           <ul className="space-y-2">
-            <li><Link to="/volunteer" className="hover:text-white">স্বেচ্ছাসেবক হোন</Link></li>
-            <li><Link to="/donate" className="hover:text-white">অনুদান দিন</Link></li>
-            <li><Link to="/contact" className="hover:text-white">যোগাযোগ করুন</Link></li>
-            <li><Link to="/login" className="hover:text-white">সদস্য লগইন</Link></li>
+            <li><Link to="/volunteer" className="hover:text-white">{t('nav.volunteer')}</Link></li>
+            <li><Link to="/donate" className="hover:text-white">{t('nav.donate')}</Link></li>
+            <li><Link to="/contact" className="hover:text-white">{t('nav.contact')}</Link></li>
+            <li><Link to="/login" className="hover:text-white">{t('header.memberLogin')}</Link></li>
           </ul>
         </div>
 
         <div>
-          <h3 className="mb-4 text-xl font-semibold text-white">যোগাযোগ</h3>
+          <h3 className="mb-4 text-xl font-semibold text-white">{t('nav.contact')}</h3>
           <address className="space-y-1 not-italic text-sm">
-            <p>{ORG.address.line1}</p>
-            <p>{ORG.address.line2}</p>
-            <p>{ORG.address.line3}</p>
-            <p>{ORG.address.line4}</p>
-            <p>ইমেল: <a href={`mailto:${ORG.email}`} className="hover:text-white">{ORG.email}</a></p>
+            {ORG.address[lang].map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+            <p>{t('common.email')}: <a href={`mailto:${ORG.email}`} className="hover:text-white">{ORG.email}</a></p>
             <p>
-              ফোন:{' '}
+              {t('common.phone')}:{' '}
               {ORG.phones.map((p, i) => (
                 <span key={p}>
-                  <a href={`tel:+91${p}`} className="hover:text-white">{toBengaliDigits(p)}</a>
+                  <a href={`tel:+91${p}`} className="hover:text-white">{fmt.num(p)}</a>
                   {i < ORG.phones.length - 1 ? ', ' : ''}
                 </span>
               ))}
@@ -69,7 +69,7 @@ export default function Footer() {
       </div>
 
       <div className="mt-8 border-t border-gray-700 pt-6 text-center text-sm text-gray-500">
-        © {toBengaliDigits(year)} {ORG.nameBn} ({ORG.nameEn})। সর্বস্বত্ব সংরক্ষিত।
+        © {fmt.num(year)} {ORG.nameEn} ({ORG.nameBn})। {t('footer.rights')}
       </div>
     </footer>
   );
