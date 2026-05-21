@@ -68,8 +68,16 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="mt-8 border-t border-gray-700 pt-6 text-center text-sm text-gray-500">
-        © {fmt.num(year)} {ORG.nameEn} ({ORG.nameBn})। {t('footer.rights')}
+      <div className="container mx-auto mt-8 border-t border-gray-700 px-4 pt-6 md:px-8">
+        <nav className="mb-4 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
+          <Link to="/terms" className="hover:text-white">{t('legal.terms')}</Link>
+          <Link to="/privacy" className="hover:text-white">{t('legal.privacy')}</Link>
+          <Link to="/refunds" className="hover:text-white">{t('legal.refunds')}</Link>
+          <Link to="/shipping" className="hover:text-white">{t('legal.shipping')}</Link>
+        </nav>
+        <p className="text-center text-sm text-gray-500">
+          © {fmt.num(year)} {ORG.nameEn} ({ORG.nameBn})। {t('footer.rights')}
+        </p>
       </div>
     </footer>
   );

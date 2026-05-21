@@ -214,6 +214,11 @@ const D: Dict = {
   'footer.quickLinks': { bn: 'দ্রুত লিঙ্ক', en: 'Quick links' },
   'footer.getInvolved': { bn: 'জড়িত হন', en: 'Get involved' },
   'footer.rights': { bn: 'সর্বস্বত্ব সংরক্ষিত।', en: 'All rights reserved.' },
+  'footer.legal': { bn: 'আইনি', en: 'Legal' },
+  'legal.terms': { bn: 'শর্তাবলী', en: 'Terms & Conditions' },
+  'legal.privacy': { bn: 'গোপনীয়তা নীতি', en: 'Privacy Policy' },
+  'legal.refunds': { bn: 'বাতিল ও ফেরত নীতি', en: 'Cancellation & Refunds' },
+  'legal.shipping': { bn: 'শিপিং নীতি', en: 'Shipping Policy' },
 
   // ---- member panel ----
   'm.panel': { bn: 'সদস্য প্যানেল', en: 'Member Panel' },
