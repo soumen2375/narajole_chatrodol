@@ -53,7 +53,8 @@ export default function MemberContributions() {
       });
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('donate.failed'));
+      console.error('Contribution payment error:', err);
+      setError(err instanceof Error && err.message === 'CANCELLED' ? t('pay.cancelled') : t('pay.failed'));
     } finally {
       setPayingMonth(null);
     }

@@ -200,6 +200,11 @@ const D: Dict = {
     en: 'Secure payment via Razorpay. Your information is kept private.',
   },
   'donate.failed': { bn: 'পেমেন্টে সমস্যা হয়েছে।', en: 'Payment failed.' },
+  'pay.failed': {
+    bn: 'পেমেন্ট সম্পন্ন করা যায়নি। অনুগ্রহ করে কিছুক্ষণ পরে আবার চেষ্টা করুন।',
+    en: 'Payment could not be completed. Please try again later.',
+  },
+  'pay.cancelled': { bn: 'পেমেন্ট বাতিল করা হয়েছে।', en: 'Payment was cancelled.' },
 
   // ---- footer ----
   'footer.about': {

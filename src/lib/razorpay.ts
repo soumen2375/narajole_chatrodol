@@ -90,7 +90,7 @@ interface StartPaymentArgs {
 export async function startRazorpayPayment(args: StartPaymentArgs): Promise<void> {
   const loaded = await loadRazorpayScript();
   if (!loaded || !window.Razorpay) {
-    throw new Error('পেমেন্ট গেটওয়ে লোড হয়নি / Payment gateway failed to load.');
+    throw new Error('PAYMENT_FAILED');
   }
 
   const order = await invoke<CreateOrderResult>({
@@ -137,7 +137,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<void
         }
       },
       modal: {
-        ondismiss: () => reject(new Error('পেমেন্ট বাতিল করা হয়েছে।')),
+        ondismiss: () => reject(new Error('CANCELLED')),
       },
     });
     rzp.open();
