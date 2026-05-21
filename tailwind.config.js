@@ -4,16 +4,24 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        bengali: ['"Noto Sans Bengali"', 'sans-serif'],
-        roboto: ['Roboto', 'sans-serif'],
+        bengali:   ['"Noto Sans Bengali"', 'sans-serif'],
+        'serif-bn':['"Noto Serif Bengali"', '"Noto Sans Bengali"', 'serif'],
+        'serif-en':['"Noto Serif"', 'Georgia', 'serif'],
+        roboto:    ['Roboto', 'sans-serif'],
+        mono:      ['"Roboto Mono"', 'ui-monospace', 'monospace'],
       },
       colors: {
         brand: {
-          DEFAULT: '#1e40af',
-          dark: '#1e3a8a',
-          light: '#3b82f6',
+          DEFAULT: '#c2410c',
+          dark:    '#9a3412',
+          light:   '#ea580c',
         },
-        accent: '#f59e0b',
+        accent: '#b45309',
+        ink:    '#1c1917',
+        cream:  '#faf6ef',
+      },
+      maxWidth: {
+        '8xl': '1320px',
       },
     },
   },

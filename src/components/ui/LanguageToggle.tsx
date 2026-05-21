@@ -2,18 +2,37 @@ import { useT } from '@/i18n';
 
 export default function LanguageToggle({ light = false }: { light?: boolean }) {
   const { lang, setLang } = useT();
-  const base = 'rounded-md px-2 py-0.5 text-xs font-semibold transition';
-  const activeCls = light ? 'bg-white text-blue-700' : 'bg-blue-600 text-white';
-  const idleCls = light ? 'text-white/80 hover:text-white' : 'text-gray-500 hover:text-gray-800';
+
+  const containerStyle = light
+    ? { background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)' }
+    : { background: '#f5f1ea', border: '1px solid #e7e5e4' };
+
+  const activeStyle = light
+    ? { background: '#ffffff', color: '#1c1917' }
+    : { background: '#c2410c', color: '#ffffff' };
+
+  const idleStyle = light
+    ? { color: 'rgba(255,255,255,0.75)' }
+    : { color: '#78716c' };
 
   return (
-    <div className={`inline-flex items-center gap-1 rounded-lg p-0.5 ${light ? 'bg-white/15' : 'bg-gray-100'}`}>
-      <button className={`${base} ${lang === 'bn' ? activeCls : idleCls}`} onClick={() => setLang('bn')}>
-        বাংলা
-      </button>
-      <button className={`${base} ${lang === 'en' ? activeCls : idleCls}`} onClick={() => setLang('en')}>
-        EN
-      </button>
+    <div
+      className="inline-flex items-center gap-0.5 rounded-full p-0.5"
+      style={containerStyle}
+    >
+      {(['bn', 'en'] as const).map((l) => {
+        const isActive = lang === l;
+        return (
+          <button
+            key={l}
+            onClick={() => setLang(l)}
+            className="rounded-full px-3.5 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] transition-all duration-200"
+            style={isActive ? activeStyle : idleStyle}
+          >
+            {l === 'bn' ? 'বাং' : 'EN'}
+          </button>
+        );
+      })}
     </div>
   );
 }

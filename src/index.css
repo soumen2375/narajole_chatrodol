@@ -2,23 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Field Journal palette vars ─── */
+:root {
+  --c-bg:      #faf6ef;
+  --c-paper:   #ffffff;
+  --c-ink:     #1c1917;
+  --c-ink-2:   #44403c;
+  --c-muted:   #78716c;
+  --c-rule:    #e7e5e4;
+  --c-brand:   #c2410c;
+  --c-brand-d: #9a3412;
+  --c-brand-l: #ea580c;
+  --c-accent:  #b45309;
+}
+
 @layer components {
   .input {
-    @apply w-full rounded-md border border-gray-300 px-3 py-2 text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500;
+    @apply w-full rounded-md border border-gray-300 px-3 py-2 text-gray-800 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand;
   }
   .btn-primary {
-    @apply rounded-md bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60;
+    @apply rounded-full bg-brand px-6 py-3 font-semibold text-white transition hover:-translate-y-[2px] hover:bg-brand-light hover:shadow-[0_10px_24px_-8px_rgba(194,65,12,0.5)] disabled:opacity-60;
   }
   .btn-secondary {
-    @apply rounded-md bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200;
+    @apply rounded-full border border-ink px-6 py-3 font-medium text-ink transition hover:bg-ink hover:text-white;
   }
   .badge {
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
-}
 
-:root {
-  --brand: #1e40af;
+  /* Card lift — apply to any card that should rise on hover/touch */
+  .card-lift {
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 48px -12px rgba(28, 25, 23, 0.18);
+  }
+  .card-lift:active {
+    transform: translateY(-2px);
+  }
+
+  /* Image zoom wrapper */
+  .img-zoom {
+    overflow: hidden;
+  }
+  .img-zoom img {
+    transition: transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .img-zoom:hover img {
+    transform: scale(1.06);
+  }
 }
 
 html {
@@ -28,15 +61,28 @@ html {
 body {
   margin: 0;
   font-family: 'Roboto', 'Noto Sans Bengali', sans-serif;
-  background-color: #f9fafb;
-  color: #1f2937;
+  background-color: var(--c-bg);
+  color: var(--c-ink);
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Noto Sans Bengali', 'Roboto', sans-serif;
+/* Bengali serif display headings */
+.font-bengali-serif {
+  font-family: 'Noto Serif Bengali', 'Noto Sans Bengali', serif;
 }
 
+/* Noto Serif English flourish */
+.font-english-serif {
+  font-family: 'Noto Serif', Georgia, serif;
+}
+
+/* Line-clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -44,18 +90,77 @@ h1, h2, h3, h4, h5, h6 {
   overflow: hidden;
 }
 
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* ─── Animations ─── */
+
+/* Fade + slide up — used for section entry */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Stagger children */
+.stagger-children > * { animation: fadeInUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 320ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 480ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 560ms; }
+
+/* Legacy fade-in */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out;
+}
+
+/* Pulse glow on brand elements */
+@keyframes brandPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(194, 65, 12, 0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(194, 65, 12, 0); }
+}
+.pulse-brand {
+  animation: brandPulse 2.4s ease-in-out infinite;
+}
+
+/* Paper grain texture overlay */
+.paper-grain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+}
+
+/* Underline grow on hover */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--c-brand);
+  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-underline:hover::after {
+  width: 100%;
+}
+
+/* Focus ring for accessibility */
+:focus-visible {
+  outline: 2px solid var(--c-brand);
+  outline-offset: 3px;
+  border-radius: 3px;
 }

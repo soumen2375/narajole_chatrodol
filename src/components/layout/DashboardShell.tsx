@@ -1,12 +1,22 @@
 import { useState } from 'react';
+import type { ComponentType, SVGProps } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/i18n';
 import LanguageToggle from '@/components/ui/LanguageToggle';
 
+// Field Journal palette constants used inline so no CSS vars needed here
+const INK    = '#1c1917';
+const CREAM  = '#faf6ef';
+const PAPER  = '#ffffff';
+const BRAND  = '#c2410c';
+const MUTED  = '#78716c';
+const RULE   = '#e7e5e4';
+
 export interface NavItem {
   to: string;
   label: string;
+  icon?: ComponentType<SVGProps<SVGSVGElement>>;
   end?: boolean;
 }
 
@@ -30,66 +40,115 @@ export default function DashboardShell({
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen" style={{ background: CREAM }}>
+      {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 transform bg-gray-900 text-gray-200 transition-transform duration-200 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-200 lg:static lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{ background: INK, color: CREAM }}
       >
-        <div className="flex items-center gap-2 border-b border-gray-700 px-5 py-4">
-          <img src="/assets/images/favicon/favicon512.png" alt="" className="h-8 w-8 rounded-full bg-white p-0.5" />
-          <span className="font-bold">{title}</span>
+        {/* Sidebar header */}
+        <div
+          className="flex items-center gap-2.5 px-5 py-4"
+          style={{ borderBottom: `1px solid rgba(250,246,239,0.12)` }}
+        >
+          <img src="/assets/images/favicon/favicon512.png" alt="" className="h-8 w-8 rounded-full object-cover" style={{ background: CREAM }} />
+          <div>
+            <div className="font-semibold leading-tight" style={{ fontFamily: '"Noto Serif Bengali", serif', fontSize: 14 }}>{title}</div>
+            <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: 'rgba(250,246,239,0.5)' }}>
+              {panel === 'admin' ? 'Admin Panel' : 'Member Panel'}
+            </div>
+          </div>
         </div>
-        <nav className="flex flex-col gap-1 p-3 text-sm">
+
+        {/* Nav items */}
+        <nav className="flex flex-col gap-0.5 p-3 text-sm">
           {items.map((it) => (
             <NavLink
               key={it.to}
               to={it.to}
               end={it.end}
               onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                `rounded-md px-3 py-2 transition hover:bg-gray-800 ${isActive ? 'bg-blue-600 text-white' : ''}`
-              }
+              className="flex items-center gap-2.5 rounded-[4px] px-3.5 py-2.5 font-medium transition-colors"
+              style={({ isActive }) => ({
+                background: isActive ? BRAND : 'transparent',
+                color: isActive ? '#fff' : 'rgba(250,246,239,0.78)',
+              })}
             >
+              {it.icon && <it.icon className="h-3.5 w-3.5 shrink-0" />}
               {it.label}
             </NavLink>
           ))}
 
+          <div className="my-2" style={{ height: 1, background: 'rgba(250,246,239,0.10)' }} />
+
           {isAdmin && (
             <Link
               to={panel === 'admin' ? '/member' : '/admin'}
-              className="mt-2 rounded-md bg-gray-800 px-3 py-2 text-center font-medium text-amber-300 transition hover:bg-gray-700"
+              onClick={() => setOpen(false)}
+              className="rounded-[4px] px-3.5 py-2.5 text-center text-sm font-medium transition-colors"
+              style={{ background: 'rgba(194,65,12,0.22)', color: '#fca47e' }}
             >
               {panel === 'admin' ? t('header.memberPanel') : t('header.adminPanel')}
             </Link>
           )}
-          <Link to="/" className="mt-1 rounded-md px-3 py-2 text-gray-400 transition hover:bg-gray-800">
-            {t('common.backToSite')}
+          <Link
+            to="/"
+            onClick={() => setOpen(false)}
+            className="rounded-[4px] px-3.5 py-2.5 text-sm transition-colors"
+            style={{ color: 'rgba(250,246,239,0.45)' }}
+          >
+            ← {t('common.backToSite')}
           </Link>
         </nav>
       </aside>
 
-      {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setOpen(false)} />}
+      {/* Backdrop */}
+      {open && (
+        <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setOpen(false)} />
+      )}
 
+      {/* Main content */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b bg-white px-4 py-3 shadow-sm">
-          <button className="lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        {/* Top bar */}
+        <header
+          className="sticky top-0 z-20 flex items-center justify-between px-4 py-3"
+          style={{ background: PAPER, borderBottom: `1px solid ${RULE}`, boxShadow: '0 1px 8px rgba(28,25,23,0.06)' }}
+        >
+          <button
+            className="lg:hidden rounded-[4px] p-1.5 transition-colors hover:bg-gray-100"
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <div className="flex flex-1 items-center justify-end gap-4">
+
+          <div className="hidden text-sm font-semibold lg:block" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>
+            {title}
+          </div>
+
+          <div className="flex items-center gap-4">
             <LanguageToggle />
-            <div className="text-right">
-              <p className="text-sm font-semibold text-gray-800">{member?.full_name}</p>
-              <p className="text-xs text-gray-500">{member?.role === 'admin' ? t('common.admin') : t('common.member')}</p>
-            </div>
-            <button onClick={handleSignOut} className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">
+            {member && (
+              <div className="hidden text-right sm:block">
+                <p className="text-[13px] font-semibold" style={{ color: INK }}>{member.full_name}</p>
+                <p className="text-[11px]" style={{ color: MUTED }}>{member.role === 'admin' ? t('common.admin') : t('common.member')}</p>
+              </div>
+            )}
+            <button
+              onClick={handleSignOut}
+              className="rounded-full px-4 py-1.5 text-[12px] font-medium uppercase tracking-[0.18em] transition-colors hover:opacity-80"
+              style={{ background: INK, color: CREAM }}
+            >
               {t('header.logout')}
             </button>
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-6">
+
+        <main className="flex-1 p-4 md:p-8">
           <Outlet />
         </main>
       </div>

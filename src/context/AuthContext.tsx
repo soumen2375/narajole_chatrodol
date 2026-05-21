@@ -25,6 +25,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const CACHE_KEY = 'cswo_member_cache';
+const FETCH_TIMEOUT_MS = 10000; // 10s — covers Supabase cold-start on free tier
 
 function readCache(userId: string): Member | null {
   try {
@@ -41,9 +42,17 @@ function writeCache(userId: string, member: Member | null) {
   try {
     if (member) localStorage.setItem(CACHE_KEY, JSON.stringify({ userId, member }));
     else localStorage.removeItem(CACHE_KEY);
-  } catch {
-    /* ignore */
-  }
+  } catch { /* ignore */ }
+}
+
+// Wraps a thenable (including Supabase query builders) with a hard timeout.
+function withTimeout<T>(thenable: PromiseLike<T>, ms: number): Promise<T> {
+  return Promise.race([
+    Promise.resolve(thenable),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('request_timeout')), ms),
+    ),
+  ]);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -52,15 +61,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchMember = useCallback(async (userId: string): Promise<Member | null> => {
-    const { data, error } = await supabase.from('cswo_members').select('*').eq('id', userId).maybeSingle();
-    if (error) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to load member profile', error.message);
+    try {
+      // Convert the Supabase thenable to a real Promise so Promise.race works
+      const query: Promise<{ data: Member | null; error: { message: string } | null }> =
+        Promise.resolve(
+          supabase.from('cswo_members').select('*').eq('id', userId).maybeSingle() as PromiseLike<{ data: Member | null; error: { message: string } | null }>
+        );
+
+      const { data, error } = await withTimeout(query, FETCH_TIMEOUT_MS);
+      if (error) {
+        console.error('Failed to load member profile', error.message);
+        return null;
+      }
+      const m = data ?? null;
+      writeCache(userId, m);
+      return m;
+    } catch (err) {
+      console.warn('fetchMember:', err instanceof Error ? err.message : err);
       return null;
     }
-    const m = (data as Member | null) ?? null;
-    writeCache(userId, m);
-    return m;
   }, []);
 
   const refreshMember = useCallback(async () => {
@@ -71,14 +90,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
+    // Safety net: never show spinner for more than 12 seconds.
+    const safetyTimer = setTimeout(() => {
+      if (active) setLoading(false);
+    }, 12000);
+
     (async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data } = await withTimeout(supabase.auth.getSession(), FETCH_TIMEOUT_MS);
         if (!active) return;
         setSession(data.session);
         const uid = data.session?.user?.id;
         if (uid) {
-          // Hydrate instantly from cache, then revalidate in the background.
+          // Show cached data instantly, then revalidate silently.
           const cached = readCache(uid);
           if (cached) {
             setMember(cached);
@@ -89,8 +113,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setMember(await fetchMember(uid));
         }
       } catch {
-        /* ignore */
+        /* network error or timeout — let finally clear loading */
       } finally {
+        clearTimeout(safetyTimer);
         if (active) setLoading(false);
       }
     })();
@@ -110,13 +135,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       active = false;
+      clearTimeout(safetyTimer);
       sub.subscription.unsubscribe();
     };
   }, [fetchMember]);
 
   const signIn = useCallback(
     async (email: string, password: string) => {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      const { data, error } = await withTimeout(
+        supabase.auth.signInWithPassword({ email: email.trim(), password }),
+        FETCH_TIMEOUT_MS,
+      );
       if (error) throw new Error(translateAuthError(error.message));
       if (!data.user) throw new Error('Login failed.');
 
@@ -164,6 +193,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 function translateAuthError(message: string): string {
   if (message.toLowerCase().includes('invalid login credentials')) {
     return 'Wrong email or password. / ভুল ইমেল বা পাসওয়ার্ড।';
+  }
+  if (message === 'request_timeout') {
+    return 'Connection timed out. Check your internet. / সংযোগ বিলম্বিত হয়েছে।';
   }
   return message;
 }
