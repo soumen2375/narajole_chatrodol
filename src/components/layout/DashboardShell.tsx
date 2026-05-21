@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useT } from '@/i18n';
+import LanguageToggle from '@/components/ui/LanguageToggle';
 
 export interface NavItem {
   to: string;
@@ -8,8 +10,17 @@ export interface NavItem {
   end?: boolean;
 }
 
-export default function DashboardShell({ title, items }: { title: string; items: NavItem[] }) {
-  const { member, signOut } = useAuth();
+export default function DashboardShell({
+  title,
+  items,
+  panel,
+}: {
+  title: string;
+  items: NavItem[];
+  panel: 'member' | 'admin';
+}) {
+  const { member, isAdmin, signOut } = useAuth();
+  const { t } = useT();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -20,7 +31,6 @@ export default function DashboardShell({ title, items }: { title: string; items:
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-64 transform bg-gray-900 text-gray-200 transition-transform duration-200 lg:static lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
@@ -44,15 +54,23 @@ export default function DashboardShell({ title, items }: { title: string; items:
               {it.label}
             </NavLink>
           ))}
-          <Link to="/" className="mt-2 rounded-md px-3 py-2 text-gray-400 transition hover:bg-gray-800">
-            ← সাইটে ফিরে যান
+
+          {isAdmin && (
+            <Link
+              to={panel === 'admin' ? '/member' : '/admin'}
+              className="mt-2 rounded-md bg-gray-800 px-3 py-2 text-center font-medium text-amber-300 transition hover:bg-gray-700"
+            >
+              {panel === 'admin' ? t('header.memberPanel') : t('header.adminPanel')}
+            </Link>
+          )}
+          <Link to="/" className="mt-1 rounded-md px-3 py-2 text-gray-400 transition hover:bg-gray-800">
+            {t('common.backToSite')}
           </Link>
         </nav>
       </aside>
 
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setOpen(false)} />}
 
-      {/* Main */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex items-center justify-between border-b bg-white px-4 py-3 shadow-sm">
           <button className="lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
@@ -61,15 +79,13 @@ export default function DashboardShell({ title, items }: { title: string; items:
             </svg>
           </button>
           <div className="flex flex-1 items-center justify-end gap-4">
+            <LanguageToggle />
             <div className="text-right">
               <p className="text-sm font-semibold text-gray-800">{member?.full_name}</p>
-              <p className="text-xs text-gray-500">{member?.role === 'admin' ? 'অ্যাডমিন' : 'সদস্য'}</p>
+              <p className="text-xs text-gray-500">{member?.role === 'admin' ? t('common.admin') : t('common.member')}</p>
             </div>
-            <button
-              onClick={handleSignOut}
-              className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
-            >
-              লগআউট
+            <button onClick={handleSignOut} className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200">
+              {t('header.logout')}
             </button>
           </div>
         </header>

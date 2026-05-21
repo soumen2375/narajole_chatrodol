@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { useT } from '@/i18n';
 
 export default function MemberProfile() {
   const { member, refreshMember } = useAuth();
+  const { t } = useT();
   const [form, setForm] = useState({
     full_name: member?.full_name ?? '',
     phone: member?.phone ?? '',
@@ -55,68 +57,44 @@ export default function MemberProfile() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">আমার প্রোফাইল</h1>
+      <h1 className="mb-6 text-2xl font-bold text-gray-900">{t('m.profile')}</h1>
 
-      <form onSubmit={save} className="space-y-4 rounded-lg bg-white p-6 shadow-sm">
-        {status === 'saved' && <div className="rounded bg-green-100 px-4 py-2 text-green-800">প্রোফাইল সংরক্ষিত হয়েছে।</div>}
+      <form onSubmit={save} className="space-y-4 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+        {status === 'saved' && <div className="rounded bg-green-100 px-4 py-2 text-green-800">{t('m.profileSaved')}</div>}
         {status === 'error' && <div className="rounded bg-red-100 px-4 py-2 text-red-800">{error}</div>}
 
-        <Row label="পূর্ণ নাম">
-          <input
-            value={form.full_name}
-            onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
-            required
-            className="input"
-          />
+        <Row label={`${t('common.fullName')} *`}>
+          <input value={form.full_name} onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} required className="input" />
         </Row>
-        <Row label="ইমেল">
+        <Row label={t('common.email')}>
           <input value={member.email} disabled className="input bg-gray-100" />
         </Row>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Row label="ফোন">
+          <Row label={t('common.phone')}>
             <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} className="input" />
           </Row>
-          <Row label="রক্তের গ্রুপ">
-            <input
-              value={form.blood_group}
-              onChange={(e) => setForm((f) => ({ ...f, blood_group: e.target.value }))}
-              placeholder="যেমন: O+"
-              className="input"
-            />
+          <Row label={t('m.bloodGroup')}>
+            <input value={form.blood_group} onChange={(e) => setForm((f) => ({ ...f, blood_group: e.target.value }))} placeholder="O+, B+ …" className="input" />
           </Row>
         </div>
-        <Row label="ঠিকানা">
+        <Row label={t('common.address')}>
           <input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} className="input" />
         </Row>
-        <Row label="পরিচিতি">
+        <Row label={t('m.bio')}>
           <textarea rows={3} value={form.bio} onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))} className="input" />
         </Row>
-        <button
-          type="submit"
-          disabled={status === 'saving'}
-          className="rounded-md bg-blue-600 px-5 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-        >
-          {status === 'saving' ? 'সংরক্ষণ হচ্ছে…' : 'সংরক্ষণ করুন'}
+        <button type="submit" disabled={status === 'saving'} className="btn-primary">
+          {status === 'saving' ? t('common.saving') : t('common.save')}
         </button>
       </form>
 
-      <form onSubmit={changePassword} className="mt-6 space-y-3 rounded-lg bg-white p-6 shadow-sm">
-        <h2 className="font-semibold text-gray-800">পাসওয়ার্ড পরিবর্তন</h2>
-        {pwStatus === 'saved' && <div className="rounded bg-green-100 px-4 py-2 text-green-800">পাসওয়ার্ড পরিবর্তিত হয়েছে।</div>}
-        {pwStatus === 'error' && <div className="rounded bg-red-100 px-4 py-2 text-red-800">পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।</div>}
-        <input
-          type="password"
-          value={pw}
-          onChange={(e) => setPw(e.target.value)}
-          placeholder="নতুন পাসওয়ার্ড"
-          className="input"
-        />
-        <button
-          type="submit"
-          disabled={pwStatus === 'saving'}
-          className="rounded-md bg-gray-800 px-5 py-2 font-semibold text-white hover:bg-gray-900 disabled:opacity-60"
-        >
-          পাসওয়ার্ড পরিবর্তন করুন
+      <form onSubmit={changePassword} className="mt-6 space-y-3 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+        <h2 className="font-semibold text-gray-800">{t('m.changePassword')}</h2>
+        {pwStatus === 'saved' && <div className="rounded bg-green-100 px-4 py-2 text-green-800">{t('m.passwordChanged')}</div>}
+        {pwStatus === 'error' && <div className="rounded bg-red-100 px-4 py-2 text-red-800">{t('m.passwordShort')}</div>}
+        <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder={t('m.newPassword')} className="input" />
+        <button type="submit" disabled={pwStatus === 'saving'} className="rounded-md bg-gray-800 px-5 py-2 font-semibold text-white hover:bg-gray-900 disabled:opacity-60">
+          {t('m.changePassword')}
         </button>
       </form>
     </div>

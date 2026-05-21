@@ -36,6 +36,25 @@ interface CreateOrderResult {
 
 const ENV_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
 
+let scriptPromise: Promise<boolean> | null = null;
+
+function loadRazorpayScript(): Promise<boolean> {
+  if (window.Razorpay) return Promise.resolve(true);
+  if (scriptPromise) return scriptPromise;
+  scriptPromise = new Promise<boolean>((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.async = true;
+    s.onload = () => resolve(true);
+    s.onerror = () => {
+      scriptPromise = null;
+      resolve(false);
+    };
+    document.body.appendChild(s);
+  });
+  return scriptPromise;
+}
+
 async function invoke<T>(body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke('cswo-razorpay', { body });
   if (error) {
@@ -69,8 +88,9 @@ interface StartPaymentArgs {
 }
 
 export async function startRazorpayPayment(args: StartPaymentArgs): Promise<void> {
-  if (!window.Razorpay) {
-    throw new Error('পেমেন্ট গেটওয়ে লোড হয়নি। অনুগ্রহ করে পৃষ্ঠা রিফ্রেশ করুন।');
+  const loaded = await loadRazorpayScript();
+  if (!loaded || !window.Razorpay) {
+    throw new Error('পেমেন্ট গেটওয়ে লোড হয়নি / Payment gateway failed to load.');
   }
 
   const order = await invoke<CreateOrderResult>({

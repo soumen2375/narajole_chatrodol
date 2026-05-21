@@ -17,7 +17,7 @@ interface AuthContextValue {
   loading: boolean;
   isAdmin: boolean;
   isApproved: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<Member>;
   signOut: () => Promise<void>;
   refreshMember: () => Promise<void>;
 }
@@ -53,14 +53,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-      if (data.session?.user) {
-        setMember(await fetchMember(data.session.user.id));
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!active) return;
+        setSession(data.session);
+        if (data.session?.user) {
+          setMember(await fetchMember(data.session.user.id));
+        }
+      } catch {
+        /* ignore — fall through to setLoading(false) */
+      } finally {
+        if (active) setLoading(false);
       }
-      setLoading(false);
-    });
+    })();
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       if (!active) return;
@@ -101,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(msg);
       }
       setMember(profile);
+      return profile;
     },
     [fetchMember],
   );
