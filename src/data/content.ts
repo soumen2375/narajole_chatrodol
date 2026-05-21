@@ -11,8 +11,11 @@ export interface Bi {
 export const ORG = {
   nameEn: 'Chhatradol Social Welfare Organisation',
   nameBn: 'নাড়াজোল ছাত্রদল',
+  shortEn: 'Chhatradol SWO',
+  shortBn: 'ছাত্রদল',
   taglineBn: 'একতা, শিক্ষা, উন্নতি',
   taglineEn: 'Unity · Education · Progress',
+  established: '2019',
   email: 'info@narajolchhatrodol.org',
   phones: ['7074074110', '7430029114'],
   address: {
@@ -29,7 +32,7 @@ export const ORG = {
 export const FALLBACK_IMAGE = '/assets/images/chatrodol.jpg';
 
 export function name(lang: Lang) {
-  return lang === 'en' ? ORG.nameEn : ORG.nameBn;
+  return lang === 'en' ? ORG.shortEn : ORG.shortBn;
 }
 
 export const NAV_LINKS = [
