@@ -17,6 +17,11 @@ const Donate = lazy(() => import('@/pages/Donate'));
 const Login = lazy(() => import('@/pages/Login'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
+const Terms = lazy(() => import('@/pages/legal/Terms'));
+const Privacy = lazy(() => import('@/pages/legal/Privacy'));
+const Refunds = lazy(() => import('@/pages/legal/Refunds'));
+const Shipping = lazy(() => import('@/pages/legal/Shipping'));
+
 const MemberLayout = lazy(() => import('@/pages/member/MemberLayout'));
 const MemberDashboard = lazy(() => import('@/pages/member/MemberDashboard'));
 const MemberProfile = lazy(() => import('@/pages/member/MemberProfile'));
@@ -52,6 +57,10 @@ export default function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/volunteer" element={<Volunteer />} />
             <Route path="/donate" element={<Donate />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refunds" element={<Refunds />} />
+            <Route path="/shipping" element={<Shipping />} />
           </Route>
 
           <Route path="/login" element={<Login />} />
