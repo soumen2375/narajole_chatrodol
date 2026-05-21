@@ -44,8 +44,9 @@ export default function Donate() {
       setStatus('success');
       setMessage(t('donate.success'));
     } catch (err) {
+      console.error('Donation payment error:', err);
       setStatus('error');
-      setMessage(err instanceof Error ? err.message : t('donate.failed'));
+      setMessage(err instanceof Error && err.message === 'CANCELLED' ? t('pay.cancelled') : t('pay.failed'));
     }
   };
 

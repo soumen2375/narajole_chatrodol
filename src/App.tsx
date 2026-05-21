@@ -1,99 +1,100 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ScrollToTop from '@/components/layout/ScrollToTop';
-import PublicLayout from '@/components/layout/PublicLayout';
 import ProtectedRoute from '@/components/ui/ProtectedRoute';
+import Spinner from '@/components/ui/Spinner';
 
-import Home from '@/pages/Home';
-import About from '@/pages/About';
-import Programs from '@/pages/Programs';
-import Events from '@/pages/Events';
-import Gallery from '@/pages/Gallery';
-import Impacts from '@/pages/Impacts';
-import Contact from '@/pages/Contact';
-import Volunteer from '@/pages/Volunteer';
-import Donate from '@/pages/Donate';
-import Login from '@/pages/Login';
-import NotFound from '@/pages/NotFound';
+const PublicLayout = lazy(() => import('@/components/layout/PublicLayout'));
+const Home = lazy(() => import('@/pages/Home'));
+const About = lazy(() => import('@/pages/About'));
+const Programs = lazy(() => import('@/pages/Programs'));
+const Events = lazy(() => import('@/pages/Events'));
+const Gallery = lazy(() => import('@/pages/Gallery'));
+const Impacts = lazy(() => import('@/pages/Impacts'));
+const Contact = lazy(() => import('@/pages/Contact'));
+const Volunteer = lazy(() => import('@/pages/Volunteer'));
+const Donate = lazy(() => import('@/pages/Donate'));
+const Login = lazy(() => import('@/pages/Login'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
 
-import MemberLayout from '@/pages/member/MemberLayout';
-import MemberDashboard from '@/pages/member/MemberDashboard';
-import MemberProfile from '@/pages/member/MemberProfile';
-import MemberPosts from '@/pages/member/MemberPosts';
-import MemberAttendance from '@/pages/member/MemberAttendance';
-import MemberContributions from '@/pages/member/MemberContributions';
-import MemberDonations from '@/pages/member/MemberDonations';
+const MemberLayout = lazy(() => import('@/pages/member/MemberLayout'));
+const MemberDashboard = lazy(() => import('@/pages/member/MemberDashboard'));
+const MemberProfile = lazy(() => import('@/pages/member/MemberProfile'));
+const MemberPosts = lazy(() => import('@/pages/member/MemberPosts'));
+const MemberAttendance = lazy(() => import('@/pages/member/MemberAttendance'));
+const MemberContributions = lazy(() => import('@/pages/member/MemberContributions'));
+const MemberDonations = lazy(() => import('@/pages/member/MemberDonations'));
 
-import AdminLayout from '@/pages/admin/AdminLayout';
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import AdminMembers from '@/pages/admin/AdminMembers';
-import AdminMemberDetail from '@/pages/admin/AdminMemberDetail';
-import AdminPosts from '@/pages/admin/AdminPosts';
-import AdminEvents from '@/pages/admin/AdminEvents';
-import AdminAttendance from '@/pages/admin/AdminAttendance';
-import AdminContributions from '@/pages/admin/AdminContributions';
-import AdminDonations from '@/pages/admin/AdminDonations';
-import AdminMessages from '@/pages/admin/AdminMessages';
+const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
+const AdminMembers = lazy(() => import('@/pages/admin/AdminMembers'));
+const AdminMemberDetail = lazy(() => import('@/pages/admin/AdminMemberDetail'));
+const AdminPosts = lazy(() => import('@/pages/admin/AdminPosts'));
+const AdminEvents = lazy(() => import('@/pages/admin/AdminEvents'));
+const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
+const AdminContributions = lazy(() => import('@/pages/admin/AdminContributions'));
+const AdminDonations = lazy(() => import('@/pages/admin/AdminDonations'));
+const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'));
 
 export default function App() {
   return (
     <>
       <ScrollToTop />
-      <Routes>
-        {/* Public site */}
-        <Route element={<PublicLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/programs" element={<Programs />} />
-          <Route path="/events" element={<Events />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/impacts" element={<Impacts />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/volunteer" element={<Volunteer />} />
-          <Route path="/donate" element={<Donate />} />
-        </Route>
+      <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Spinner /></div>}>
+        <Routes>
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/programs" element={<Programs />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/impacts" element={<Impacts />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/volunteer" element={<Volunteer />} />
+            <Route path="/donate" element={<Donate />} />
+          </Route>
 
-        <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login />} />
 
-        {/* Member dashboard */}
-        <Route
-          path="/member"
-          element={
-            <ProtectedRoute>
-              <MemberLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<MemberDashboard />} />
-          <Route path="profile" element={<MemberProfile />} />
-          <Route path="posts" element={<MemberPosts />} />
-          <Route path="attendance" element={<MemberAttendance />} />
-          <Route path="contributions" element={<MemberContributions />} />
-          <Route path="donations" element={<MemberDonations />} />
-        </Route>
+          <Route
+            path="/member"
+            element={
+              <ProtectedRoute>
+                <MemberLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<MemberDashboard />} />
+            <Route path="profile" element={<MemberProfile />} />
+            <Route path="posts" element={<MemberPosts />} />
+            <Route path="attendance" element={<MemberAttendance />} />
+            <Route path="contributions" element={<MemberContributions />} />
+            <Route path="donations" element={<MemberDonations />} />
+          </Route>
 
-        {/* Admin dashboard */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute requireAdmin>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-          <Route path="members" element={<AdminMembers />} />
-          <Route path="members/:id" element={<AdminMemberDetail />} />
-          <Route path="posts" element={<AdminPosts />} />
-          <Route path="events" element={<AdminEvents />} />
-          <Route path="attendance" element={<AdminAttendance />} />
-          <Route path="contributions" element={<AdminContributions />} />
-          <Route path="donations" element={<AdminDonations />} />
-          <Route path="messages" element={<AdminMessages />} />
-        </Route>
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="members" element={<AdminMembers />} />
+            <Route path="members/:id" element={<AdminMemberDetail />} />
+            <Route path="posts" element={<AdminPosts />} />
+            <Route path="events" element={<AdminEvents />} />
+            <Route path="attendance" element={<AdminAttendance />} />
+            <Route path="contributions" element={<AdminContributions />} />
+            <Route path="donations" element={<AdminDonations />} />
+            <Route path="messages" element={<AdminMessages />} />
+          </Route>
 
-        <Route path="/404" element={<NotFound />} />
-        <Route path="*" element={<Navigate to="/404" replace />} />
-      </Routes>
+          <Route path="/404" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/404" replace />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }
