@@ -12,8 +12,9 @@ const BRAND  = '#c2410c';
 const PAPER  = '#ffffff';
 const RULE   = '#e7e5e4';
 const MUTED  = '#78716c';
+const ADMIN_DARK = '#0f172a'; // dark navy for admin accent
 
-export default function Login() {
+export default function AdminLogin() {
   const { signIn } = useAuth();
   const { t, lang } = useT();
   const navigate = useNavigate();
@@ -28,11 +29,13 @@ export default function Login() {
     setError('');
     try {
       const m = await signIn(email, password);
-      if (m.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/member');
+      if (m.role !== 'admin') {
+        setError(lang === 'bn'
+          ? 'এই পেজটি শুধুমাত্র অ্যাডমিনদের জন্য। সদস্য লগইনের জন্য সদস্য লগইন পেজ ব্যবহার করুন।'
+          : 'This page is for administrators only. Please use the Member Login page instead.');
+        return;
       }
+      navigate('/admin');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('login.failed'));
     } finally {
@@ -42,16 +45,16 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen flex-col" style={{ background: CREAM }}>
-      {/* Top strip */}
+      {/* Top strip — dark admin style */}
       <div
         className="flex items-center justify-between px-6 py-3"
-        style={{ background: BRAND, borderBottom: `1px solid rgba(255,255,255,0.12)` }}
+        style={{ background: ADMIN_DARK, borderBottom: `1px solid rgba(255,255,255,0.08)` }}
       >
         <Link to="/" className="flex items-center gap-2.5">
           <img src="/assets/images/favicon/favicon512.png" alt="logo" className="h-8 w-8 rounded-full object-cover" style={{ background: CREAM }} />
           <div>
             <span className="block text-[15px] font-bold" style={{ ...SERIF_BN, color: CREAM }}>{lang === 'en' ? ORG.shortEn : ORG.shortBn}</span>
-            <span className="block font-mono text-[9px] uppercase tracking-[0.22em]" style={{ color: 'rgba(255,255,255,0.55)' }}>Member Portal</span>
+            <span className="block font-mono text-[9px] uppercase tracking-[0.22em]" style={{ color: 'rgba(255,255,255,0.45)' }}>Admin Portal</span>
           </div>
         </Link>
         <LanguageToggle light />
@@ -61,20 +64,20 @@ export default function Login() {
       <div className="flex flex-1 items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <h1 className="font-bengali text-[36px] leading-tight" style={{ ...SERIF_BN, color: INK }}>
-            {lang === 'bn' ? 'সদস্য লগইন' : 'Member Login'}
+            {lang === 'bn' ? 'অ্যাডমিন লগইন' : 'Admin Login'}
           </h1>
           <p className="mt-2 mb-8 font-bengali text-[14px]" style={{ color: MUTED }}>
-            {lang === 'bn' ? 'সদস্য প্যানেলে প্রবেশ করুন।' : 'Sign in to your member panel.'}
+            {lang === 'bn' ? 'অ্যাডমিন প্যানেলে প্রবেশ করুন।' : 'Sign in to the admin panel.'}
           </p>
 
           <div
             className="rounded-[4px] p-8"
-            style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 8px 30px -10px rgba(28,25,23,0.12)' }}
+            style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 8px 30px -10px rgba(15,23,42,0.14)' }}
           >
             {error && (
               <div
                 className="mb-5 rounded-[4px] px-4 py-3 font-bengali text-[13px]"
-                style={{ background: 'rgba(194,65,12,0.08)', border: `1px solid rgba(194,65,12,0.2)`, color: BRAND }}
+                style={{ background: 'rgba(15,23,42,0.06)', border: `1px solid rgba(15,23,42,0.14)`, color: ADMIN_DARK }}
               >
                 {error}
               </div>
@@ -90,9 +93,9 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-[4px] border bg-transparent px-4 py-3 text-[14px] outline-none transition-colors focus:border-[#c2410c]"
+                  className="w-full rounded-[4px] border bg-transparent px-4 py-3 text-[14px] outline-none transition-colors"
                   style={{ borderColor: RULE, color: INK }}
-                  placeholder="your@email.com"
+                  placeholder="admin@example.com"
                 />
               </div>
               <div>
@@ -104,7 +107,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-[4px] border bg-transparent px-4 py-3 text-[14px] outline-none transition-colors focus:border-[#c2410c]"
+                  className="w-full rounded-[4px] border bg-transparent px-4 py-3 text-[14px] outline-none transition-colors"
                   style={{ borderColor: RULE, color: INK }}
                   placeholder="••••••••"
                 />
@@ -113,30 +116,20 @@ export default function Login() {
                 type="submit"
                 disabled={loading}
                 className="w-full rounded-full py-3.5 font-bengali text-[14px] font-semibold text-white transition-all hover:-translate-y-[1px] disabled:opacity-60"
-                style={{ background: BRAND, boxShadow: '0 8px 20px -8px rgba(194,65,12,0.55)' }}
+                style={{ background: ADMIN_DARK, boxShadow: '0 8px 20px -8px rgba(15,23,42,0.45)' }}
               >
-                {loading ? t('login.loggingIn') : t('login.button')}
+                {loading ? t('login.loggingIn') : (lang === 'bn' ? 'অ্যাডমিন লগইন' : 'Sign in as Admin')}
               </button>
             </form>
           </div>
 
-          {/* Note */}
           <div
             className="mt-5 rounded-[4px] px-5 py-4 font-bengali text-[13px]"
-            style={{ background: 'rgba(180,83,9,0.07)', border: `1px solid rgba(180,83,9,0.15)`, color: '#92400e' }}
+            style={{ background: 'rgba(15,23,42,0.05)', border: `1px solid rgba(15,23,42,0.10)`, color: '#374151' }}
           >
-            {t('login.note')}{' '}
-            <Link to="/volunteer" className="font-semibold underline underline-offset-2">{t('login.applyHere')}</Link>।
-          </div>
-
-          {/* Admin link */}
-          <div
-            className="mt-3 rounded-[4px] px-5 py-4 font-bengali text-[13px]"
-            style={{ background: 'rgba(15,23,42,0.04)', border: `1px solid rgba(15,23,42,0.08)`, color: '#374151' }}
-          >
-            {lang === 'bn' ? 'অ্যাডমিন? ' : 'Administrator? '}
-            <Link to="/admin-login" className="font-semibold underline underline-offset-2" style={{ color: '#0f172a' }}>
-              {lang === 'bn' ? 'অ্যাডমিন লগইন পেজে যান' : 'Go to Admin Login'}
+            {lang === 'bn' ? 'সদস্য? ' : 'Not an admin? '}
+            <Link to="/login" className="font-semibold underline underline-offset-2" style={{ color: BRAND }}>
+              {lang === 'bn' ? 'সদস্য লগইন পেজে যান' : 'Go to Member Login'}
             </Link>
           </div>
 

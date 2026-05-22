@@ -4,8 +4,8 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/i18n';
 import LanguageToggle from '@/components/ui/LanguageToggle';
+import { memberDisplayId } from '@/types';
 
-// Field Journal palette constants used inline so no CSS vars needed here
 const INK    = '#1c1917';
 const CREAM  = '#faf6ef';
 const PAPER  = '#ffffff';
@@ -18,6 +18,34 @@ export interface NavItem {
   label: string;
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
   end?: boolean;
+}
+
+function MemberAvatar({ avatarUrl, name, size = 36 }: { avatarUrl: string | null; name: string; size?: number }) {
+  const initials = name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={name}
+        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid rgba(250,246,239,0.25)' }}
+        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      />
+    );
+  }
+  return (
+    <div
+      style={{
+        width: size, height: size, borderRadius: '50%', flexShrink: 0,
+        background: BRAND, color: '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: size * 0.38, fontWeight: 700,
+        border: '2px solid rgba(250,246,239,0.25)',
+        fontFamily: '"Noto Serif Bengali", serif',
+      }}
+    >
+      {initials}
+    </div>
+  );
 }
 
 export default function DashboardShell({
@@ -39,6 +67,8 @@ export default function DashboardShell({
     navigate('/');
   };
 
+  const displayId = member ? memberDisplayId(member) : '';
+
   return (
     <div className="flex min-h-screen" style={{ background: CREAM }}>
       {/* Sidebar */}
@@ -48,16 +78,18 @@ export default function DashboardShell({
         }`}
         style={{ background: INK, color: CREAM }}
       >
-        {/* Sidebar header */}
+        {/* Sidebar header — member photo + name + ID */}
         <div
-          className="flex items-center gap-2.5 px-5 py-4"
+          className="flex items-center gap-3 px-5 py-4"
           style={{ borderBottom: `1px solid rgba(250,246,239,0.12)` }}
         >
-          <img src="/assets/images/favicon/favicon512.png" alt="" className="h-8 w-8 rounded-full object-cover" style={{ background: CREAM }} />
-          <div>
-            <div className="font-semibold leading-tight" style={{ fontFamily: '"Noto Serif Bengali", serif', fontSize: 14 }}>{title}</div>
-            <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: 'rgba(250,246,239,0.5)' }}>
-              {panel === 'admin' ? 'Admin Panel' : 'Member Panel'}
+          <MemberAvatar avatarUrl={member?.avatar_url ?? null} name={member?.full_name ?? 'M'} size={40} />
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-semibold leading-tight" style={{ fontFamily: '"Noto Serif Bengali", serif', fontSize: 14, color: CREAM }}>
+              {member?.full_name ?? title}
+            </div>
+            <div className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.18em]" style={{ color: 'rgba(250,246,239,0.5)' }}>
+              {displayId} · {panel === 'admin' ? 'Admin' : 'Member'}
             </div>
           </div>
         </div>
@@ -133,9 +165,12 @@ export default function DashboardShell({
           <div className="flex items-center gap-4">
             <LanguageToggle />
             {member && (
-              <div className="hidden text-right sm:block">
-                <p className="text-[13px] font-semibold" style={{ color: INK }}>{member.full_name}</p>
-                <p className="text-[11px]" style={{ color: MUTED }}>{member.role === 'admin' ? t('common.admin') : t('common.member')}</p>
+              <div className="hidden items-center gap-2.5 sm:flex">
+                <MemberAvatar avatarUrl={member.avatar_url} name={member.full_name} size={30} />
+                <div className="text-right">
+                  <p className="text-[13px] font-semibold" style={{ color: INK }}>{member.full_name}</p>
+                  <p className="text-[11px] font-mono" style={{ color: MUTED }}>{displayId}</p>
+                </div>
               </div>
             )}
             <button

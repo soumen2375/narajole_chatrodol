@@ -9,12 +9,14 @@ const Home = lazy(() => import('@/pages/Home'));
 const About = lazy(() => import('@/pages/About'));
 const Programs = lazy(() => import('@/pages/Programs'));
 const Events = lazy(() => import('@/pages/Events'));
+const EventDetail = lazy(() => import('@/pages/EventDetail'));
 const Gallery = lazy(() => import('@/pages/Gallery'));
 const Impacts = lazy(() => import('@/pages/Impacts'));
 const Contact = lazy(() => import('@/pages/Contact'));
 const Volunteer = lazy(() => import('@/pages/Volunteer'));
 const Donate = lazy(() => import('@/pages/Donate'));
 const Login = lazy(() => import('@/pages/Login'));
+const AdminLogin = lazy(() => import('@/pages/AdminLogin'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const Terms = lazy(() => import('@/pages/legal/Terms'));
@@ -52,6 +54,7 @@ export default function App() {
             <Route path="/about" element={<About />} />
             <Route path="/programs" element={<Programs />} />
             <Route path="/events" element={<Events />} />
+            <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/impacts" element={<Impacts />} />
             <Route path="/contact" element={<Contact />} />
@@ -64,6 +67,7 @@ export default function App() {
           </Route>
 
           <Route path="/login" element={<Login />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
 
           <Route
             path="/member"

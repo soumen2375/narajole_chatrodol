@@ -21,6 +21,12 @@ export interface Member {
   joined_at: string;
   created_at: string;
   updated_at: string;
+  member_serial: number | null;
+}
+
+export function memberDisplayId(m: Pick<Member, 'member_serial'>): string {
+  if (!m.member_serial) return 'CSWO-????';
+  return 'CSWO-' + String(m.member_serial).padStart(4, '0');
 }
 
 export interface CswoPost {

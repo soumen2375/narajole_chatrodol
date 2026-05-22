@@ -1,7 +1,7 @@
 // Field Journal — shared helpers & design tokens
 // Every public page imports from here to keep the design system in one place.
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useT } from '@/i18n';
 import {
@@ -65,6 +65,47 @@ export const Icon = {
   ArrowUp: FaArrowUp,
 };
 
+// ─────────────────── Reveal utility ───────────────────
+export function Reveal({ children, className = '', delay = 0, direction = 'up' }: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+  direction?: 'up' | 'left' | 'right' | 'scale';
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } }, { threshold: 0.12 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  const cls = direction === 'left' ? 'reveal-left' : direction === 'right' ? 'reveal-right' : direction === 'scale' ? 'reveal-scale' : 'reveal';
+  return (
+    <div ref={ref} className={`${cls}${inView ? ' revealed' : ''} ${className}`} style={delay ? { transitionDelay: `${delay}ms` } : undefined}>
+      {children}
+    </div>
+  );
+}
+
+export function RevealStagger({ children, className = '', style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } }, { threshold: 0.08 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className={`reveal-stagger${inView ? ' revealed' : ''} ${className}`} style={style}>
+      {children}
+    </div>
+  );
+}
+
 // ─────────────────── PageShell ───────────────────
 export function PageShell({ children }: { children: React.ReactNode }) {
   return (
@@ -75,15 +116,11 @@ export function PageShell({ children }: { children: React.ReactNode }) {
 }
 
 // ─────────────────── PageHero ───────────────────
-export function PageHero({ eyebrow, title, lede }: { eyebrow: string; title: string; lede?: string }) {
+export function PageHero({ title, lede }: { eyebrow?: string; title: string; lede?: string }) {
   return (
     <section className="relative overflow-hidden" style={{ background: 'var(--c-bg)' }}>
       <div className="relative mx-auto grid max-w-[1320px] grid-cols-12 gap-8 px-6 pb-14 pt-16 md:px-10 md:pt-20">
         <div className="col-span-12 md:col-span-8">
-          <div className="mb-6 inline-flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'var(--c-brand)' }} />
-            {eyebrow}
-          </div>
           <h1 className="font-bengali text-[44px] leading-[1.05] md:text-[68px]" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>{title}</h1>
           {lede && (<p className="mt-6 max-w-2xl font-bengali text-[17px] leading-[1.7]" style={{ color: 'var(--c-ink-2)' }}>{lede}</p>)}
         </div>
@@ -97,15 +134,11 @@ export function PageHero({ eyebrow, title, lede }: { eyebrow: string; title: str
 }
 
 // ─────────────────── SectionHeader ───────────────────
-export function SectionHeader({ eyebrow, title, kicker }: { eyebrow: string; title: string; kicker?: string }) {
+export function SectionHeader({ title, kicker }: { eyebrow?: string; title: string; kicker?: string }) {
   return (
     <div className="mb-14">
       <div className="flex flex-col items-start gap-6 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl">
-          <div className="mb-4 inline-flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'var(--c-brand)' }} />
-            {eyebrow}
-          </div>
           <h2 className="font-bengali text-[36px] leading-[1.1] md:text-[52px]" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>{title}</h2>
         </div>
         {kicker && (<p className="max-w-sm font-bengali text-[15px] leading-[1.7]" style={{ color: 'var(--c-ink-2)' }}>{kicker}</p>)}
@@ -119,6 +152,7 @@ export function SectionHeader({ eyebrow, title, kicker }: { eyebrow: string; tit
 export function GetInvolvedSection() {
   const { lang } = useT();
   const bn = lang === 'bn';
+
   const items = [
     {
       tag: '01', en: 'Donate',
@@ -147,13 +181,15 @@ export function GetInvolvedSection() {
   ];
   return (
     <section style={{ background: 'var(--c-bg)' }}>
-      <div className="mx-auto max-w-[1320px] px-6 py-24 md:px-10">
-        <SectionHeader
-          eyebrow="Three Ways to Help"
-          title={bn ? 'আপনিও সঙ্গী হোন' : 'Get Involved'}
-          kicker={bn ? 'আমাদের কাজ এগিয়ে চলে আপনার মতো মানুষদের হাত ধরে। যেভাবেই হোক — সাথে থাকুন।' : 'Our work moves forward through people like you. Stay with us — in whatever way you can.'}
-        />
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+      <div className="mx-auto max-w-[1320px] px-6 py-28 md:px-10">
+        <Reveal>
+          <SectionHeader
+            eyebrow="Three Ways to Help"
+            title={bn ? 'আপনিও সঙ্গী হোন' : 'Get Involved'}
+            kicker={bn ? 'আমাদের কাজ এগিয়ে চলে আপনার মতো মানুষদের হাত ধরে। যেভাবেই হোক — সাথে থাকুন।' : 'Our work moves forward through people like you. Stay with us — in whatever way you can.'}
+          />
+        </Reveal>
+        <RevealStagger className="grid grid-cols-1 gap-5 md:grid-cols-3">
           {items.map(({ IIcon, ...it }) => (
             <article
               key={it.tag}
@@ -164,16 +200,16 @@ export function GetInvolvedSection() {
             >
               <div className="flex items-center justify-between">
                 <span className="font-mono text-[11px] uppercase tracking-[0.22em]" style={{ opacity: 0.6 }}>{it.tag} · {it.en}</span>
-                <IIcon className="h-5 w-5" style={{ opacity: it.primary ? 0.9 : 0.7 }} />
+                <IIcon className="h-5 w-5 transition-transform duration-300 group-hover:scale-125" style={{ opacity: it.primary ? 0.9 : 0.7 }} />
               </div>
               <h3 className="font-bengali text-[32px] leading-tight" style={SERIF_BN}>{it.title}</h3>
               <p className="flex-1 font-bengali text-[14.5px] leading-[1.7]" style={{ opacity: 0.85 }}>{it.lead}</p>
-              <Link to={it.to} className="inline-flex items-center gap-2 self-start border-b pb-0.5 font-bengali text-[13px] font-semibold transition-all duration-300 group-hover:gap-3" style={{ borderColor: 'currentColor' }}>
+              <Link to={it.to} className="inline-flex items-center gap-2 self-start border-b pb-0.5 font-bengali text-[13px] font-semibold transition-all duration-300 group-hover:gap-3.5" style={{ borderColor: 'currentColor' }}>
                 {it.cta} <Icon.Arrow className="h-3.5 w-3.5" />
               </Link>
             </article>
           ))}
-        </div>
+        </RevealStagger>
       </div>
     </section>
   );
