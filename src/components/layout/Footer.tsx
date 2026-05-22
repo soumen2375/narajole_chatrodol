@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ORG } from '@/data/content';
 import { useT } from '@/i18n';
+import RazorpayButton from '@/components/ui/RazorpayButton';
 
 // Field Journal Footer — dark ink bg, cream text, big serif name + CTAs.
 
@@ -35,23 +36,26 @@ export default function Footer() {
               {t('footer.about')}
             </p>
           </div>
-          <div className="flex gap-3">
-            <Link
-              to="/donate"
-              className="inline-flex items-center justify-center rounded-full px-6 py-3 font-bengali text-sm font-semibold transition-colors"
-              style={{ background: BRAND, color: CREAM }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = BRAND_LIGHT)}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = BRAND)}
-            >
-              {t('nav.donate')}
-            </Link>
-            <Link
-              to="/contact"
-              className="inline-flex items-center justify-center rounded-full border px-6 py-3 font-bengali text-sm font-semibold transition-colors hover:bg-white/10"
-              style={{ borderColor: 'rgba(255,255,255,0.20)', color: CREAM }}
-            >
-              {t('nav.contact')}
-            </Link>
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex gap-3">
+              <Link
+                to="/donate"
+                className="inline-flex items-center justify-center rounded-full px-6 py-3 font-bengali text-sm font-semibold transition-colors"
+                style={{ background: BRAND, color: CREAM }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = BRAND_LIGHT)}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = BRAND)}
+              >
+                {t('nav.donate')}
+              </Link>
+              <Link
+                to="/contact"
+                className="inline-flex items-center justify-center rounded-full border px-6 py-3 font-bengali text-sm font-semibold transition-colors hover:bg-white/10"
+                style={{ borderColor: 'rgba(255,255,255,0.20)', color: CREAM }}
+              >
+                {t('nav.contact')}
+              </Link>
+            </div>
+            <RazorpayButton />
           </div>
         </div>
 

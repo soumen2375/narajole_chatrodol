@@ -105,7 +105,7 @@ export default function Events() {
                   {p.title}
                 </h3>
                 <p className="mt-2 line-clamp-3 px-5 font-bengali text-[13.5px] leading-relaxed" style={{ color: 'var(--c-ink-2)' }}>
-                  {p.content.split('\n')[0].slice(0, 160)}…
+                  {p.content.replace(/<[^>]+>/g, '').split('\n')[0].slice(0, 160)}…
                 </p>
                 <Link
                   to={`/events/${p.id}`}

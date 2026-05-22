@@ -19,6 +19,7 @@ const D: Dict = {
   'nav.donate': { bn: 'অনুদান', en: 'Donate' },
 
   // ---- header / common ----
+  'header.login': { bn: 'লগইন', en: 'Login' },
   'header.memberLogin': { bn: 'সদস্য লগইন', en: 'Member Login' },
   'header.dashboard': { bn: 'ড্যাশবোর্ড', en: 'Dashboard' },
   'header.logout': { bn: 'লগআউট', en: 'Logout' },
@@ -252,6 +253,7 @@ const D: Dict = {
   'm.attendance': { bn: 'উপস্থিতি ও ক্যাম্প', en: 'Attendance & camps' },
   'm.contributions': { bn: 'মাসিক অনুদান', en: 'Monthly dues' },
   'm.donations': { bn: 'আমার দান', en: 'My donations' },
+  'm.gallery': { bn: 'আমার ছবি', en: 'My photos' },
   'm.welcome': { bn: 'স্বাগতম', en: 'Welcome' },
   'm.stat.attendance': { bn: 'উপস্থিত অনুষ্ঠান/ক্যাম্প', en: 'Events / camps attended' },
   'm.stat.posts': { bn: 'আমার পোস্ট', en: 'My posts' },
@@ -274,6 +276,7 @@ const D: Dict = {
   'a.attendance': { bn: 'উপস্থিতি', en: 'Attendance' },
   'a.contributions': { bn: 'মাসিক অনুদান', en: 'Monthly dues' },
   'a.donations': { bn: 'দান রেকর্ড', en: 'Donations' },
+  'a.gallery': { bn: 'গ্যালারি', en: 'Gallery' },
   'a.messages': { bn: 'বার্তা ও আবেদন', en: 'Messages' },
   'a.newMember': { bn: '+ নতুন সদস্য', en: '+ New member' },
   'a.tempPassword': { bn: 'অস্থায়ী পাসওয়ার্ড', en: 'Temporary password' },

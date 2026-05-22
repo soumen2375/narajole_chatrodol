@@ -1,6 +1,6 @@
 export type MemberRole = 'admin' | 'member';
 export type MemberStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
-export type PostStatus = 'draft' | 'pending' | 'published' | 'rejected';
+export type PostStatus = 'draft' | 'pending' | 'published' | 'rejected' | 'scheduled' | 'archived' | 'trash';
 export type EventType = 'event' | 'camp' | 'program';
 export type AttendanceStatus = 'present' | 'absent' | 'volunteered';
 export type PaymentStatus = 'created' | 'paid' | 'failed' | 'refunded';
@@ -41,8 +41,26 @@ export interface CswoPost {
   published_date: string;
   slug: string | null;
   status: PostStatus;
+  schedule_at: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  focus_keyword: string | null;
+  is_featured: boolean;
+  is_sticky: boolean;
+  og_title: string | null;
+  og_image: string | null;
+  share_snippet: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface CswoCategory {
+  id: string;
+  name: string;
+  slug: string;
+  parent_id: string | null;
+  sort_order: number;
+  created_at: string;
 }
 
 export interface CswoEvent {
