@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import type { ContactMessage, VolunteerApplication } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
-import Spinner from '@/components/ui/Spinner';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 
 export default function AdminMessages() {
   const { t, lang } = useT();
@@ -42,7 +42,7 @@ export default function AdminMessages() {
       </div>
 
       {loading ? (
-        <Spinner />
+        <ListSkeleton rows={5} />
       ) : tab === 'contact' ? (
         messages.length === 0 ? (
           <p className="text-gray-600">{tr('No messages.', 'কোনো বার্তা নেই।')}</p>

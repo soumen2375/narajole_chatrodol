@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import type { CswoPost, PostStatus } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
-import Spinner from '@/components/ui/Spinner';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 
 const CATEGORIES = ['News', 'Events', 'Success Story', 'Programs'];
@@ -112,7 +112,7 @@ export default function AdminPosts() {
       )}
 
       {loading ? (
-        <Spinner />
+        <ListSkeleton rows={5} />
       ) : posts.length === 0 ? (
         <p className="text-gray-600">{tr('No posts.', 'কোনো পোস্ট নেই।')}</p>
       ) : (

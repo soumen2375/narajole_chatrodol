@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import type { Donation } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
-import Spinner from '@/components/ui/Spinner';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 
 interface DonationRow extends Omit<Donation, 'member'> {
@@ -51,7 +51,7 @@ export default function AdminDonations() {
       </div>
 
       {loading ? (
-        <Spinner />
+        <TableSkeleton rows={6} />
       ) : donations.length === 0 ? (
         <p className="text-gray-600">{tr('No donation records.', 'কোনো দান রেকর্ড নেই।')}</p>
       ) : (

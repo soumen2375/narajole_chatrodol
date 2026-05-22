@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import type { Attendance, CswoEvent, CswoPost, Donation, Member, MonthlyContribution } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
-import Spinner from '@/components/ui/Spinner';
+import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 
 type AttendanceWithEvent = Attendance & { event?: CswoEvent | null };
@@ -70,7 +70,7 @@ export default function AdminMemberDetail() {
     setBusyMonth(null);
   };
 
-  if (loading) return <Spinner />;
+  if (loading) return <DashboardSkeleton />;
   if (!m) return <p className="text-gray-600">{tr('Member not found.', 'সদস্য পাওয়া যায়নি।')}</p>;
 
   const donated = donations.filter((d) => d.status === 'paid').reduce((s, d) => s + Number(d.amount), 0);

@@ -5,7 +5,7 @@ import type { MonthlyContribution } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { startRazorpayPayment } from '@/lib/razorpay';
-import Spinner from '@/components/ui/Spinner';
+import { MonthGridSkeleton } from '@/components/ui/Skeleton';
 
 const DEFAULT_AMOUNT = 100;
 
@@ -88,7 +88,7 @@ export default function MemberContributions() {
       {error && <div className="mb-4 rounded bg-red-100 px-4 py-2 text-red-800">{error}</div>}
 
       {loading ? (
-        <Spinner />
+        <MonthGridSkeleton />
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {months.map((nm, i) => {

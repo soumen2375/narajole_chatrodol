@@ -98,6 +98,9 @@ export default function Header() {
               <Link to="/login" className="font-bengali text-[13.5px] font-medium" style={{ color: 'rgba(250,246,239,0.85)' }}>
                 {t('header.memberLogin')}
               </Link>
+              <Link to="/admin-login" className="font-mono text-[10.5px] uppercase tracking-[0.18em]" style={{ color: 'rgba(250,246,239,0.55)' }}>
+                {lang === 'bn' ? 'অ্যাডমিন' : 'Admin'}
+              </Link>
               <Link
                 to="/donate"
                 className="inline-flex items-center gap-1.5 rounded-full px-5 py-2 font-bengali text-[13px] font-semibold transition-all hover:-translate-y-[1px]"

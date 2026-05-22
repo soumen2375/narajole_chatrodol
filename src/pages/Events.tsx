@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { usePosts } from '@/hooks/usePosts';
+import { useT } from '@/i18n';
 import { PageShell, PageHero, SERIF_BN, Icon } from './_field-journal';
 
 // ════════════════════════════════════════════════════════════════════
@@ -7,17 +9,31 @@ import { PageShell, PageHero, SERIF_BN, Icon } from './_field-journal';
 // ════════════════════════════════════════════════════════════════════
 
 const PAGE_SIZE = 9;
-const CATEGORIES = ['All', 'Events', 'Education', 'Health', 'Relief'] as const;
-type Cat = (typeof CATEGORIES)[number];
+type Cat = 'all' | 'events' | 'education' | 'health' | 'relief';
+
+const CAT_KEYS: Cat[] = ['all', 'events', 'education', 'health', 'relief'];
+const CAT_DB: Record<Cat, string | null> = {
+  all: null, events: 'Events', education: 'Education', health: 'Health', relief: 'Relief',
+};
 
 export default function Events() {
   const { posts } = usePosts();
-  const [filter, setFilter] = useState<Cat>('All');
+  const { t, lang } = useT();
+  const [filter, setFilter] = useState<Cat>('all');
   const [page, setPage] = useState(1);
 
+  const catLabels: Record<Cat, string> = {
+    all:       t('events.catAll'),
+    events:    t('events.catEvents'),
+    education: t('events.catEducation'),
+    health:    t('events.catHealth'),
+    relief:    t('events.catRelief'),
+  };
+
   const filtered = useMemo(() => {
-    if (filter === 'All') return posts;
-    return posts.filter((p) => p.category === filter);
+    const db = CAT_DB[filter];
+    if (!db) return posts;
+    return posts.filter((p) => p.category === db);
   }, [posts, filter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -29,17 +45,19 @@ export default function Events() {
   return (
     <PageShell>
       <PageHero
-        eyebrow="Events · অনুষ্ঠান ও খবর"
-        title="মাঠ থেকে — আমাদের সাম্প্রতিক কর্মসূচি ও ইভেন্ট।"
-        lede="রক্তদান, স্বাস্থ্য শিবির, পরিবেশ অভিযান, সাংস্কৃতিক উদযাপন — সব কিছুর সাম্প্রতিক রিপোর্ট এখানে।"
+        eyebrow={lang === 'bn' ? 'অনুষ্ঠান ও খবর' : 'Events & News'}
+        title={t('events.heroTitle')}
+        lede={t('events.heroLede')}
       />
 
       {/* Filter bar */}
       <section style={{ background: 'var(--c-paper)' }}>
         <div className="mx-auto max-w-[1320px] px-6 pt-8 md:px-10">
           <div className="flex flex-wrap items-center gap-2 border-b pb-4" style={{ borderColor: 'var(--c-rule)' }}>
-            <span className="pr-3 font-mono text-[11px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>Filter:</span>
-            {CATEGORIES.map((c) => {
+            <span className="pr-3 font-mono text-[11px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>
+              {t('events.filter')}
+            </span>
+            {CAT_KEYS.map((c) => {
               const active = filter === c;
               return (
                 <button
@@ -53,12 +71,12 @@ export default function Events() {
                     border:    `1px solid ${active ? 'var(--c-brand)' : 'var(--c-rule)'}`,
                   }}
                 >
-                  {c}
+                  {catLabels[c]}
                 </button>
               );
             })}
             <span className="ml-auto font-mono text-[10.5px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>
-              {filtered.length} entries
+              {filtered.length} {t('events.entries')}
             </span>
           </div>
         </div>
@@ -89,9 +107,13 @@ export default function Events() {
                 <p className="mt-2 line-clamp-3 px-5 font-bengali text-[13.5px] leading-relaxed" style={{ color: 'var(--c-ink-2)' }}>
                   {p.content.split('\n')[0].slice(0, 160)}…
                 </p>
-                <a href="#" className="mx-5 mb-6 mt-3 inline-flex items-center gap-1.5 self-start font-mono text-[10.5px] uppercase tracking-[0.18em] transition-all duration-300 hover:gap-2.5" style={{ color: 'var(--c-brand)' }}>
-                  Read more <Icon.Arrow className="h-3 w-3" />
-                </a>
+                <Link
+                  to={`/events/${p.id}`}
+                  className="mx-5 mb-6 mt-3 inline-flex items-center gap-1.5 self-start font-mono text-[10.5px] uppercase tracking-[0.18em] transition-all duration-300 hover:gap-2.5"
+                  style={{ color: 'var(--c-brand)' }}
+                >
+                  {t('events.readMore')} <Icon.Arrow className="h-3 w-3" />
+                </Link>
               </article>
             ))}
           </div>
@@ -106,10 +128,10 @@ export default function Events() {
                 className="font-mono text-[11px] uppercase tracking-[0.22em] disabled:opacity-40"
                 style={{ color: 'var(--c-muted)' }}
               >
-                ← Previous
+                {t('events.prev')}
               </button>
               <div className="font-mono text-[11px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>
-                Page {String(page).padStart(2, '0')} / {String(totalPages).padStart(2, '0')}
+                {t('events.page')} {String(page).padStart(2, '0')} / {String(totalPages).padStart(2, '0')}
               </div>
               <button
                 type="button"
@@ -118,7 +140,7 @@ export default function Events() {
                 className="font-mono text-[11px] uppercase tracking-[0.22em] disabled:opacity-40"
                 style={{ color: 'var(--c-brand)' }}
               >
-                Next →
+                {t('events.next')}
               </button>
             </div>
           )}

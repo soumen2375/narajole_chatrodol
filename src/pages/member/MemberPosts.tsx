@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import type { CswoPost } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
-import Spinner from '@/components/ui/Spinner';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 
 const CATEGORIES = ['News', 'Events', 'Success Story', 'Programs'];
@@ -115,7 +115,7 @@ export default function MemberPosts() {
       )}
 
       {loading ? (
-        <Spinner />
+        <ListSkeleton rows={5} />
       ) : posts.length === 0 ? (
         <p className="text-gray-600">{tr('You have not created any posts yet.', 'আপনি এখনও কোনো পোস্ট তৈরি করেননি।')}</p>
       ) : (

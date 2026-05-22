@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import type { Attendance, CswoEvent } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
-import Spinner from '@/components/ui/Spinner';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 
 export default function MemberAttendance() {
   const { member } = useAuth();
@@ -52,7 +52,7 @@ export default function MemberAttendance() {
     await load();
   };
 
-  if (loading) return <Spinner />;
+  if (loading) return <ListSkeleton rows={6} />;
 
   return (
     <div>

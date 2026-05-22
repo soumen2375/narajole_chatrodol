@@ -124,6 +124,19 @@ const D: Dict = {
   'events.past': { bn: 'অতীতের অনুষ্ঠান', en: 'Past events' },
   'events.noUpcoming': { bn: 'বর্তমানে কোন আসন্ন অনুষ্ঠান নেই।', en: 'No upcoming events right now.' },
   'events.noPast': { bn: 'কোন অতীতের অনুষ্ঠান পাওয়া যায়নি।', en: 'No past events found.' },
+  'events.filter': { bn: 'ফিল্টার:', en: 'Filter:' },
+  'events.entries': { bn: 'এন্ট্রি', en: 'entries' },
+  'events.prev': { bn: '← পূর্ববর্তী', en: '← Previous' },
+  'events.next': { bn: 'পরবর্তী →', en: 'Next →' },
+  'events.page': { bn: 'পাতা', en: 'Page' },
+  'events.readMore': { bn: 'বিস্তারিত পড়ুন', en: 'Read more' },
+  'events.catAll': { bn: 'সব', en: 'All' },
+  'events.catEvents': { bn: 'অনুষ্ঠান', en: 'Events' },
+  'events.catEducation': { bn: 'শিক্ষা', en: 'Education' },
+  'events.catHealth': { bn: 'স্বাস্থ্য', en: 'Health' },
+  'events.catRelief': { bn: 'ত্রাণ', en: 'Relief' },
+  'events.heroTitle': { bn: 'মাঠ থেকে — আমাদের সাম্প্রতিক কর্মসূচি ও ইভেন্ট।', en: 'From the field — our recent programmes & events.' },
+  'events.heroLede': { bn: 'রক্তদান, স্বাস্থ্য শিবির, পরিবেশ অভিযান, সাংস্কৃতিক উদযাপন — সব কিছুর সাম্প্রতিক রিপোর্ট এখানে।', en: 'Blood donation, health camps, environmental drives, cultural celebrations — the latest reports from every front.' },
 
   // ---- gallery ----
   'gallery.title': { bn: 'চিত্রশালা', en: 'Gallery' },
@@ -156,6 +169,17 @@ const D: Dict = {
   'contact.success': { bn: 'সফল! আপনার বার্তা পাঠানো হয়েছে।', en: 'Success! Your message has been sent.' },
   'contact.error': { bn: 'বার্তা পাঠাতে সমস্যা হয়েছে।', en: 'Could not send your message.' },
   'contact.addressTitle': { bn: 'আমাদের অফিসের ঠিকানা', en: 'Our office address' },
+  'contact.heroTitle': { bn: 'আমাদের সাথে কথা বলুন।', en: 'Talk to us.' },
+  'contact.heroLede': { bn: 'প্রশ্ন, পরামর্শ, স্বেচ্ছাসেবী হওয়ার আগ্রহ — যেকোনো কারণে নির্দ্বিধায় যোগাযোগ করুন।', en: 'Questions, suggestions, volunteering — reach out for any reason, any time.' },
+  'contact.replyTime': { bn: 'আমরা সাড়া দিই ২৪ ঘণ্টার মধ্যে।', en: 'We respond within 24 hours.' },
+  'contact.msgSent': { bn: 'বার্তা পৌঁছে গেছে।', en: 'Message delivered.' },
+  'contact.msgSentSub': { bn: 'শীঘ্রই আমরা যোগাযোগ করব।', en: 'We will be in touch soon.' },
+  'contact.anotherMsg': { bn: 'আরেকটি বার্তা', en: 'Send another' },
+  'contact.office': { bn: 'দফতর', en: 'Office' },
+  'contact.subjectOpts': {
+    bn: 'বিষয় বেছে নিন…,স্বেচ্ছাসেবী হতে চাই,দান সংক্রান্ত জিজ্ঞাসা,কর্মসূচি সম্পর্কে,মিডিয়া / সংবাদ,অন্যান্য',
+    en: 'Choose a subject…,I want to volunteer,Donation enquiry,About a programme,Media / press,Other',
+  },
 
   // ---- volunteer ----
   'volunteer.title': { bn: 'স্বেচ্ছাসেবক হোন', en: 'Become a volunteer' },

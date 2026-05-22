@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import type { Member, MonthlyContribution } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
-import Spinner from '@/components/ui/Spinner';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 
 export default function AdminContributions() {
   const { member: me } = useAuth();
@@ -61,7 +61,7 @@ export default function AdminContributions() {
   };
 
   const years = [currentYear, currentYear - 1, currentYear - 2];
-  if (loading) return <Spinner />;
+  if (loading) return <TableSkeleton rows={6} />;
 
   return (
     <div>
