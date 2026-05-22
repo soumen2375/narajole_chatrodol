@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import type { Donation } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
-import Spinner from '@/components/ui/Spinner';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 
 export default function MemberDonations() {
@@ -26,7 +26,7 @@ export default function MemberDonations() {
 
   const total = donations.filter((d) => d.status === 'paid').reduce((s, d) => s + Number(d.amount), 0);
 
-  if (loading) return <Spinner />;
+  if (loading) return <TableSkeleton rows={5} />;
 
   return (
     <div>

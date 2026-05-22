@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import type { CswoEvent, EventType } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
-import Spinner from '@/components/ui/Spinner';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 
 const empty = {
   title: '',
@@ -106,7 +106,7 @@ export default function AdminEvents() {
       )}
 
       {loading ? (
-        <Spinner />
+        <ListSkeleton rows={5} />
       ) : events.length === 0 ? (
         <p className="text-gray-600">{tr('No events added yet.', 'এখনও কোনো অনুষ্ঠান যোগ করা হয়নি।')}</p>
       ) : (

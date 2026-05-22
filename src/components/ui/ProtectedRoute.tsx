@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { DashboardSkeleton } from './Skeleton';
 
 // Shows after 8s of spinning — lets user retry without a hard refresh.
 function LoadingTimeout({ onRetry }: { onRetry: () => void }) {
@@ -37,14 +38,10 @@ function LoadingTimeout({ onRetry }: { onRetry: () => void }) {
 
 function Loader() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4" style={{ background: '#faf6ef' }}>
-      <div className="relative h-12 w-12">
-        <div className="absolute inset-0 rounded-full border-4 border-[#e7e5e4]" />
-        <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-[#c2410c]" />
+    <div className="min-h-screen p-5 md:p-6" style={{ background: '#faf6ef' }}>
+      <div className="mx-auto max-w-5xl">
+        <DashboardSkeleton />
       </div>
-      <p className="font-bengali text-[14px]" style={{ color: '#78716c', fontFamily: '"Noto Sans Bengali", sans-serif' }}>
-        লোড হচ্ছে…
-      </p>
     </div>
   );
 }

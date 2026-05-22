@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { Member } from '@/types';
 import { useT } from '@/i18n';
-import Spinner from '@/components/ui/Spinner';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 
 const emptyForm = { full_name: '', email: '', password: '', phone: '', designation: '', role: 'member' };
@@ -76,7 +76,7 @@ export default function AdminMembers() {
 
   const shown = members.filter((m) => (filter === 'all' ? true : m.status === filter));
 
-  if (loading) return <Spinner />;
+  if (loading) return <TableSkeleton rows={6} />;
 
   return (
     <div>

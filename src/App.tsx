@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ScrollToTop from '@/components/layout/ScrollToTop';
 import ProtectedRoute from '@/components/ui/ProtectedRoute';
-import Spinner from '@/components/ui/Spinner';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 
 const PublicLayout = lazy(() => import('@/components/layout/PublicLayout'));
 const Home = lazy(() => import('@/pages/Home'));
@@ -45,7 +45,7 @@ export default function App() {
   return (
     <>
       <ScrollToTop />
-      <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Spinner /></div>}>
+      <Suspense fallback={<PageSkeleton />}>
         <Routes>
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Home />} />

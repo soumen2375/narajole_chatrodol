@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import type { Attendance, AttendanceStatus, CswoEvent, Member } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
-import Spinner from '@/components/ui/Spinner';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 
 export default function AdminAttendance() {
   const { member: me } = useAuth();
@@ -59,7 +59,7 @@ export default function AdminAttendance() {
     setBusy(null);
   };
 
-  if (loading) return <Spinner />;
+  if (loading) return <TableSkeleton rows={6} />;
 
   const presentCount = Object.values(att).filter((a) => a.status !== 'absent').length;
 
