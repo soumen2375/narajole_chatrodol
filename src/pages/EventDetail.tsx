@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { FaFacebook, FaWhatsapp, FaXTwitter, FaLink } from 'react-icons/fa6';
 import { usePosts } from '@/hooks/usePosts';
 import { useT } from '@/i18n';
 import { PageShell, SERIF_BN, Icon } from './_field-journal';
@@ -29,41 +30,41 @@ function ShareBar({ title, url }: { title: string; url: string }) {
   const e = encodeURIComponent;
   const copy = () => navigator.clipboard?.writeText(url).catch(() => {});
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2.5">
       <a
         href={`https://www.facebook.com/sharer/sharer.php?u=${e(url)}`}
         target="_blank" rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 font-mono text-[10.5px] uppercase tracking-[0.16em] text-white transition-opacity hover:opacity-80"
+        title="Share on Facebook"
+        className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-opacity hover:opacity-80"
         style={{ background: '#1877f2' }}
       >
-        <Icon.Users className="h-3.5 w-3.5" />
-        Facebook
+        <FaFacebook className="h-[17px] w-[17px]" />
       </a>
       <a
         href={`https://wa.me/?text=${e(title + ' ' + url)}`}
         target="_blank" rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 font-mono text-[10.5px] uppercase tracking-[0.16em] text-white transition-opacity hover:opacity-80"
+        title="Share on WhatsApp"
+        className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-opacity hover:opacity-80"
         style={{ background: '#25d366' }}
       >
-        <Icon.Phone className="h-3.5 w-3.5" />
-        WhatsApp
+        <FaWhatsapp className="h-[17px] w-[17px]" />
       </a>
       <a
         href={`https://twitter.com/intent/tweet?text=${e(title)}&url=${e(url)}`}
         target="_blank" rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 font-mono text-[10.5px] uppercase tracking-[0.16em] text-white transition-opacity hover:opacity-80"
+        title="Share on X / Twitter"
+        className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-opacity hover:opacity-80"
         style={{ background: '#000' }}
       >
-        <span className="font-bold leading-none text-[12px]">𝕏</span>
-        Twitter
+        <FaXTwitter className="h-[17px] w-[17px]" />
       </a>
       <button
         type="button" onClick={copy}
-        className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 font-mono text-[10.5px] uppercase tracking-[0.16em] transition-colors hover:bg-[color:var(--c-brand)] hover:text-white hover:border-[color:var(--c-brand)]"
+        title="Copy link"
+        className="flex h-9 w-9 items-center justify-center rounded-full border transition-colors hover:bg-[color:var(--c-brand)] hover:text-white hover:border-[color:var(--c-brand)]"
         style={{ borderColor: 'var(--c-rule)', color: 'var(--c-ink-2)' }}
       >
-        <Icon.Check className="h-3.5 w-3.5" />
-        Copy link
+        <FaLink className="h-[15px] w-[15px]" />
       </button>
     </div>
   );
@@ -137,7 +138,8 @@ export default function EventDetail() {
 
   const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
   const mins = readingMinutes(post.content);
-  const paragraphs = post.content.split('\n').filter(Boolean);
+  const isHtml = post.content.trim().startsWith('<');
+  const paragraphs = isHtml ? [] : post.content.split('\n').filter(Boolean);
 
   return (
     <PageShell>
@@ -197,13 +199,21 @@ export default function EventDetail() {
               </div>
 
               {/* Body */}
-              <div className="mt-8 space-y-5">
-                {paragraphs.map((para, i) => (
-                  <p key={i} className="font-bengali text-[16px] leading-[1.88]" style={{ color: 'var(--c-ink-2)' }}>
-                    {para}
-                  </p>
-                ))}
-              </div>
+              {isHtml ? (
+                <div
+                  className="prose prose-lg mt-8 max-w-none font-bengali"
+                  style={{ color: 'var(--c-ink-2)' }}
+                  dangerouslySetInnerHTML={{ __html: post.content }}
+                />
+              ) : (
+                <div className="mt-8 space-y-5">
+                  {paragraphs.map((para, i) => (
+                    <p key={i} className="font-bengali text-[16px] leading-[1.88]" style={{ color: 'var(--c-ink-2)' }}>
+                      {para}
+                    </p>
+                  ))}
+                </div>
+              )}
 
               {/* Tags */}
               {post.tags && post.tags.length > 0 && (

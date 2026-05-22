@@ -10,7 +10,6 @@ const INK    = '#1c1917';
 const CREAM  = '#faf6ef';
 const PAPER  = '#ffffff';
 const BRAND  = '#c2410c';
-const MUTED  = '#78716c';
 const RULE   = '#e7e5e4';
 
 export interface NavItem {
@@ -133,6 +132,14 @@ export default function DashboardShell({
           >
             ← {t('common.backToSite')}
           </Link>
+
+          <button
+            onClick={() => { setOpen(false); handleSignOut(); }}
+            className="flex w-full items-center gap-2.5 rounded-[4px] px-3.5 py-2.5 text-sm font-medium transition-colors hover:bg-red-900/30"
+            style={{ color: '#fca47e' }}
+          >
+            ⏻ {t('header.logout')}
+          </button>
         </nav>
       </aside>
 
@@ -162,24 +169,11 @@ export default function DashboardShell({
             {title}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <LanguageToggle />
             {member && (
-              <div className="hidden items-center gap-2.5 sm:flex">
-                <MemberAvatar avatarUrl={member.avatar_url} name={member.full_name} size={30} />
-                <div className="text-right">
-                  <p className="text-[13px] font-semibold" style={{ color: INK }}>{member.full_name}</p>
-                  <p className="text-[11px] font-mono" style={{ color: MUTED }}>{displayId}</p>
-                </div>
-              </div>
+              <MemberAvatar avatarUrl={member.avatar_url} name={member.full_name} size={32} />
             )}
-            <button
-              onClick={handleSignOut}
-              className="rounded-full px-4 py-1.5 text-[12px] font-medium uppercase tracking-[0.18em] transition-colors hover:opacity-80"
-              style={{ background: INK, color: CREAM }}
-            >
-              {t('header.logout')}
-            </button>
           </div>
         </header>
 

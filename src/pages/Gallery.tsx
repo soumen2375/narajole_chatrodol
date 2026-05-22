@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { GALLERY_IMAGES } from '@/data/content';
+import { useGallery } from '@/hooks/useGallery';
 import { useT } from '@/i18n';
 import { PageShell, PageHero, Icon } from './_field-journal';
 
@@ -10,17 +10,18 @@ import { PageShell, PageHero, Icon } from './_field-journal';
 export default function Gallery() {
   const { lang } = useT();
   const bn = lang === 'bn';
+  const { items: galleryItems } = useGallery();
 
   const ALL_LABEL = bn ? 'সব' : 'All';
   const allCategories = useMemo(
-    () => [ALL_LABEL, ...Array.from(new Set(GALLERY_IMAGES.map((g) => g.category[lang])))],
-    [lang, ALL_LABEL],
+    () => [ALL_LABEL, ...Array.from(new Set(galleryItems.map((g) => g.category[lang])))],
+    [galleryItems, lang, ALL_LABEL],
   );
   const [filter, setFilter] = useState<string>(ALL_LABEL);
 
   const items = filter === ALL_LABEL || !allCategories.includes(filter)
-    ? GALLERY_IMAGES
-    : GALLERY_IMAGES.filter((g) => g.category[lang] === filter);
+    ? galleryItems
+    : galleryItems.filter((g) => g.category[lang] === filter);
 
   return (
     <PageShell>
@@ -72,7 +73,7 @@ export default function Gallery() {
           <div className="columns-1 gap-5 sm:columns-2 lg:columns-3">
             {items.map((g, i) => (
               <figure
-                key={g.src + i}
+                key={g.id + i}
                 className="card-lift group mb-5 inline-block w-full break-inside-avoid overflow-hidden rounded-[3px]"
                 style={{ background: 'var(--c-bg)' }}
               >

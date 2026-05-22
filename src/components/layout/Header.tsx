@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { ORG } from '@/data/content';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/i18n';
@@ -23,16 +23,10 @@ const NAV_KEYS = [
 
 export default function Header() {
   const [open, setOpen] = useState(false);
-  const { member, isAdmin, signOut } = useAuth();
+  const { member, isAdmin } = useAuth();
   const { t, lang } = useT();
-  const navigate = useNavigate();
 
   const dashboardPath = isAdmin ? '/admin' : '/member';
-  const handleSignOut = async () => {
-    await signOut();
-    setOpen(false);
-    navigate('/');
-  };
 
   const orgName = lang === 'en' ? ORG.shortEn : ORG.shortBn;
 
@@ -81,38 +75,29 @@ export default function Header() {
           ))}
           <LanguageToggle light />
           {member ? (
-            <div className="flex items-center gap-3">
-              <Link
-                to={dashboardPath}
-                className="inline-flex items-center gap-1.5 rounded-full px-5 py-2 font-bengali text-[13px] font-semibold transition-all hover:-translate-y-[1px]"
-                style={{ background: INK, color: CREAM }}
-              >
-                {t('header.dashboard')}
-              </Link>
-              <button onClick={handleSignOut} className="font-bengali text-[13px]" style={{ color: 'rgba(250,246,239,0.85)' }}>
-                {t('header.logout')}
-              </button>
-            </div>
+            <Link
+              to={dashboardPath}
+              className="inline-flex items-center gap-1.5 rounded-full px-5 py-2 font-bengali text-[13px] font-semibold transition-all hover:-translate-y-[1px]"
+              style={{ background: INK, color: CREAM }}
+            >
+              {t('header.dashboard')}
+            </Link>
           ) : (
-            <>
-              <Link to="/login" className="font-bengali text-[13.5px] font-medium" style={{ color: 'rgba(250,246,239,0.85)' }}>
-                {t('header.memberLogin')}
-              </Link>
-              <Link to="/admin-login" className="font-mono text-[10.5px] uppercase tracking-[0.18em]" style={{ color: 'rgba(250,246,239,0.55)' }}>
-                {lang === 'bn' ? 'অ্যাডমিন' : 'Admin'}
-              </Link>
-              <Link
-                to="/donate"
-                className="inline-flex items-center gap-1.5 rounded-full px-5 py-2 font-bengali text-[13px] font-semibold transition-all hover:-translate-y-[1px]"
-                style={{ background: INK, color: CREAM, boxShadow: '0 8px 18px -10px rgba(0,0,0,0.5)' }}
-              >
-                {t('nav.donate')}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
-                  <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </Link>
-            </>
+            <Link
+              to="/login"
+              className="font-bengali text-[13.5px] font-medium"
+              style={{ color: 'rgba(250,246,239,0.85)' }}
+            >
+              {t('header.login')}
+            </Link>
           )}
+          <Link
+            to="/donate"
+            className="inline-flex items-center gap-1.5 rounded-full px-5 py-2 font-bengali text-[13px] font-semibold transition-all hover:-translate-y-[1px]"
+            style={{ background: INK, color: CREAM, boxShadow: '0 8px 18px -10px rgba(0,0,0,0.5)' }}
+          >
+            {t('nav.donate')} →
+          </Link>
         </nav>
 
         {/* Mobile toggle */}
@@ -151,8 +136,8 @@ export default function Header() {
               <div className="mb-3 flex justify-center">
                 <LanguageToggle light />
               </div>
-              {member ? (
-                <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2">
+                {member ? (
                   <Link
                     to={dashboardPath}
                     onClick={() => setOpen(false)}
@@ -161,24 +146,25 @@ export default function Header() {
                   >
                     {t('header.dashboard')}
                   </Link>
-                  <button
-                    onClick={handleSignOut}
+                ) : (
+                  <Link
+                    to="/login"
+                    onClick={() => setOpen(false)}
                     className="rounded-full border px-4 py-2.5 text-center font-bengali font-semibold"
                     style={{ borderColor: 'rgba(255,255,255,0.30)', color: '#fff' }}
                   >
-                    {t('header.logout')}
-                  </button>
-                </div>
-              ) : (
+                    {t('header.login')}
+                  </Link>
+                )}
                 <Link
-                  to="/login"
+                  to="/donate"
                   onClick={() => setOpen(false)}
-                  className="block rounded-full px-4 py-2.5 text-center font-bengali font-semibold"
+                  className="rounded-full px-4 py-2.5 text-center font-bengali font-semibold"
                   style={{ background: INK, color: CREAM }}
                 >
-                  {t('header.memberLogin')}
+                  {t('nav.donate')} →
                 </Link>
-              )}
+              </div>
             </div>
           </div>
         </nav>

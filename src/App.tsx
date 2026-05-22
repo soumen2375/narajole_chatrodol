@@ -31,12 +31,14 @@ const MemberPosts = lazy(() => import('@/pages/member/MemberPosts'));
 const MemberAttendance = lazy(() => import('@/pages/member/MemberAttendance'));
 const MemberContributions = lazy(() => import('@/pages/member/MemberContributions'));
 const MemberDonations = lazy(() => import('@/pages/member/MemberDonations'));
+const MemberGallery = lazy(() => import('@/pages/member/MemberGallery'));
 
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
 const AdminMembers = lazy(() => import('@/pages/admin/AdminMembers'));
 const AdminMemberDetail = lazy(() => import('@/pages/admin/AdminMemberDetail'));
 const AdminPosts = lazy(() => import('@/pages/admin/AdminPosts'));
+const AdminGallery = lazy(() => import('@/pages/admin/AdminGallery'));
 const AdminEvents = lazy(() => import('@/pages/admin/AdminEvents'));
 const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
 const AdminContributions = lazy(() => import('@/pages/admin/AdminContributions'));
@@ -80,6 +82,7 @@ export default function App() {
             <Route index element={<MemberDashboard />} />
             <Route path="profile" element={<MemberProfile />} />
             <Route path="posts" element={<MemberPosts />} />
+            <Route path="gallery" element={<MemberGallery />} />
             <Route path="attendance" element={<MemberAttendance />} />
             <Route path="contributions" element={<MemberContributions />} />
             <Route path="donations" element={<MemberDonations />} />
@@ -97,6 +100,7 @@ export default function App() {
             <Route path="members" element={<AdminMembers />} />
             <Route path="members/:id" element={<AdminMemberDetail />} />
             <Route path="posts" element={<AdminPosts />} />
+            <Route path="gallery" element={<AdminGallery />} />
             <Route path="events" element={<AdminEvents />} />
             <Route path="attendance" element={<AdminAttendance />} />
             <Route path="contributions" element={<AdminContributions />} />
