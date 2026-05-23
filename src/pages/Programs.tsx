@@ -52,15 +52,15 @@ export default function Programs() {
 
       {/* Focus area band */}
       <section style={{ background: 'var(--c-paper)' }}>
-        <div className="mx-auto max-w-[1320px] px-6 py-16 md:px-10">
+        <div className="mx-auto max-w-[1320px] px-4 py-12 md:px-10 md:py-16">
           <div className="grid grid-cols-2 gap-px md:grid-cols-4" style={{ background: 'var(--c-rule)' }}>
             {focusAreas.map((f) => (
-              <div key={f.tag} className="p-7" style={{ background: 'var(--c-paper)' }}>
-                <div className="font-mono text-[10px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>{f.tag} · Focus</div>
-                <div className="mt-3 font-bengali text-[28px]" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>{f.bn}</div>
-                <div className="mt-4 flex items-baseline gap-2 border-t pt-3" style={{ borderColor: 'var(--c-rule)' }}>
-                  <span className="font-bengali text-[28px]" style={{ ...SERIF_BN, color: 'var(--c-brand)' }}>{f.n}</span>
-                  <span className="font-bengali text-[12.5px]" style={{ color: 'var(--c-muted)' }}>{bn ? 'কর্মসূচি' : 'programmes'}</span>
+              <div key={f.tag} className="p-4 md:p-7" style={{ background: 'var(--c-paper)' }}>
+                <div className="font-mono text-[9px] uppercase tracking-[0.18em] md:text-[10px] md:tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>{f.tag} · Focus</div>
+                <div className="mt-2 font-bengali text-[20px] leading-tight md:mt-3 md:text-[28px]" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>{f.bn}</div>
+                <div className="mt-3 flex items-baseline gap-1 border-t pt-2 md:mt-4 md:gap-2 md:pt-3" style={{ borderColor: 'var(--c-rule)' }}>
+                  <span className="font-bengali text-[22px] md:text-[28px]" style={{ ...SERIF_BN, color: 'var(--c-brand)' }}>{f.n}</span>
+                  <span className="font-bengali text-[11px] md:text-[12.5px]" style={{ color: 'var(--c-muted)' }}>{bn ? 'কর্মসূচি' : 'programmes'}</span>
                 </div>
               </div>
             ))}
