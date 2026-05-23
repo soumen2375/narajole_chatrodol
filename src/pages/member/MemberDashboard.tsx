@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useFmt, monthNames, toBengaliDigits } from '@/lib/format';
 import { useT } from '@/i18n';
 import { memberDisplayId } from '@/types';
-import type { CswoEvent, Attendance, MonthlyContribution } from '@/types';
+import type { CswoEvent, MonthlyContribution } from '@/types';
 
 const BRAND  = '#c2410c';
 const INK    = '#1c1917';
