@@ -148,7 +148,6 @@ export default function MemberDashboard() {
 
   const memberId = memberDisplayId(member);
   const { day, dateNum, month, year: headerYear } = todayHeader(lang);
-  const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
   const elapsedMonths = currentMonth;
   const months = fmt.months();

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { ContactMessage, VolunteerApplication, Member } from '@/types';
 import { useFmt } from '@/lib/format';
@@ -56,7 +56,7 @@ export default function AdminMessages() {
     setLoading(false);
   };
 
-  const handleSend = async (e: React.FormEvent) => {
+  const handleSend = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedMemberId || !msgText.trim() || !senderName.trim()) return;
     setSending(true); setSendError(''); setSendSuccess('');
