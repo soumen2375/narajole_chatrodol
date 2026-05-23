@@ -17,6 +17,8 @@ export interface NavItem {
   label: string;
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
   end?: boolean;
+  /** If set, a small category header is rendered immediately before this nav link. */
+  sectionLabel?: string;
 }
 
 function MemberAvatar({ avatarUrl, name, size = 36 }: { avatarUrl: string | null; name: string; size?: number }) {
@@ -96,20 +98,29 @@ export default function DashboardShell({
         {/* Nav items */}
         <nav className="flex flex-col gap-0.5 p-3 text-sm">
           {items.map((it) => (
-            <NavLink
-              key={it.to}
-              to={it.to}
-              end={it.end}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-[4px] px-3.5 py-2.5 font-medium transition-colors"
-              style={({ isActive }) => ({
-                background: isActive ? BRAND : 'transparent',
-                color: isActive ? '#fff' : 'rgba(250,246,239,0.78)',
-              })}
-            >
-              {it.icon && <it.icon className="h-3.5 w-3.5 shrink-0" />}
-              {it.label}
-            </NavLink>
+            <div key={it.to}>
+              {it.sectionLabel && (
+                <p
+                  className="mt-3 mb-0.5 px-3.5 text-[9px] font-bold uppercase tracking-[0.2em]"
+                  style={{ color: 'rgba(250,246,239,0.35)' }}
+                >
+                  {it.sectionLabel}
+                </p>
+              )}
+              <NavLink
+                to={it.to}
+                end={it.end}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 rounded-[4px] px-3.5 py-2.5 font-medium transition-colors"
+                style={({ isActive }) => ({
+                  background: isActive ? BRAND : 'transparent',
+                  color: isActive ? '#fff' : 'rgba(250,246,239,0.78)',
+                })}
+              >
+                {it.icon && <it.icon className="h-3.5 w-3.5 shrink-0" />}
+                {it.label}
+              </NavLink>
+            </div>
           ))}
 
           <div className="my-2" style={{ height: 1, background: 'rgba(250,246,239,0.10)' }} />

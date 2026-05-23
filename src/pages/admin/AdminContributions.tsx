@@ -102,9 +102,12 @@ export default function AdminContributions() {
     setBulkBusy(false);
   };
 
+  // For the current year only count months that have already passed (no future months).
+  const maxMonth = year === currentYear ? new Date().getMonth() + 1 : 12;
+
   const defaulters = members.reduce<DefaulterRow[]>((acc, m) => {
     const row = grid[m.id] ?? {};
-    const unpaidMonths = Array.from({ length: 12 }, (_, i) => i + 1).filter(
+    const unpaidMonths = Array.from({ length: maxMonth }, (_, i) => i + 1).filter(
       (mo) => !row[mo] || row[mo].status !== 'paid',
     );
     if (unpaidMonths.length > 0) {
