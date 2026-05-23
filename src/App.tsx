@@ -32,6 +32,7 @@ const MemberAttendance = lazy(() => import('@/pages/member/MemberAttendance'));
 const MemberContributions = lazy(() => import('@/pages/member/MemberContributions'));
 const MemberDonations = lazy(() => import('@/pages/member/MemberDonations'));
 const MemberGallery = lazy(() => import('@/pages/member/MemberGallery'));
+const MemberDirectory = lazy(() => import('@/pages/member/MemberDirectory'));
 
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
@@ -44,6 +45,7 @@ const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
 const AdminContributions = lazy(() => import('@/pages/admin/AdminContributions'));
 const AdminDonations = lazy(() => import('@/pages/admin/AdminDonations'));
 const AdminExpenses = lazy(() => import('@/pages/admin/AdminExpenses'));
+const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'));
 const AdminFinance = lazy(() => import('@/pages/admin/AdminFinance'));
 const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'));
 
@@ -83,11 +85,12 @@ export default function App() {
           >
             <Route index element={<MemberDashboard />} />
             <Route path="profile" element={<MemberProfile />} />
-            <Route path="posts" element={<MemberPosts />} />
-            <Route path="gallery" element={<MemberGallery />} />
+            <Route path="posts" element={<ProtectedRoute require="canManagePosts"><MemberPosts /></ProtectedRoute>} />
+            <Route path="gallery" element={<ProtectedRoute require="canManagePosts"><MemberGallery /></ProtectedRoute>} />
             <Route path="attendance" element={<MemberAttendance />} />
             <Route path="contributions" element={<MemberContributions />} />
             <Route path="donations" element={<MemberDonations />} />
+            <Route path="directory" element={<MemberDirectory />} />
           </Route>
 
           <Route
@@ -102,6 +105,7 @@ export default function App() {
             <Route path="members" element={<AdminMembers />} />
             <Route path="members/:id" element={<AdminMemberDetail />} />
             <Route path="posts" element={<AdminPosts />} />
+            <Route path="categories" element={<AdminCategories />} />
             <Route path="gallery" element={<AdminGallery />} />
             <Route path="events" element={<AdminEvents />} />
             <Route path="attendance" element={<AdminAttendance />} />

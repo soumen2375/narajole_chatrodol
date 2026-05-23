@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePosts } from '@/hooks/usePosts';
+import { useCategories } from '@/hooks/useCategories';
 import { useT } from '@/i18n';
 import { PageShell, PageHero, SERIF_BN, Icon } from './_field-journal';
 
@@ -9,38 +10,30 @@ import { PageShell, PageHero, SERIF_BN, Icon } from './_field-journal';
 // ════════════════════════════════════════════════════════════════════
 
 const PAGE_SIZE = 9;
-type Cat = 'all' | 'events' | 'education' | 'health' | 'relief';
-
-const CAT_KEYS: Cat[] = ['all', 'events', 'education', 'health', 'relief'];
-const CAT_DB: Record<Cat, string | null> = {
-  all: null, events: 'Events', education: 'Education', health: 'Health', relief: 'Relief',
-};
 
 export default function Events() {
   const { posts } = usePosts();
+  const { flat: categories } = useCategories();
   const { t, lang } = useT();
-  const [filter, setFilter] = useState<Cat>('all');
+  const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(1);
 
-  const catLabels: Record<Cat, string> = {
-    all:       t('events.catAll'),
-    events:    t('events.catEvents'),
-    education: t('events.catEducation'),
-    health:    t('events.catHealth'),
-    relief:    t('events.catRelief'),
-  };
+  // Only show top-level categories that have at least one matching post
+  const topLevelCats = useMemo(() => {
+    const names = new Set(posts.map((p) => p.category));
+    return categories.filter((c) => !c.parent_id && names.has(c.name));
+  }, [categories, posts]);
 
   const filtered = useMemo(() => {
-    const db = CAT_DB[filter];
-    if (!db) return posts;
-    return posts.filter((p) => p.category === db);
+    if (filter === 'all') return posts;
+    return posts.filter((p) => p.category === filter);
   }, [posts, filter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const start = (page - 1) * PAGE_SIZE;
   const slice = filtered.slice(start, start + PAGE_SIZE);
 
-  const setCat = (c: Cat) => { setFilter(c); setPage(1); };
+  const setCat = (c: string) => { setFilter(c); setPage(1); };
 
   return (
     <PageShell>
@@ -57,24 +50,35 @@ export default function Events() {
             <span className="pr-3 font-mono text-[11px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>
               {t('events.filter')}
             </span>
-            {CAT_KEYS.map((c) => {
-              const active = filter === c;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCat(c)}
-                  className="inline-flex items-center rounded-full px-3.5 py-1.5 font-bengali text-[12.5px] font-medium transition-colors"
-                  style={{
-                    background: active ? 'var(--c-brand)' : 'transparent',
-                    color:      active ? '#fff' : 'var(--c-ink-2)',
-                    border:    `1px solid ${active ? 'var(--c-brand)' : 'var(--c-rule)'}`,
-                  }}
-                >
-                  {catLabels[c]}
-                </button>
-              );
-            })}
+            {/* "All" pill */}
+            <button
+              type="button"
+              onClick={() => setCat('all')}
+              className="inline-flex items-center rounded-full px-3.5 py-1.5 font-bengali text-[12.5px] font-medium transition-colors"
+              style={{
+                background: filter === 'all' ? 'var(--c-brand)' : 'transparent',
+                color:      filter === 'all' ? '#fff' : 'var(--c-ink-2)',
+                border:    `1px solid ${filter === 'all' ? 'var(--c-brand)' : 'var(--c-rule)'}`,
+              }}
+            >
+              {t('events.catAll')}
+            </button>
+            {/* Dynamic category pills from DB */}
+            {topLevelCats.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setCat(c.name)}
+                className="inline-flex items-center rounded-full px-3.5 py-1.5 font-bengali text-[12.5px] font-medium transition-colors"
+                style={{
+                  background: filter === c.name ? 'var(--c-brand)' : 'transparent',
+                  color:      filter === c.name ? '#fff' : 'var(--c-ink-2)',
+                  border:    `1px solid ${filter === c.name ? 'var(--c-brand)' : 'var(--c-rule)'}`,
+                }}
+              >
+                {c.name}
+              </button>
+            ))}
             <span className="ml-auto font-mono text-[10.5px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>
               {filtered.length} {t('events.entries')}
             </span>
@@ -87,7 +91,7 @@ export default function Events() {
         <div className="mx-auto max-w-[1320px] px-6 py-16 md:px-10">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {slice.map((p) => (
-              <article key={p.id} className="card-lift group flex flex-col rounded-[3px] overflow-hidden" style={{ background: 'var(--c-paper)', border: '1px solid var(--c-rule)' }}>
+              <article key={p.id} className="card-lift group flex flex-col overflow-hidden rounded-[3px]" style={{ background: 'var(--c-paper)', border: '1px solid var(--c-rule)' }}>
                 <div className="img-zoom">
                   <img
                     src={p.featuredImage || '/assets/images/chatrodol.jpg'}

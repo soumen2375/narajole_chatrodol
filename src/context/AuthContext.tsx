@@ -15,8 +15,12 @@ interface AuthContextValue {
   user: User | null;
   member: Member | null;
   loading: boolean;
+  revalidating: boolean;
   isAdmin: boolean;
   isApproved: boolean;
+  canManagePosts: boolean;
+  canManageEvents: boolean;
+  canManageFinance: boolean;
   signIn: (email: string, password: string) => Promise<Member>;
   signOut: () => Promise<void>;
   refreshMember: () => Promise<void>;
@@ -59,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
+  const [revalidating, setRevalidating] = useState(false);
 
   const fetchMember = useCallback(async (userId: string): Promise<Member | null> => {
     try {
@@ -107,7 +112,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (cached) {
             setMember(cached);
             setLoading(false);
-            fetchMember(uid).then((fresh) => active && fresh && setMember(fresh));
+            setRevalidating(true);
+            fetchMember(uid).then((fresh) => {
+              if (active && fresh) setMember(fresh);
+              if (active) setRevalidating(false);
+            });
             return;
           }
           setMember(await fetchMember(uid));
@@ -175,13 +184,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   }, []);
 
+  const approved = member?.status === 'approved';
   const value: AuthContextValue = {
     session,
     user: session?.user ?? null,
     member,
     loading,
-    isAdmin: member?.role === 'admin' && member?.status === 'approved',
-    isApproved: member?.status === 'approved',
+    revalidating,
+    isAdmin: member?.role === 'admin' && approved,
+    isApproved: approved,
+    canManagePosts: approved && !!member?.can_manage_posts,
+    canManageEvents: approved && !!member?.can_manage_events,
+    canManageFinance: approved && !!member?.can_manage_finance,
     signIn,
     signOut,
     refreshMember,

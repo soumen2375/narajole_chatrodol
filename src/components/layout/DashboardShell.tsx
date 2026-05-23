@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ComponentType, SVGProps } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -17,8 +17,36 @@ export interface NavItem {
   label: string;
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
   end?: boolean;
-  /** If set, a small category header is rendered immediately before this nav link. */
   sectionLabel?: string;
+}
+
+type SectionGroup = { label: string | null; items: NavItem[] };
+
+function groupItems(items: NavItem[]): SectionGroup[] {
+  const groups: SectionGroup[] = [];
+  let cur: SectionGroup = { label: null, items: [] };
+  for (const item of items) {
+    if (item.sectionLabel !== undefined) {
+      if (cur.items.length > 0) groups.push(cur);
+      cur = { label: item.sectionLabel, items: [item] };
+    } else {
+      cur.items.push(item);
+    }
+  }
+  if (cur.items.length > 0) groups.push(cur);
+  return groups;
+}
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      className="h-3 w-3 shrink-0 transition-transform duration-200"
+      style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  );
 }
 
 function MemberAvatar({ avatarUrl, name, size = 36 }: { avatarUrl: string | null; name: string; size?: number }) {
@@ -58,10 +86,26 @@ export default function DashboardShell({
   items: NavItem[];
   panel: 'member' | 'admin';
 }) {
-  const { member, isAdmin, signOut } = useAuth();
+  const { member, isAdmin, canManagePosts, canManageEvents, canManageFinance, signOut } = useAuth();
   const { t } = useT();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const roleLabel = (() => {
+    if (panel === 'admin' || isAdmin) return 'Admin';
+    const parts = [
+      canManagePosts  && 'Digital Media',
+      canManageEvents && 'Secretary',
+      canManageFinance && 'Treasurer',
+    ].filter(Boolean) as string[];
+    if (parts.length === 0) return 'Member';
+    if (parts.length >= 3) return 'All Roles';
+    return parts.join(' · ');
+  })();
+
+  const groups = useMemo(() => groupItems(items), [items]);
+  const toggle = (label: string) => setCollapsed((p) => ({ ...p, [label]: !p[label] }));
 
   const handleSignOut = async () => {
     await signOut();
@@ -74,14 +118,14 @@ export default function DashboardShell({
     <div className="flex min-h-screen" style={{ background: CREAM }}>
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-200 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col transform transition-transform duration-200 lg:static lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ background: INK, color: CREAM }}
       >
-        {/* Sidebar header — member photo + name + ID */}
+        {/* Sidebar header */}
         <div
-          className="flex items-center gap-3 px-5 py-4"
+          className="flex shrink-0 items-center gap-3 px-5 py-4"
           style={{ borderBottom: `1px solid rgba(250,246,239,0.12)` }}
         >
           <MemberAvatar avatarUrl={member?.avatar_url ?? null} name={member?.full_name ?? 'M'} size={40} />
@@ -90,67 +134,81 @@ export default function DashboardShell({
               {member?.full_name ?? title}
             </div>
             <div className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.18em]" style={{ color: 'rgba(250,246,239,0.5)' }}>
-              {displayId} · {panel === 'admin' ? 'Admin' : 'Member'}
+              {displayId} · {roleLabel}
             </div>
           </div>
         </div>
 
-        {/* Nav items */}
-        <nav className="flex flex-col gap-0.5 p-3 text-sm">
-          {items.map((it) => (
-            <div key={it.to}>
-              {it.sectionLabel && (
-                <p
-                  className="mt-3 mb-0.5 px-3.5 text-[9px] font-bold uppercase tracking-[0.2em]"
-                  style={{ color: 'rgba(250,246,239,0.35)' }}
+        {/* Scrollable nav area */}
+        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3 text-sm">
+          {groups.map((group) => (
+            <div key={group.label ?? '__top__'}>
+              {/* Collapsible section header */}
+              {group.label && (
+                <button
+                  type="button"
+                  onClick={() => toggle(group.label!)}
+                  className="mt-3 mb-0.5 flex w-full items-center justify-between px-3.5 py-0.5 transition-opacity hover:opacity-80"
                 >
-                  {it.sectionLabel}
-                </p>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(250,246,239,0.45)' }}>
+                    {group.label}
+                  </span>
+                  <span style={{ color: 'rgba(250,246,239,0.35)' }}>
+                    <Chevron open={!collapsed[group.label]} />
+                  </span>
+                </button>
               )}
-              <NavLink
-                to={it.to}
-                end={it.end}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 rounded-[4px] px-3.5 py-2.5 font-medium transition-colors"
-                style={({ isActive }) => ({
-                  background: isActive ? BRAND : 'transparent',
-                  color: isActive ? '#fff' : 'rgba(250,246,239,0.78)',
-                })}
-              >
-                {it.icon && <it.icon className="h-3.5 w-3.5 shrink-0" />}
-                {it.label}
-              </NavLink>
+
+              {/* Section items — hidden when collapsed */}
+              {(!group.label || !collapsed[group.label]) && group.items.map((it) => (
+                <NavLink
+                  key={it.to}
+                  to={it.to}
+                  end={it.end}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2.5 rounded-[4px] px-3.5 py-2.5 font-medium transition-colors"
+                  style={({ isActive }) => ({
+                    background: isActive ? BRAND : 'transparent',
+                    color: isActive ? '#fff' : 'rgba(250,246,239,0.78)',
+                  })}
+                >
+                  {it.icon && <it.icon className="h-3.5 w-3.5 shrink-0" />}
+                  {it.label}
+                </NavLink>
+              ))}
             </div>
           ))}
 
-          <div className="my-2" style={{ height: 1, background: 'rgba(250,246,239,0.10)' }} />
+          {/* Bottom actions */}
+          <div className="mt-auto pt-2">
+            <div className="mb-2" style={{ height: 1, background: 'rgba(250,246,239,0.10)' }} />
 
-          {isAdmin && (
+            {(isAdmin || canManagePosts || canManageEvents || canManageFinance) && (
+              <Link
+                to={panel === 'admin' ? '/member' : '/admin'}
+                onClick={() => setOpen(false)}
+                className="mb-1 block rounded-[4px] px-3.5 py-2.5 text-center text-sm font-medium transition-colors"
+                style={{ background: 'rgba(194,65,12,0.22)', color: '#fca47e' }}
+              >
+                {panel === 'admin' ? t('header.memberPanel') : t('header.adminPanel')}
+              </Link>
+            )}
             <Link
-              to={panel === 'admin' ? '/member' : '/admin'}
+              to="/"
               onClick={() => setOpen(false)}
-              className="rounded-[4px] px-3.5 py-2.5 text-center text-sm font-medium transition-colors"
-              style={{ background: 'rgba(194,65,12,0.22)', color: '#fca47e' }}
+              className="block rounded-[4px] px-3.5 py-2.5 text-sm transition-colors"
+              style={{ color: 'rgba(250,246,239,0.45)' }}
             >
-              {panel === 'admin' ? t('header.memberPanel') : t('header.adminPanel')}
+              {t('common.backToSite')}
             </Link>
-          )}
-          <Link
-            to="/"
-            onClick={() => setOpen(false)}
-            className="rounded-[4px] px-3.5 py-2.5 text-sm transition-colors"
-            style={{ color: 'rgba(250,246,239,0.45)' }}
-          >
-            ← {t('common.backToSite')}
-          </Link>
-
-          <button
-            onClick={() => { setOpen(false); handleSignOut(); }}
-            className="flex w-full items-center gap-2.5 rounded-[4px] px-3.5 py-2.5 text-sm font-medium transition-colors hover:bg-red-900/30"
-            style={{ color: '#fca47e' }}
-          >
-            ⏻ {t('header.logout')}
-          </button>
+            <button
+              onClick={() => { setOpen(false); handleSignOut(); }}
+              className="flex w-full items-center gap-2.5 rounded-[4px] px-3.5 py-2.5 text-sm font-medium transition-colors hover:bg-red-900/30"
+              style={{ color: '#fca47e' }}
+            >
+              ⏻ {t('header.logout')}
+            </button>
+          </div>
         </nav>
       </aside>
 

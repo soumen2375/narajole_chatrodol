@@ -18,10 +18,15 @@ export interface Member {
   blood_group: string | null;
   bio: string | null;
   designation: string | null;
+  skills: string[];
+  expires_at: string | null;
   joined_at: string;
   created_at: string;
   updated_at: string;
   member_serial: number | null;
+  can_manage_posts: boolean;
+  can_manage_events: boolean;
+  can_manage_finance: boolean;
 }
 
 export function memberDisplayId(m: Pick<Member, 'member_serial'>): string {
