@@ -18,10 +18,15 @@ export interface Member {
   blood_group: string | null;
   bio: string | null;
   designation: string | null;
+  skills: string[];
+  expires_at: string | null;
   joined_at: string;
   created_at: string;
   updated_at: string;
   member_serial: number | null;
+  can_manage_posts: boolean;
+  can_manage_events: boolean;
+  can_manage_finance: boolean;
 }
 
 export function memberDisplayId(m: Pick<Member, 'member_serial'>): string {
@@ -97,11 +102,13 @@ export interface Donation {
   currency: string;
   purpose: string | null;
   member_id: string | null;
+  fund_id: string | null;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
   razorpay_signature: string | null;
   status: PaymentStatus;
   is_anonymous: boolean;
+  receipt_number: string | null;
   created_at: string;
   updated_at: string;
   member?: Member;
@@ -118,11 +125,54 @@ export interface MonthlyContribution {
   payment_method: string | null;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
+  receipt_number: string | null;
   note: string | null;
   recorded_by: string | null;
   created_at: string;
   updated_at: string;
   member?: Member;
+}
+
+export type ExpenseStatus = 'draft' | 'approved';
+export type CswoPaymentMethod = 'cash' | 'bank_transfer' | 'upi' | 'cheque' | 'online' | 'other';
+
+export interface CswoFund {
+  id: string;
+  name_bn: string;
+  name_en: string;
+  slug: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface CswoExpense {
+  id: string;
+  fund_id: string;
+  event_id: string | null;
+  amount: number;
+  currency: string;
+  spent_on: string;
+  vendor: string;
+  description: string;
+  payment_method: CswoPaymentMethod;
+  receipt_image: string | null;
+  recorded_by: string;
+  approved_by: string | null;
+  status: ExpenseStatus;
+  created_at: string;
+  updated_at: string;
+  fund?: CswoFund;
+}
+
+export interface CswoBudget {
+  id: string;
+  fund_id: string;
+  fiscal_year: string;
+  allocated_amount: number;
+  note: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface VolunteerApplication {

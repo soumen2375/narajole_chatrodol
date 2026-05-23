@@ -3,7 +3,6 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { DashboardSkeleton } from './Skeleton';
 
-// Shows after 8s of spinning — lets user retry without a hard refresh.
 function LoadingTimeout({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4"
@@ -46,13 +45,25 @@ function Loader() {
   );
 }
 
+export type CapabilityKey = 'canManagePosts' | 'canManageEvents' | 'canManageFinance';
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  /** Redirect to /member if this specific capability is missing */
+  require?: CapabilityKey;
 }
 
-export default function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const { session, member, loading, isAdmin, isApproved } = useAuth();
+export default function ProtectedRoute({
+  children,
+  requireAdmin = false,
+  require: requireCap,
+}: ProtectedRouteProps) {
+  const {
+    session, member, loading, revalidating,
+    isAdmin, isApproved,
+    canManagePosts, canManageEvents, canManageFinance,
+  } = useAuth();
   const location = useLocation();
   const [timedOut, setTimedOut] = useState(false);
 
@@ -71,12 +82,28 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  if (requireAdmin && !isAdmin) {
-    return <Navigate to="/member" replace />;
-  }
-
   if (!isApproved && !isAdmin) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Admin-panel access: allow full admins OR members with any management capability.
+  // While background-revalidating we show a loader instead of redirecting,
+  // because the stale cache may not yet have the newly-assigned capabilities.
+  if (requireAdmin) {
+    const hasManagement = canManagePosts || canManageEvents || canManageFinance;
+    if (!isAdmin && !hasManagement) {
+      if (revalidating) return <Loader />;
+      return <Navigate to="/member" replace />;
+    }
+  }
+
+  // Specific capability guard (e.g. posts / gallery routes inside /member)
+  if (requireCap) {
+    const capMap: Record<CapabilityKey, boolean> = { canManagePosts, canManageEvents, canManageFinance };
+    if (!capMap[requireCap]) {
+      if (revalidating) return <Loader />;
+      return <Navigate to="/member" replace />;
+    }
   }
 
   return <>{children}</>;

@@ -104,13 +104,13 @@ export default function About() {
               },
               {
                 year: '2023',
-                title: bn ? 'রেজিস্ট্রেশন' : 'Registration',
-                text: bn ? 'সরকারিভাবে পাবলিক চ্যারিটেবল ট্রাস্ট হিসেবে নিবন্ধিত।' : 'Officially registered as a public charitable trust.',
+                title: bn ? 'বিকাশ' : 'Growth',
+                text: bn ? '৮+ কর্মসূচি, ৫০০+ শিক্ষার্থী, ২৫+ স্বাস্থ্য শিবির।' : '8+ programmes, 500+ students supported, 25+ health camps.',
               },
               {
                 year: '2026',
-                title: bn ? 'বর্তমান' : 'Today',
-                text: bn ? '৮+ কর্মসূচি, ৫০০+ শিক্ষার্থী, ২৫+ স্বাস্থ্য শিবির।' : '8+ programmes, 500+ students supported, 25+ health camps.',
+                title: bn ? 'রেজিস্ট্রেশন' : 'Registration',
+                text: bn ? 'সরকারিভাবে পাবলিক চ্যারিটেবল ট্রাস্ট হিসেবে নিবন্ধিত।' : 'Officially registered as a public charitable trust.',
               },
             ].map((s) => (
               <div key={s.year} className="p-7" style={{ background: 'var(--c-paper)' }}>

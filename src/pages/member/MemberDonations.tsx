@@ -7,6 +7,7 @@ import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { printReceipt } from '@/lib/receipt';
 
 export default function MemberDonations() {
   const { member } = useAuth();
@@ -51,7 +52,7 @@ export default function MemberDonations() {
                 <th className="px-4 py-3">{t('common.amount')}</th>
                 <th className="px-4 py-3">{t('donate.purpose')}</th>
                 <th className="px-4 py-3">{t('common.status')}</th>
-                <th className="px-4 py-3">{tr('Payment ID', 'পেমেন্ট আইডি')}</th>
+                <th className="px-4 py-3">{tr('Receipt', 'রসিদ')}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -61,7 +62,33 @@ export default function MemberDonations() {
                   <td className="px-4 py-3 font-semibold">{fmt.money(Number(d.amount))}</td>
                   <td className="px-4 py-3">{d.purpose || '—'}</td>
                   <td className="px-4 py-3"><StatusBadge status={d.status} /></td>
-                  <td className="px-4 py-3 text-xs text-gray-500">{d.razorpay_payment_id || '—'}</td>
+                  <td className="px-4 py-3">
+                    {d.status === 'paid' ? (
+                      <button
+                        onClick={() =>
+                          printReceipt(
+                            {
+                              receiptNumber: d.receipt_number ?? `DON-${d.id.slice(0, 8).toUpperCase()}`,
+                              type: 'donation',
+                              name: d.is_anonymous ? tr('Anonymous', 'নাম প্রকাশ অনিচ্ছুক') : (d.donor_name ?? ''),
+                              email: d.donor_email,
+                              amount: Number(d.amount),
+                              date: fmt.date(d.created_at),
+                              purpose: d.purpose,
+                              paymentMethod: d.razorpay_payment_id ? 'Razorpay' : tr('Offline', 'অফলাইন'),
+                              paymentId: d.razorpay_payment_id,
+                            },
+                            lang,
+                          )
+                        }
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        {tr('Download', 'ডাউনলোড')}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

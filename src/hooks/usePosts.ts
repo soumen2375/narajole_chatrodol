@@ -8,6 +8,10 @@ export interface MergedPost extends PostCardData {
   author?: string;
   slug?: string;
   tags?: string[];
+  meta_title?: string;
+  meta_description?: string;
+  og_image?: string;
+  share_snippet?: string;
 }
 
 export function usePosts() {
@@ -16,10 +20,11 @@ export function usePosts() {
 
   useEffect(() => {
     let active = true;
+    const now = new Date().toISOString();
     supabase
       .from('cswo_posts')
-      .select('id,title,content,category,featured_image,published_date,status,author_name,slug,tags')
-      .eq('status', 'published')
+      .select('id,title,content,category,featured_image,published_date,status,schedule_at,author_name,slug,tags,meta_title,meta_description,og_image,share_snippet')
+      .or(`status.eq.published,and(status.eq.scheduled,schedule_at.lte.${now})`)
       .order('published_date', { ascending: false })
       .then(({ data }) => {
         if (!active) return;
@@ -34,13 +39,15 @@ export function usePosts() {
           author: p.author_name ?? undefined,
           slug: p.slug ?? undefined,
           tags: Array.isArray(p.tags) ? p.tags : [],
+          meta_title: p.meta_title ?? undefined,
+          meta_description: p.meta_description ?? undefined,
+          og_image: p.og_image ?? undefined,
+          share_snippet: p.share_snippet ?? undefined,
         }));
         setPosts(dbPosts);
         setLoading(false);
       });
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
 
   return { posts, loading };

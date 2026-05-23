@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FaFacebook, FaWhatsapp, FaXTwitter, FaLink } from 'react-icons/fa6';
 import { usePosts } from '@/hooks/usePosts';
@@ -103,6 +103,37 @@ export default function EventDetail() {
   const bn = lang === 'bn';
 
   const post = useMemo(() => posts.find((p) => p.id === id), [posts, id]);
+
+  // Inject SEO meta tags into <head> while this post is mounted
+  useEffect(() => {
+    if (!post) return;
+    const prev = document.title;
+    document.title = post.meta_title || post.title;
+
+    const setMeta = (name: string, prop: string, content: string) => {
+      let el = document.head.querySelector(`meta[${name}="${prop}"]`) as HTMLMetaElement | null;
+      if (!el) { el = document.createElement('meta'); el.setAttribute(name, prop); document.head.appendChild(el); }
+      el.setAttribute('content', content);
+      return el;
+    };
+
+    const ogImage = post.og_image || post.featuredImage;
+    const desc = post.meta_description || (post.content.replace(/<[^>]+>/g, '').trim().slice(0, 160));
+    const shareDesc = post.share_snippet || desc;
+
+    const metas = [
+      setMeta('name', 'description', desc),
+      setMeta('property', 'og:title', post.meta_title || post.title),
+      setMeta('property', 'og:description', shareDesc),
+      setMeta('property', 'og:image', ogImage),
+      setMeta('property', 'og:type', 'article'),
+    ];
+
+    return () => {
+      document.title = prev;
+      metas.forEach((el) => el.removeAttribute('content'));
+    };
+  }, [post]);
 
   const related = useMemo(() => {
     if (!post) return [];
