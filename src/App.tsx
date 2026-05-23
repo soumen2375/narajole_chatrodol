@@ -33,6 +33,7 @@ const MemberContributions = lazy(() => import('@/pages/member/MemberContribution
 const MemberDonations = lazy(() => import('@/pages/member/MemberDonations'));
 const MemberGallery = lazy(() => import('@/pages/member/MemberGallery'));
 const MemberDirectory = lazy(() => import('@/pages/member/MemberDirectory'));
+const MemberMessages = lazy(() => import('@/pages/member/MemberMessages'));
 
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
@@ -85,12 +86,13 @@ export default function App() {
           >
             <Route index element={<MemberDashboard />} />
             <Route path="profile" element={<MemberProfile />} />
-            <Route path="posts" element={<ProtectedRoute require="canManagePosts"><MemberPosts /></ProtectedRoute>} />
-            <Route path="gallery" element={<ProtectedRoute require="canManagePosts"><MemberGallery /></ProtectedRoute>} />
+            <Route path="posts" element={<MemberPosts />} />
+            <Route path="gallery" element={<MemberGallery />} />
             <Route path="attendance" element={<MemberAttendance />} />
             <Route path="contributions" element={<MemberContributions />} />
             <Route path="donations" element={<MemberDonations />} />
             <Route path="directory" element={<MemberDirectory />} />
+            <Route path="messages" element={<MemberMessages />} />
           </Route>
 
           <Route
