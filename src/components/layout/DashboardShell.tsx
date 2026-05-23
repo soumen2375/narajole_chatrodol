@@ -18,6 +18,7 @@ export interface NavItem {
   icon?: ComponentType<SVGProps<SVGSVGElement>>;
   end?: boolean;
   sectionLabel?: string;
+  badge?: number;
 }
 
 type SectionGroup = { label: string | null; items: NavItem[] };
@@ -173,7 +174,14 @@ export default function DashboardShell({
                   })}
                 >
                   {it.icon && <it.icon className="h-3.5 w-3.5 shrink-0" />}
-                  {it.label}
+                  <span className="flex-1 min-w-0 truncate">{it.label}</span>
+                  {it.badge != null && it.badge > 0 && (
+                    <span style={{
+                      background: BRAND, color: '#fff',
+                      borderRadius: 99, padding: '1px 6px', fontSize: 10, fontWeight: 700,
+                      lineHeight: '14px', flexShrink: 0,
+                    }}>{it.badge}</span>
+                  )}
                 </NavLink>
               ))}
             </div>
