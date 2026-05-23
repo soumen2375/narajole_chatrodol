@@ -6,6 +6,7 @@ import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { startRazorpayPayment } from '@/lib/razorpay';
 import { MonthGridSkeleton } from '@/components/ui/Skeleton';
+import { printReceipt } from '@/lib/receipt';
 
 const DEFAULT_AMOUNT = 100;
 
@@ -104,9 +105,35 @@ export default function MemberContributions() {
                   </span>
                 </div>
                 {paid ? (
-                  <p className="mt-2 text-sm text-gray-600">
-                    {fmt.money(Number(row.amount))}{row.paid_at ? ` · ${fmt.date(row.paid_at)}` : ''}
-                  </p>
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600">
+                      {fmt.money(Number(row.amount))}{row.paid_at ? ` · ${fmt.date(row.paid_at)}` : ''}
+                    </p>
+                    {row.receipt_number && (
+                      <button
+                        onClick={() =>
+                          printReceipt(
+                            {
+                              receiptNumber: row.receipt_number!,
+                              type: 'contribution',
+                              name: member?.full_name ?? '',
+                              email: member?.email,
+                              amount: Number(row.amount),
+                              date: row.paid_at ? fmt.date(row.paid_at) : '',
+                              month: nm,
+                              year,
+                              paymentMethod: row.payment_method ?? undefined,
+                              paymentId: row.razorpay_payment_id ?? undefined,
+                            },
+                            lang,
+                          )
+                        }
+                        className="mt-1 text-xs text-blue-600 hover:underline"
+                      >
+                        {tr('Download receipt', 'রসিদ ডাউনলোড')}
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <button onClick={() => pay(month)} disabled={payingMonth === month} className="btn-primary mt-3 w-full text-sm">
                     {payingMonth === month ? t('common.processing') : `${fmt.money(row?.amount ? Number(row.amount) : amount)} ${tr('Pay', 'পরিশোধ করুন')}`}

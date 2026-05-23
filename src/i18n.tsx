@@ -278,6 +278,8 @@ const D: Dict = {
   'a.donations': { bn: 'দান রেকর্ড', en: 'Donations' },
   'a.gallery': { bn: 'গ্যালারি', en: 'Gallery' },
   'a.messages': { bn: 'বার্তা ও আবেদন', en: 'Messages' },
+  'a.finance': { bn: 'আর্থিক সারসংক্ষেপ', en: 'Finance' },
+  'a.expenses': { bn: 'ব্যয় ব্যবস্থাপনা', en: 'Expenses' },
   'a.newMember': { bn: '+ নতুন সদস্য', en: '+ New member' },
   'a.tempPassword': { bn: 'অস্থায়ী পাসওয়ার্ড', en: 'Temporary password' },
   'a.memberDetails': { bn: 'সদস্যের বিস্তারিত', en: 'Member details' },

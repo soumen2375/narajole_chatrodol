@@ -43,6 +43,8 @@ const AdminEvents = lazy(() => import('@/pages/admin/AdminEvents'));
 const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
 const AdminContributions = lazy(() => import('@/pages/admin/AdminContributions'));
 const AdminDonations = lazy(() => import('@/pages/admin/AdminDonations'));
+const AdminExpenses = lazy(() => import('@/pages/admin/AdminExpenses'));
+const AdminFinance = lazy(() => import('@/pages/admin/AdminFinance'));
 const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'));
 
 export default function App() {
@@ -105,6 +107,8 @@ export default function App() {
             <Route path="attendance" element={<AdminAttendance />} />
             <Route path="contributions" element={<AdminContributions />} />
             <Route path="donations" element={<AdminDonations />} />
+            <Route path="expenses" element={<AdminExpenses />} />
+            <Route path="finance" element={<AdminFinance />} />
             <Route path="messages" element={<AdminMessages />} />
           </Route>
 
