@@ -28,12 +28,21 @@ export default function AdminDonations() {
   const fyOf = (s: string) => { const d = new Date(s); const y = d.getFullYear(); return d.getMonth() + 1 >= 4 ? `${y}-${String(y + 1).slice(-2)}` : `${y - 1}-${String(y).slice(-2)}`; };
 
   const [regs, setRegs] = useState({ reg80g: '', reg12a: '', orgPan: '' });
+  const [campaigns, setCampaigns] = useState<{ id: string; name_en: string; name_bn: string }[]>([]);
   useEffect(() => {
     supabase.from('cswo_compliance').select('ckey,reg_number').then(({ data }) => {
       const m = Object.fromEntries(((data ?? []) as { ckey: string; reg_number: string }[]).map((r) => [r.ckey, r.reg_number]));
       setRegs({ reg80g: m['80g'] ?? '', reg12a: m['12a'] ?? '', orgPan: m['pan'] ?? '' });
     });
+    supabase.from('cswo_campaigns').select('id,name_en,name_bn').eq('is_active', true).order('created_at', { ascending: false }).then(({ data }) => {
+      setCampaigns((data ?? []) as { id: string; name_en: string; name_bn: string }[]);
+    });
   }, []);
+
+  const setCampaign = async (id: string, campaignId: string) => {
+    await supabase.from('cswo_donations').update({ campaign_id: campaignId || null }).eq('id', id);
+    setDonations((ds) => ds.map((d) => (d.id === id ? { ...d, campaign_id: campaignId || null } : d)));
+  };
 
   const handleCert = (d: DonationRow) => {
     printCertificate({
@@ -203,6 +212,7 @@ export default function AdminDonations() {
                 <th className="px-4 py-3">{tr('Donor', 'দাতা')}</th>
                 <th className="px-4 py-3">{t('common.amount')}</th>
                 <th className="px-4 py-3">{t('donate.purpose')}</th>
+                <th className="px-4 py-3">{tr('Campaign', 'ক্যাম্পেইন')}</th>
                 <th className="px-4 py-3">{t('common.member')}</th>
                 <th className="px-4 py-3">{t('common.status')}</th>
                 <th className="px-4 py-3">{tr('Receipt No.', 'রসিদ নং')}</th>
@@ -230,6 +240,16 @@ export default function AdminDonations() {
                   </td>
                   <td className="px-4 py-3 font-semibold">{fmt.money(Number(d.amount))}</td>
                   <td className="px-4 py-3">{d.purpose || '—'}</td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={d.campaign_id ?? ''}
+                      onChange={(e) => setCampaign(d.id, e.target.value)}
+                      className="rounded border border-gray-300 px-2 py-1 text-xs"
+                    >
+                      <option value="">—</option>
+                      {campaigns.map((c) => <option key={c.id} value={c.id}>{lang === 'bn' ? c.name_bn : c.name_en}</option>)}
+                    </select>
+                  </td>
                   <td className="px-4 py-3 text-gray-600">
                     {d.member ? d.member.full_name : '—'}
                   </td>

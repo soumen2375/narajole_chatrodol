@@ -103,6 +103,7 @@ export interface Donation {
   purpose: string | null;
   member_id: string | null;
   fund_id: string | null;
+  campaign_id: string | null;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
   razorpay_signature: string | null;
@@ -227,6 +228,36 @@ export interface CswoDocument {
   file_type: string;
   uploaded_by: string | null;
   created_at: string;
+}
+
+export type RefundStatus = 'requested' | 'approved' | 'processed' | 'rejected';
+export interface CswoRefund {
+  id: string;
+  donation_id: string | null;
+  amount: number;
+  reason: string;
+  status: RefundStatus;
+  requested_by: string | null;
+  approved_by: string | null;
+  note: string;
+  created_at: string;
+  processed_at: string | null;
+}
+
+export interface CswoCampaign {
+  id: string;
+  name_bn: string;
+  name_en: string;
+  slug: string;
+  goal_amount: number;
+  fund_id: string | null;
+  starts_on: string | null;
+  ends_on: string | null;
+  is_active: boolean;
+  description: string;
+  cover_image: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface VolunteerApplication {

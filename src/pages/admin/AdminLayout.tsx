@@ -2,6 +2,7 @@ import {
   FaGauge, FaUsers, FaFileLines, FaCalendarDays,
   FaClipboardList, FaCoins, FaHeart, FaEnvelope, FaImages,
   FaChartPie, FaReceipt, FaFolderOpen, FaScaleBalanced, FaBookOpen, FaShieldHalved, FaFileContract,
+  FaRotateLeft, FaBullhorn,
 } from 'react-icons/fa6';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -44,6 +45,8 @@ export default function AdminLayout() {
       { to: '/admin/budgets',        label: t('a.budgets'),        icon: FaScaleBalanced } as NavItem,
       { to: '/admin/contributions',  label: t('a.contributions'),  icon: FaCoins } as NavItem,
       { to: '/admin/donations',      label: t('a.donations'),      icon: FaHeart } as NavItem,
+      { to: '/admin/campaigns',      label: t('a.campaigns'),      icon: FaBullhorn } as NavItem,
+      { to: '/admin/refunds',        label: t('a.refunds'),        icon: FaRotateLeft } as NavItem,
       { to: '/admin/expenses',       label: t('a.expenses'),       icon: FaReceipt } as NavItem,
       { to: '/admin/ledger',         label: t('a.ledger'),         icon: FaBookOpen } as NavItem,
       { to: '/admin/compliance',     label: t('a.compliance'),     icon: FaFileContract } as NavItem,

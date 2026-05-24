@@ -52,6 +52,8 @@ const AdminBudgets = lazy(() => import('@/pages/admin/AdminBudgets'));
 const AdminLedger = lazy(() => import('@/pages/admin/AdminLedger'));
 const AdminAudit = lazy(() => import('@/pages/admin/AdminAudit'));
 const AdminCompliance = lazy(() => import('@/pages/admin/AdminCompliance'));
+const AdminRefunds = lazy(() => import('@/pages/admin/AdminRefunds'));
+const AdminCampaigns = lazy(() => import('@/pages/admin/AdminCampaigns'));
 const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'));
 
 export default function App() {
@@ -123,6 +125,8 @@ export default function App() {
             <Route path="ledger" element={<AdminLedger />} />
             <Route path="audit" element={<AdminAudit />} />
             <Route path="compliance" element={<AdminCompliance />} />
+            <Route path="refunds" element={<AdminRefunds />} />
+            <Route path="campaigns" element={<AdminCampaigns />} />
             <Route path="messages" element={<AdminMessages />} />
           </Route>
 
