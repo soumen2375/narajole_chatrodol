@@ -288,6 +288,7 @@ const D: Dict = {
   'a.compliance': { bn: 'বাধ্যবাধকতা', en: 'Compliance' },
   'a.refunds': { bn: 'ফেরত', en: 'Refunds' },
   'a.campaigns': { bn: 'ক্যাম্পেইন', en: 'Campaigns' },
+  'a.payroll': { bn: 'বেতন', en: 'Payroll' },
   'a.newMember': { bn: '+ নতুন সদস্য', en: '+ New member' },
   'a.categories': { bn: 'বিভাগ ব্যবস্থাপনা', en: 'Categories' },
   'a.directory': { bn: 'সদস্য তালিকা', en: 'Directory' },

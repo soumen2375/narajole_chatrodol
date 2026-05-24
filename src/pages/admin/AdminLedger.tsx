@@ -15,7 +15,7 @@ const GREEN = '#4d7c0f';
 const PAPER = '#ffffff';
 const CREAM = '#faf6ef';
 
-type EntryFilter = 'all' | 'donation' | 'contribution' | 'expense' | 'adjustment';
+type EntryFilter = 'all' | 'donation' | 'contribution' | 'expense' | 'payroll' | 'adjustment';
 type DirFilter = 'all' | 'credit' | 'debit';
 interface LedgerRow extends CswoLedgerEntry { actor?: { full_name: string } | null }
 
@@ -54,7 +54,7 @@ export default function AdminLedger() {
 
   const fundName = (id: string | null) => { const f = funds.find((x) => x.id === id); return f ? (lang === 'bn' ? f.name_bn : f.name_en) : '—'; };
   const typeLabel = (t: CswoLedgerEntry['entry_type']) =>
-    t === 'donation' ? tr('Donation', 'অনুদান') : t === 'contribution' ? tr('Contribution', 'চাঁদা') : t === 'expense' ? tr('Expense', 'ব্যয়') : tr('Adjustment', 'সমন্বয়');
+    t === 'donation' ? tr('Donation', 'অনুদান') : t === 'contribution' ? tr('Contribution', 'চাঁদা') : t === 'expense' ? tr('Expense', 'ব্যয়') : t === 'payroll' ? tr('Payroll', 'বেতন') : tr('Adjustment', 'সমন্বয়');
 
   const filtered = useMemo(() => {
     const qq = search.trim().toLowerCase();
@@ -100,7 +100,7 @@ export default function AdminLedger() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2.5 rounded-[8px] p-4" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
         <select value={entry} onChange={(e) => setEntry(e.target.value as EntryFilter)} className="rounded-[6px] px-3 py-2 text-[13px] outline-none" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
-          {(['all', 'donation', 'contribution', 'expense', 'adjustment'] as EntryFilter[]).map((v) => <option key={v} value={v}>{v === 'all' ? tr('All types', 'সব ধরন') : typeLabel(v as CswoLedgerEntry['entry_type'])}</option>)}
+          {(['all', 'donation', 'contribution', 'expense', 'payroll', 'adjustment'] as EntryFilter[]).map((v) => <option key={v} value={v}>{v === 'all' ? tr('All types', 'সব ধরন') : typeLabel(v as CswoLedgerEntry['entry_type'])}</option>)}
         </select>
         <select value={dir} onChange={(e) => setDir(e.target.value as DirFilter)} className="rounded-[6px] px-3 py-2 text-[13px] outline-none" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
           <option value="all">{tr('Credit & debit', 'জমা ও খরচ')}</option>

@@ -150,7 +150,7 @@ export interface CswoFund {
   created_at: string;
 }
 
-export type LedgerEntryType = 'donation' | 'contribution' | 'expense' | 'adjustment';
+export type LedgerEntryType = 'donation' | 'contribution' | 'expense' | 'adjustment' | 'payroll';
 export type LedgerDirection = 'credit' | 'debit';
 
 export interface CswoLedgerEntry {
@@ -228,6 +228,26 @@ export interface CswoDocument {
   file_type: string;
   uploaded_by: string | null;
   created_at: string;
+}
+
+export type PayrollKind = 'salary' | 'honorarium' | 'stipend' | 'reimbursement';
+export type PayrollStatus = 'pending' | 'paid' | 'cancelled';
+export interface CswoPayroll {
+  id: string;
+  member_id: string | null;
+  payee_name: string;
+  designation: string;
+  kind: PayrollKind;
+  period: string;
+  amount: number;
+  fund_id: string | null;
+  status: PayrollStatus;
+  note: string;
+  paid_on: string | null;
+  created_by: string | null;
+  approved_by: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export type RefundStatus = 'requested' | 'approved' | 'processed' | 'rejected';
