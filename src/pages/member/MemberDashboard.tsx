@@ -215,10 +215,6 @@ export default function MemberDashboard() {
           <h1 className="mt-0.5 text-[26px] font-extrabold leading-tight" style={{ ...SERIF, color: INK }}>
             {tr('Welcome back, ', 'স্বাগতম, ')}
             <span style={{ color: BRAND }}>{member.full_name.split(' ')[0]}</span>
-            {' '}
-            <span className="text-[20px] italic font-light" style={{ color: MUTED }}>
-              · {tr('Welcome back', 'Welcome back')}
-            </span>
           </h1>
           {/* Alert strip */}
           {(unpaidThisYear > 0 || unreadCount > 0) && (
@@ -268,12 +264,14 @@ export default function MemberDashboard() {
             </div>
             <h2 className="mt-0.5 text-[20px] font-bold leading-tight" style={{ ...SERIF, color: INK }}>
               {member.full_name}
-              <span className="ml-2 text-[14px] font-light italic" style={{ color: MUTED }}>
-                · {member.full_name}
-              </span>
+              {member.designation && (
+                <span className="ml-2 text-[14px] font-light italic" style={{ color: MUTED }}>
+                  · {member.designation}
+                </span>
+              )}
             </h2>
             <p className="mt-0.5 text-[12px]" style={{ color: MUTED }}>
-              {tr('Active member', 'সক্রিয় স্বেচ্ছাসেবিকা')} · {tr('Member since', 'সদস্য')} — {fmt.date(member.joined_at || member.created_at)}
+              {tr('Active member', 'সক্রিয় সদস্য')} · {tr('Member since', 'সদস্য থেকে')} — {fmt.date(member.joined_at || member.created_at)}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-[12px]" style={{ color: MUTED }}>
               {member.address && (
@@ -306,7 +304,7 @@ export default function MemberDashboard() {
           style={{ background: CREAM, border: `1px solid ${RULE}` }}
         >
           <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: MUTED }}>
-            YOUR STANDING · {tr('স্তর', 'Level')}
+            YOUR STANDING · {tr('Level', 'স্তর')}
           </p>
           <p className="mt-1 text-[18px] font-bold" style={{ ...SERIF, color: standing.color }}>
             {lang === 'bn' ? standing.label_bn : standing.label_en}
@@ -344,7 +342,7 @@ export default function MemberDashboard() {
           <div className="flex items-start justify-between mb-4">
             <div>
               <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
-                YOUR DUES · {tr('চাঁদা', 'Dues')}
+                YOUR DUES · {tr('Dues', 'চাঁদা')}
               </p>
               <h3 className="mt-0.5 text-[18px] font-bold" style={{ ...SERIF, color: INK }}>
                 {tr('Dues Payment', 'চাঁদা পরিশোধ')}
@@ -414,7 +412,7 @@ export default function MemberDashboard() {
           style={{ background: '#fff', border: `1px solid ${RULE}`, boxShadow: '0 1px 8px rgba(28,25,23,0.05)' }}
         >
           <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
-            ATTENDANCE · {tr('উপস্থিতি', 'Attendance')}
+            ATTENDANCE · {tr('Attendance', 'উপস্থিতি')}
           </p>
           <h3 className="mt-0.5 mb-4 text-[18px] font-bold" style={{ ...SERIF, color: INK }}>
             {tr('Your Attendance', 'তোমার উপস্থিতি')}
@@ -458,7 +456,7 @@ export default function MemberDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
-                UPCOMING · {tr('আসছে', 'Coming up')}
+                UPCOMING · {tr('Coming up', 'আসছে')}
               </p>
               <h3 className="mt-0.5 text-[18px] font-bold" style={{ ...SERIF, color: INK }}>
                 {tr('Your Invitations', 'তোমার জন্য আমন্ত্রণ')}
@@ -526,7 +524,7 @@ export default function MemberDashboard() {
         >
           <div className="mb-4">
             <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
-              FROM ADMIN · {tr('অ্যাডমিন', 'Admin')}
+              FROM ADMIN · {tr('Admin', 'অ্যাডমিন')}
             </p>
             <h3 className="mt-0.5 text-[18px] font-bold" style={{ ...SERIF, color: INK }}>
               {tr('Your Messages', 'তোমার জন্য বার্তা')}
@@ -579,7 +577,7 @@ export default function MemberDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
-                YOUR LEDGER · {tr('অবদান পাতা', 'Ledger')}
+                YOUR LEDGER · {tr('Ledger', 'অবদান পাতা')}
               </p>
               <h3 className="mt-0.5 text-[18px] font-bold" style={{ ...SERIF, color: INK }}>
                 {tr('Your Contributions', 'তোমার অবদান')}
@@ -648,7 +646,7 @@ export default function MemberDashboard() {
         >
           <div className="mb-4">
             <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
-              YOUR IMPACT · {tr('প্রভাব', 'Impact')}
+              YOUR IMPACT · {tr('Impact', 'প্রভাব')}
             </p>
             <h3 className="mt-0.5 text-[18px] font-bold" style={{ ...SERIF, color: INK }}>
               {tr('What you changed', 'যা তুমি বদলে দিয়েছ')}

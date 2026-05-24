@@ -29,7 +29,7 @@ export default function MemberLayout() {
     { to: '/member/profile',       label: t('m.profile'),       icon: FaCircleUser },
     { to: '/member/contributions', label: t('m.contributions'), icon: FaWallet },
     { to: '/member/attendance',    label: t('m.attendance'),    icon: FaCalendarCheck },
-    { to: '/member/attendance',    label: t('m.events'),        icon: FaCalendarDays },
+    { to: '/events',               label: t('m.events'),        icon: FaCalendarDays },
     { to: '/member/posts',         label: t('m.posts'),         icon: FaFileLines },
     { to: '/member/gallery',       label: t('m.gallery'),       icon: FaImage },
     { to: '/member/donations',     label: t('m.donations'),     icon: FaHeart },
