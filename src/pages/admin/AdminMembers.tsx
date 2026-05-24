@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FaEllipsis, FaPlus, FaDownload, FaCheck, FaUsers, FaUserClock,
@@ -94,7 +95,7 @@ export default function AdminMembers() {
   const [joined, setJoined] = useState<'any' | 'thisyear' | 'lastyear' | 'older'>('any');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [menuId, setMenuId] = useState<string | null>(null);
+  const [menu, setMenu] = useState<{ id: string; top: number; bottom: number; right: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -103,6 +104,15 @@ export default function AdminMembers() {
     setLoading(false);
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  // Close the row menu on scroll/resize (its fixed coords would go stale).
+  useEffect(() => {
+    if (!menu) return;
+    const close = () => setMenu(null);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => { window.removeEventListener('scroll', close, true); window.removeEventListener('resize', close); };
+  }, [menu]);
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,6 +186,7 @@ export default function AdminMembers() {
   const shown = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
   const resetPage = () => setPage(0);
+  const menuMember = menu ? members.find((x) => x.id === menu.id) ?? null : null;
 
   const statusMeta = (s: Member['status']) =>
     s === 'approved' ? { dot: GREEN, label: tr('Active', 'সক্রিয়') } :
@@ -321,16 +332,9 @@ export default function AdminMembers() {
                             <FaCheck className="h-2.5 w-2.5" /> OK
                           </button>
                         )}
-                        <button onClick={() => setMenuId(menuId === m.id ? null : m.id)} className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5" style={{ color: MUTED }} aria-label="Actions">
+                        <button onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setMenu(menu?.id === m.id ? null : { id: m.id, top: r.top, bottom: r.bottom, right: r.right }); }} className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5" style={{ color: MUTED }} aria-label="Actions">
                           <FaEllipsis className="h-4 w-4" />
                         </button>
-                        {menuId === m.id && (
-                          <RowMenu
-                            m={m} me={me} tr={tr} navigate={navigate}
-                            onClose={() => setMenuId(null)}
-                            setRole={setRole} setStatus={setStatus} setCapability={setCapability}
-                          />
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -357,12 +361,18 @@ export default function AdminMembers() {
           </div>
         </div>
       </div>
+
+      {menu && menuMember && createPortal(
+        <RowMenu rect={menu} m={menuMember} me={me} tr={tr} navigate={navigate} onClose={() => setMenu(null)} setRole={setRole} setStatus={setStatus} setCapability={setCapability} />,
+        document.body,
+      )}
     </div>
   );
 }
 
 // ───────── Row kebab menu ─────────
-function RowMenu({ m, me, tr, navigate, onClose, setRole, setStatus, setCapability }: {
+function RowMenu({ rect, m, me, tr, navigate, onClose, setRole, setStatus, setCapability }: {
+  rect: { top: number; bottom: number; right: number };
   m: Member; me: Member | null; tr: (en: string, bn: string) => string;
   navigate: ReturnType<typeof useNavigate>; onClose: () => void;
   setRole: (id: string, r: Member['role']) => void;
@@ -370,6 +380,16 @@ function RowMenu({ m, me, tr, navigate, onClose, setRole, setStatus, setCapabili
   setCapability: (id: string, c: CapKey) => void;
 }) {
   const isSelf = m.id === me?.id;
+  const MENU_W = 240;
+  const up = rect.bottom > window.innerHeight - 360;
+  const left = Math.max(8, Math.min(rect.right - MENU_W, window.innerWidth - MENU_W - 8));
+  const panelStyle: React.CSSProperties = {
+    position: 'fixed', left, width: MENU_W, zIndex: 50,
+    maxHeight: '72vh', overflowY: 'auto',
+    background: PAPER, border: `1px solid ${RULE}`,
+    boxShadow: '0 12px 32px -8px rgba(28,25,23,0.25)',
+    ...(up ? { top: rect.top - 6, transform: 'translateY(-100%)' } : { top: rect.bottom + 6 }),
+  };
   const act = (fn: () => void) => { fn(); onClose(); };
   const Section = ({ label }: { label: string }) => (
     <div className="px-3 pb-1 pt-2 font-mono text-[9px] uppercase tracking-[0.16em]" style={{ color: MUTED }}>{label}</div>
@@ -385,8 +405,8 @@ function RowMenu({ m, me, tr, navigate, onClose, setRole, setStatus, setCapabili
   const curCap = currentCap(m);
   return (
     <>
-      <div className="fixed inset-0 z-20" onClick={onClose} />
-      <div className="absolute right-0 top-9 z-30 w-60 overflow-hidden rounded-[8px] py-1 shadow-xl" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
+      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div className="rounded-[8px] py-1" style={panelStyle}>
         <Item label={tr('View', 'বিস্তারিত')} icon={FaEye} onClick={() => act(() => navigate(`/admin/members/${m.id}`))} />
         <Item label={tr('Edit profile', 'প্রোফাইল সম্পাদনা')} icon={FaPen} onClick={() => act(() => navigate(`/admin/members/${m.id}?edit=1`))} />
 
