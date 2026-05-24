@@ -17,13 +17,14 @@ const CREAM = '#faf6ef';
 
 type EntryFilter = 'all' | 'donation' | 'contribution' | 'expense' | 'adjustment';
 type DirFilter = 'all' | 'credit' | 'debit';
+interface LedgerRow extends CswoLedgerEntry { actor?: { full_name: string } | null }
 
 export default function AdminLedger() {
   const { lang } = useT();
   const fmt = useFmt();
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
 
-  const [rows, setRows] = useState<CswoLedgerEntry[]>([]);
+  const [rows, setRows] = useState<LedgerRow[]>([]);
   const [funds, setFunds] = useState<CswoFund[]>([]);
   const [loading, setLoading] = useState(true);
   const [entry, setEntry] = useState<EntryFilter>('all');
@@ -38,14 +39,14 @@ export default function AdminLedger() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    let q = supabase.from('cswo_finance_ledger').select('*').order('occurred_at', { ascending: false }).limit(500);
+    let q = supabase.from('cswo_finance_ledger').select('*, actor:cswo_members(full_name)').order('occurred_at', { ascending: false }).limit(500);
     if (entry !== 'all') q = q.eq('entry_type', entry);
     if (dir !== 'all') q = q.eq('direction', dir);
     if (fund) q = q.eq('fund_id', fund);
     if (from) q = q.gte('occurred_at', from);
     if (to) q = q.lte('occurred_at', to + 'T23:59:59');
     const [ledR, fundR] = await Promise.all([q, supabase.from('cswo_funds').select('*').order('sort_order')]);
-    setRows((ledR.data ?? []) as CswoLedgerEntry[]);
+    setRows((ledR.data ?? []) as LedgerRow[]);
     setFunds((fundR.data ?? []) as CswoFund[]);
     setLoading(false);
   }, [entry, dir, fund, from, to]);
@@ -67,8 +68,8 @@ export default function AdminLedger() {
   }, [filtered]);
 
   const exportCSV = () => {
-    const header = [tr('Date & time', 'তারিখ ও সময়'), tr('Type', 'ধরন'), tr('Fund', 'ফান্ড'), tr('Note', 'বিবরণ'), tr('Direction', 'দিক'), tr('Amount', 'পরিমাণ')];
-    const body = filtered.map((r) => [dtFull(r.occurred_at), typeLabel(r.entry_type), fundName(r.fund_id), r.note, r.direction, Number(r.amount)]);
+    const header = [tr('Date & time', 'তারিখ ও সময়'), tr('Type', 'ধরন'), tr('Fund', 'ফান্ড'), tr('Note', 'বিবরণ'), tr('By', 'দ্বারা'), tr('Direction', 'দিক'), tr('Amount', 'পরিমাণ')];
+    const body = filtered.map((r) => [dtFull(r.occurred_at), typeLabel(r.entry_type), fundName(r.fund_id), r.note, r.actor?.full_name ?? 'System', r.direction, Number(r.amount)]);
     const csv = [header, ...body].map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -122,8 +123,8 @@ export default function AdminLedger() {
         <div className="overflow-x-auto rounded-[8px]" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
           <table className="w-full text-[13px]">
             <thead><tr style={{ borderBottom: `1px solid ${RULE}` }}>
-              {[tr('Date & time', 'তারিখ ও সময়'), tr('Type', 'ধরন'), tr('Fund', 'ফান্ড'), tr('Note', 'বিবরণ'), tr('Amount', 'পরিমাণ')].map((h, i) => (
-                <th key={i} className={`px-4 py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] ${i === 4 ? 'text-right' : 'text-left'}`} style={{ color: MUTED }}>{h}</th>
+              {[tr('Date & time', 'তারিখ ও সময়'), tr('Type', 'ধরন'), tr('Fund', 'ফান্ড'), tr('Note', 'বিবরণ'), tr('By', 'দ্বারা'), tr('Amount', 'পরিমাণ')].map((h, i) => (
+                <th key={i} className={`px-4 py-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] ${i === 5 ? 'text-right' : 'text-left'}`} style={{ color: MUTED }}>{h}</th>
               ))}
             </tr></thead>
             <tbody>
@@ -133,10 +134,11 @@ export default function AdminLedger() {
                   <td className="px-4 py-3"><span className="rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ background: CREAM, color: INK2, border: `1px solid ${RULE}` }}>{typeLabel(r.entry_type)}</span></td>
                   <td className="px-4 py-3" style={{ color: INK2 }}>{fundName(r.fund_id)}</td>
                   <td className="px-4 py-3" style={{ color: INK }}>{r.note}</td>
+                  <td className="px-4 py-3" style={{ color: MUTED }}>{r.actor?.full_name ?? tr('System', 'সিস্টেম')}</td>
                   <td className="px-4 py-3 text-right font-semibold" style={{ color: r.direction === 'credit' ? GREEN : BRAND }}>{r.direction === 'credit' ? '+' : '−'}{fmt.money(Number(r.amount))}</td>
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={5} className="px-4 py-10 text-center text-[13px]" style={{ color: MUTED }}>{tr('No transactions match.', 'কোনো লেনদেন মেলেনি।')}</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={6} className="px-4 py-10 text-center text-[13px]" style={{ color: MUTED }}>{tr('No transactions match.', 'কোনো লেনদেন মেলেনি।')}</td></tr>}
             </tbody>
           </table>
         </div>

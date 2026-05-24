@@ -6,7 +6,6 @@ import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { logAudit } from '@/lib/audit';
 
 type Form = {
   fund_id: string;
@@ -138,18 +137,11 @@ export default function AdminExpenses() {
       recorded_by: me!.id,
       ...(form.status === 'approved' && !editing ? { approved_by: me!.id } : {}),
     };
-    let newId: string | null = editing?.id ?? null;
-    let error: { message: string } | null = null;
-    if (editing) {
-      ({ error } = await supabase.from('cswo_expenses').update(payload).eq('id', editing.id));
-    } else {
-      const res = await supabase.from('cswo_expenses').insert(payload).select('id').single();
-      error = res.error;
-      newId = res.data?.id ?? null;
-    }
+    const { error } = editing
+      ? await supabase.from('cswo_expenses').update(payload).eq('id', editing.id)
+      : await supabase.from('cswo_expenses').insert(payload);
     setSaving(false);
     if (error) { setErr(error.message); return; }
-    await logAudit(editing ? 'expense.update' : 'expense.create', 'cswo_expenses', newId, { amount: payload.amount, fund_id: payload.fund_id, status: payload.status });
     closeModal();
     await load();
   };
@@ -157,7 +149,6 @@ export default function AdminExpenses() {
   const remove = async (id: string) => {
     if (!window.confirm(tr('Delete this expense?', 'এই ব্যয় মুছবেন?'))) return;
     await supabase.from('cswo_expenses').delete().eq('id', id);
-    await logAudit('expense.delete', 'cswo_expenses', id, {});
     await load();
   };
 
@@ -165,7 +156,6 @@ export default function AdminExpenses() {
     await supabase.from('cswo_expenses')
       .update({ status: 'approved', approved_by: me!.id })
       .eq('id', e.id);
-    await logAudit('expense.approve', 'cswo_expenses', e.id, { amount: e.amount, fund_id: e.fund_id });
     await load();
   };
 

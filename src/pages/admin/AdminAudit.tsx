@@ -12,6 +12,8 @@ const MUTED = '#78716c';
 const RULE = '#e7e5e4';
 const CREAM = '#faf6ef';
 const PAPER = '#ffffff';
+const GREEN = '#4d7c0f';
+const BRAND = '#c2410c';
 
 interface AuditRow extends CswoAuditLog { actor?: { full_name: string } | null }
 
@@ -28,19 +30,47 @@ export default function AdminAudit() {
   const pad = (n: number) => String(n).padStart(2, '0');
   const dtFull = (s: string) => { const d = new Date(s); return `${fmt.date(s)} · ${fmt.num(pad(d.getHours()))}:${fmt.num(pad(d.getMinutes()))}`; };
 
-  const ACTIONS: Record<string, string> = {
-    'budget.set': tr('Budget set', 'বাজেট নির্ধারণ'),
-    'expense.create': tr('Expense added', 'ব্যয় যোগ'),
-    'expense.update': tr('Expense updated', 'ব্যয় সম্পাদনা'),
-    'expense.delete': tr('Expense deleted', 'ব্যয় মুছে ফেলা'),
-    'expense.approve': tr('Expense approved', 'ব্যয় অনুমোদন'),
-    'fund.is_restricted': tr('Fund restriction', 'ফান্ড সীমাবদ্ধতা'),
-    'fund.is_frozen': tr('Fund freeze', 'ফান্ড স্থগিত'),
-    'donation.recurring': tr('Donation recurring', 'মাসিক অনুদান'),
+  const ACTIONS: Record<string, { label: string; color: string }> = {
+    insert: { label: tr('Added', 'যোগ'), color: GREEN },
+    update: { label: tr('Updated', 'সম্পাদনা'), color: '#b45309' },
+    delete: { label: tr('Deleted', 'মুছে ফেলা'), color: BRAND },
   };
-  const actionLabel = (a: string) => ACTIONS[a] ?? a.replace(/[._]/g, ' ');
-  const formatVal = (v: unknown) =>
-    typeof v === 'boolean' ? (v ? tr('Yes', 'হ্যাঁ') : tr('No', 'না')) : v === null || v === undefined ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v);
+  const actionMeta = (a: string) => ACTIONS[a] ?? { label: a.replace(/[._]/g, ' '), color: MUTED };
+
+  const ENTITIES: Record<string, string> = {
+    cswo_donations: tr('Donation', 'অনুদান'),
+    cswo_monthly_contributions: tr('Contribution', 'চাঁদা'),
+    cswo_expenses: tr('Expense', 'ব্যয়'),
+    cswo_budgets: tr('Budget', 'বাজেট'),
+    cswo_funds: tr('Fund', 'ফান্ড'),
+    cswo_members: tr('Member', 'সদস্য'),
+  };
+  const entityLabel = (e: string) => ENTITIES[e] ?? e.replace(/^cswo_/, '').replace(/_/g, ' ');
+
+  const KEY_FIELDS = ['full_name', 'donor_name', 'name_en', 'vendor', 'description', 'amount', 'allocated_amount', 'status', 'role', 'fiscal_year', 'month', 'year', 'purpose', 'is_recurring', 'email'];
+  const fmtVal = (v: unknown) =>
+    typeof v === 'boolean' ? (v ? tr('Yes', 'হ্যাঁ') : tr('No', 'না'))
+      : v === null || v === undefined || v === '' ? '—'
+        : typeof v === 'object' ? JSON.stringify(v) : String(v);
+
+  type Chip = { k: string; v: string };
+  const detailChips = (detail: Record<string, unknown>): Chip[] => {
+    const changes = detail.changes as Record<string, { from: unknown; to: unknown }> | undefined;
+    if (changes) {
+      return Object.entries(changes).filter(([k]) => k !== 'id').slice(0, 8)
+        .map(([k, ch]) => ({ k: k.replace(/_/g, ' '), v: `${fmtVal(ch.from)} → ${fmtVal(ch.to)}` }));
+    }
+    const row = (detail.new ?? detail.deleted) as Record<string, unknown> | undefined;
+    if (row) {
+      const chips: Chip[] = [];
+      for (const key of KEY_FIELDS) {
+        if (chips.length >= 5) break;
+        if (key in row && row[key] !== null && row[key] !== '') chips.push({ k: key.replace(/_/g, ' '), v: fmtVal(row[key]) });
+      }
+      return chips;
+    }
+    return Object.entries(detail).slice(0, 5).map(([k, v]) => ({ k, v: fmtVal(v) }));
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,7 +99,7 @@ export default function AdminAudit() {
       <div className="flex flex-wrap items-center gap-2.5 rounded-[8px] p-4" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
         <select value={entity} onChange={(e) => setEntity(e.target.value)} className="rounded-[6px] px-3 py-2 text-[13px] outline-none" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
           <option value="">{tr('All entities', 'সব এন্টিটি')}</option>
-          {entities.map((e) => <option key={e} value={e}>{e}</option>)}
+          {entities.map((e) => <option key={e} value={e}>{entityLabel(e)}</option>)}
         </select>
         <div className="relative min-w-[200px] flex-1">
           <FaMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2" style={{ color: MUTED }} />
@@ -90,18 +120,21 @@ export default function AdminAudit() {
                 <tr key={r.id} style={{ borderBottom: `1px solid ${RULE}` }}>
                   <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px]" style={{ color: MUTED }}>{dtFull(r.created_at)}</td>
                   <td className="px-4 py-3" style={{ color: INK }}>{r.actor?.full_name ?? tr('System', 'সিস্টেম')}</td>
-                  <td className="px-4 py-3"><span className="rounded-full px-2.5 py-0.5 text-[11px] font-medium" style={{ background: CREAM, color: INK2, border: `1px solid ${RULE}` }}>{actionLabel(r.action)}</span></td>
-                  <td className="px-4 py-3" style={{ color: INK2 }}>{r.entity.replace(/^cswo_/, '')}</td>
+                  <td className="px-4 py-3"><span className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style={{ background: actionMeta(r.action).color + '1a', color: actionMeta(r.action).color }}>{actionMeta(r.action).label}</span></td>
+                  <td className="px-4 py-3" style={{ color: INK2 }}>{entityLabel(r.entity)}</td>
                   <td className="px-4 py-3 text-[12px]">
-                    {Object.keys(r.detail || {}).length ? (
-                      <div className="flex flex-wrap gap-1.5">
-                        {Object.entries(r.detail).map(([k, v]) => (
-                          <span key={k} className="rounded px-1.5 py-0.5" style={{ background: CREAM, border: `1px solid ${RULE}` }}>
-                            <span style={{ color: MUTED }}>{k.replace(/_/g, ' ')}:</span> <span style={{ color: INK }}>{formatVal(v)}</span>
-                          </span>
-                        ))}
-                      </div>
-                    ) : <span style={{ color: MUTED }}>—</span>}
+                    {(() => {
+                      const chips = detailChips(r.detail || {});
+                      return chips.length ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {chips.map((c, i) => (
+                            <span key={i} className="rounded px-1.5 py-0.5" style={{ background: CREAM, border: `1px solid ${RULE}` }}>
+                              <span style={{ color: MUTED }}>{c.k}:</span> <span style={{ color: INK }}>{c.v}</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : <span style={{ color: MUTED }}>—</span>;
+                    })()}
                   </td>
                 </tr>
               ))}

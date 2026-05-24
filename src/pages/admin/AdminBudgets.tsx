@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase';
 import type { CswoBudget, CswoExpense, CswoFund } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
-import { logAudit } from '@/lib/audit';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 
 const INK = '#1c1917';
@@ -70,7 +69,6 @@ export default function AdminBudgets() {
       { fund_id: fund.id, fiscal_year: fy, allocated_amount: amount },
       { onConflict: 'fund_id,fiscal_year' },
     );
-    await logAudit('budget.set', 'cswo_budgets', fund.id, { fiscal_year: fy, amount });
     setSavingId(null);
     setMsg(`${tr('Saved', 'সংরক্ষিত')}: ${lang === 'bn' ? fund.name_bn : fund.name_en}`);
     setTimeout(() => setMsg(null), 2500);

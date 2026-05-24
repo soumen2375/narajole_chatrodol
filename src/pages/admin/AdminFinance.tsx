@@ -7,7 +7,6 @@ import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { Sparkline, BarLineChart } from '@/components/ui/charts';
-import { logAudit } from '@/lib/audit';
 
 const INK = '#1c1917';
 const INK2 = '#44403c';
@@ -138,7 +137,6 @@ export default function AdminFinance() {
 
   const toggleFund = async (fund: CswoFund, field: 'is_restricted' | 'is_frozen') => {
     await supabase.from('cswo_funds').update({ [field]: !fund[field] }).eq('id', fund.id);
-    await logAudit(`fund.${field}`, 'cswo_funds', fund.id, { value: !fund[field] });
     setTick((t) => t + 1);
   };
 
