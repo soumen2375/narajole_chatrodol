@@ -230,6 +230,39 @@ export interface CswoDocument {
   created_at: string;
 }
 
+export type BankAccountType = 'savings' | 'current' | 'cash' | 'other';
+export interface CswoBankAccount {
+  id: string;
+  label: string;
+  bank_name: string;
+  account_name: string;
+  account_number: string;
+  ifsc: string;
+  branch: string;
+  account_type: BankAccountType;
+  opening_balance: number;
+  is_active: boolean;
+  note: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CswoBankTransaction {
+  id: string;
+  account_id: string;
+  txn_date: string;
+  description: string;
+  reference: string;
+  direction: LedgerDirection;
+  amount: number;
+  reconciled: boolean;
+  note: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type PayrollKind = 'salary' | 'honorarium' | 'stipend' | 'reimbursement';
 export type PayrollStatus = 'pending' | 'paid' | 'cancelled';
 export interface CswoPayroll {
