@@ -5,7 +5,7 @@ import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { printReceipt } from '@/lib/receipt';
+import { printReceipt, printCertificate } from '@/lib/receipt';
 
 interface DonationRow extends Omit<Donation, 'member'> {
   member?: { full_name: string; email: string } | null;
@@ -25,6 +25,28 @@ export default function AdminDonations() {
 
   const pad = (n: number) => String(n).padStart(2, '0');
   const dtFull = (s: string) => { const d = new Date(s); return `${fmt.date(s)} · ${fmt.num(pad(d.getHours()))}:${fmt.num(pad(d.getMinutes()))}`; };
+  const fyOf = (s: string) => { const d = new Date(s); const y = d.getFullYear(); return d.getMonth() + 1 >= 4 ? `${y}-${String(y + 1).slice(-2)}` : `${y - 1}-${String(y).slice(-2)}`; };
+
+  const [regs, setRegs] = useState({ reg80g: '', reg12a: '', orgPan: '' });
+  useEffect(() => {
+    supabase.from('cswo_compliance').select('ckey,reg_number').then(({ data }) => {
+      const m = Object.fromEntries(((data ?? []) as { ckey: string; reg_number: string }[]).map((r) => [r.ckey, r.reg_number]));
+      setRegs({ reg80g: m['80g'] ?? '', reg12a: m['12a'] ?? '', orgPan: m['pan'] ?? '' });
+    });
+  }, []);
+
+  const handleCert = (d: DonationRow) => {
+    printCertificate({
+      receiptNumber: d.receipt_number ?? `DON-${d.id.slice(0, 8).toUpperCase()}`,
+      name: d.is_anonymous ? tr('Anonymous', 'নাম প্রকাশ অনিচ্ছুক') : (d.donor_name ?? '—'),
+      amount: Number(d.amount),
+      date: fmt.date(d.created_at),
+      fy: fyOf(d.created_at),
+      purpose: d.purpose,
+      paymentId: d.razorpay_payment_id,
+      reg80g: regs.reg80g, reg12a: regs.reg12a, orgPan: regs.orgPan,
+    }, lang);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -225,6 +247,14 @@ export default function AdminDonations() {
                           className="text-xs text-blue-600 hover:underline"
                         >
                           {tr('Receipt', 'রসিদ')}
+                        </button>
+                      )}
+                      {d.status === 'paid' && (
+                        <button
+                          onClick={() => handleCert(d)}
+                          className="text-xs font-medium text-emerald-700 hover:underline"
+                        >
+                          {tr('80G Cert', '৮০জি')}
                         </button>
                       )}
                       <button

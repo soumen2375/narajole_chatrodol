@@ -285,6 +285,7 @@ const D: Dict = {
   'a.budgets': { bn: 'বাজেট', en: 'Budgets' },
   'a.ledger': { bn: 'লেজার', en: 'Ledger' },
   'a.audit': { bn: 'অডিট লগ', en: 'Audit log' },
+  'a.compliance': { bn: 'বাধ্যবাধকতা', en: 'Compliance' },
   'a.newMember': { bn: '+ নতুন সদস্য', en: '+ New member' },
   'a.categories': { bn: 'বিভাগ ব্যবস্থাপনা', en: 'Categories' },
   'a.directory': { bn: 'সদস্য তালিকা', en: 'Directory' },

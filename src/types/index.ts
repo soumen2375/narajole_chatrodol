@@ -204,6 +204,31 @@ export interface CswoBudget {
   updated_at: string;
 }
 
+export interface CswoCompliance {
+  id: string;
+  ckey: string;
+  name_bn: string;
+  name_en: string;
+  authority: string;
+  reg_number: string;
+  issued_on: string | null;
+  expiry_on: string | null;
+  note: string;
+  sort_order: number;
+  updated_at: string;
+  created_at: string;
+}
+
+export interface CswoDocument {
+  id: string;
+  title: string;
+  category: string;
+  file_url: string;
+  file_type: string;
+  uploaded_by: string | null;
+  created_at: string;
+}
+
 export interface VolunteerApplication {
   id: string;
   name: string;

@@ -1,7 +1,7 @@
 import {
   FaGauge, FaUsers, FaFileLines, FaCalendarDays,
   FaClipboardList, FaCoins, FaHeart, FaEnvelope, FaImages,
-  FaChartPie, FaReceipt, FaFolderOpen, FaScaleBalanced, FaBookOpen, FaShieldHalved,
+  FaChartPie, FaReceipt, FaFolderOpen, FaScaleBalanced, FaBookOpen, FaShieldHalved, FaFileContract,
 } from 'react-icons/fa6';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -46,6 +46,7 @@ export default function AdminLayout() {
       { to: '/admin/donations',      label: t('a.donations'),      icon: FaHeart } as NavItem,
       { to: '/admin/expenses',       label: t('a.expenses'),       icon: FaReceipt } as NavItem,
       { to: '/admin/ledger',         label: t('a.ledger'),         icon: FaBookOpen } as NavItem,
+      { to: '/admin/compliance',     label: t('a.compliance'),     icon: FaFileContract } as NavItem,
     ] : []),
 
     // ── Communication (admin only) ────────────────────────────────────
