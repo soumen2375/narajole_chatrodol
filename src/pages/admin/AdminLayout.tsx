@@ -1,7 +1,7 @@
 import {
   FaGauge, FaUsers, FaFileLines, FaCalendarDays,
   FaClipboardList, FaCoins, FaHeart, FaEnvelope, FaImages,
-  FaChartPie, FaReceipt, FaFolderOpen,
+  FaChartPie, FaReceipt, FaFolderOpen, FaScaleBalanced, FaBookOpen, FaShieldHalved,
 } from 'react-icons/fa6';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -41,15 +41,19 @@ export default function AdminLayout() {
     ...(isAdmin || canManageFinance ? [
       { to: '/admin/finance',        label: t('a.finance'),        icon: FaChartPie,
         sectionLabel: isAdmin ? tr('Finance', 'অর্থ') : tr('Treasurer', 'কোষাধ্যক্ষ') } as NavItem,
+      { to: '/admin/budgets',        label: t('a.budgets'),        icon: FaScaleBalanced } as NavItem,
       { to: '/admin/contributions',  label: t('a.contributions'),  icon: FaCoins } as NavItem,
       { to: '/admin/donations',      label: t('a.donations'),      icon: FaHeart } as NavItem,
       { to: '/admin/expenses',       label: t('a.expenses'),       icon: FaReceipt } as NavItem,
+      { to: '/admin/ledger',         label: t('a.ledger'),         icon: FaBookOpen } as NavItem,
     ] : []),
 
     // ── Communication (admin only) ────────────────────────────────────
     ...(isAdmin ? [
       { to: '/admin/messages', label: t('a.messages'), icon: FaEnvelope,
         sectionLabel: tr('Communication', 'যোগাযোগ') } as NavItem,
+      { to: '/admin/audit', label: t('a.audit'), icon: FaShieldHalved,
+        sectionLabel: tr('Governance', 'সুশাসন') } as NavItem,
     ] : []),
   ];
 

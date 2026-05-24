@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { Attendance, CswoEvent, CswoPost, Donation, Member, MemberRole, MemberStatus, MonthlyContribution } from '@/types';
@@ -81,6 +81,12 @@ export default function AdminMemberDetail() {
   }, [id, year]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Deep-link from the Members list "Edit profile" action opens edit mode.
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    if (m && searchParams.get('edit') === '1') setEditMode(true);
+  }, [m, searchParams]);
 
   const saveEdit = async () => {
     if (!id || !editForm) return;

@@ -108,6 +108,7 @@ export interface Donation {
   razorpay_signature: string | null;
   status: PaymentStatus;
   is_anonymous: boolean;
+  is_recurring: boolean;
   receipt_number: string | null;
   created_at: string;
   updated_at: string;
@@ -142,7 +143,35 @@ export interface CswoFund {
   name_en: string;
   slug: string;
   is_active: boolean;
+  is_restricted: boolean;
+  is_frozen: boolean;
   sort_order: number;
+  created_at: string;
+}
+
+export type LedgerEntryType = 'donation' | 'contribution' | 'expense' | 'adjustment';
+export type LedgerDirection = 'credit' | 'debit';
+
+export interface CswoLedgerEntry {
+  id: string;
+  entry_type: LedgerEntryType;
+  source_id: string | null;
+  fund_id: string | null;
+  direction: LedgerDirection;
+  amount: number;
+  occurred_at: string;
+  actor_id: string | null;
+  note: string;
+  created_at: string;
+}
+
+export interface CswoAuditLog {
+  id: string;
+  actor_id: string | null;
+  action: string;
+  entity: string;
+  entity_id: string | null;
+  detail: Record<string, unknown>;
   created_at: string;
 }
 

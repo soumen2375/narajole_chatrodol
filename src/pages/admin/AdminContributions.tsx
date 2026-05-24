@@ -6,12 +6,21 @@ import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 
-type Tab = 'grid' | 'defaulters';
+type Tab = 'grid' | 'defaulters' | 'monthly';
 
 interface DefaulterRow {
   member: Member;
   unpaidMonths: number[];
   totalDue: number;
+}
+
+interface RecurDon {
+  id: string;
+  donor_name: string | null;
+  is_anonymous: boolean;
+  amount: number;
+  purpose: string | null;
+  created_at: string;
 }
 
 export default function AdminContributions() {
@@ -31,12 +40,17 @@ export default function AdminContributions() {
   const [busy, setBusy] = useState<string | null>(null);
   const [bulkMonth, setBulkMonth] = useState<number>(new Date().getMonth() + 1);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [recurring, setRecurring] = useState<RecurDon[]>([]);
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const dtFull = (s: string) => { const d = new Date(s); return `${fmt.date(s)} · ${fmt.num(pad(d.getHours()))}:${fmt.num(pad(d.getMinutes()))}`; };
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [mem, con] = await Promise.all([
+    const [mem, con, rec] = await Promise.all([
       supabase.from('cswo_members').select('*').eq('status', 'approved').order('full_name'),
       supabase.from('cswo_monthly_contributions').select('*').eq('year', year),
+      supabase.from('cswo_donations').select('id,donor_name,is_anonymous,amount,purpose,created_at').eq('status', 'paid').eq('is_recurring', true).order('created_at', { ascending: false }),
     ]);
     setMembers((mem.data ?? []) as Member[]);
     const g: Record<string, Record<number, MonthlyContribution>> = {};
@@ -44,6 +58,7 @@ export default function AdminContributions() {
       (g[r.member_id] ??= {})[r.month] = r;
     }
     setGrid(g);
+    setRecurring((rec.data ?? []) as RecurDon[]);
     setLoading(false);
   }, [year]);
 
@@ -204,6 +219,17 @@ export default function AdminContributions() {
             </span>
           )}
         </button>
+        <button
+          onClick={() => setTab('monthly')}
+          className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${tab === 'monthly' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
+        >
+          {tr('Monthly donations', 'মাসিক অনুদান')}
+          {recurring.length > 0 && (
+            <span className="ml-1.5 rounded-full bg-orange-500 px-1.5 py-0.5 text-[10px] text-white">
+              {fmt.num(recurring.length)}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* --- payment grid tab --- */}
@@ -332,6 +358,38 @@ export default function AdminContributions() {
                 </tbody>
               </table>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* --- monthly donations tab --- */}
+      {tab === 'monthly' && (
+        <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
+          {recurring.length === 0 ? (
+            <p className="p-6 text-center text-gray-500">
+              {tr('No recurring monthly donations yet. Mark donations as “monthly” on the Donations page.', 'এখনো কোনো মাসিক অনুদান নেই। দান পেজে অনুদানকে “মাসিক” চিহ্নিত করুন।')}
+            </p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-gray-600">
+                <tr>
+                  <th className="px-4 py-3">{tr('Date & time', 'তারিখ ও সময়')}</th>
+                  <th className="px-4 py-3">{tr('Donor', 'দাতা')}</th>
+                  <th className="px-4 py-3">{tr('Purpose', 'উদ্দেশ্য')}</th>
+                  <th className="px-4 py-3 text-right">{tr('Amount', 'পরিমাণ')}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {recurring.map((d) => (
+                  <tr key={d.id}>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-600">{dtFull(d.created_at)}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">{d.is_anonymous ? tr('Anonymous', 'নাম প্রকাশ অনিচ্ছুক') : d.donor_name || '—'}</td>
+                    <td className="px-4 py-3 text-gray-600">{d.purpose || '—'}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-green-700">{fmt.money(Number(d.amount))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
       )}
