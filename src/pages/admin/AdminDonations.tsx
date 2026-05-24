@@ -6,6 +6,7 @@ import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { printReceipt } from '@/lib/receipt';
+import { logAudit } from '@/lib/audit';
 
 interface DonationRow extends Omit<Donation, 'member'> {
   member?: { full_name: string; email: string } | null;
@@ -44,6 +45,7 @@ export default function AdminDonations() {
 
   const setRecurring = async (id: string, val: boolean) => {
     await supabase.from('cswo_donations').update({ is_recurring: val }).eq('id', id);
+    await logAudit('donation.recurring', 'cswo_donations', id, { is_recurring: val });
     setDonations((ds) => ds.map((d) => (d.id === id ? { ...d, is_recurring: val } : d)));
   };
 

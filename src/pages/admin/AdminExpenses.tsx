@@ -138,11 +138,18 @@ export default function AdminExpenses() {
       recorded_by: me!.id,
       ...(form.status === 'approved' && !editing ? { approved_by: me!.id } : {}),
     };
-    const { error } = editing
-      ? await supabase.from('cswo_expenses').update(payload).eq('id', editing.id)
-      : await supabase.from('cswo_expenses').insert(payload);
+    let newId: string | null = editing?.id ?? null;
+    let error: { message: string } | null = null;
+    if (editing) {
+      ({ error } = await supabase.from('cswo_expenses').update(payload).eq('id', editing.id));
+    } else {
+      const res = await supabase.from('cswo_expenses').insert(payload).select('id').single();
+      error = res.error;
+      newId = res.data?.id ?? null;
+    }
     setSaving(false);
     if (error) { setErr(error.message); return; }
+    await logAudit(editing ? 'expense.update' : 'expense.create', 'cswo_expenses', newId, { amount: payload.amount, fund_id: payload.fund_id, status: payload.status });
     closeModal();
     await load();
   };
@@ -150,6 +157,7 @@ export default function AdminExpenses() {
   const remove = async (id: string) => {
     if (!window.confirm(tr('Delete this expense?', 'এই ব্যয় মুছবেন?'))) return;
     await supabase.from('cswo_expenses').delete().eq('id', id);
+    await logAudit('expense.delete', 'cswo_expenses', id, {});
     await load();
   };
 

@@ -51,7 +51,7 @@ export default function AdminFinance() {
     income: number; donations: number; contributions: number; expenses: number;
     recurringTotal: number; recurringCount: number; outstanding: number;
     mDon: number[]; mCon: number[]; mExp: number[]; mInc: number[];
-    funds: FundRow[]; txns: Txn[];
+    funds: FundRow[]; txns: Txn[]; unassignedDon: number; unassignedExp: number;
   } | null>(null);
 
   useEffect(() => {
@@ -116,10 +116,14 @@ export default function AdminFinance() {
         ...expenses.map<Txn>((e) => ({ at: e.created_at || e.spent_on, label: (e.vendor || e.description || tr('Expense', 'ব্যয়')), fund: fundName(e.fund_id), amount: Number(e.amount), dir: 'debit' })),
       ].filter((t) => t.at).sort((a, b) => +new Date(b.at) - +new Date(a.at)).slice(0, 10);
 
+      const activeIds = new Set(funds.map((f) => f.id));
+      const unassignedDon = donFy.filter((d) => !d.fund_id || !activeIds.has(d.fund_id)).reduce((s, d) => s + Number(d.amount), 0);
+      const unassignedExp = expFy.filter((e) => !e.fund_id || !activeIds.has(e.fund_id)).reduce((s, e) => s + Number(e.amount), 0);
+
       setData({
         income: tDon + tCon, donations: tDon, contributions: tCon, expenses: tExp,
         recurringTotal: recurring.reduce((s, d) => s + Number(d.amount), 0), recurringCount: recurring.length,
-        outstanding, mDon, mCon, mExp, mInc, funds: fundRows, txns,
+        outstanding, mDon, mCon, mExp, mInc, funds: fundRows, txns, unassignedDon, unassignedExp,
       });
       setLoading(false);
     });
@@ -266,7 +270,9 @@ export default function AdminFinance() {
                 <tbody>
                   {data.funds.map((r, i) => {
                     const bal = r.donations - r.expenses;
-                    const usage = r.donations > 0 ? Math.min(100, Math.round((r.expenses / r.donations) * 100)) : 0;
+                    const usage = r.budget && r.budget > 0
+                      ? Math.min(100, Math.round((r.expenses / r.budget) * 100))
+                      : r.donations > 0 ? Math.min(100, Math.round((r.expenses / r.donations) * 100)) : 0;
                     return (
                       <tr key={r.fund.id} style={{ borderBottom: `1px solid ${RULE}` }}>
                         <td className="px-5 py-3">
@@ -283,6 +289,16 @@ export default function AdminFinance() {
                       </tr>
                     );
                   })}
+                  {(data.unassignedDon > 0 || data.unassignedExp > 0) && (
+                    <tr style={{ borderBottom: `1px solid ${RULE}` }}>
+                      <td className="px-5 py-3"><span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: '#a8a29e' }} /><span style={{ color: INK2 }}>{tr('Unassigned / General', 'অনির্ধারিত / সাধারণ')}</span></span></td>
+                      <td className="px-5 py-3 text-right" style={{ color: GREEN }}>{fmt.money(data.unassignedDon)}</td>
+                      <td className="px-5 py-3 text-right" style={{ color: BRAND }}>{fmt.money(data.unassignedExp)}</td>
+                      <td className="px-5 py-3 text-right" style={{ color: MUTED }}>—</td>
+                      <td className="px-5 py-3 text-right font-semibold" style={{ color: (data.unassignedDon - data.unassignedExp) >= 0 ? GREEN : BRAND }}>{fmt.money(data.unassignedDon - data.unassignedExp)}</td>
+                      <td className="px-5 py-3" />
+                    </tr>
+                  )}
                   <tr style={{ background: INK }}>
                     <td className="px-5 py-3 font-semibold" style={{ color: CREAM }}>{tr('Total', 'সর্বমোট')}</td>
                     <td className="px-5 py-3 text-right font-semibold" style={{ color: '#86efac' }}>{fmt.money(data.donations)}</td>
