@@ -19,8 +19,12 @@ export default function AdminDonations() {
   const [donations, setDonations] = useState<DonationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [onlyPaid, setOnlyPaid] = useState(true);
+  const [onlyRecurring, setOnlyRecurring] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const dtFull = (s: string) => { const d = new Date(s); return `${fmt.date(s)} · ${fmt.num(pad(d.getHours()))}:${fmt.num(pad(d.getMinutes()))}`; };
 
   useEffect(() => {
     setLoading(true);
@@ -29,13 +33,19 @@ export default function AdminDonations() {
       .select('*, member:cswo_members(full_name,email)')
       .order('created_at', { ascending: false });
     if (onlyPaid) q = q.eq('status', 'paid');
+    if (onlyRecurring) q = q.eq('is_recurring', true);
     if (dateFrom) q = q.gte('created_at', dateFrom);
     if (dateTo) q = q.lte('created_at', dateTo + 'T23:59:59');
     q.then(({ data }) => {
       setDonations((data ?? []) as DonationRow[]);
       setLoading(false);
     });
-  }, [onlyPaid, dateFrom, dateTo]);
+  }, [onlyPaid, onlyRecurring, dateFrom, dateTo]);
+
+  const setRecurring = async (id: string, val: boolean) => {
+    await supabase.from('cswo_donations').update({ is_recurring: val }).eq('id', id);
+    setDonations((ds) => ds.map((d) => (d.id === id ? { ...d, is_recurring: val } : d)));
+  };
 
   const total = donations
     .filter((d) => d.status === 'paid')
@@ -122,6 +132,14 @@ export default function AdminDonations() {
           />
           {tr('Successful payments only', 'শুধুমাত্র সফল পেমেন্ট')}
         </label>
+        <label className="flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={onlyRecurring}
+            onChange={(e) => setOnlyRecurring(e.target.checked)}
+          />
+          {tr('Recurring (monthly) only', 'শুধুমাত্র মাসিক')}
+        </label>
         <div>
           <label className="mb-1 block text-xs text-gray-500">{tr('From', 'থেকে')}</label>
           <input
@@ -172,12 +190,17 @@ export default function AdminDonations() {
             <tbody className="divide-y">
               {donations.map((d) => (
                 <tr key={d.id}>
-                  <td className="whitespace-nowrap px-4 py-3">{fmt.date(d.created_at)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-600">{dtFull(d.created_at)}</td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">
+                    <div className="flex items-center gap-2 font-medium text-gray-900">
                       {d.is_anonymous
                         ? tr('Anonymous', 'নাম প্রকাশ অনিচ্ছুক')
                         : d.donor_name || '—'}
+                      {d.is_recurring && (
+                        <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700">
+                          {tr('Monthly', 'মাসিক')}
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-gray-500">
                       {d.donor_email || d.donor_phone || ''}
@@ -195,14 +218,22 @@ export default function AdminDonations() {
                     {d.receipt_number ?? '—'}
                   </td>
                   <td className="px-4 py-3">
-                    {d.status === 'paid' && (
+                    <div className="flex items-center gap-3">
+                      {d.status === 'paid' && (
+                        <button
+                          onClick={() => handleReceipt(d)}
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          {tr('Receipt', 'রসিদ')}
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleReceipt(d)}
-                        className="text-xs text-blue-600 hover:underline"
+                        onClick={() => setRecurring(d.id, !d.is_recurring)}
+                        className={`text-xs hover:underline ${d.is_recurring ? 'text-amber-600' : 'text-gray-500'}`}
                       >
-                        {tr('Receipt', 'রসিদ')}
+                        {d.is_recurring ? tr('Unmark monthly', 'মাসিক বাতিল') : tr('Mark monthly', 'মাসিক চিহ্নিত')}
                       </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -108,6 +108,7 @@ export interface Donation {
   razorpay_signature: string | null;
   status: PaymentStatus;
   is_anonymous: boolean;
+  is_recurring: boolean;
   receipt_number: string | null;
   created_at: string;
   updated_at: string;
