@@ -7,6 +7,7 @@ import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { Sparkline, BarLineChart } from '@/components/ui/charts';
+import { logAudit } from '@/lib/audit';
 
 const INK = '#1c1917';
 const INK2 = '#44403c';
@@ -44,6 +45,7 @@ export default function AdminFinance() {
   const months = fmt.months();
 
   const [fy, setFy] = useState(currentFiscalYear());
+  const [tick, setTick] = useState(0);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<{
     income: number; donations: number; contributions: number; expenses: number;
@@ -122,11 +124,19 @@ export default function AdminFinance() {
       setLoading(false);
     });
     return () => { active = false; };
-  }, [fy, lang]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fy, lang, tick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const net = data ? data.income - data.expenses : 0;
   const expenseRatio = data && data.income > 0 ? Math.round((data.expenses / data.income) * 100) : 0;
   const savingsRate = data && data.income > 0 ? Math.round((net / data.income) * 100) : 0;
+  const restrictedDon = data ? data.funds.filter((r) => r.fund.is_restricted).reduce((s, r) => s + r.donations, 0) : 0;
+  const unrestrictedDon = data ? data.funds.filter((r) => !r.fund.is_restricted).reduce((s, r) => s + r.donations, 0) : 0;
+
+  const toggleFund = async (fund: CswoFund, field: 'is_restricted' | 'is_frozen') => {
+    await supabase.from('cswo_funds').update({ [field]: !fund[field] }).eq('id', fund.id);
+    await logAudit(`fund.${field}`, 'cswo_funds', fund.id, { value: !fund[field] });
+    setTick((t) => t + 1);
+  };
 
   const best = useMemo(() => {
     if (!data) return { inc: { i: 0, v: 0 }, exp: { i: 0, v: 0 }, avg: 0 };
@@ -285,6 +295,34 @@ export default function AdminFinance() {
               </table>
             </div>
             <p className="px-5 py-3 text-[11px]" style={{ color: MUTED }}>* {tr('Contributions (monthly dues) are unrestricted and counted in Net Balance, not per-fund.', 'মাসিক চাঁদা নির্দিষ্ট ফান্ডে বরাদ্দ নয়; শুধু নিট ব্যালেন্সে গণ্য।')}</p>
+          </div>
+
+          {/* Fund controls + restricted split */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="rounded-[8px] p-5 lg:col-span-2" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Fund controls', 'ফান্ড নিয়ন্ত্রণ')}</div>
+              <h3 className="mt-1.5 text-[18px]" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>{tr('Restrict or freeze funds', 'ফান্ড সীমাবদ্ধ বা স্থগিত করুন')}</h3>
+              <div className="mt-3">
+                {data.funds.map((r) => (
+                  <div key={r.fund.id} className="flex items-center justify-between py-2.5" style={{ borderTop: `1px solid ${RULE}` }}>
+                    <span className="text-[13.5px]" style={{ color: INK }}>{lang === 'bn' ? r.fund.name_bn : r.fund.name_en}</span>
+                    <div className="flex gap-2">
+                      <button onClick={() => toggleFund(r.fund, 'is_restricted')} className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors" style={r.fund.is_restricted ? { background: '#b45309', color: '#fff' } : { background: CREAM, color: MUTED, border: `1px solid ${RULE}` }}>{tr('Restricted', 'সীমাবদ্ধ')}</button>
+                      <button onClick={() => toggleFund(r.fund, 'is_frozen')} className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors" style={r.fund.is_frozen ? { background: BRAND, color: '#fff' } : { background: CREAM, color: MUTED, border: `1px solid ${RULE}` }}>{tr('Frozen', 'স্থগিত')}</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px]" style={{ color: MUTED }}>{tr('Frozen funds cannot receive new expenses. Restricted funds are earmarked and shown separately.', 'স্থগিত ফান্ডে নতুন ব্যয় যোগ করা যায় না। সীমাবদ্ধ ফান্ড আলাদাভাবে দেখানো হয়।')}</p>
+            </div>
+            <div className="rounded-[8px] p-5" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Restricted split', 'সীমাবদ্ধতার ভাগ')}</div>
+              <div className="mt-3 space-y-2.5">
+                <CashRow label={tr('Restricted donations', 'সীমাবদ্ধ অনুদান')} value={moneyShort(restrictedDon)} />
+                <CashRow label={tr('Unrestricted donations', 'অসীমাবদ্ধ অনুদান')} value={moneyShort(unrestrictedDon)} />
+                <CashRow label={tr('Contributions (unrestricted)', 'চাঁদা (অসীমাবদ্ধ)')} value={moneyShort(data.contributions)} />
+              </div>
+            </div>
           </div>
 
           {/* Latest transactions */}

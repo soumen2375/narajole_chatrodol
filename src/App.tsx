@@ -48,6 +48,9 @@ const AdminDonations = lazy(() => import('@/pages/admin/AdminDonations'));
 const AdminExpenses = lazy(() => import('@/pages/admin/AdminExpenses'));
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'));
 const AdminFinance = lazy(() => import('@/pages/admin/AdminFinance'));
+const AdminBudgets = lazy(() => import('@/pages/admin/AdminBudgets'));
+const AdminLedger = lazy(() => import('@/pages/admin/AdminLedger'));
+const AdminAudit = lazy(() => import('@/pages/admin/AdminAudit'));
 const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'));
 
 export default function App() {
@@ -115,6 +118,9 @@ export default function App() {
             <Route path="donations" element={<AdminDonations />} />
             <Route path="expenses" element={<AdminExpenses />} />
             <Route path="finance" element={<AdminFinance />} />
+            <Route path="budgets" element={<AdminBudgets />} />
+            <Route path="ledger" element={<AdminLedger />} />
+            <Route path="audit" element={<AdminAudit />} />
             <Route path="messages" element={<AdminMessages />} />
           </Route>
 

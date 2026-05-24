@@ -6,6 +6,7 @@ import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { logAudit } from '@/lib/audit';
 
 type Form = {
   fund_id: string;
@@ -156,6 +157,7 @@ export default function AdminExpenses() {
     await supabase.from('cswo_expenses')
       .update({ status: 'approved', approved_by: me!.id })
       .eq('id', e.id);
+    await logAudit('expense.approve', 'cswo_expenses', e.id, { amount: e.amount, fund_id: e.fund_id });
     await load();
   };
 
@@ -328,7 +330,7 @@ export default function AdminExpenses() {
                   onChange={(e) => setForm((f) => ({ ...f, fund_id: e.target.value }))}
                 >
                   <option value="">{tr('Select fund…', 'ফান্ড বেছে নিন…')}</option>
-                  {funds.map((f) => (
+                  {funds.filter((f) => !f.is_frozen).map((f) => (
                     <option key={f.id} value={f.id}>
                       {lang === 'bn' ? f.name_bn : f.name_en}
                     </option>
