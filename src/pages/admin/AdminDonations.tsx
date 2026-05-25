@@ -29,6 +29,7 @@ export default function AdminDonations() {
 
   const [regs, setRegs] = useState({ reg80g: '', reg12a: '', orgPan: '' });
   const [campaigns, setCampaigns] = useState<{ id: string; name_en: string; name_bn: string }[]>([]);
+  const [events, setEvents] = useState<{ id: string; title: string }[]>([]);
   useEffect(() => {
     supabase.from('cswo_compliance').select('ckey,reg_number').then(({ data }) => {
       const m = Object.fromEntries(((data ?? []) as { ckey: string; reg_number: string }[]).map((r) => [r.ckey, r.reg_number]));
@@ -37,11 +38,19 @@ export default function AdminDonations() {
     supabase.from('cswo_campaigns').select('id,name_en,name_bn').eq('is_active', true).order('created_at', { ascending: false }).then(({ data }) => {
       setCampaigns((data ?? []) as { id: string; name_en: string; name_bn: string }[]);
     });
+    supabase.from('cswo_events').select('id,title').order('event_date', { ascending: false }).then(({ data }) => {
+      setEvents((data ?? []) as { id: string; title: string }[]);
+    });
   }, []);
 
   const setCampaign = async (id: string, campaignId: string) => {
     await supabase.from('cswo_donations').update({ campaign_id: campaignId || null }).eq('id', id);
     setDonations((ds) => ds.map((d) => (d.id === id ? { ...d, campaign_id: campaignId || null } : d)));
+  };
+
+  const setEvent = async (id: string, eventId: string) => {
+    await supabase.from('cswo_donations').update({ event_id: eventId || null }).eq('id', id);
+    setDonations((ds) => ds.map((d) => (d.id === id ? { ...d, event_id: eventId || null } : d)));
   };
 
   const handleCert = (d: DonationRow) => {
@@ -213,6 +222,7 @@ export default function AdminDonations() {
                 <th className="px-4 py-3">{t('common.amount')}</th>
                 <th className="px-4 py-3">{t('donate.purpose')}</th>
                 <th className="px-4 py-3">{tr('Campaign', 'ক্যাম্পেইন')}</th>
+                <th className="px-4 py-3">{tr('Event', 'অনুষ্ঠান')}</th>
                 <th className="px-4 py-3">{t('common.member')}</th>
                 <th className="px-4 py-3">{t('common.status')}</th>
                 <th className="px-4 py-3">{tr('Receipt No.', 'রসিদ নং')}</th>
@@ -248,6 +258,16 @@ export default function AdminDonations() {
                     >
                       <option value="">—</option>
                       {campaigns.map((c) => <option key={c.id} value={c.id}>{lang === 'bn' ? c.name_bn : c.name_en}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={d.event_id ?? ''}
+                      onChange={(e) => setEvent(d.id, e.target.value)}
+                      className="rounded border border-gray-300 px-2 py-1 text-xs"
+                    >
+                      <option value="">—</option>
+                      {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
                     </select>
                   </td>
                   <td className="px-4 py-3 text-gray-600">

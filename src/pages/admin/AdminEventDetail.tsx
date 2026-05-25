@@ -18,6 +18,7 @@ const PAPER = '#ffffff';
 const CREAM = '#faf8f5';
 
 interface LinkedExpense { id: string; amount: number; description: string; vendor: string; status: string; spent_on: string }
+interface LinkedDonation { id: string; amount: number; donor_name: string | null; is_anonymous: boolean; status: string; created_at: string }
 
 const BSTATUS: EventBudgetStatus[] = ['planned', 'approved', 'paid'];
 const emptyBudget = { category: '', planned: '', approved: '', actual: '', vendor: '', status: 'planned' as EventBudgetStatus };
@@ -33,6 +34,7 @@ export default function AdminEventDetail() {
   const [budget, setBudget] = useState<CswoEventBudgetItem[]>([]);
   const [vols, setVols] = useState<CswoEventVolunteer[]>([]);
   const [expenses, setExpenses] = useState<LinkedExpense[]>([]);
+  const [donations, setDonations] = useState<LinkedDonation[]>([]);
   const [attendance, setAttendance] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -42,17 +44,19 @@ export default function AdminEventDetail() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [evR, bR, vR, exR, atR] = await Promise.all([
+    const [evR, bR, vR, exR, dnR, atR] = await Promise.all([
       supabase.from('cswo_events').select('*').eq('id', id).maybeSingle(),
       supabase.from('cswo_event_budget_items').select('*').eq('event_id', id).order('created_at'),
       supabase.from('cswo_event_volunteers').select('*').eq('event_id', id).order('created_at'),
       supabase.from('cswo_expenses').select('id,amount,description,vendor,status,spent_on').eq('event_id', id),
+      supabase.from('cswo_donations').select('id,amount,donor_name,is_anonymous,status,created_at').eq('event_id', id).order('created_at', { ascending: false }),
       supabase.from('cswo_attendance').select('id', { count: 'exact', head: true }).eq('event_id', id),
     ]);
     setEvent((evR.data ?? null) as CswoEvent | null);
     setBudget((bR.data ?? []) as CswoEventBudgetItem[]);
     setVols((vR.data ?? []) as CswoEventVolunteer[]);
     setExpenses((exR.data ?? []) as LinkedExpense[]);
+    setDonations((dnR.data ?? []) as LinkedDonation[]);
     setAttendance(atR.count ?? 0);
     setLoading(false);
   }, [id]);
@@ -98,6 +102,7 @@ export default function AdminEventDetail() {
   const bApproved = budget.reduce((s, b) => s + Number(b.approved), 0);
   const bActual = budget.reduce((s, b) => s + Number(b.actual), 0);
   const expTotal = expenses.filter((e) => e.status === 'approved').reduce((s, e) => s + Number(e.amount), 0);
+  const donTotal = donations.filter((d) => d.status === 'paid').reduce((s, d) => s + Number(d.amount), 0);
   const volAttended = vols.filter((v) => v.attended).length;
 
   return (
@@ -133,9 +138,10 @@ export default function AdminEventDetail() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <Stat label={tr('Budget planned', 'বাজেট পরিকল্পিত')} value={fmt.money(bPlanned)} color={INK} />
         <Stat label={tr('Budget spent', 'বাজেট ব্যয়')} value={fmt.money(bActual)} color={AMBER} sub={`${tr('of approved', 'অনুমোদিত')} ${fmt.money(bApproved)}`} />
+        <Stat label={tr('Donations received', 'প্রাপ্ত অনুদান')} value={fmt.money(donTotal)} color={GREEN} sub={`${fmt.num(donations.filter((d) => d.status === 'paid').length)} ${tr('paid', 'পরিশোধিত')}`} />
         <Stat label={tr('Linked expenses', 'যুক্ত ব্যয়')} value={fmt.money(expTotal)} color={TEAL} sub={`${fmt.num(expenses.length)} ${tr('records', 'রেকর্ড')}`} />
         <Stat label={tr('Attendance', 'উপস্থিতি')} value={fmt.num(attendance)} color={GREEN} sub={`${fmt.num(vols.length)} ${tr('volunteers', 'স্বেচ্ছাসেবক')}`} />
       </div>
@@ -196,6 +202,21 @@ export default function AdminEventDetail() {
             </tr>
           ))}
           {vols.length === 0 && <tr><td colSpan={7} className="px-3 py-6 text-center text-[13px]" style={{ color: MUTED }}>{tr('No volunteers added yet.', 'এখনো কোনো স্বেচ্ছাসেবক নেই।')}</td></tr>}
+        </Table>
+      </Card>
+
+      {/* Donations */}
+      <Card title={tr('Donations Received', 'প্রাপ্ত অনুদান')} hint={<Link to="/admin/donations" className="text-[12px] font-semibold" style={{ color: TEAL }}>{tr('Manage in Donations', 'অনুদানে পরিচালনা')} →</Link>}>
+        <Table head={[tr('Date', 'তারিখ'), tr('Donor', 'দাতা'), tr('Status', 'অবস্থা'), tr('Amount', 'পরিমাণ')]}>
+          {donations.map((d) => (
+            <tr key={d.id} style={{ borderTop: `1px solid ${RULE}` }}>
+              <td className="px-3 py-2.5 font-mono text-[11px]" style={{ color: MUTED }}>{fmt.date(d.created_at)}</td>
+              <td className="px-3 py-2.5" style={{ color: INK }}>{d.is_anonymous ? tr('Anonymous', 'নাম গোপন') : (d.donor_name || '—')}</td>
+              <td className="px-3 py-2.5" style={{ color: INK2 }}>{d.status}</td>
+              <td className="px-3 py-2.5 font-semibold" style={{ color: GREEN }}>{fmt.money(Number(d.amount))}</td>
+            </tr>
+          ))}
+          {donations.length === 0 && <tr><td colSpan={4} className="px-3 py-6 text-center text-[13px]" style={{ color: MUTED }}>{tr('No donations linked yet. Attribute a donation to this event from the Donations page.', 'এই অনুষ্ঠানে কোনো অনুদান যুক্ত নেই। অনুদান পেজ থেকে যুক্ত করুন।')}</td></tr>}
         </Table>
       </Card>
 

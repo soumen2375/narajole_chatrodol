@@ -146,6 +146,7 @@ export interface Donation {
   member_id: string | null;
   fund_id: string | null;
   campaign_id: string | null;
+  event_id: string | null;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
   razorpay_signature: string | null;

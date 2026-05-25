@@ -9,6 +9,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 
 type Form = {
   fund_id: string;
+  event_id: string;
   amount: string;
   spent_on: string;
   vendor: string;
@@ -20,6 +21,7 @@ type Form = {
 
 const EMPTY_FORM: Form = {
   fund_id: '',
+  event_id: '',
   amount: '',
   spent_on: new Date().toISOString().slice(0, 10),
   vendor: '',
@@ -49,6 +51,7 @@ export default function AdminExpenses() {
 
   const [expenses, setExpenses] = useState<CswoExpense[]>([]);
   const [funds, setFunds] = useState<CswoFund[]>([]);
+  const [events, setEvents] = useState<{ id: string; title: string; event_code: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterFund, setFilterFund] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -62,7 +65,7 @@ export default function AdminExpenses() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [ef, ff] = await Promise.all([
+    const [ef, ff, ev] = await Promise.all([
       supabase
         .from('cswo_expenses')
         .select('*, fund:cswo_funds(id,name_bn,name_en,slug)')
@@ -72,9 +75,14 @@ export default function AdminExpenses() {
         .select('*')
         .eq('is_active', true)
         .order('sort_order'),
+      supabase
+        .from('cswo_events')
+        .select('id,title,event_code')
+        .order('event_date', { ascending: false }),
     ]);
     setExpenses((ef.data ?? []) as CswoExpense[]);
     setFunds((ff.data ?? []) as CswoFund[]);
+    setEvents((ev.data ?? []) as { id: string; title: string; event_code: string | null }[]);
     setLoading(false);
   }, []);
 
@@ -91,6 +99,7 @@ export default function AdminExpenses() {
     setEditing(e);
     setForm({
       fund_id: e.fund_id,
+      event_id: e.event_id ?? '',
       amount: String(e.amount),
       spent_on: e.spent_on,
       vendor: e.vendor,
@@ -130,6 +139,7 @@ export default function AdminExpenses() {
     setErr('');
     const payload = {
       fund_id: form.fund_id,
+      event_id: form.event_id || null,
       amount: parseFloat(form.amount),
       spent_on: form.spent_on,
       vendor: form.vendor.trim(),
@@ -336,6 +346,20 @@ export default function AdminExpenses() {
                     <option key={f.id} value={f.id}>
                       {lang === 'bn' ? f.name_bn : f.name_en}
                     </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label">{tr('Event / camp (optional)', 'অনুষ্ঠান / ক্যাম্প (ঐচ্ছিক)')}</label>
+                <select
+                  className="input"
+                  value={form.event_id}
+                  onChange={(e) => setForm((f) => ({ ...f, event_id: e.target.value }))}
+                >
+                  <option value="">{tr('Not linked to an event', 'কোনো অনুষ্ঠানে যুক্ত নয়')}</option>
+                  {events.map((ev) => (
+                    <option key={ev.id} value={ev.id}>{ev.title}{ev.event_code ? ` · ${ev.event_code}` : ''}</option>
                   ))}
                 </select>
               </div>
