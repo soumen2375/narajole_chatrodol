@@ -39,15 +39,15 @@ ALTER TABLE public.cswo_bank_transactions ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
   CREATE POLICY "cswo_bank_accounts_all" ON public.cswo_bank_accounts FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)))
+    public.cswo_is_finance_or_admin())
     WITH CHECK (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)));
+    public.cswo_is_finance_or_admin());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE POLICY "cswo_bank_txn_all" ON public.cswo_bank_transactions FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)))
+    public.cswo_is_finance_or_admin())
     WITH CHECK (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)));
+    public.cswo_is_finance_or_admin());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 CREATE OR REPLACE TRIGGER cswo_audit_bank_accounts AFTER INSERT OR UPDATE OR DELETE ON public.cswo_bank_accounts     FOR EACH ROW EXECUTE FUNCTION public.cswo_audit_row();

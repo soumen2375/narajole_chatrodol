@@ -17,13 +17,13 @@ CREATE INDEX IF NOT EXISTS cswo_refunds_created_at_idx ON public.cswo_refunds(cr
 ALTER TABLE public.cswo_refunds ENABLE ROW LEVEL SECURITY;
 DO $$ BEGIN
   CREATE POLICY "cswo_refunds_select" ON public.cswo_refunds FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved'));
+    public.cswo_is_approved());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE POLICY "cswo_refunds_write" ON public.cswo_refunds FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)))
+    public.cswo_is_finance_or_admin())
     WITH CHECK (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)));
+    public.cswo_is_finance_or_admin());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ── Campaigns ────────────────────────────────────────────────
@@ -50,9 +50,9 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE POLICY "cswo_campaigns_write" ON public.cswo_campaigns FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)))
+    public.cswo_is_finance_or_admin())
     WITH CHECK (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)));
+    public.cswo_is_finance_or_admin());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Audit these new financial tables too

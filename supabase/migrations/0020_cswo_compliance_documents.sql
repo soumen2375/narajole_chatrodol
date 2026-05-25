@@ -29,27 +29,36 @@ CREATE INDEX IF NOT EXISTS cswo_documents_created_at_idx ON public.cswo_document
 ALTER TABLE public.cswo_compliance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cswo_documents  ENABLE ROW LEVEL SECURITY;
 
+-- Helper function to check finance/admin status securely (avoids RLS recursion on cswo_members)
+CREATE OR REPLACE FUNCTION public.cswo_is_finance_or_admin()
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.cswo_members m
+    WHERE m.id = auth.uid() AND m.status = 'approved' AND (m.role = 'admin' OR m.can_manage_finance)
+  );
+$$;
+
 -- read: any approved member; write: admin or finance-capable
 DO $$ BEGIN
   CREATE POLICY "cswo_compliance_select" ON public.cswo_compliance FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved'));
+    public.cswo_is_approved());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE POLICY "cswo_compliance_write" ON public.cswo_compliance FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)))
+    public.cswo_is_finance_or_admin())
     WITH CHECK (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)));
+    public.cswo_is_finance_or_admin());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
   CREATE POLICY "cswo_documents_select" ON public.cswo_documents FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved'));
+    public.cswo_is_approved());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE POLICY "cswo_documents_write" ON public.cswo_documents FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)))
+    public.cswo_is_finance_or_admin())
     WITH CHECK (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)));
+    public.cswo_is_finance_or_admin());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Seed the standard NGO compliance items (admin fills in numbers/dates)

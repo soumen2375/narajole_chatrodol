@@ -26,13 +26,13 @@ CREATE INDEX IF NOT EXISTS cswo_payroll_member_idx     ON public.cswo_payroll(me
 ALTER TABLE public.cswo_payroll ENABLE ROW LEVEL SECURITY;
 DO $$ BEGIN
   CREATE POLICY "cswo_payroll_select" ON public.cswo_payroll FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved'));
+    public.cswo_is_approved());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE POLICY "cswo_payroll_write" ON public.cswo_payroll FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)))
+    public.cswo_is_finance_or_admin())
     WITH CHECK (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)));
+    public.cswo_is_finance_or_admin());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Ledger integration: a paid payroll record posts a debit; reverses on unpay/cancel/delete.

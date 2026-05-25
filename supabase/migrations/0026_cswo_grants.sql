@@ -39,23 +39,23 @@ ALTER TABLE public.cswo_grant_tranches  ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
   CREATE POLICY "cswo_grants_select" ON public.cswo_grants FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved'));
+    public.cswo_is_approved());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE POLICY "cswo_grants_write" ON public.cswo_grants FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)))
+    public.cswo_is_finance_or_admin())
     WITH CHECK (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)));
+    public.cswo_is_finance_or_admin());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE POLICY "cswo_grant_tranches_select" ON public.cswo_grant_tranches FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved'));
+    public.cswo_is_approved());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN
   CREATE POLICY "cswo_grant_tranches_write" ON public.cswo_grant_tranches FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)))
+    public.cswo_is_finance_or_admin())
     WITH CHECK (
-    EXISTS (SELECT 1 FROM public.cswo_members WHERE id = auth.uid() AND status = 'approved' AND (role = 'admin' OR can_manage_finance)));
+    public.cswo_is_finance_or_admin());
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Ledger integration: a received tranche posts a credit (income); reverses on un-receive/delete.
