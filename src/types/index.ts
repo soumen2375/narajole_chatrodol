@@ -417,6 +417,17 @@ export interface CswoEventBeneficiary {
   updated_at: string;
 }
 
+export interface CswoEventDocument {
+  id: string;
+  event_id: string;
+  title: string;
+  category: string;
+  file_url: string;
+  file_type: string;
+  uploaded_by: string | null;
+  created_at: string;
+}
+
 export type CertRecipientType = 'participant' | 'winner' | 'volunteer' | 'donor' | 'custom';
 export interface CswoEventCertificate {
   id: string;

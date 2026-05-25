@@ -148,6 +148,9 @@ export default function AdminEventDetail() {
             <Link to="certificates" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold" style={{ background: '#fff7ed', color: '#b8860b', border: '1px solid #f0d090' }}>
               🏅 {tr('Certificates', 'সার্টিফিকেট')} →
             </Link>
+            <Link to="documents" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
+              📄 {tr('Documents', 'নথি')} →
+            </Link>
           </div>
         </div>
       </div>
