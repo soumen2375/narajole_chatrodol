@@ -61,8 +61,9 @@ export default function MemberLayout() {
 
     // ── Secretary / Events Capability (Dynamic) ────────────────────────
     ...(canManageEvents ? [
-      { to: '/member/events',            label: t('a.events'),     icon: CalendarDays,
+      { to: '/member/event-dashboard',   label: t('a.eventsDashboard'), icon: LayoutDashboard,
         sectionLabel: tr('Secretary', 'সেক্রেটারি') } as NavItem,
+      { to: '/member/events',            label: t('a.events'),     icon: CalendarDays } as NavItem,
       { to: '/member/attendance-manage', label: t('a.attendance'), icon: ClipboardList } as NavItem,
     ] : []),
 
