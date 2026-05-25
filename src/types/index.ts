@@ -263,6 +263,18 @@ export interface CswoBankTransaction {
   updated_at: string;
 }
 
+export type NotificationKind = 'info' | 'finance' | 'approval' | 'member' | 'system';
+export interface CswoNotification {
+  id: string;
+  recipient_id: string;
+  title: string;
+  body: string;
+  kind: NotificationKind;
+  link: string;
+  is_read: boolean;
+  created_at: string;
+}
+
 export type PayrollKind = 'salary' | 'honorarium' | 'stipend' | 'reimbursement';
 export type PayrollStatus = 'pending' | 'paid' | 'cancelled';
 export interface CswoPayroll {
