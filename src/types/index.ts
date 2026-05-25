@@ -68,6 +68,7 @@ export interface CswoCategory {
   created_at: string;
 }
 
+export type EventStatus = 'draft' | 'planned' | 'approved' | 'live' | 'completed' | 'cancelled';
 export interface CswoEvent {
   id: string;
   title: string;
@@ -77,6 +78,47 @@ export interface CswoEvent {
   type: EventType;
   featured_image: string | null;
   created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  category: string;
+  event_code: string | null;
+  status: EventStatus;
+  end_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  district: string;
+  state: string;
+  pincode: string;
+  map_link: string;
+  expected_participants: number;
+}
+
+export type EventBudgetStatus = 'planned' | 'approved' | 'paid';
+export interface CswoEventBudgetItem {
+  id: string;
+  event_id: string;
+  category: string;
+  planned: number;
+  approved: number;
+  actual: number;
+  vendor: string;
+  status: EventBudgetStatus;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CswoEventVolunteer {
+  id: string;
+  event_id: string;
+  member_id: string | null;
+  name: string;
+  role: string;
+  phone: string;
+  department: string;
+  shift: string;
+  attended: boolean;
+  note: string;
   created_at: string;
   updated_at: string;
 }
