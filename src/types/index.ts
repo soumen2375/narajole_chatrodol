@@ -150,7 +150,7 @@ export interface CswoFund {
   created_at: string;
 }
 
-export type LedgerEntryType = 'donation' | 'contribution' | 'expense' | 'adjustment' | 'payroll';
+export type LedgerEntryType = 'donation' | 'contribution' | 'expense' | 'adjustment' | 'payroll' | 'grant';
 export type LedgerDirection = 'credit' | 'debit';
 
 export interface CswoLedgerEntry {
@@ -259,6 +259,38 @@ export interface CswoBankTransaction {
   reconciled: boolean;
   note: string;
   created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type GrantStatus = 'pending' | 'active' | 'completed' | 'closed';
+export interface CswoGrant {
+  id: string;
+  grantor: string;
+  title: string;
+  reference: string;
+  fund_id: string | null;
+  sanctioned_amount: number;
+  start_date: string | null;
+  end_date: string | null;
+  status: GrantStatus;
+  contact_person: string;
+  note: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type TrancheStatus = 'expected' | 'received';
+export interface CswoGrantTranche {
+  id: string;
+  grant_id: string;
+  tranche_no: number;
+  amount: number;
+  received_on: string | null;
+  status: TrancheStatus;
+  reference: string;
+  note: string;
   created_at: string;
   updated_at: string;
 }

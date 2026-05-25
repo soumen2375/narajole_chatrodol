@@ -59,6 +59,7 @@ const AdminPayroll = lazy(() => import('@/pages/admin/AdminPayroll'));
 const AdminBankAccounts = lazy(() => import('@/pages/admin/AdminBankAccounts'));
 const AdminApprovals = lazy(() => import('@/pages/admin/AdminApprovals'));
 const AdminReports = lazy(() => import('@/pages/admin/AdminReports'));
+const AdminGrants = lazy(() => import('@/pages/admin/AdminGrants'));
 const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'));
 
 export default function App() {
@@ -137,6 +138,7 @@ export default function App() {
             <Route path="bank" element={<AdminBankAccounts />} />
             <Route path="approvals" element={<AdminApprovals />} />
             <Route path="reports" element={<AdminReports />} />
+            <Route path="grants" element={<AdminGrants />} />
             <Route path="messages" element={<AdminMessages />} />
           </Route>
 

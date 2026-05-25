@@ -30,7 +30,7 @@ export default function Transparency() {
   }, []);
 
   const typeLabel = (t: string) =>
-    t === 'donation' ? tr('Donations', 'অনুদান') : t === 'contribution' ? tr('Member contributions', 'সদস্য চাঁদা') : t === 'expense' ? tr('Programme expenses', 'কর্মসূচি ব্যয়') : t === 'payroll' ? tr('Honorariums', 'সম্মানী') : tr('Adjustments', 'সমন্বয়');
+    t === 'donation' ? tr('Donations', 'অনুদান') : t === 'contribution' ? tr('Member contributions', 'সদস্য চাঁদা') : t === 'grant' ? tr('Grants', 'অনুদান-তহবিল') : t === 'expense' ? tr('Programme expenses', 'কর্মসূচি ব্যয়') : t === 'payroll' ? tr('Honorariums', 'সম্মানী') : tr('Adjustments', 'সমন্বয়');
 
   const maxYear = data ? Math.max(1, ...data.years.flatMap((y) => [Number(y.income), Number(y.expense)])) : 1;
 
@@ -64,7 +64,7 @@ export default function Transparency() {
               <div>
                 <SectionHeader title={tr('Where it comes from', 'কোথা থেকে আসে')} />
                 <Breakdown
-                  rows={Object.entries(data.by_type).filter(([k]) => k === 'donation' || k === 'contribution').map(([k, v]) => ({ label: typeLabel(k), value: Number(v) }))}
+                  rows={Object.entries(data.by_type).filter(([k]) => k === 'donation' || k === 'contribution' || k === 'grant').map(([k, v]) => ({ label: typeLabel(k), value: Number(v) }))}
                   total={Number(data.totals.income)} color={FJ.brand} fmt={fmt} empty={tr('No income recorded yet.', 'এখনো কোনো আয় নথিভুক্ত হয়নি।')}
                 />
               </div>

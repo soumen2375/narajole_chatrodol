@@ -291,6 +291,7 @@ const D: Dict = {
   'a.campaigns': { bn: 'ক্যাম্পেইন', en: 'Campaigns' },
   'a.payroll': { bn: 'বেতন', en: 'Payroll' },
   'a.bank': { bn: 'ব্যাংক', en: 'Bank' },
+  'a.grants': { bn: 'অনুদান-তহবিল', en: 'Grants' },
   'a.approvals': { bn: 'অনুমোদন', en: 'Approvals' },
   'a.reports': { bn: 'প্রতিবেদন', en: 'Reports' },
   'a.newMember': { bn: '+ নতুন সদস্য', en: '+ New member' },

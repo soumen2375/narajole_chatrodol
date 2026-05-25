@@ -43,7 +43,7 @@ export default function AdminReports() {
   const setAllTime = () => { setFrom(''); setTo(''); };
 
   const typeLabel = (t: LedgerEntryType) =>
-    t === 'donation' ? tr('Donations', 'অনুদান') : t === 'contribution' ? tr('Contributions', 'চাঁদা') : t === 'expense' ? tr('Expenses', 'ব্যয়') : t === 'payroll' ? tr('Payroll', 'বেতন') : tr('Adjustments', 'সমন্বয়');
+    t === 'donation' ? tr('Donations', 'অনুদান') : t === 'contribution' ? tr('Contributions', 'চাঁদা') : t === 'grant' ? tr('Grants', 'অনুদান-তহবিল') : t === 'expense' ? tr('Expenses', 'ব্যয়') : t === 'payroll' ? tr('Payroll', 'বেতন') : tr('Adjustments', 'সমন্বয়');
   const fundName = (id: string | null) => { const f = funds.find((x) => x.id === id); return f ? (lang === 'bn' ? f.name_bn : f.name_en) : tr('Unassigned', 'অনির্ধারিত'); };
 
   const report = useMemo(() => {
