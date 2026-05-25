@@ -43,6 +43,7 @@ const AdminMemberDetail = lazy(() => import('@/pages/admin/AdminMemberDetail'));
 const AdminPosts = lazy(() => import('@/pages/admin/AdminPosts'));
 const AdminGallery = lazy(() => import('@/pages/admin/AdminGallery'));
 const AdminEvents = lazy(() => import('@/pages/admin/AdminEvents'));
+const AdminEventsDashboard = lazy(() => import('@/pages/admin/AdminEventsDashboard'));
 const AdminEventDetail = lazy(() => import('@/pages/admin/AdminEventDetail'));
 const AdminBloodCamp = lazy(() => import('@/pages/admin/AdminBloodCamp'));
 const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
@@ -114,6 +115,7 @@ export default function App() {
             <Route path="categories" element={<ProtectedRoute require="canManagePosts"><AdminCategories /></ProtectedRoute>} />
             <Route path="gallery-manage" element={<ProtectedRoute require="canManagePosts"><AdminGallery /></ProtectedRoute>} />
             
+            <Route path="event-dashboard" element={<ProtectedRoute require="canManageEvents"><AdminEventsDashboard /></ProtectedRoute>} />
             <Route path="events" element={<ProtectedRoute require="canManageEvents"><AdminEvents /></ProtectedRoute>} />
             <Route path="events/:id" element={<ProtectedRoute require="canManageEvents"><AdminEventDetail /></ProtectedRoute>} />
             <Route path="events/:id/blood" element={<ProtectedRoute require="canManageEvents"><AdminBloodCamp /></ProtectedRoute>} />
@@ -141,6 +143,7 @@ export default function App() {
             <Route path="posts" element={<AdminPosts />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="gallery" element={<AdminGallery />} />
+            <Route path="event-dashboard" element={<AdminEventsDashboard />} />
             <Route path="events" element={<AdminEvents />} />
             <Route path="events/:id" element={<AdminEventDetail />} />
             <Route path="events/:id/blood" element={<AdminBloodCamp />} />

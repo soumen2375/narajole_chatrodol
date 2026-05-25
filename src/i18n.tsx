@@ -276,6 +276,7 @@ const D: Dict = {
   'a.members': { bn: 'সদস্য ব্যবস্থাপনা', en: 'Members' },
   'a.posts': { bn: 'পোস্ট ব্যবস্থাপনা', en: 'Posts' },
   'a.events': { bn: 'অনুষ্ঠান ও ক্যাম্প', en: 'Events & camps' },
+  'a.eventsDashboard': { bn: 'অনুষ্ঠান ড্যাশবোর্ড', en: 'Event Dashboard' },
   'a.attendance': { bn: 'উপস্থিতি', en: 'Attendance' },
   'a.contributions': { bn: 'মাসিক চাঁদা', en: 'Monthly Donation' },
   'a.donations': { bn: 'দান রেকর্ড', en: 'Donations' },
