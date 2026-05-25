@@ -2,18 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Field Journal palette vars ─── */
 :root {
-  --c-bg:      #faf6ef;
+  --c-bg:      #efeadb;
   --c-paper:   #ffffff;
-  --c-ink:     #1c1917;
-  --c-ink-2:   #44403c;
-  --c-muted:   #78716c;
-  --c-rule:    #e7e5e4;
-  --c-brand:   #c2410c;
-  --c-brand-d: #9a3412;
-  --c-brand-l: #ea580c;
-  --c-accent:  #b45309;
+  --c-ink:     #000201;
+  --c-ink-2:   #4a4c4b;
+  --c-muted:   #7a7c7b;
+  --c-rule:    #e5dec9;
+  --c-brand:   #0c756f;
+  --c-brand-d: #085450;
+  --c-brand-l: #118a83;
+  --c-accent:  #fdcf6f;
+  --c-accent-d: #f5c051;
+  --c-accent-l: #fef3d6;
 }
 
 @layer components {
@@ -21,7 +22,7 @@
     @apply w-full rounded-md border border-gray-300 px-3 py-2 text-gray-800 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand;
   }
   .btn-primary {
-    @apply rounded-full bg-brand px-6 py-3 font-semibold text-white transition hover:-translate-y-[2px] hover:bg-brand-light hover:shadow-[0_10px_24px_-8px_rgba(194,65,12,0.5)] disabled:opacity-60;
+    @apply rounded-full bg-brand px-6 py-3 font-semibold text-white transition hover:-translate-y-[2px] hover:bg-brand-light hover:shadow-[0_10px_24px_-8px_rgba(12,117,111,0.45)] disabled:opacity-60;
   }
   .btn-secondary {
     @apply rounded-full border border-ink px-6 py-3 font-medium text-ink transition hover:bg-ink hover:text-white;
@@ -242,8 +243,8 @@ body {
 
 /* Pulse glow on brand elements */
 @keyframes brandPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(194, 65, 12, 0.4); }
-  50%       { box-shadow: 0 0 0 8px rgba(194, 65, 12, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(12, 117, 111, 0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(12, 117, 111, 0); }
 }
 .pulse-brand {
   animation: brandPulse 2.4s ease-in-out infinite;
@@ -283,3 +284,42 @@ body {
   outline-offset: 3px;
   border-radius: 3px;
 }
+
+/* ─── Premium Sidebar Custom Classes ─── */
+.premium-sidebar-link {
+  font-family: 'Inter', sans-serif !important;
+  transition: all 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.premium-sidebar-link:hover {
+  transform: translateX(4px) !important;
+  color: #FDCF6F !important;
+  background-color: rgba(253, 207, 111, 0.05) !important;
+  box-shadow: 0 6px 16px rgba(253, 207, 111, 0.12) !important;
+}
+
+.premium-section-header {
+  transition: all 220ms ease !important;
+}
+
+.premium-section-header:hover {
+  color: #FDCF6F !important;
+  background-color: rgba(253, 207, 111, 0.03) !important;
+}
+
+/* Custom thin scrollbar for premium sidebar */
+.premium-sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+.premium-sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.premium-sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+.premium-sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+

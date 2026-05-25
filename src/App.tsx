@@ -96,6 +96,21 @@ export default function App() {
             <Route path="donations" element={<MemberDonations />} />
             <Route path="directory" element={<MemberDirectory />} />
             <Route path="messages" element={<MemberMessages />} />
+
+            {/* Dynamic Capability-Guarded Sub-Routes inside Member Panel */}
+            <Route path="posts-manage" element={<ProtectedRoute require="canManagePosts"><AdminPosts /></ProtectedRoute>} />
+            <Route path="categories" element={<ProtectedRoute require="canManagePosts"><AdminCategories /></ProtectedRoute>} />
+            <Route path="gallery-manage" element={<ProtectedRoute require="canManagePosts"><AdminGallery /></ProtectedRoute>} />
+            
+            <Route path="events" element={<ProtectedRoute require="canManageEvents"><AdminEvents /></ProtectedRoute>} />
+            <Route path="attendance-manage" element={<ProtectedRoute require="canManageEvents"><AdminAttendance /></ProtectedRoute>} />
+
+            <Route path="finance" element={<ProtectedRoute require="canManageFinance"><AdminFinance /></ProtectedRoute>} />
+            <Route path="budgets" element={<ProtectedRoute require="canManageFinance"><AdminBudgets /></ProtectedRoute>} />
+            <Route path="contributions-manage" element={<ProtectedRoute require="canManageFinance"><AdminContributions /></ProtectedRoute>} />
+            <Route path="donations-manage" element={<ProtectedRoute require="canManageFinance"><AdminDonations /></ProtectedRoute>} />
+            <Route path="expenses" element={<ProtectedRoute require="canManageFinance"><AdminExpenses /></ProtectedRoute>} />
+            <Route path="ledger" element={<ProtectedRoute require="canManageFinance"><AdminLedger /></ProtectedRoute>} />
           </Route>
 
           <Route

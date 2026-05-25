@@ -24,6 +24,9 @@ export default function MemberContributions() {
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
   const months = fmt.months();
 
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const dtFull = (s: string) => { const d = new Date(s); return `${fmt.date(s)} · ${fmt.num(pad(d.getHours()))}:${fmt.num(pad(d.getMinutes()))}`; };
+
   const load = useCallback(async () => {
     if (!member) return;
     setLoading(true);
@@ -107,7 +110,7 @@ export default function MemberContributions() {
                 {paid ? (
                   <div className="mt-2">
                     <p className="text-sm text-gray-600">
-                      {fmt.money(Number(row.amount))}{row.paid_at ? ` · ${fmt.date(row.paid_at)}` : ''}
+                      {fmt.money(Number(row.amount))}{row.paid_at ? ` · ${dtFull(row.paid_at)}` : ''}
                     </p>
                     {row.receipt_number && (
                       <button

@@ -44,6 +44,9 @@ export default function AdminExpenses() {
   const fmt = useFmt();
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
 
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const dtFull = (s: string) => { const d = new Date(s); return `${fmt.date(s)} · ${fmt.num(pad(d.getHours()))}:${fmt.num(pad(d.getMinutes()))}`; };
+
   const [expenses, setExpenses] = useState<CswoExpense[]>([]);
   const [funds, setFunds] = useState<CswoFund[]>([]);
   const [loading, setLoading] = useState(true);
@@ -248,7 +251,8 @@ export default function AdminExpenses() {
               {filtered.map((e) => (
                 <tr key={e.id}>
                   <td className="whitespace-nowrap px-4 py-3">
-                    {fmt.date(e.spent_on + 'T00:00:00')}
+                    <div className="text-[13px] font-medium">{fmt.date(e.spent_on + 'T00:00:00')}</div>
+                    <div className="text-[10px] text-gray-400 font-mono mt-0.5">{dtFull(e.created_at)}</div>
                   </td>
                   <td className="px-4 py-3">{fundLabel(e)}</td>
                   <td className="px-4 py-3">{e.vendor || '—'}</td>

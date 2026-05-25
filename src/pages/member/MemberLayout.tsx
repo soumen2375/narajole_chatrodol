@@ -1,8 +1,23 @@
 import { useEffect, useState } from 'react';
 import {
-  FaGauge, FaCircleUser, FaFileLines, FaCalendarCheck,
-  FaWallet, FaHeart, FaImage, FaUsers, FaEnvelope, FaCalendarDays,
-} from 'react-icons/fa6';
+  LayoutDashboard,
+  UserRound,
+  BadgeIndianRupee,
+  CalendarCheck,
+  FileText,
+  Image,
+  HeartHandshake,
+  Mail,
+  Users,
+  FolderOpen,
+  Images,
+  CalendarDays,
+  ClipboardList,
+  Wallet,
+  Scale,
+  ReceiptText,
+  BookOpenText
+} from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -10,9 +25,10 @@ import { useT } from '@/i18n';
 import type { NavItem } from '@/components/layout/DashboardShell';
 
 export default function MemberLayout() {
-  const { t } = useT();
-  const { member } = useAuth();
+  const { t, lang } = useT();
+  const { member, canManagePosts, canManageEvents, canManageFinance } = useAuth();
   const [unreadMsgs, setUnreadMsgs] = useState(0);
+  const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
 
   useEffect(() => {
     if (!member) return;
@@ -25,16 +41,41 @@ export default function MemberLayout() {
   }, [member]);
 
   const items: NavItem[] = [
-    { to: '/member',               label: t('m.dashboard'),     icon: FaGauge,         end: true },
-    { to: '/member/profile',       label: t('m.profile'),       icon: FaCircleUser },
-    { to: '/member/contributions', label: t('m.contributions'), icon: FaWallet },
-    { to: '/member/attendance',    label: t('m.attendance'),    icon: FaCalendarCheck },
-    { to: '/events',               label: t('m.events'),        icon: FaCalendarDays },
-    { to: '/member/posts',         label: t('m.posts'),         icon: FaFileLines },
-    { to: '/member/gallery',       label: t('m.gallery'),       icon: FaImage },
-    { to: '/member/donations',     label: t('m.donations'),     icon: FaHeart },
-    { to: '/member/messages',      label: t('m.messages'),      icon: FaEnvelope, badge: unreadMsgs },
-    { to: '/member/directory',     label: t('m.directory'),     icon: FaUsers },
+    { to: '/member',               label: t('m.dashboard'),     icon: LayoutDashboard, end: true },
+    { to: '/member/profile',       label: t('m.profile'),       icon: UserRound },
+    { to: '/member/directory',     label: t('m.directory'),     icon: Users },
+    { to: '/member/posts',         label: t('m.posts'),         icon: FileText },
+    { to: '/member/gallery',       label: t('m.gallery'),       icon: Image },
+    { to: '/member/attendance',    label: t('m.attendance'),    icon: CalendarCheck },
+    { to: '/member/contributions', label: t('m.contributions'), icon: BadgeIndianRupee },
+    { to: '/member/donations',     label: t('m.donations'),     icon: HeartHandshake },
+    { to: '/member/messages',      label: t('m.messages'),      icon: Mail, badge: unreadMsgs },
+
+    // ── Digital Media Capability (Dynamic) ─────────────────────────────
+    ...(canManagePosts ? [
+      { to: '/member/posts-manage',      label: t('a.posts'),      icon: FileText,
+        sectionLabel: tr('Digital Media', 'ডিজিটাল মিডিয়া') } as NavItem,
+      { to: '/member/categories', label: t('a.categories'), icon: FolderOpen } as NavItem,
+      { to: '/member/gallery-manage',    label: t('a.gallery'),    icon: Images } as NavItem,
+    ] : []),
+
+    // ── Secretary / Events Capability (Dynamic) ────────────────────────
+    ...(canManageEvents ? [
+      { to: '/member/events',            label: t('a.events'),     icon: CalendarDays,
+        sectionLabel: tr('Secretary', 'সেক্রেটারি') } as NavItem,
+      { to: '/member/attendance-manage', label: t('a.attendance'), icon: ClipboardList } as NavItem,
+    ] : []),
+
+    // ── Treasurer / Finance Capability (Dynamic) ───────────────────────
+    ...(canManageFinance ? [
+      { to: '/member/finance',              label: t('a.finance'),        icon: Wallet,
+        sectionLabel: tr('Treasurer', 'কোষাধ্যক্ষ') } as NavItem,
+      { to: '/member/budgets',              label: t('a.budgets'),        icon: Scale } as NavItem,
+      { to: '/member/contributions-manage', label: t('a.contributions'),  icon: BadgeIndianRupee } as NavItem,
+      { to: '/member/donations-manage',     label: t('a.donations'),      icon: HeartHandshake } as NavItem,
+      { to: '/member/expenses',             label: t('a.expenses'),       icon: ReceiptText } as NavItem,
+      { to: '/member/ledger',               label: t('a.ledger'),         icon: BookOpenText } as NavItem,
+    ] : []),
   ];
 
   return <DashboardShell title={t('m.panel')} items={items} panel="member" />;
