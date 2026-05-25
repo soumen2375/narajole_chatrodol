@@ -12,6 +12,7 @@ const Events = lazy(() => import('@/pages/Events'));
 const EventDetail = lazy(() => import('@/pages/EventDetail'));
 const Gallery = lazy(() => import('@/pages/Gallery'));
 const Impacts = lazy(() => import('@/pages/Impacts'));
+const Transparency = lazy(() => import('@/pages/Transparency'));
 const Contact = lazy(() => import('@/pages/Contact'));
 const Volunteer = lazy(() => import('@/pages/Volunteer'));
 const Donate = lazy(() => import('@/pages/Donate'));
@@ -57,6 +58,7 @@ const AdminCampaigns = lazy(() => import('@/pages/admin/AdminCampaigns'));
 const AdminPayroll = lazy(() => import('@/pages/admin/AdminPayroll'));
 const AdminBankAccounts = lazy(() => import('@/pages/admin/AdminBankAccounts'));
 const AdminApprovals = lazy(() => import('@/pages/admin/AdminApprovals'));
+const AdminReports = lazy(() => import('@/pages/admin/AdminReports'));
 const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'));
 
 export default function App() {
@@ -73,6 +75,7 @@ export default function App() {
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/impacts" element={<Impacts />} />
+            <Route path="/transparency" element={<Transparency />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/volunteer" element={<Volunteer />} />
             <Route path="/donate" element={<Donate />} />
@@ -133,6 +136,7 @@ export default function App() {
             <Route path="payroll" element={<AdminPayroll />} />
             <Route path="bank" element={<AdminBankAccounts />} />
             <Route path="approvals" element={<AdminApprovals />} />
+            <Route path="reports" element={<AdminReports />} />
             <Route path="messages" element={<AdminMessages />} />
           </Route>
 

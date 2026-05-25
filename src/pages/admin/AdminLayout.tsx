@@ -2,7 +2,7 @@ import {
   FaGauge, FaUsers, FaFileLines, FaCalendarDays,
   FaClipboardList, FaCoins, FaHeart, FaEnvelope, FaImages,
   FaChartPie, FaReceipt, FaFolderOpen, FaScaleBalanced, FaBookOpen, FaShieldHalved, FaFileContract,
-  FaRotateLeft, FaBullhorn, FaSackDollar, FaBuildingColumns, FaListCheck,
+  FaRotateLeft, FaBullhorn, FaSackDollar, FaBuildingColumns, FaListCheck, FaChartColumn,
 } from 'react-icons/fa6';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -52,6 +52,7 @@ export default function AdminLayout() {
       { to: '/admin/payroll',        label: t('a.payroll'),        icon: FaSackDollar } as NavItem,
       { to: '/admin/bank',           label: t('a.bank'),           icon: FaBuildingColumns } as NavItem,
       { to: '/admin/ledger',         label: t('a.ledger'),         icon: FaBookOpen } as NavItem,
+      { to: '/admin/reports',        label: t('a.reports'),        icon: FaChartColumn } as NavItem,
       { to: '/admin/compliance',     label: t('a.compliance'),     icon: FaFileContract } as NavItem,
     ] : []),
 

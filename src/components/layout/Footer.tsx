@@ -67,6 +67,7 @@ export default function Footer() {
             { to: '/programs', label: t('nav.programs') },
             { to: '/events',   label: t('nav.events') },
             { to: '/impacts',  label: t('nav.impacts') },
+            { to: '/transparency', label: t('nav.transparency') },
           ]} />
           <FooterColumn title={t('footer.getInvolved')} links={[
             { to: '/volunteer', label: t('nav.volunteer') },
