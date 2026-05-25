@@ -46,6 +46,7 @@ const AdminEvents = lazy(() => import('@/pages/admin/AdminEvents'));
 const AdminEventsDashboard = lazy(() => import('@/pages/admin/AdminEventsDashboard'));
 const AdminEventDetail = lazy(() => import('@/pages/admin/AdminEventDetail'));
 const AdminBloodCamp = lazy(() => import('@/pages/admin/AdminBloodCamp'));
+const AdminBeneficiaries = lazy(() => import('@/pages/admin/AdminBeneficiaries'));
 const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
 const AdminContributions = lazy(() => import('@/pages/admin/AdminContributions'));
 const AdminDonations = lazy(() => import('@/pages/admin/AdminDonations'));
@@ -119,6 +120,7 @@ export default function App() {
             <Route path="events" element={<ProtectedRoute require="canManageEvents"><AdminEvents /></ProtectedRoute>} />
             <Route path="events/:id" element={<ProtectedRoute require="canManageEvents"><AdminEventDetail /></ProtectedRoute>} />
             <Route path="events/:id/blood" element={<ProtectedRoute require="canManageEvents"><AdminBloodCamp /></ProtectedRoute>} />
+            <Route path="events/:id/relief" element={<ProtectedRoute require="canManageEvents"><AdminBeneficiaries /></ProtectedRoute>} />
             <Route path="attendance-manage" element={<ProtectedRoute require="canManageEvents"><AdminAttendance /></ProtectedRoute>} />
 
             <Route path="finance" element={<ProtectedRoute require="canManageFinance"><AdminFinance /></ProtectedRoute>} />
@@ -147,6 +149,7 @@ export default function App() {
             <Route path="events" element={<AdminEvents />} />
             <Route path="events/:id" element={<AdminEventDetail />} />
             <Route path="events/:id/blood" element={<AdminBloodCamp />} />
+            <Route path="events/:id/relief" element={<AdminBeneficiaries />} />
             <Route path="attendance" element={<AdminAttendance />} />
             <Route path="contributions" element={<AdminContributions />} />
             <Route path="donations" element={<AdminDonations />} />

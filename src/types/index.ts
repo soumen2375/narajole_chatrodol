@@ -382,6 +382,41 @@ export interface CswoBloodBank {
   updated_at: string;
 }
 
+export interface CswoEventInventory {
+  id: string;
+  event_id: string;
+  item: string;
+  category: string;
+  variant: string;
+  qty_required: number;
+  qty_available: number;
+  unit_cost: number;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CswoEventBeneficiary {
+  id: string;
+  event_id: string;
+  beneficiary_code: string | null;
+  name: string;
+  age: number | null;
+  gender: '' | 'male' | 'female' | 'other';
+  phone: string;
+  address: string;
+  family_size: number;
+  income_category: string;
+  id_proof: string;
+  verified: boolean;
+  inventory_id: string | null;
+  item_received: string;
+  quantity: number;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export type NotificationKind = 'info' | 'finance' | 'approval' | 'member' | 'system';
 export interface CswoNotification {
   id: string;
