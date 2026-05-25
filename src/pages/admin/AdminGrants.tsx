@@ -37,6 +37,7 @@ export default function AdminGrants() {
   const [grants, setGrants] = useState<CswoGrant[]>([]);
   const [tranches, setTranches] = useState<CswoGrantTranche[]>([]);
   const [funds, setFunds] = useState<CswoFund[]>([]);
+  const [expenses, setExpenses] = useState<{ amount: number; fund_id: string }[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -51,15 +52,17 @@ export default function AdminGrants() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [gR, tR, fR] = await Promise.all([
+    const [gR, tR, fR, eR] = await Promise.all([
       supabase.from('cswo_grants').select('*').order('created_at', { ascending: false }),
       supabase.from('cswo_grant_tranches').select('*').order('tranche_no'),
       supabase.from('cswo_funds').select('*').eq('is_active', true).order('sort_order'),
+      supabase.from('cswo_expenses').select('amount,fund_id').eq('status', 'approved'),
     ]);
     const gs = (gR.data ?? []) as CswoGrant[];
     setGrants(gs);
     setTranches((tR.data ?? []) as CswoGrantTranche[]);
     setFunds((fR.data ?? []) as CswoFund[]);
+    setExpenses((eR.data ?? []) as { amount: number; fund_id: string }[]);
     setSelectedId((cur) => cur && gs.some((g) => g.id === cur) ? cur : (gs[0]?.id ?? null));
     setLoading(false);
   }, []);
@@ -67,6 +70,11 @@ export default function AdminGrants() {
 
   const receivedOf = useCallback((grantId: string) =>
     tranches.filter((t) => t.grant_id === grantId && t.status === 'received').reduce((s, t) => s + Number(t.amount), 0), [tranches]);
+
+  const spentOf = useCallback((fundId: string | null) => {
+    if (!fundId) return 0;
+    return expenses.filter((e) => e.fund_id === fundId).reduce((s, e) => s + Number(e.amount), 0);
+  }, [expenses]);
 
   const selected = grants.find((g) => g.id === selectedId) ?? null;
   const selTranches = useMemo(() => tranches.filter((t) => t.grant_id === selectedId).sort((a, b) => a.tranche_no - b.tranche_no), [tranches, selectedId]);
@@ -197,10 +205,11 @@ export default function AdminGrants() {
                   <button onClick={() => removeG(selected.id)} className="text-red-600 hover:underline">{tr('Delete', 'মুছুন')}</button>
                 </div>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                <Mini label={tr('Sanctioned', 'অনুমোদিত')} value={fmt.money(Number(selected.sanctioned_amount))} color={INK2} />
-                <Mini label={tr('Received', 'প্রাপ্ত')} value={fmt.money(receivedOf(selected.id))} color={GREEN} />
-                <Mini label={tr('Outstanding', 'বকেয়া')} value={fmt.money(Number(selected.sanctioned_amount) - receivedOf(selected.id))} color={BRAND} />
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <Mini label={tr('Total Grant', 'মোট অনুদান')} value={fmt.money(Number(selected.sanctioned_amount))} color={INK2} />
+                <Mini label={tr('Received', 'প্রাপ্ত হয়েছে')} value={fmt.money(receivedOf(selected.id))} color={GREEN} />
+                <Mini label={tr('Spent', 'ব্যয় হয়েছে')} value={fmt.money(spentOf(selected.fund_id))} color={BRAND} sub={`${Math.round((spentOf(selected.fund_id) / Math.max(1, Number(selected.sanctioned_amount))) * 100)}%`} />
+                <Mini label={tr('Remaining', 'অবশিষ্ট')} value={fmt.money(Number(selected.sanctioned_amount) - spentOf(selected.fund_id))} color={GREEN} />
               </div>
               {selected.note && <p className="mt-3 text-[12.5px]" style={{ color: INK2 }}>{selected.note}</p>}
             </div>
@@ -292,11 +301,12 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
   );
 }
 
-function Mini({ label, value, color }: { label: string; value: string; color: string }) {
+function Mini({ label, value, color, sub }: { label: string; value: string; color: string; sub?: string }) {
   return (
     <div className="rounded-[6px] p-2.5" style={{ background: CREAM }}>
       <div className="font-mono text-[9px] uppercase tracking-[0.16em]" style={{ color: MUTED }}>{label}</div>
       <div className="mt-0.5 text-[15px] font-bold" style={{ color }}>{value}</div>
+      {sub && <div className="mt-0.5 text-[10.5px] font-semibold text-stone-500" style={{ color: MUTED }}>{sub}</div>}
     </div>
   );
 }

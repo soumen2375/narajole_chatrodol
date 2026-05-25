@@ -68,6 +68,7 @@ export interface CswoCategory {
   created_at: string;
 }
 
+export type EventStatus = 'draft' | 'planned' | 'approved' | 'live' | 'completed' | 'cancelled';
 export interface CswoEvent {
   id: string;
   title: string;
@@ -77,6 +78,47 @@ export interface CswoEvent {
   type: EventType;
   featured_image: string | null;
   created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  category: string;
+  event_code: string | null;
+  status: EventStatus;
+  end_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  district: string;
+  state: string;
+  pincode: string;
+  map_link: string;
+  expected_participants: number;
+}
+
+export type EventBudgetStatus = 'planned' | 'approved' | 'paid';
+export interface CswoEventBudgetItem {
+  id: string;
+  event_id: string;
+  category: string;
+  planned: number;
+  approved: number;
+  actual: number;
+  vendor: string;
+  status: EventBudgetStatus;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CswoEventVolunteer {
+  id: string;
+  event_id: string;
+  member_id: string | null;
+  name: string;
+  role: string;
+  phone: string;
+  department: string;
+  shift: string;
+  attended: boolean;
+  note: string;
   created_at: string;
   updated_at: string;
 }
@@ -104,6 +146,7 @@ export interface Donation {
   member_id: string | null;
   fund_id: string | null;
   campaign_id: string | null;
+  event_id: string | null;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
   razorpay_signature: string | null;
@@ -135,7 +178,7 @@ export interface MonthlyContribution {
   member?: Member;
 }
 
-export type ExpenseStatus = 'draft' | 'approved';
+export type ExpenseStatus = 'draft' | 'approved' | 'rejected';
 export type CswoPaymentMethod = 'cash' | 'bank_transfer' | 'upi' | 'cheque' | 'online' | 'other';
 
 export interface CswoFund {
@@ -190,6 +233,8 @@ export interface CswoExpense {
   recorded_by: string;
   approved_by: string | null;
   status: ExpenseStatus;
+  rejection_reason?: string | null;
+  bank_account_id: string | null;
   created_at: string;
   updated_at: string;
   fund?: CswoFund;
@@ -215,6 +260,8 @@ export interface CswoCompliance {
   issued_on: string | null;
   expiry_on: string | null;
   note: string;
+  file_url: string;
+  file_type: string;
   sort_order: number;
   updated_at: string;
   created_at: string;
@@ -241,6 +288,7 @@ export interface CswoBankAccount {
   branch: string;
   account_type: BankAccountType;
   opening_balance: number;
+  statement_balance: number;
   is_active: boolean;
   note: string;
   sort_order: number;
@@ -295,6 +343,110 @@ export interface CswoGrantTranche {
   updated_at: string;
 }
 
+export type BloodGroup = '' | 'A+' | 'A-' | 'B+' | 'B-' | 'O+' | 'O-' | 'AB+' | 'AB-';
+export type DonorStatus = 'registered' | 'eligible' | 'rejected' | 'donated';
+export interface CswoBloodDonor {
+  id: string;
+  event_id: string;
+  donor_code: string | null;
+  name: string;
+  age: number | null;
+  gender: '' | 'male' | 'female' | 'other';
+  blood_group: BloodGroup;
+  phone: string;
+  email: string;
+  address: string;
+  member_id: string | null;
+  weight: number | null;
+  bp: string;
+  hemoglobin: number | null;
+  last_donation: string | null;
+  status: DonorStatus;
+  units: number;
+  consent: boolean;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CswoBloodBank {
+  id: string;
+  event_id: string;
+  name: string;
+  contact_person: string;
+  phone: string;
+  email: string;
+  license_no: string;
+  team_size: number;
+  beds: number;
+  ambulance: boolean;
+  generator: boolean;
+  equipment: string;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CswoEventInventory {
+  id: string;
+  event_id: string;
+  item: string;
+  category: string;
+  variant: string;
+  qty_required: number;
+  qty_available: number;
+  unit_cost: number;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CswoEventBeneficiary {
+  id: string;
+  event_id: string;
+  beneficiary_code: string | null;
+  name: string;
+  age: number | null;
+  gender: '' | 'male' | 'female' | 'other';
+  phone: string;
+  address: string;
+  family_size: number;
+  income_category: string;
+  id_proof: string;
+  verified: boolean;
+  inventory_id: string | null;
+  item_received: string;
+  quantity: number;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CswoEventDocument {
+  id: string;
+  event_id: string;
+  title: string;
+  category: string;
+  file_url: string;
+  file_type: string;
+  uploaded_by: string | null;
+  created_at: string;
+}
+
+export type CertRecipientType = 'participant' | 'winner' | 'volunteer' | 'donor' | 'custom';
+export interface CswoEventCertificate {
+  id: string;
+  event_id: string;
+  cert_code: string | null;
+  recipient_name: string;
+  recipient_type: CertRecipientType;
+  category: string;
+  position: string;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export type NotificationKind = 'info' | 'finance' | 'approval' | 'member' | 'system';
 export interface CswoNotification {
   id: string;
@@ -321,6 +473,7 @@ export interface CswoPayroll {
   status: PayrollStatus;
   note: string;
   paid_on: string | null;
+  bank_account_id: string | null;
   created_by: string | null;
   approved_by: string | null;
   created_at: string;

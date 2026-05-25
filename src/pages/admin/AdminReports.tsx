@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FaDownload, FaPrint } from 'react-icons/fa6';
 import { supabase } from '@/lib/supabase';
-import type { CswoFund, CswoLedgerEntry, LedgerEntryType } from '@/types';
+import type { CswoFund, CswoLedgerEntry, LedgerEntryType, CswoBankAccount, CswoBankTransaction, CswoCompliance } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
@@ -23,6 +23,9 @@ export default function AdminReports() {
 
   const [rows, setRows] = useState<CswoLedgerEntry[]>([]);
   const [funds, setFunds] = useState<CswoFund[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<CswoBankAccount[]>([]);
+  const [bankTxns, setBankTxns] = useState<CswoBankTransaction[]>([]);
+  const [compliance, setCompliance] = useState<CswoCompliance[]>([]);
   const [loading, setLoading] = useState(true);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -32,9 +35,18 @@ export default function AdminReports() {
     let q = supabase.from('cswo_finance_ledger').select('*').order('occurred_at', { ascending: false }).limit(5000);
     if (from) q = q.gte('occurred_at', from);
     if (to) q = q.lte('occurred_at', to + 'T23:59:59');
-    const [ledR, fundR] = await Promise.all([q, supabase.from('cswo_funds').select('*').order('sort_order')]);
+    const [ledR, fundR, bankR, txnR, compR] = await Promise.all([
+      q,
+      supabase.from('cswo_funds').select('*').order('sort_order'),
+      supabase.from('cswo_bank_accounts').select('*').order('sort_order'),
+      supabase.from('cswo_bank_transactions').select('*'),
+      supabase.from('cswo_compliance').select('*').order('sort_order'),
+    ]);
     setRows((ledR.data ?? []) as CswoLedgerEntry[]);
     setFunds((fundR.data ?? []) as CswoFund[]);
+    setBankAccounts((bankR.data ?? []) as CswoBankAccount[]);
+    setBankTxns((txnR.data ?? []) as CswoBankTransaction[]);
+    setCompliance((compR.data ?? []) as CswoCompliance[]);
     setLoading(false);
   }, [from, to]);
   useEffect(() => { load(); }, [load]);
@@ -139,6 +151,153 @@ export default function AdminReports() {
     setTimeout(() => w.print(), 400);
   };
 
+  const exportPDFAuditPack = () => {
+    const L = (en: string, bn: string) => (lang === 'en' ? en : bn);
+    const money = (n: number) => `₹${Number(n).toLocaleString('en-IN')}`;
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const dtFull = (s: string) => { const d = new Date(s); return `${fmt.date(s)} · ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+
+    // Compute Bank Account Balances
+    const bankRows = bankAccounts.map((acc) => {
+      const t = bankTxns.filter((x) => x.account_id === acc.id);
+      const cr = t.filter((x) => x.direction === 'credit').reduce((s, x) => s + Number(x.amount), 0);
+      const db = t.filter((x) => x.direction === 'debit').reduce((s, x) => s + Number(x.amount), 0);
+      const bal = Number(acc.opening_balance) + cr - db;
+      return `<tr>
+        <td><strong>${acc.label}</strong> (${acc.bank_name || 'Cash Register'})</td>
+        <td class="mono">${acc.account_number ? `•••• ${acc.account_number.slice(-4)}` : '—'}</td>
+        <td class="r mono">${money(acc.opening_balance)}</td>
+        <td class="r mono font-semibold" style="color: ${bal < 0 ? '#b91c1c' : '#15803d'}">${money(bal)}</td>
+      </tr>`;
+    }).join('');
+
+    // Compute Fund Balances
+    const fundSummaryRows = report.byFund.map((f) => `
+      <tr>
+        <td><strong>${f.name}</strong></td>
+        <td class="r mono text-green-700">+${money(f.cr)}</td>
+        <td class="r mono text-red-700">-${money(f.db)}</td>
+        <td class="r mono font-semibold">${money(f.bal)}</td>
+      </tr>
+    `).join('');
+
+    // Compliance Summaries
+    const compRows = compliance.map((c) => {
+      const getStatusText = (expiry: string | null) => {
+        if (!expiry) return `<span class="badge badge-green">${L('On record', 'নথিভুক্ত')}</span>`;
+        const days = Math.ceil((new Date(expiry).getTime() - Date.now()) / 86400000);
+        if (days < 0) return `<span class="badge badge-red">${L('Expired', 'মেয়াদোত্তীর্ণ')}</span>`;
+        if (days <= 30) return `<span class="badge badge-amber">${L(`Expires in ${days} days`, `মেয়াদ ${days} দিন`)}</span>`;
+        return `<span class="badge badge-green">${L('Valid', 'বৈধ')}</span>`;
+      };
+      return `<tr>
+        <td><strong>${lang === 'bn' ? c.name_bn : c.name_en}</strong><br/><small style="color:#78716c">${c.authority}</small></td>
+        <td class="mono">${c.reg_number || '—'}</td>
+        <td class="mono">${c.issued_on ? fmt.date(c.issued_on) : '—'}</td>
+        <td class="mono">${c.expiry_on ? fmt.date(c.expiry_on) : '—'}</td>
+        <td>${getStatusText(c.expiry_on)}</td>
+      </tr>`;
+    }).join('');
+
+    // Complete Transaction Ledger Sheet
+    const ledgerRows = rows.map((r) => `
+      <tr>
+        <td class="mono whitespace-nowrap">${dtFull(r.occurred_at)}</td>
+        <td><span class="type-pill">${typeLabel(r.entry_type)}</span></td>
+        <td>${fundName(r.fund_id)}</td>
+        <td>${r.note}</td>
+        <td class="r mono font-semibold" style="color: ${r.direction === 'credit' ? '#15803d' : '#b91c1c'}">
+          ${r.direction === 'credit' ? '+' : '−'}${money(r.amount)}
+        </td>
+      </tr>
+    `).join('');
+
+    const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8">
+<title>${L('NGO Comprehensive Financial Audit Pack', 'এনজিও আর্থিক অডিট প্যাকেজ')}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;color:#1c1917;padding:40px;max-width:960px;margin:auto}
+  .head{text-align:center;border-bottom:3px double #c2410c;padding-bottom:16px;margin-bottom:24px}
+  .org{font-size:24px;font-weight:800;color:#c2410c;text-transform:uppercase;letter-spacing:.03em}
+  .sub{font-size:15px;color:#555;margin-top:2px}
+  .title{margin-top:14px;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;background:#faf6ef;padding:6px 12px;display:inline-block;border:1px solid #e7e5e4}
+  .period{font-size:13px;color:#78716c;margin-top:6px;font-weight:600}
+  h3{margin:28px 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:#c2410c;border-left:4px solid #c2410c;padding-left:8px}
+  table{width:100%;border-collapse:collapse;margin-bottom:16px}
+  td,th{padding:8px 10px;font-size:12.5px;border-bottom:1px solid #e7e5e4;text-align:left}
+  th{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#78716c;background:#f5f5f4}
+  .r{text-align:right}
+  .mono{font-family:monospace}
+  .font-semibold{font-weight:600}
+  .whitespace-nowrap{white-space:nowrap}
+  .net-box{margin-top:20px;padding:16px;background:#faf6ef;border:1px solid #e7e5e4;display:flex;justify-content:space-between;font-weight:800;font-size:16px}
+  .badge{display:inline-block;padding:2px 6px;font-size:11px;font-weight:600;border-radius:4px;text-transform:uppercase}
+  .badge-green{background:#dcfce7;color:#15803d}
+  .badge-amber{background:#fef3c7;color:#b45309}
+  .badge-red{background:#fee2e2;color:#b91c1c}
+  .type-pill{background:#f4f4f5;padding:2px 6px;border-radius:12px;font-size:11px;font-weight:500;color:#3f3f46;border:1px solid #e4e4e7}
+  .foot{margin-top:40px;text-align:center;font-size:11px;color:#a8a29e;border-top:1px solid #e7e5e4;padding-top:16px}
+  @media print{body{padding:12px}}
+</style></head><body>
+  <div class="head">
+    <div class="org">Chhatradol Social Welfare Organisation</div>
+    <div class="sub">নাড়াজোল ছাত্রদল · Govt Regd NGO / Trust</div>
+    <div class="title">${L('Comprehensive Financial Audit Pack', 'আর্থিক অডিট ও বাধ্যবাধকতা প্যাকেজ')}</div>
+    <div class="period">${L('Statement Period', 'বিবরণীর সময়কাল')}: ${periodLabel}</div>
+  </div>
+
+  <h3>1. Cash Registers & Bank Account Balances</h3>
+  <table>
+    <thead><tr><th>${L('Account / Register', 'অ্যাকাউন্ট / রেজিস্টার')}</th><th>${L('A/C Number', 'অ্যাকাউন্ট নম্বর')}</th><th class="r">${L('Opening', 'প্রারম্ভিক')}</th><th class="r">${L('Available Balance', 'বর্তমান ব্যালেন্স')}</th></tr></thead>
+    <tbody>${bankRows || `<tr><td colspan="4" style="color:#999;text-align:center">${L('No accounts registered', 'কোনো অ্যাকাউন্ট নিবন্ধিত নেই')}</td></tr>`}</tbody>
+  </table>
+
+  <h3>2. Fund Balance Sheets</h3>
+  <table>
+    <thead><tr><th>${L('Fund Category', 'তহবিল ক্যাটাগরি')}</th><th class="r">${L('Inflow (Credits)', 'মোট জমা')}</th><th class="r">${L('Outflow (Debits)', 'মোট খরচ')}</th><th class="r">${L('Current Fund Balance', 'ফান্ড ব্যালেন্স')}</th></tr></thead>
+    <tbody>
+      ${fundSummaryRows}
+      <tr style="background:#f5f5f4;font-weight:bold">
+        <td>${L('Consolidated Totals', 'একত্রিত মোট')}</td>
+        <td class="r mono text-green-700">+${money(report.totalIncome)}</td>
+        <td class="r mono text-red-700">-${money(report.totalExpense)}</td>
+        <td class="r mono">${money(report.net)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="net-box">
+    <span>${L('CONSOLIDATED NET SURPLUS / (DEFICIT)', 'একত্রিত নিট উদ্বৃত্ত / (ঘাটতি)')}</span>
+    <span style="color: ${report.net >= 0 ? '#15803d' : '#b91c1c'}">${money(report.net)}</span>
+  </div>
+
+  <h3>3. Statutory Compliance & Certifications Summary</h3>
+  <table>
+    <thead><tr><th>${L('Compliance Item', 'বিষয়')}</th><th>${L('Reg. Number', 'রেজিস্ট্রেশন নম্বর')}</th><th>${L('Issued On', 'ইস্যু')}</th><th>${L('Expiry Date', 'মেয়াদ উত্তীর্ণের তারিখ')}</th><th>${L('Status / Renewal Warning', 'অবস্থা')}</th></tr></thead>
+    <tbody>${compRows || `<tr><td colspan="5" style="color:#999;text-align:center">${L('No compliance documents registered', 'কোনো কমপ্লায়েন্স নথি নিবন্ধিত নেই')}</td></tr>`}</tbody>
+  </table>
+
+  <h3>4. Operational Ledger Entries List</h3>
+  <table>
+    <thead><tr><th>${L('Date & Time', 'তারিখ ও সময়')}</th><th>${L('Type', 'ধরন')}</th><th>${L('Fund', 'ফান্ড')}</th><th>${L('Transaction Note', 'বিবরণ')}</th><th class="r">${L('Amount', 'পরিমাণ')}</th></tr></thead>
+    <tbody>${ledgerRows || `<tr><td colspan="5" style="color:#999;text-align:center">${L('No transactions recorded in this period', 'এই সময়কালে কোনো লেনদেন নথিভুক্ত হয়নি')}</td></tr>`}</tbody>
+  </table>
+
+  <div class="foot">
+    <strong>${L('Official NGO Audit Pack Document', 'অফিসিয়াল এনজিও অডিট প্যাকেজ নথি')}</strong><br/>
+    ${L('Computer assembled statement from NGO Ledger vaults', 'এনজিও লেজার ভল্ট থেকে কম্পিউটার-জেনারেটেড একত্রিত বিবরণী')} · 
+    ${L('Downloaded at', 'ডাউনলোড করা হয়েছে')} ${new Date().toLocaleString('en-IN')} · 
+    narajole.org
+  </div>
+</body></html>`;
+
+    const w = window.open('', '_blank', 'width=960,height=900');
+    if (!w) return;
+    w.document.write(html); w.document.close(); w.focus();
+    setTimeout(() => w.print(), 400);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -150,6 +309,7 @@ export default function AdminReports() {
         <div className="flex gap-2">
           <button onClick={exportCSV} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12.5px] font-semibold transition-colors hover:bg-black/[0.03]" style={{ border: `1px solid ${RULE}`, color: INK2 }}><FaDownload className="h-3 w-3" /> CSV</button>
           <button onClick={printStatement} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12.5px] font-semibold text-white transition-opacity hover:opacity-90" style={{ background: BRAND }}><FaPrint className="h-3 w-3" /> {tr('Print', 'প্রিন্ট')}</button>
+          <button onClick={exportPDFAuditPack} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12.5px] font-semibold text-white transition-opacity hover:opacity-90" style={{ background: GREEN }}><FaPrint className="h-3 w-3" /> {tr('Export PDF Audit Pack', 'PDF অডিট প্যাক')}</button>
         </div>
       </div>
 

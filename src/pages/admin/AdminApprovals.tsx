@@ -66,11 +66,103 @@ export default function AdminApprovals() {
   }, [lang]);
   useEffect(() => { load(); }, [load]);
 
+  const checkBudgetExceeded = async (expenseId: string): Promise<{ exceeded: boolean; msg: string; frozen: boolean }> => {
+    const { data: exp, error: expErr } = await supabase
+      .from('cswo_expenses')
+      .select('fund_id, amount, spent_on')
+      .eq('id', expenseId)
+      .single();
+
+    if (expErr || !exp) {
+      return { exceeded: false, msg: tr('Expense record not found.', 'ব্যয় রেকর্ড পাওয়া যায়নি।'), frozen: false };
+    }
+
+    const { fund_id: fundId, amount, spent_on: spentOn } = exp;
+
+    const { data: fund, error: fundErr } = await supabase
+      .from('cswo_funds')
+      .select('*')
+      .eq('id', fundId)
+      .single();
+    
+    if (fundErr || !fund) {
+      return { exceeded: false, msg: tr('Fund not found.', 'ফান্ড পাওয়া যায়নি।'), frozen: false };
+    }
+    if (fund.is_frozen) {
+      return { exceeded: false, msg: tr('This fund is frozen. Spend/approval is blocked.', 'এই ফান্ডটি স্থগিত করা হয়েছে। নতুন ব্যয়/অনুমোদন নিষিদ্ধ।'), frozen: true };
+    }
+
+    const d = new Date(spentOn);
+    const y = d.getFullYear();
+    const fy = d.getMonth() >= 3 ? `${y}-${String(y + 1).slice(-2)}` : `${y - 1}-${String(y).slice(-2)}`;
+
+    const { data: budget } = await supabase
+      .from('cswo_budgets')
+      .select('*')
+      .eq('fund_id', fundId)
+      .eq('fiscal_year', fy)
+      .maybeSingle();
+
+    if (!budget) {
+      return { exceeded: false, msg: '', frozen: false };
+    }
+
+    const budgetLimit = Number(budget.allocated_amount);
+    const startYear = parseInt(fy.split('-')[0]);
+    const startDate = `${startYear}-04-01`;
+    const endDate = `${startYear + 1}-03-31`;
+
+    const { data: approvedExpenses } = await supabase
+      .from('cswo_expenses')
+      .select('amount')
+      .eq('fund_id', fundId)
+      .eq('status', 'approved')
+      .gte('spent_on', startDate)
+      .lte('spent_on', endDate);
+
+    const totalSpent = (approvedExpenses ?? []).reduce((sum, item) => sum + Number(item.amount), 0);
+
+    if (totalSpent + Number(amount) > budgetLimit) {
+      const remaining = budgetLimit - totalSpent;
+      return {
+        exceeded: true,
+        msg: tr(
+          `Budget exceeded! Maximum allowed budget is ₹${budgetLimit.toLocaleString('en-IN')}. Current spent is ₹${totalSpent.toLocaleString('en-IN')} (Remaining: ₹${remaining.toLocaleString('en-IN')}).`,
+          `বাজেট অতিক্রম করেছে! সর্বোচ্চ অনুমোদিত বাজেট ₹${budgetLimit.toLocaleString('en-IN')}। বর্তমান ব্যয় ₹${totalSpent.toLocaleString('en-IN')} (অবশিষ্ট: ₹${remaining.toLocaleString('en-IN')})।`
+        ),
+        frozen: false
+      };
+    }
+
+    return { exceeded: false, msg: '', frozen: false };
+  };
+
   const act = async (item: Item, action: 'approve' | 'reject') => {
     setBusy(item.id);
     if (item.kind === 'expense') {
-      if (action === 'approve') await supabase.from('cswo_expenses').update({ status: 'approved', approved_by: me?.id }).eq('id', item.id);
-      else await supabase.from('cswo_expenses').delete().eq('id', item.id);
+      if (action === 'approve') {
+        const res = await checkBudgetExceeded(item.id);
+        if (res.frozen) {
+          alert(res.msg);
+          setBusy(null);
+          return;
+        }
+        if (res.exceeded) {
+          const ok = window.confirm(res.msg + "\n\n" + tr("Do you still want to approve this expense?", "আপনি কি তবুও এই ব্যয়টি অনুমোদন করতে চান?"));
+          if (!ok) {
+            setBusy(null);
+            return;
+          }
+        }
+        await supabase.from('cswo_expenses').update({ status: 'approved', approved_by: me?.id }).eq('id', item.id);
+      } else {
+        const reason = window.prompt(tr('Why is this expense rejected?', 'এই ব্যয়টি কেন প্রত্যাখ্যাত হলো?'));
+        if (reason === null) {
+          setBusy(null);
+          return;
+        }
+        await supabase.from('cswo_expenses').update({ status: 'rejected', rejection_reason: reason.trim(), approved_by: me?.id }).eq('id', item.id);
+      }
     } else if (item.kind === 'refund') {
       await supabase.from('cswo_refunds').update({ status: action === 'approve' ? 'approved' : 'rejected', approved_by: me?.id }).eq('id', item.id);
     } else {

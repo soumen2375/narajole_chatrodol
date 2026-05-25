@@ -52,8 +52,9 @@ export default function AdminLayout() {
 
     // ── Secretary / Events ────────────────────────────────────────────
     ...(isAdmin || canManageEvents ? [
-      { to: '/admin/events',     label: t('a.events'),     icon: CalendarDays,
+      { to: '/admin/event-dashboard', label: t('a.eventsDashboard'), icon: LayoutDashboard,
         sectionLabel: isAdmin ? tr('Events', 'অনুষ্ঠান') : tr('Secretary', 'সেক্রেটারি') } as NavItem,
+      { to: '/admin/events',     label: t('a.events'),     icon: CalendarDays } as NavItem,
       { to: '/admin/attendance', label: t('a.attendance'), icon: ClipboardList } as NavItem,
     ] : []),
 

@@ -12,7 +12,6 @@ const Events = lazy(() => import('@/pages/Events'));
 const EventDetail = lazy(() => import('@/pages/EventDetail'));
 const Gallery = lazy(() => import('@/pages/Gallery'));
 const Impacts = lazy(() => import('@/pages/Impacts'));
-const Transparency = lazy(() => import('@/pages/Transparency'));
 const Contact = lazy(() => import('@/pages/Contact'));
 const Volunteer = lazy(() => import('@/pages/Volunteer'));
 const Donate = lazy(() => import('@/pages/Donate'));
@@ -43,6 +42,13 @@ const AdminMemberDetail = lazy(() => import('@/pages/admin/AdminMemberDetail'));
 const AdminPosts = lazy(() => import('@/pages/admin/AdminPosts'));
 const AdminGallery = lazy(() => import('@/pages/admin/AdminGallery'));
 const AdminEvents = lazy(() => import('@/pages/admin/AdminEvents'));
+const AdminEventsDashboard = lazy(() => import('@/pages/admin/AdminEventsDashboard'));
+const AdminEventDetail = lazy(() => import('@/pages/admin/AdminEventDetail'));
+const AdminBloodCamp = lazy(() => import('@/pages/admin/AdminBloodCamp'));
+const AdminBeneficiaries = lazy(() => import('@/pages/admin/AdminBeneficiaries'));
+const AdminCertificates = lazy(() => import('@/pages/admin/AdminCertificates'));
+const AdminEventDocuments = lazy(() => import('@/pages/admin/AdminEventDocuments'));
+const AdminEventReport = lazy(() => import('@/pages/admin/AdminEventReport'));
 const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
 const AdminContributions = lazy(() => import('@/pages/admin/AdminContributions'));
 const AdminDonations = lazy(() => import('@/pages/admin/AdminDonations'));
@@ -76,7 +82,6 @@ export default function App() {
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/impacts" element={<Impacts />} />
-            <Route path="/transparency" element={<Transparency />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/volunteer" element={<Volunteer />} />
             <Route path="/donate" element={<Donate />} />
@@ -112,7 +117,14 @@ export default function App() {
             <Route path="categories" element={<ProtectedRoute require="canManagePosts"><AdminCategories /></ProtectedRoute>} />
             <Route path="gallery-manage" element={<ProtectedRoute require="canManagePosts"><AdminGallery /></ProtectedRoute>} />
             
+            <Route path="event-dashboard" element={<ProtectedRoute require="canManageEvents"><AdminEventsDashboard /></ProtectedRoute>} />
             <Route path="events" element={<ProtectedRoute require="canManageEvents"><AdminEvents /></ProtectedRoute>} />
+            <Route path="events/:id" element={<ProtectedRoute require="canManageEvents"><AdminEventDetail /></ProtectedRoute>} />
+            <Route path="events/:id/blood" element={<ProtectedRoute require="canManageEvents"><AdminBloodCamp /></ProtectedRoute>} />
+            <Route path="events/:id/relief" element={<ProtectedRoute require="canManageEvents"><AdminBeneficiaries /></ProtectedRoute>} />
+            <Route path="events/:id/certificates" element={<ProtectedRoute require="canManageEvents"><AdminCertificates /></ProtectedRoute>} />
+            <Route path="events/:id/documents" element={<ProtectedRoute require="canManageEvents"><AdminEventDocuments /></ProtectedRoute>} />
+            <Route path="events/:id/report" element={<ProtectedRoute require="canManageEvents"><AdminEventReport /></ProtectedRoute>} />
             <Route path="attendance-manage" element={<ProtectedRoute require="canManageEvents"><AdminAttendance /></ProtectedRoute>} />
 
             <Route path="finance" element={<ProtectedRoute require="canManageFinance"><AdminFinance /></ProtectedRoute>} />
@@ -121,6 +133,14 @@ export default function App() {
             <Route path="donations-manage" element={<ProtectedRoute require="canManageFinance"><AdminDonations /></ProtectedRoute>} />
             <Route path="expenses" element={<ProtectedRoute require="canManageFinance"><AdminExpenses /></ProtectedRoute>} />
             <Route path="ledger" element={<ProtectedRoute require="canManageFinance"><AdminLedger /></ProtectedRoute>} />
+            <Route path="approvals" element={<ProtectedRoute require="canManageFinance"><AdminApprovals /></ProtectedRoute>} />
+            <Route path="grants" element={<ProtectedRoute require="canManageFinance"><AdminGrants /></ProtectedRoute>} />
+            <Route path="campaigns" element={<ProtectedRoute require="canManageFinance"><AdminCampaigns /></ProtectedRoute>} />
+            <Route path="refunds" element={<ProtectedRoute require="canManageFinance"><AdminRefunds /></ProtectedRoute>} />
+            <Route path="payroll" element={<ProtectedRoute require="canManageFinance"><AdminPayroll /></ProtectedRoute>} />
+            <Route path="bank" element={<ProtectedRoute require="canManageFinance"><AdminBankAccounts /></ProtectedRoute>} />
+            <Route path="reports" element={<ProtectedRoute require="canManageFinance"><AdminReports /></ProtectedRoute>} />
+            <Route path="compliance" element={<ProtectedRoute require="canManageFinance"><AdminCompliance /></ProtectedRoute>} />
           </Route>
 
           <Route
@@ -137,7 +157,14 @@ export default function App() {
             <Route path="posts" element={<AdminPosts />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="gallery" element={<AdminGallery />} />
+            <Route path="event-dashboard" element={<AdminEventsDashboard />} />
             <Route path="events" element={<AdminEvents />} />
+            <Route path="events/:id" element={<AdminEventDetail />} />
+            <Route path="events/:id/blood" element={<AdminBloodCamp />} />
+            <Route path="events/:id/relief" element={<AdminBeneficiaries />} />
+            <Route path="events/:id/certificates" element={<AdminCertificates />} />
+            <Route path="events/:id/documents" element={<AdminEventDocuments />} />
+            <Route path="events/:id/report" element={<AdminEventReport />} />
             <Route path="attendance" element={<AdminAttendance />} />
             <Route path="contributions" element={<AdminContributions />} />
             <Route path="donations" element={<AdminDonations />} />

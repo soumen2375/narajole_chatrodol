@@ -20,9 +20,9 @@ const ACCT_TYPES: BankAccountType[] = ['savings', 'current', 'cash', 'other'];
 
 type AcctForm = {
   label: string; bank_name: string; account_name: string; account_number: string;
-  ifsc: string; branch: string; account_type: BankAccountType; opening_balance: string; is_active: boolean; note: string;
+  ifsc: string; branch: string; account_type: BankAccountType; opening_balance: string; statement_balance: string; is_active: boolean; note: string;
 };
-const EMPTY_ACCT: AcctForm = { label: '', bank_name: '', account_name: '', account_number: '', ifsc: '', branch: '', account_type: 'savings', opening_balance: '', is_active: true, note: '' };
+const EMPTY_ACCT: AcctForm = { label: '', bank_name: '', account_name: '', account_number: '', ifsc: '', branch: '', account_type: 'savings', opening_balance: '', statement_balance: '', is_active: true, note: '' };
 
 type TxnForm = { txn_date: string; description: string; reference: string; direction: LedgerDirection; amount: string; note: string };
 const today = () => new Date().toISOString().slice(0, 10);
@@ -91,7 +91,7 @@ export default function AdminBankAccounts() {
   const openAddAcct = () => { setEditingAcct(null); setAcctForm(EMPTY_ACCT); setAcctErr(''); setShowAcct(true); };
   const openEditAcct = (a: CswoBankAccount) => {
     setEditingAcct(a);
-    setAcctForm({ label: a.label, bank_name: a.bank_name, account_name: a.account_name, account_number: a.account_number, ifsc: a.ifsc, branch: a.branch, account_type: a.account_type, opening_balance: String(Number(a.opening_balance)), is_active: a.is_active, note: a.note });
+    setAcctForm({ label: a.label, bank_name: a.bank_name, account_name: a.account_name, account_number: a.account_number, ifsc: a.ifsc, branch: a.branch, account_type: a.account_type, opening_balance: String(Number(a.opening_balance)), statement_balance: String(Number(a.statement_balance || 0)), is_active: a.is_active, note: a.note });
     setAcctErr(''); setShowAcct(true);
   };
 
@@ -101,7 +101,7 @@ export default function AdminBankAccounts() {
     const payload = {
       label: acctForm.label.trim(), bank_name: acctForm.bank_name.trim(), account_name: acctForm.account_name.trim(),
       account_number: acctForm.account_number.trim(), ifsc: acctForm.ifsc.trim(), branch: acctForm.branch.trim(),
-      account_type: acctForm.account_type, opening_balance: Number(acctForm.opening_balance || 0), is_active: acctForm.is_active, note: acctForm.note.trim(),
+      account_type: acctForm.account_type, opening_balance: Number(acctForm.opening_balance || 0), statement_balance: Number(acctForm.statement_balance || 0), is_active: acctForm.is_active, note: acctForm.note.trim(),
     };
     const { error } = editingAcct
       ? await supabase.from('cswo_bank_accounts').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', editingAcct.id)
@@ -196,6 +196,24 @@ export default function AdminBankAccounts() {
                 <Mini label={tr('Debits', 'খরচ')} value={fmt.money(selSummary.db)} color={BRAND} />
                 <Mini label={tr('Balance', 'ব্যালেন্স')} value={fmt.money(selSummary.balance)} color={selSummary.balance < 0 ? BRAND : INK} />
               </div>
+              
+              {/* Reconciliation Panel / Discrepancy Alert */}
+              {Math.abs(selSummary.balance - Number(selected.statement_balance || 0)) > 0.01 && (
+                <div className="mt-4 rounded-[6px] p-3 flex items-center justify-between border text-[13px] font-semibold" style={{ background: '#fef2f2', borderColor: '#fecaca', color: '#991b1b' }}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[16px]">⚠️</span>
+                    <span>
+                      {tr(
+                        `Discrepancy Alert: Calculated balance (${fmt.money(selSummary.balance)}) is out of sync with statement balance (${fmt.money(Number(selected.statement_balance || 0))}) by ${fmt.money(Math.abs(selSummary.balance - Number(selected.statement_balance || 0)))}.`,
+                        `অমিল সতর্কতা: লেজার ব্যালেন্স (${fmt.money(selSummary.balance)}) এবং ব্যাংক বিবরণী ব্যালেন্স (${fmt.money(Number(selected.statement_balance || 0))}) এর মধ্যে ${fmt.money(Math.abs(selSummary.balance - Number(selected.statement_balance || 0)))} অমিল রয়েছে।`
+                      )}
+                    </span>
+                  </div>
+                  <span className="rounded bg-red-100 px-2 py-0.5 text-[11.5px] font-bold uppercase tracking-wide shrink-0" style={{ color: '#991b1b' }}>
+                    {tr('Out of Sync', 'সমন্বয়হীন')}
+                  </span>
+                </div>
+              )}
               {selSummary.unrec > 0 && <div className="mt-3 text-[12px]" style={{ color: MUTED }}>{fmt.num(selSummary.unrec)} {tr('unreconciled entries', 'অমিলিত এন্ট্রি')}</div>}
             </div>
 
@@ -273,6 +291,7 @@ export default function AdminBankAccounts() {
                 {ACCT_TYPES.map((t) => <option key={t} value={t}>{typeLabel(t)}</option>)}
               </select>
               <input className="input" type="number" placeholder={tr('Opening balance (₹)', 'প্রারম্ভিক ব্যালেন্স (₹)')} value={acctForm.opening_balance} onChange={(e) => setAcctForm((f) => ({ ...f, opening_balance: e.target.value }))} />
+              <input className="input sm:col-span-2" type="number" placeholder={tr('Statement balance / Actual (₹)', 'স্টেটমেন্ট ব্যালেন্স / প্রকৃত (₹)')} value={acctForm.statement_balance} onChange={(e) => setAcctForm((f) => ({ ...f, statement_balance: e.target.value }))} />
               <textarea className="input resize-none sm:col-span-2" rows={2} placeholder={tr('Note', 'নোট')} value={acctForm.note} onChange={(e) => setAcctForm((f) => ({ ...f, note: e.target.value }))} />
               <label className="flex items-center gap-2 text-[13px] sm:col-span-2" style={{ color: INK2 }}>
                 <input type="checkbox" checked={acctForm.is_active} onChange={(e) => setAcctForm((f) => ({ ...f, is_active: e.target.checked }))} /> {tr('Active', 'সক্রিয়')}

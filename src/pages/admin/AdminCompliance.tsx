@@ -27,6 +27,24 @@ export default function AdminCompliance() {
   const fmt = useFmt();
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
 
+  // Expose the RLS safeguard check immediately for Treasurer/Non-Admin lock
+  if (me?.role !== 'admin') {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center rounded-[10px] border shadow-sm bg-white" style={{ borderColor: RULE }}>
+        <span className="text-[44px]">🚫</span>
+        <h2 className="mt-4 text-[20px] font-bold text-red-700" style={{ fontFamily: '"Noto Serif Bengali", serif' }}>
+          {tr('Access Denied / Admins Only', 'প্রবেশাধিকার বঞ্চিত / শুধুমাত্র এডমিন')}
+        </h2>
+        <p className="mt-2 text-[14px] max-w-md text-stone-600">
+          {tr(
+            'You do not have the required administrative permissions to access the compliance document vault. This area is reserved strictly for organization administrators.',
+            'আপনার কমপ্লায়েন্স ডকুমেন্ট ভল্ট অ্যাক্সেস করার প্রয়োজনীয় প্রশাসনিক অনুমতি নেই। এই বিভাগটি কঠোরভাবে সংগঠনের প্রশাসকদের জন্য সংরক্ষিত।'
+          )}
+        </p>
+      </div>
+    );
+  }
+
   const [items, setItems] = useState<CswoCompliance[]>([]);
   const [docs, setDocs] = useState<CswoDocument[]>([]);
   const [edits, setEdits] = useState<Record<string, EditRow>>({});
@@ -38,6 +56,17 @@ export default function AdminCompliance() {
   const [docCat, setDocCat] = useState('certificate');
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Register Custom Document Modal States
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [regTitle, setRegTitle] = useState('');
+  const [regAuthority, setRegAuthority] = useState('');
+  const [regNum, setRegNum] = useState('');
+  const [regIssued, setRegIssued] = useState('');
+  const [regExpiry, setRegExpiry] = useState('');
+  const [regNote, setRegNote] = useState('');
+  const [regFile, setRegFile] = useState<File | null>(null);
+  const [registering, setRegistering] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -75,8 +104,54 @@ export default function AdminCompliance() {
     if (!expiry) return { label: tr('On record', 'নথিভুক্ত'), color: GREEN };
     const days = Math.ceil((new Date(expiry).getTime() - Date.now()) / 86400000);
     if (days < 0) return { label: tr('Expired', 'মেয়াদোত্তীর্ণ'), color: BRAND };
-    if (days <= 30) return { label: tr(`Expiring · ${days}d`, `মেয়াদ ${fmt.num(days)} দিন`), color: AMBER };
+    if (days <= 30) return { label: tr(`Expires in ${days} days`, `মেয়াদ ${fmt.num(days)} দিন`), color: AMBER };
     return { label: tr('Valid', 'বৈধ'), color: GREEN };
+  };
+
+  const registerDocument = async () => {
+    if (!regTitle.trim() || !regAuthority.trim()) {
+      alert(tr('Name and Authority/Type are required.', 'নাম এবং কর্তৃপক্ষ/টাইপ আবশ্যক।'));
+      return;
+    }
+    setRegistering(true);
+    let publicUrl = '';
+    let fileType = '';
+    if (regFile) {
+      const ext = regFile.name.split('.').pop() ?? 'pdf';
+      const path = `compliance-docs/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { data, error } = await supabase.storage.from('cswo-media').upload(path, regFile);
+      if (error) {
+        alert(tr('Upload failed: ', 'আপলোড ব্যর্থ: ') + error.message);
+        setRegistering(false);
+        return;
+      }
+      const { data: { publicUrl: url } } = supabase.storage.from('cswo-media').getPublicUrl(data.path);
+      publicUrl = url;
+      fileType = regFile.type;
+    }
+
+    const { error } = await supabase.from('cswo_compliance').insert({
+      ckey: 'custom-' + Date.now(),
+      name_en: regTitle.trim(),
+      name_bn: regTitle.trim(),
+      authority: regAuthority.trim(),
+      reg_number: regNum.trim(),
+      issued_on: regIssued || null,
+      expiry_on: regExpiry || null,
+      note: regNote.trim(),
+      file_url: publicUrl,
+      file_type: fileType,
+      sort_order: items.length + 1,
+    });
+
+    setRegistering(false);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    setShowRegisterModal(false);
+    setRegTitle(''); setRegAuthority(''); setRegNum(''); setRegIssued(''); setRegExpiry(''); setRegNote(''); setRegFile(null);
+    await load();
   };
 
   const upload = async (file: File) => {
@@ -104,10 +179,15 @@ export default function AdminCompliance() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Governance', 'সুশাসন')} · {tr('Compliance', 'সম্মতি')}</div>
-        <h1 className="mt-1.5 text-[28px] leading-tight" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>{tr('Compliance & Documents', 'বাধ্যবাধকতা ও নথি')}</h1>
-        <p className="mt-1 text-[13.5px]" style={{ color: INK2 }}>{tr('Track statutory registrations and renewal dates, and keep certificates and audit files in one vault.', 'বিধিবদ্ধ রেজিস্ট্রেশন ও নবায়নের তারিখ ট্র্যাক করুন এবং সার্টিফিকেট ও অডিট ফাইল এক জায়গায় রাখুন।')}</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Governance', 'সুশাসন')} · {tr('Compliance', 'সম্মতি')}</div>
+          <h1 className="mt-1.5 text-[28px] leading-tight" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>{tr('Compliance & Documents', 'বাধ্যবাধকতা ও নথি')}</h1>
+          <p className="mt-1 text-[13.5px]" style={{ color: INK2 }}>{tr('Track statutory registrations and renewal dates, and keep certificates and audit files in one vault.', 'বিধিবদ্ধ রেজিস্ট্রেশন ও নবায়নের তারিখ ট্র্যাক করুন এবং সার্টিফিকেট ও অডিট ফাইল এক জায়গায় রাখুন।')}</p>
+        </div>
+        <button onClick={() => setShowRegisterModal(true)} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90" style={{ background: BRAND }}>
+          <span className="text-[15px] font-bold">+</span> {tr('Register Document', 'নথি রেজিস্টার')}
+        </button>
       </div>
 
       {msg && <div className="rounded-[6px] px-4 py-2.5 text-[13px]" style={{ background: 'rgba(77,124,15,0.1)', color: GREEN }}>{msg}</div>}
@@ -128,7 +208,14 @@ export default function AdminCompliance() {
               return (
                 <tr key={it.id} style={{ borderBottom: `1px solid ${RULE}` }}>
                   <td className="px-4 py-3">
-                    <div className="font-semibold" style={{ color: INK }}>{lang === 'bn' ? it.name_bn : it.name_en}</div>
+                    <div className="font-semibold inline-flex items-center gap-1.5" style={{ color: INK }}>
+                      <span>{lang === 'bn' ? it.name_bn : it.name_en}</span>
+                      {it.file_url && (
+                        <a href={it.file_url} target="_blank" rel="noreferrer" className="text-orange-700 hover:underline inline-flex items-center gap-0.5" title={tr('View Attachment', 'সংযুক্তি দেখুন')}>
+                          <FaFileLines className="h-3.5 w-3.5 shrink-0" />
+                        </a>
+                      )}
+                    </div>
                     <div className="font-mono text-[10px]" style={{ color: MUTED }}>{it.authority}</div>
                   </td>
                   <td className="px-4 py-3"><input value={e.reg_number} onChange={(ev) => setEdits((m) => ({ ...m, [it.id]: { ...e, reg_number: ev.target.value } }))} placeholder="—" className="w-36 rounded-[5px] px-2 py-1 text-[12.5px] outline-none" style={{ border: `1px solid ${RULE}`, color: INK }} /></td>
@@ -175,6 +262,44 @@ export default function AdminCompliance() {
           ))}
         </div>
       </div>
+
+      {/* Register Custom Document Modal */}
+      {showRegisterModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowRegisterModal(false)}>
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[10px] p-6 shadow-xl" style={{ background: PAPER }} onClick={(e) => e.stopPropagation()}>
+            <h2 className="mb-4 text-[18px] font-bold" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>{tr('Register Document', 'নথি রেজিস্টার')}</h2>
+            
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <input className="input sm:col-span-2" placeholder={tr('Document name (e.g. 80G Registration Renewal)', 'নথির নাম (যেমন 80G Registration Renewal)')} value={regTitle} onChange={(e) => setRegTitle(e.target.value)} />
+              <input className="input" placeholder={tr('Authority / Type (e.g. 80G)', 'কর্তৃপক্ষ / ধরন (যেমন 80G)')} value={regAuthority} onChange={(e) => setRegAuthority(e.target.value)} />
+              <input className="input" placeholder={tr('Registration number', 'রেজিস্ট্রেশন নম্বর')} value={regNum} onChange={(e) => setRegNum(e.target.value)} />
+              
+              <div className="flex flex-col gap-1 sm:col-span-1">
+                <label className="text-[11px] font-semibold text-stone-500">{tr('Issue Date', 'ইস্যু তারিখ')}</label>
+                <input className="input" type="date" value={regIssued} onChange={(e) => setRegIssued(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1 sm:col-span-1">
+                <label className="text-[11px] font-semibold text-stone-500">{tr('Expiry Date', 'মেয়াদ উত্তীর্ণের তারিখ')}</label>
+                <input className="input" type="date" value={regExpiry} onChange={(e) => setRegExpiry(e.target.value)} />
+              </div>
+              
+              <div className="sm:col-span-2 flex flex-col gap-1">
+                <label className="text-[11px] font-semibold text-stone-500">{tr('Upload PDF / Attachment', 'PDF / সংযুক্তি আপলোড')}</label>
+                <input className="input" type="file" accept="image/*,application/pdf" onChange={(e) => setRegFile(e.target.files?.[0] || null)} />
+              </div>
+              
+              <textarea className="input resize-none sm:col-span-2" rows={2} placeholder={tr('Note', 'নোট')} value={regNote} onChange={(e) => setRegNote(e.target.value)} />
+            </div>
+            
+            <div className="mt-5 flex justify-end gap-3">
+              <button onClick={() => setShowRegisterModal(false)} className="rounded-full px-4 py-2 text-[13px] font-medium" style={{ border: `1px solid ${RULE}`, color: INK2 }}>{tr('Cancel', 'বাতিল')}</button>
+              <button onClick={registerDocument} disabled={registering} className="rounded-full px-5 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60" style={{ background: BRAND }}>
+                {registering ? tr('Registering…', 'রেজিস্টার হচ্ছে…') : tr('Register', 'রেজিস্টার')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

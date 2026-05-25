@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { FaPlus } from 'react-icons/fa6';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-import type { CswoPayroll, CswoFund, PayrollKind, PayrollStatus } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import type { CswoPayroll, CswoFund, PayrollKind, PayrollStatus, CswoBankAccount, CswoBankTransaction } from '@/types';
 
 const INK = '#1c1917';
 const INK2 = '#44403c';
@@ -25,8 +25,9 @@ interface Row extends CswoPayroll {
 type Form = {
   member_id: string; payee_name: string; designation: string;
   kind: PayrollKind; period: string; amount: string; fund_id: string; note: string;
+  bank_account_id: string;
 };
-const EMPTY: Form = { member_id: '', payee_name: '', designation: '', kind: 'honorarium', period: '', amount: '', fund_id: '', note: '' };
+const EMPTY: Form = { member_id: '', payee_name: '', designation: '', kind: 'honorarium', period: '', amount: '', fund_id: '', note: '', bank_account_id: '' };
 
 export default function AdminPayroll() {
   const { member: me } = useAuth();
@@ -37,6 +38,8 @@ export default function AdminPayroll() {
   const [rows, setRows] = useState<Row[]>([]);
   const [funds, setFunds] = useState<CswoFund[]>([]);
   const [members, setMembers] = useState<{ id: string; full_name: string }[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<CswoBankAccount[]>([]);
+  const [bankTxns, setBankTxns] = useState<CswoBankTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<CswoPayroll | null>(null);
@@ -46,17 +49,30 @@ export default function AdminPayroll() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [pR, fR, mR] = await Promise.all([
+    const [pR, fR, mR, ba, bt] = await Promise.all([
       supabase.from('cswo_payroll').select('*, member:cswo_members!member_id(full_name)').order('created_at', { ascending: false }),
       supabase.from('cswo_funds').select('*').eq('is_active', true).order('sort_order'),
       supabase.from('cswo_members').select('id,full_name').eq('status', 'approved').order('full_name'),
+      supabase.from('cswo_bank_accounts').select('*').eq('is_active', true).order('sort_order'),
+      supabase.from('cswo_bank_transactions').select('*'),
     ]);
     setRows((pR.data ?? []) as Row[]);
     setFunds((fR.data ?? []) as CswoFund[]);
     setMembers((mR.data ?? []) as { id: string; full_name: string }[]);
+    setBankAccounts((ba.data ?? []) as CswoBankAccount[]);
+    setBankTxns((bt.data ?? []) as CswoBankTransaction[]);
     setLoading(false);
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  const getBankBalance = useCallback((bankId: string) => {
+    const acc = bankAccounts.find((a) => a.id === bankId);
+    if (!acc) return 0;
+    const t = bankTxns.filter((x) => x.account_id === bankId);
+    const cr = t.filter((x) => x.direction === 'credit').reduce((s, x) => s + Number(x.amount), 0);
+    const db = t.filter((x) => x.direction === 'debit').reduce((s, x) => s + Number(x.amount), 0);
+    return Number(acc.opening_balance) + cr - db;
+  }, [bankAccounts, bankTxns]);
 
   const kindLabel = (k: PayrollKind) =>
     ({ salary: tr('Salary', 'বেতন'), honorarium: tr('Honorarium', 'সম্মানী'), stipend: tr('Stipend', 'বৃত্তি'), reimbursement: tr('Reimbursement', 'প্রতিদান') }[k]);
@@ -64,10 +80,10 @@ export default function AdminPayroll() {
     ({ pending: tr('Pending', 'অপেক্ষমাণ'), paid: tr('Paid', 'পরিশোধিত'), cancelled: tr('Cancelled', 'বাতিল') }[s]);
   const payeeOf = (r: Row) => r.member?.full_name || r.payee_name || '—';
 
-  const openAdd = () => { setEditing(null); setForm(EMPTY); setErr(''); setShowModal(true); };
+  const openAdd = () => { setEditing(null); setForm({ ...EMPTY, bank_account_id: bankAccounts[0]?.id ?? '' }); setErr(''); setShowModal(true); };
   const openEdit = (r: Row) => {
     setEditing(r);
-    setForm({ member_id: r.member_id ?? '', payee_name: r.payee_name, designation: r.designation, kind: r.kind, period: r.period, amount: String(Number(r.amount)), fund_id: r.fund_id ?? '', note: r.note });
+    setForm({ member_id: r.member_id ?? '', payee_name: r.payee_name, designation: r.designation, kind: r.kind, period: r.period, amount: String(Number(r.amount)), fund_id: r.fund_id ?? '', note: r.note, bank_account_id: r.bank_account_id ?? '' });
     setErr(''); setShowModal(true);
   };
 
@@ -78,6 +94,7 @@ export default function AdminPayroll() {
     const payload = {
       member_id: form.member_id || null, payee_name: form.payee_name.trim(), designation: form.designation.trim(),
       kind: form.kind, period: form.period.trim(), amount: Number(form.amount), fund_id: form.fund_id || null, note: form.note.trim(),
+      bank_account_id: form.bank_account_id || null,
     };
     const { error } = editing
       ? await supabase.from('cswo_payroll').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', editing.id)
@@ -88,6 +105,23 @@ export default function AdminPayroll() {
   };
 
   const setStatus = async (r: Row, status: PayrollStatus) => {
+    if (status === 'paid') {
+      if (bankAccounts.length === 0) {
+        alert(tr("No active bank accounts found. Please add a bank account first.", "কোনো সক্রিয় ব্যাংক অ্যাকাউন্ট পাওয়া যায়নি। অনুগ্রহ করে প্রথমে একটি ব্যাংক অ্যাকাউন্ট যোগ করুন।"));
+        return;
+      }
+      const bankId = r.bank_account_id || bankAccounts[0]?.id;
+      const bal = getBankBalance(bankId);
+      if (bal < Number(r.amount)) {
+        const ok = window.confirm(
+          tr(
+            `Warning: Insufficient funds in the bank account. Available: ${fmt.money(bal)}, Required: ${fmt.money(Number(r.amount))}. Do you still want to proceed?`,
+            `সতর্কতা: ব্যাংক অ্যাকাউন্টে পর্যাপ্ত তহবিল নেই। উপলব্ধ: ${fmt.money(bal)}, প্রয়োজনীয়: ${fmt.money(Number(r.amount))}। আপনি কি তবুও অগ্রসর হতে চান?`
+          )
+        );
+        if (!ok) return;
+      }
+    }
     const patch: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
     if (status === 'paid') { patch.paid_on = new Date().toISOString().slice(0, 10); patch.approved_by = me?.id; }
     if (status === 'pending') patch.paid_on = null;
@@ -179,6 +213,14 @@ export default function AdminPayroll() {
               <select className="input" value={form.fund_id} onChange={(e) => setForm((f) => ({ ...f, fund_id: e.target.value }))}>
                 <option value="">{tr('No fund', 'কোনো তহবিল নয়')}</option>
                 {funds.map((f) => <option key={f.id} value={f.id}>{lang === 'bn' ? f.name_bn : f.name_en}</option>)}
+              </select>
+              <select className="input sm:col-span-2" value={form.bank_account_id} onChange={(e) => setForm((f) => ({ ...f, bank_account_id: e.target.value }))}>
+                <option value="">{tr('-- Select Payout Bank Account --', '-- পেমেন্ট ব্যাংক অ্যাকাউন্ট নির্বাচন করুন --')}</option>
+                {bankAccounts.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.label} ({b.bank_name || 'Cash'}) - Bal: {fmt.money(getBankBalance(b.id))}
+                  </option>
+                ))}
               </select>
               <textarea className="input resize-none sm:col-span-2" rows={2} placeholder={tr('Note', 'নোট')} value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} />
             </div>
