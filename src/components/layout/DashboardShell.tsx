@@ -207,7 +207,7 @@ export default function DashboardShell({
               <div
                 className="transition-all duration-220 ease-in-out overflow-hidden"
                 style={{
-                  maxHeight: (!group.label || !!expanded[group.label]) ? '500px' : '0',
+                  maxHeight: (!group.label || !!expanded[group.label]) ? '1000px' : '0',
                   opacity: (!group.label || !!expanded[group.label]) ? 1 : 0,
                   transform: (!group.label || !!expanded[group.label]) ? 'translateY(0)' : 'translateY(-8px)',
                   transitionProperty: 'all',
