@@ -30,7 +30,16 @@ const AMOUNTS = [
   { v: 5000, bn: 'বড় প্রভাব',         en: 'Create big impact' },
 ];
 
-const PAY_METHODS = ['UPI', 'GPay', 'PhonePe', 'Paytm', 'VISA', 'Mastercard', 'RuPay', 'Net Banking'];
+const PAY_METHODS = [
+  { key: 'UPI', label: 'UPI', src: '/assets/payment/upi.svg' },
+  { key: 'GPay', label: 'GPay', src: '/assets/payment/gpay.svg' },
+  { key: 'PhonePe', label: 'PhonePe', src: '/assets/payment/phonepe.svg' },
+  { key: 'Paytm', label: 'Paytm', src: '/assets/payment/paytm.svg' },
+  { key: 'VISA', label: 'VISA', src: '/assets/payment/visa.svg' },
+  { key: 'Mastercard', label: 'Mastercard', src: '/assets/payment/mastercard.svg' },
+  { key: 'RuPay', label: 'RuPay', src: '/assets/payment/rupay.svg' },
+  { key: 'NetBanking', label: 'Net Banking', src: '/assets/payment/razorpay.svg' },
+];
 
 const FAQ_ITEMS = [
   { q: { bn: 'আমার অনুদান কি নিরাপদ?', en: 'Is my donation secure?' },
@@ -164,7 +173,8 @@ export default function Donate() {
 
       {/* ════ FORM + SUMMARY ════ */}
       <section style={{ background: FJ.paper }}>
-        <form onSubmit={handleSubmit} className="mx-auto grid max-w-[1320px] grid-cols-12 gap-8 px-6 py-12 md:px-10 md:py-16">
+        <form onSubmit={handleSubmit}
+          className="mx-auto grid max-w-[1320px] grid-cols-12 gap-8 rounded-[28px] border border-slate-200/70 bg-white shadow-sm px-6 py-12 transition-shadow duration-300 hover:shadow-2xl md:px-10 md:py-16">
           {/* LEFT */}
           <div className="col-span-12 space-y-9 lg:col-span-7">
             {/* 1. Cause */}
@@ -176,7 +186,7 @@ export default function Donate() {
                   const I = c.icon;
                   return (
                     <button key={c.key} type="button" onClick={() => setCauseKey(c.key)}
-                      className="flex flex-col items-center gap-2 rounded-[10px] border px-3 py-4 text-center transition-all"
+                      className="flex flex-col items-center gap-2 rounded-[10px] border px-3 py-4 text-center transition-all duration-200 hover:shadow-lg hover:scale-[1.01]"
                       style={{ borderColor: active ? FJ.brand : FJ.rule, background: active ? 'rgba(194,65,12,0.05)' : FJ.paper, boxShadow: active ? `0 6px 18px -10px ${FJ.brand}` : 'none' }}>
                       <I className="h-5 w-5" style={{ color: active ? FJ.brand : FJ.ink2 }} />
                       <span className="font-bengali text-[12.5px] font-medium leading-tight" style={{ color: FJ.ink }}>{lang === 'en' ? c.en : c.bn}</span>
@@ -194,7 +204,7 @@ export default function Donate() {
                   const active = picked === a.v && !custom;
                   return (
                     <button key={a.v} type="button" onClick={() => { setPicked(a.v); setCustom(''); }}
-                      className="relative flex flex-col items-start gap-0.5 rounded-[10px] border px-3.5 py-3 text-left transition-all"
+                      className="relative flex flex-col items-start gap-0.5 rounded-[10px] border px-3.5 py-3 text-left transition-all duration-200 hover:shadow-lg hover:scale-[1.01]"
                       style={{ borderColor: active ? FJ.brand : FJ.rule, background: active ? 'rgba(194,65,12,0.05)' : FJ.paper }}>
                       {active && <span className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full" style={{ background: FJ.brand }}><Icon.Check className="h-3 w-3 text-white" /></span>}
                       <span className="font-bengali text-[19px] leading-none" style={{ ...SERIF_BN, color: active ? FJ.brand : FJ.ink }}>₹{a.v.toLocaleString('en-IN')}</span>
@@ -222,7 +232,7 @@ export default function Donate() {
                   const active = frequency === f.v;
                   return (
                     <button key={f.v} type="button" onClick={() => setFrequency(f.v)}
-                      className="flex items-center gap-3 rounded-[10px] border px-4 py-3.5 text-left transition-all"
+                      className="flex items-center gap-3 rounded-[10px] border px-4 py-3.5 text-left transition-all duration-200 hover:shadow-lg hover:scale-[1.01]"
                       style={{ borderColor: active ? FJ.brand : FJ.rule, background: active ? 'rgba(194,65,12,0.05)' : FJ.paper }}>
                       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ border: `2px solid ${active ? FJ.brand : FJ.rule}` }}>
                         {active && <span className="h-2.5 w-2.5 rounded-full" style={{ background: FJ.brand }} />}
@@ -311,11 +321,14 @@ export default function Donate() {
               </div>
 
               {/* payment methods */}
-              <div className="rounded-[12px] border p-5" style={{ borderColor: FJ.rule, background: FJ.paper }}>
+              <div className="rounded-[12px] border p-5 transition-shadow duration-300 hover:shadow-lg hover:border-transparent hover:bg-white/90" style={{ borderColor: FJ.rule, background: FJ.paper }}>
                 <div className="font-bengali text-[12.5px] font-semibold" style={{ color: FJ.ink2 }}>{tr('আমরা গ্রহণ করি', 'We accept')}</div>
-                <div className="mt-3 grid grid-cols-4 gap-2">
+                <div className="mt-4 grid grid-cols-4 gap-2">
                   {PAY_METHODS.map((p) => (
-                    <span key={p} className="flex h-9 items-center justify-center rounded-[7px] border text-center font-bengali text-[11px] font-bold" style={{ borderColor: FJ.rule, color: FJ.ink2 }}>{p}</span>
+                    <div key={p.key} className="group flex items-center justify-center rounded-[12px] border bg-white p-3 transition-all duration-300 hover:border-transparent hover:shadow-lg"
+                      style={{ borderColor: FJ.rule }}>
+                      <img src={p.src} alt={p.label} className="h-8 w-auto object-contain" />
+                    </div>
                   ))}
                 </div>
               </div>
