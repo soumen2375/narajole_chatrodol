@@ -49,6 +49,7 @@ const AdminBloodCamp = lazy(() => import('@/pages/admin/AdminBloodCamp'));
 const AdminBeneficiaries = lazy(() => import('@/pages/admin/AdminBeneficiaries'));
 const AdminCertificates = lazy(() => import('@/pages/admin/AdminCertificates'));
 const AdminEventDocuments = lazy(() => import('@/pages/admin/AdminEventDocuments'));
+const AdminEventReport = lazy(() => import('@/pages/admin/AdminEventReport'));
 const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
 const AdminContributions = lazy(() => import('@/pages/admin/AdminContributions'));
 const AdminDonations = lazy(() => import('@/pages/admin/AdminDonations'));
@@ -125,6 +126,7 @@ export default function App() {
             <Route path="events/:id/relief" element={<ProtectedRoute require="canManageEvents"><AdminBeneficiaries /></ProtectedRoute>} />
             <Route path="events/:id/certificates" element={<ProtectedRoute require="canManageEvents"><AdminCertificates /></ProtectedRoute>} />
             <Route path="events/:id/documents" element={<ProtectedRoute require="canManageEvents"><AdminEventDocuments /></ProtectedRoute>} />
+            <Route path="events/:id/report" element={<ProtectedRoute require="canManageEvents"><AdminEventReport /></ProtectedRoute>} />
             <Route path="attendance-manage" element={<ProtectedRoute require="canManageEvents"><AdminAttendance /></ProtectedRoute>} />
 
             <Route path="finance" element={<ProtectedRoute require="canManageFinance"><AdminFinance /></ProtectedRoute>} />
@@ -156,6 +158,7 @@ export default function App() {
             <Route path="events/:id/relief" element={<AdminBeneficiaries />} />
             <Route path="events/:id/certificates" element={<AdminCertificates />} />
             <Route path="events/:id/documents" element={<AdminEventDocuments />} />
+            <Route path="events/:id/report" element={<AdminEventReport />} />
             <Route path="attendance" element={<AdminAttendance />} />
             <Route path="contributions" element={<AdminContributions />} />
             <Route path="donations" element={<AdminDonations />} />

@@ -151,6 +151,9 @@ export default function AdminEventDetail() {
             <Link to="documents" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
               📄 {tr('Documents', 'নথি')} →
             </Link>
+            <Link to="report" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
+              📊 {tr('Report', 'প্রতিবেদন')} →
+            </Link>
           </div>
         </div>
       </div>
