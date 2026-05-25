@@ -6,12 +6,25 @@ import { useFmt, monthNames, toBengaliDigits } from '@/lib/format';
 import { useT } from '@/i18n';
 import { memberDisplayId } from '@/types';
 import type { CswoEvent, MonthlyContribution } from '@/types';
+import { 
+  PenSquare, 
+  Heart, 
+  MapPin, 
+  Phone, 
+  Check, 
+  Droplet, 
+  Calendar, 
+  Award, 
+  IndianRupee, 
+  Sparkles
+} from 'lucide-react';
 
-const BRAND  = '#c2410c';
-const INK    = '#1c1917';
-const MUTED  = '#78716c';
-const RULE   = '#e7e5e4';
-const CREAM  = '#faf6ef';
+const BRAND  = '#0c756f'; // Deep Teal
+const INK    = '#000201'; // Charcoal Black
+const MUTED  = '#7a7c7b'; // Charcoal Muted
+const RULE   = '#e5dec9'; // Warm Border
+const CREAM  = '#efeadb'; // Warm Cream
+const ACCENT = '#fdcf6f'; // Warm Gold
 const SERIF  = { fontFamily: '"Noto Serif Bengali", "Noto Sans Bengali", serif' };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -40,7 +53,7 @@ function SenderAvatar({ name, size = 36 }: { name: string; size?: number }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%', flexShrink: 0,
-      background: '#44403c', color: CREAM,
+      background: BRAND, color: '#fff',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontSize: size * 0.36, fontWeight: 700, ...SERIF,
     }}>{ini}</div>
@@ -51,16 +64,16 @@ function CircularProgress({ pct, size = 100 }: { pct: number; size?: number }) {
   const r = (size - 14) / 2;
   const circ = 2 * Math.PI * r;
   const dash = (pct / 100) * circ;
-  const color = pct >= 70 ? '#16a34a' : pct >= 40 ? '#d97706' : '#dc2626';
+  const color = pct >= 70 ? '#10b981' : pct >= 40 ? '#fdcf6f' : '#ef4444';
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={RULE} strokeWidth={11} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1ede4" strokeWidth={11} />
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={11}
         strokeDasharray={`${dash} ${circ - dash}`}
         strokeLinecap="round"
         transform={`rotate(-90 ${size / 2} ${size / 2})`} />
       <text x={size / 2} y={size / 2 + 6} textAnchor="middle" fontSize={size * 0.2}
-        fontWeight={700} fill={INK}>{pct}%</text>
+        fontWeight={800} fill={INK}>{pct}%</text>
     </svg>
   );
 }
@@ -69,9 +82,9 @@ function CircularProgress({ pct, size = 100 }: { pct: number; size?: number }) {
 function getStanding(paidMonths: number): { label_bn: string; label_en: string; color: string; pct: number } {
   if (paidMonths >= 24) return { label_bn: 'হীরা স্তর', label_en: 'Diamond', color: '#0ea5e9', pct: 100 };
   if (paidMonths >= 18) return { label_bn: 'প্লাটিনাম স্তর', label_en: 'Platinum', color: '#8b5cf6', pct: Math.round((paidMonths / 24) * 100) };
-  if (paidMonths >= 12) return { label_bn: 'স্বর্ণ স্তর', label_en: 'Gold', color: '#f59e0b', pct: Math.round((paidMonths / 18) * 100) };
+  if (paidMonths >= 12) return { label_bn: 'স্বর্ণ স্তর', label_en: 'Gold', color: '#eab308', pct: Math.round((paidMonths / 18) * 100) };
   if (paidMonths >= 6)  return { label_bn: 'রূপা স্তর', label_en: 'Silver', color: '#6b7280', pct: Math.round((paidMonths / 12) * 100) };
-  return { label_bn: 'সদস্য', label_en: 'Member', color: '#c2410c', pct: Math.round((paidMonths / 6) * 100) };
+  return { label_bn: 'সদস্য', label_en: 'Member', color: '#0c756f', pct: Math.round((paidMonths / 6) * 100) };
 }
 
 interface AdminMsg { id: string; sender_name: string; message: string; is_read: boolean; created_at: string; }
@@ -85,18 +98,6 @@ interface DashData {
   allTimePaidMonths: number;
   adminMsgs: AdminMsg[];
   volunteerCount: number;
-}
-
-// Bengali weekday/month for header
-const BN_WEEKDAYS = ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার'];
-
-function todayHeader(lang: string) {
-  const d = new Date();
-  const day = lang === 'bn' ? BN_WEEKDAYS[d.getDay()] : d.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
-  const dateNum = lang === 'bn' ? toBengaliDigits(d.getDate()) : d.getDate();
-  const month = lang === 'bn' ? monthNames('bn')[d.getMonth()] : monthNames('en')[d.getMonth()];
-  const year = lang === 'bn' ? toBengaliDigits(d.getFullYear()) : d.getFullYear();
-  return { day, dateNum, month, year };
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -147,7 +148,6 @@ export default function MemberDashboard() {
   if (!member) return null;
 
   const memberId = memberDisplayId(member);
-  const { day, dateNum, month, year: headerYear } = todayHeader(lang);
   const currentMonth = new Date().getMonth() + 1;
   const elapsedMonths = currentMonth;
   const months = fmt.months();
@@ -161,7 +161,6 @@ export default function MemberDashboard() {
   }
 
   const paidCount = Object.values(data.contributions).filter((r) => r.status === 'paid').length;
-  const unpaidThisYear = elapsedMonths - paidCount;
   const attendancePct = data.events.length > 0 ? Math.round((data.attendedIds.size / data.events.length) * 100) : 0;
   const compliancePct = elapsedMonths > 0 ? Math.round((paidCount / elapsedMonths) * 100) : 0;
   const standing = getStanding(data.allTimePaidMonths);
@@ -180,11 +179,11 @@ export default function MemberDashboard() {
   const currentMonthDue = !currentMonthContrib || currentMonthContrib.status !== 'paid';
 
   // Ledger: combine contributions + donations into a unified recent feed
-  const ledgerItems: { icon: string; label: string; sub: string; date: string; amount?: number }[] = [
+  const ledgerItems: { type: 'dues' | 'attendance'; label: string; sub: string; date: string; amount?: number }[] = [
     ...Object.values(data.contributions)
       .filter((c) => c.status === 'paid' && c.paid_at)
       .map((c) => ({
-        icon: '₹',
+        type: 'dues' as const,
         label: tr(`${months[c.month - 1]} dues`, `${months[c.month - 1]} মাসের চাঁদা`),
         sub: tr(`Receipt #${c.receipt_number ?? '—'}`, `রসিদ #${c.receipt_number ?? '—'}`),
         date: c.paid_at!,
@@ -194,7 +193,7 @@ export default function MemberDashboard() {
       .filter((e) => data.attendedIds.has(e.id))
       .slice(0, 3)
       .map((e) => ({
-        icon: '✓',
+        type: 'attendance' as const,
         label: e.title,
         sub: e.location ?? '',
         date: e.event_date,
@@ -210,22 +209,22 @@ export default function MemberDashboard() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: MUTED }}>
-            {day} · {dateNum} {month} {headerYear}
+            {tr('MEMBER OVERVIEW', 'সদস্য সারসংক্ষেপ')}
           </p>
-          <h1 className="mt-0.5 text-[26px] font-extrabold leading-tight" style={{ ...SERIF, color: INK }}>
+          <h1 className="mt-2 text-[30px] leading-tight animate-fade-in" style={{ fontFamily: '"Noto Serif Bengali", serif', color: INK }}>
             {tr('Welcome back, ', 'স্বাগতম, ')}
             <span style={{ color: BRAND }}>{member.full_name.split(' ')[0]}</span>
           </h1>
           {/* Alert strip */}
-          {(unpaidThisYear > 0 || unreadCount > 0) && (
+          {(currentMonthDue || unreadCount > 0) && (
             <p className="mt-1 text-[13px]" style={{ color: MUTED }}>
-              {tr('This week', 'এই সপ্তাহে')}
-              {unpaidThisYear > 0 && (
-                <>{' '}{tr(`${months[currentMonth - 1]} dues pending`, `${months[currentMonth - 1]} মাসের চাঁদা`)}
-                  {' '}<span className="font-semibold" style={{ color: BRAND }}>{tr('still pending', 'এখনো বাকি')}</span>,</>
+              {tr('This week:', 'এই সপ্তাহে:')}
+              {currentMonthDue && (
+                <>{' '}{tr(`${months[currentMonth - 1]} dues`, `${months[currentMonth - 1]} মাসের চাঁদা`)}
+                  {' '}<span className="font-semibold" style={{ color: '#dc2626' }}>{tr('are still due', 'এখনো বাকি')}</span>,</>
               )}
               {unreadCount > 0 && (
-                <>{' '}{tr('and', 'এবং')} <span className="font-semibold" style={{ color: INK }}>{fmt.num(unreadCount)} {tr('new message(s)', 'টি নতুন বার্তা')}</span> {tr('arrived', 'এসেছে')}।</>
+                <>{' '}{tr('and', 'এবং')} <span className="font-semibold" style={{ color: INK }}>{fmt.num(unreadCount)} {tr('unread bulletin(s)', 'টি নতুন বার্তা')}</span> {tr('received', 'এসেছে')}।</>
               )}
             </p>
           )}
@@ -233,32 +232,34 @@ export default function MemberDashboard() {
         <div className="flex shrink-0 gap-2">
           <Link
             to="/member/posts"
-            className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] transition-opacity hover:opacity-80"
+            className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] transition-all hover:-translate-y-[1px] shadow-sm hover:shadow-md"
             style={{ background: INK, color: CREAM }}
           >
-            ✍ {tr('Write Post', 'পোস্ট লিখুন')}
+            <PenSquare className="h-3.5 w-3.5" />
+            {tr('Write Post', 'পোস্ট লিখুন')}
           </Link>
           <Link
             to="/donate"
-            className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] transition-opacity hover:opacity-80"
+            className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] transition-all hover:-translate-y-[1px] shadow-sm hover:shadow-md"
             style={{ background: BRAND, color: '#fff' }}
           >
-            ♥ {tr('Donate', 'অনুদান দিন')}
+            <Heart className="h-3.5 w-3.5 fill-white" />
+            {tr('Donate', 'অনুদান দিন')}
           </Link>
         </div>
       </div>
 
       {/* ── Profile Card ───────────────────────────────────────────────────── */}
       <div
-        className="flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-start"
-        style={{ background: '#fff', border: `1px solid ${RULE}`, boxShadow: '0 2px 16px rgba(28,25,23,0.07)' }}
+        className="flex flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:items-start border card-lift"
+        style={{ background: '#fff', borderColor: RULE, boxShadow: '0 4px 16px rgba(0,2,1,0.03)' }}
       >
         {/* Avatar + info */}
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <MemberAvatar avatarUrl={member.avatar_url} name={member.full_name} size={72} />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
+              <span className="text-[9px] font-extrabold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
                 MEMBER · {memberId}
               </span>
             </div>
@@ -270,28 +271,27 @@ export default function MemberDashboard() {
                 </span>
               )}
             </h2>
-            <p className="mt-0.5 text-[12px]" style={{ color: MUTED }}>
-              {tr('Active member', 'সক্রিয় সদস্য')} · {tr('Member since', 'সদস্য থেকে')} — {fmt.date(member.joined_at || member.created_at)}
+            <p className="mt-0.5 text-[12px] flex items-center gap-1 font-semibold" style={{ color: MUTED }}>
+              <Calendar className="h-3.5 w-3.5" />
+              {tr('Active member since', 'সক্রিয় সদস্য')} — {fmt.date(member.joined_at || member.created_at)}
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-[12px]" style={{ color: MUTED }}>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-[12px] font-semibold" style={{ color: MUTED }}>
               {member.address && (
-                <span>📍 {member.address}</span>
+                <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {member.address}</span>
               )}
               {member.phone && (
-                <span>📞 {member.phone}</span>
+                <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> {member.phone}</span>
               )}
               <span
-                className="rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold"
-                style={{ background: 'rgba(22,163,74,0.1)', color: '#16a34a' }}
+                className="rounded-full px-2 py-0.5 font-mono text-[9px] font-bold flex items-center gap-0.5 bg-green-50 text-green-600 border border-green-150"
               >
-                ✓ {tr('VERIFIED', 'যাচাইকৃত')}
+                <Check className="h-3 w-3" /> {tr('VERIFIED', 'যাচাইকৃত')}
               </span>
               {member.blood_group && (
                 <span
-                  className="rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold"
-                  style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}
+                  className="rounded-full px-2 py-0.5 font-mono text-[9px] font-bold flex items-center gap-0.5 bg-red-50 text-red-600 border border-red-150"
                 >
-                  ✦ {member.blood_group}
+                  <Droplet className="h-3 w-3 fill-red-600" /> {member.blood_group}
                 </span>
               )}
             </div>
@@ -300,8 +300,8 @@ export default function MemberDashboard() {
 
         {/* Standing box */}
         <div
-          className="shrink-0 rounded-xl p-4 min-w-[180px]"
-          style={{ background: CREAM, border: `1px solid ${RULE}` }}
+          className="shrink-0 rounded-xl p-4 min-w-[180px] border shadow-xs"
+          style={{ background: '#faf9f6', borderColor: RULE }}
         >
           <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: MUTED }}>
             YOUR STANDING · {tr('Level', 'স্তর')}
@@ -309,8 +309,8 @@ export default function MemberDashboard() {
           <p className="mt-1 text-[18px] font-bold" style={{ ...SERIF, color: standing.color }}>
             {lang === 'bn' ? standing.label_bn : standing.label_en}
           </p>
-          <p className="mb-2 text-[10px]" style={{ color: MUTED }}>
-            {fmt.num(data.allTimePaidMonths)} {tr('months contributed', 'মাস অবদান')}
+          <p className="mb-2 text-[10px] font-semibold" style={{ color: MUTED }}>
+            {fmt.num(data.allTimePaidMonths)} {tr('months paid', 'মাস পরিশোধিত')}
           </p>
           {/* Progress bars for tier */}
           <div className="space-y-1">
@@ -320,10 +320,10 @@ export default function MemberDashboard() {
             ].map((bar) => (
               <div key={bar.label}>
                 <div className="flex justify-between text-[10px] mb-0.5" style={{ color: MUTED }}>
-                  <span>{bar.label}</span><span>{bar.pct}%</span>
+                  <span className="font-semibold">{bar.label}</span><span>{bar.pct}%</span>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full" style={{ background: RULE }}>
-                  <div className="h-full rounded-full" style={{ width: `${bar.pct}%`, background: standing.color }} />
+                <div className="h-1.5 overflow-hidden rounded-full bg-gray-100">
+                  <div className="h-full rounded-full transition-all duration-300" style={{ width: `${bar.pct}%`, background: standing.color }} />
                 </div>
               </div>
             ))}
@@ -336,8 +336,8 @@ export default function MemberDashboard() {
 
         {/* Dues section (2/3 width) */}
         <div
-          className="lg:col-span-2 rounded-2xl p-5"
-          style={{ background: '#fff', border: `1px solid ${RULE}`, boxShadow: '0 1px 8px rgba(28,25,23,0.05)' }}
+          className="lg:col-span-2 rounded-2xl p-5 border bg-white card-lift"
+          style={{ borderColor: RULE, boxShadow: '0 2px 10px rgba(0,2,1,0.03)' }}
         >
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -349,19 +349,19 @@ export default function MemberDashboard() {
               </h3>
             </div>
             {currentMonthDue && (
-              <span className="rounded-full px-3 py-1 text-[11px] font-semibold" style={{ background: 'rgba(194,65,12,0.1)', color: BRAND }}>
-                {months[currentMonth - 1]} {tr('due →', 'বাকি →')} ₹100
+              <span className="rounded-full px-3 py-1 text-[11px] font-bold bg-amber-50 border border-amber-200 text-amber-800">
+                {months[currentMonth - 1]} {tr('due: ₹100', 'বাকি: ₹১০০')}
               </span>
             )}
           </div>
 
           {/* Paid count */}
           <div className="mb-3 flex items-baseline gap-1">
-            <span className="text-[42px] font-black" style={{ color: INK }}>{fmt.num(paidCount)}</span>
-            <span className="text-[18px] font-light" style={{ color: MUTED }}>/{fmt.num(12)}</span>
+            <span className="text-[42px] font-black leading-none" style={{ color: INK }}>{fmt.num(paidCount)}</span>
+            <span className="text-[18px] font-bold" style={{ color: MUTED }}>/{fmt.num(12)}</span>
           </div>
-          <p className="mb-3 text-[12px]" style={{ color: MUTED }}>
-            {tr(`Last ${months[Math.max(0, currentMonth - 2)]} month paid`, `বিগত ${months[Math.max(0, currentMonth - 2)]} মাসের পরিশোধিত`)}
+          <p className="mb-3 text-[12px] font-semibold" style={{ color: MUTED }}>
+            {tr(`Last payment for ${months[Math.max(0, currentMonth - 2)]}`, `বিগত ${months[Math.max(0, currentMonth - 2)]} মাসের পরিশোধিত`)}
           </p>
 
           {/* Month grid */}
@@ -373,43 +373,45 @@ export default function MemberDashboard() {
               const isFuture = m > currentMonth;
               return (
                 <div key={m} title={mn}
+                  className="rounded-lg text-[9px] font-extrabold flex items-center justify-center shrink-0 border"
                   style={{
-                    width: 36, height: 24, borderRadius: 4, flexShrink: 0,
-                    background: isFuture ? 'rgba(120,113,108,0.12)' : paid ? '#16a34a' : 'rgba(194,65,12,0.25)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 9, fontWeight: 700, color: isFuture ? MUTED : paid ? '#fff' : BRAND,
+                    width: 42, height: 28,
+                    background: isFuture ? '#f1ede4' : paid ? '#e2f0d9' : '#fde8e8',
+                    color: isFuture ? MUTED : paid ? '#16a34a' : '#dc2626',
+                    borderColor: isFuture ? 'transparent' : paid ? '#c2e0b1' : '#f8b4b4',
                   }}
                 >
-                  {lang === 'bn' ? mn.slice(0, 3) : mn.slice(0, 3)}
+                  {mn.slice(0, 3)}
                 </div>
               );
             })}
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between border-t pt-4" style={{ borderColor: RULE }}>
             {currentMonthDue ? (
-              <p className="text-[12px]" style={{ color: MUTED }}>
+              <p className="text-[12px] font-semibold" style={{ color: '#dc2626' }}>
                 {months[currentMonth - 1]} {tr('dues ₹100 still pending.', 'মাসের চাঁদা ₹১০০ এখনো বাকি।')}
               </p>
             ) : (
               <p className="text-[12px] font-semibold" style={{ color: '#16a34a' }}>
-                ✓ {tr('All dues paid this month!', 'এই মাসের চাঁদা পরিশোধিত!')}
+                {tr('All dues paid this month!', 'এই মাসের চাঁদা পরিশোধিত!')}
               </p>
             )}
             <Link
               to="/member/contributions"
-              className="rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] transition-opacity hover:opacity-80"
-              style={{ background: BRAND, color: '#fff' }}
+              className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] transition-all hover:-translate-y-[1px] shadow-sm text-brand-dark"
+              style={{ background: ACCENT }}
             >
-              ₹ {tr('Pay via UPI', 'UPI-তে পরিশোধ করুন')}
+              <IndianRupee className="h-3.5 w-3.5" />
+              {tr('Pay Dues', 'পরিশোধ করুন')}
             </Link>
           </div>
         </div>
 
         {/* Attendance (1/3 width) */}
         <div
-          className="rounded-2xl p-5"
-          style={{ background: '#fff', border: `1px solid ${RULE}`, boxShadow: '0 1px 8px rgba(28,25,23,0.05)' }}
+          className="rounded-2xl p-5 border bg-white card-lift"
+          style={{ borderColor: RULE, boxShadow: '0 2px 10px rgba(0,2,1,0.03)' }}
         >
           <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
             ATTENDANCE · {tr('Attendance', 'উপস্থিতি')}
@@ -421,12 +423,12 @@ export default function MemberDashboard() {
           <div className="flex justify-center mb-3">
             <CircularProgress pct={attendancePct} size={100} />
           </div>
-          <p className="text-center text-[11px] mb-4 font-semibold" style={{ color: MUTED }}>
-            {tr('PRESENT', 'উপস্থিত')}
+          <p className="text-center text-[10px] mb-4 font-black tracking-widest text-green-600">
+            {tr('ATTENDED', 'উপস্থিত')}
           </p>
 
-          <p className="text-[11px] font-semibold mb-2 uppercase tracking-[0.1em]" style={{ color: MUTED }}>
-            {tr('Recent:', 'সাম্প্রতিক:')}
+          <p className="text-[11px] font-bold mb-2 uppercase tracking-[0.1em]" style={{ color: MUTED }}>
+            {tr('Recent Events:', 'সাম্প্রতিক:')}
           </p>
           <div className="space-y-1.5">
             {recentAttended.length === 0 ? (
@@ -436,7 +438,7 @@ export default function MemberDashboard() {
             ) : recentAttended.map((e) => (
               <div key={e.id} className="flex items-center justify-between">
                 <p className="text-[12px] truncate" style={{ color: INK }}>{e.title}</p>
-                <span className="ml-2 text-[10px] rounded-full px-2 py-0.5 font-semibold shrink-0" style={{ background: 'rgba(22,163,74,0.1)', color: '#16a34a' }}>
+                <span className="ml-2 text-[9.5px] rounded-full px-2 py-0.5 font-bold shrink-0 bg-green-50 text-green-600 border border-green-150">
                   {tr('Present', 'উপস্থিত')}
                 </span>
               </div>
@@ -450,8 +452,8 @@ export default function MemberDashboard() {
 
         {/* Upcoming Events (2/3) */}
         <div
-          className="lg:col-span-2 rounded-2xl p-5"
-          style={{ background: '#fff', border: `1px solid ${RULE}`, boxShadow: '0 1px 8px rgba(28,25,23,0.05)' }}
+          className="lg:col-span-2 rounded-2xl p-5 border bg-white card-lift"
+          style={{ borderColor: RULE, boxShadow: '0 2px 10px rgba(0,2,1,0.03)' }}
         >
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -460,13 +462,9 @@ export default function MemberDashboard() {
               </p>
               <h3 className="mt-0.5 text-[18px] font-bold" style={{ ...SERIF, color: INK }}>
                 {tr('Your Invitations', 'তোমার জন্য আমন্ত্রণ')}
-                {' '}
-                <span className="text-[14px] italic font-light" style={{ color: MUTED }}>
-                  · {tr('Save your spot', 'Save your spot')}
-                </span>
               </h3>
             </div>
-            <Link to="/member/attendance" className="text-[11px] font-semibold uppercase tracking-[0.1em] hover:underline" style={{ color: BRAND }}>
+            <Link to="/member/attendance" className="text-[11px] font-extrabold uppercase tracking-[0.1em] hover:underline" style={{ color: BRAND }}>
               {tr('All Events →', 'সব অনুষ্ঠান →')}
             </Link>
           </div>
@@ -482,33 +480,34 @@ export default function MemberDashboard() {
                 const isGoing = data.attendedIds.has(ev.id);
                 return (
                   <div key={ev.id}
-                    className="flex items-center gap-4 rounded-xl p-3"
-                    style={{ background: CREAM, border: `1px solid ${RULE}` }}
+                    className="flex items-center gap-4 rounded-xl p-3 border hover:shadow-xs transition-shadow duration-200"
+                    style={{ background: '#faf9f6', borderColor: RULE }}
                   >
                     {/* Date badge */}
-                    <div className="shrink-0 text-center rounded-lg px-3 py-2" style={{ background: BRAND, color: '#fff', minWidth: 52 }}>
-                      <div className="text-[11px] font-semibold uppercase">
+                    <div className="shrink-0 text-center rounded-lg px-3 py-2 text-white" style={{ background: BRAND, minWidth: 52 }}>
+                      <div className="text-[9.5px] font-bold uppercase font-mono leading-none">
                         {lang === 'bn' ? monthNames('bn')[evDate.getMonth()].slice(0, 3) : monthNames('en')[evDate.getMonth()].slice(0, 3).toUpperCase()}
                       </div>
-                      <div className="text-[22px] font-black leading-tight">
+                      <div className="text-xl font-black leading-none mt-1">
                         {lang === 'bn' ? toBengaliDigits(evDate.getDate()) : evDate.getDate()}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-[14px] truncate" style={{ color: INK }}>{ev.title}</h4>
+                      <h4 className="font-extrabold text-[13.5px] truncate" style={{ color: INK }}>{ev.title}</h4>
                       {ev.location && (
-                        <p className="text-[12px] truncate" style={{ color: MUTED }}>📍 {ev.location}</p>
+                        <p className="text-[12px] truncate opacity-75 mt-0.5 flex items-center gap-1" style={{ color: MUTED }}><MapPin className="h-3 w-3" /> {ev.location}</p>
                       )}
                     </div>
                     <Link
                       to="/member/attendance"
-                      className="shrink-0 rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] transition-opacity hover:opacity-80"
+                      className="shrink-0 rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 hover:-translate-y-[1px]"
                       style={{
-                        background: isGoing ? '#16a34a' : BRAND,
-                        color: '#fff',
+                        background: isGoing ? '#e2f0d9' : ACCENT,
+                        color: isGoing ? '#16a34a' : INK,
+                        border: isGoing ? '1px solid #c2e0b1' : '1px solid transparent',
                       }}
                     >
-                      {isGoing ? `✓ ${tr('Going', 'যাচ্ছি')}` : tr('Join', 'যোগ দিন')}
+                      {isGoing ? tr('Going', 'যাচ্ছি') : tr('Join', 'যোগ দিন')}
                     </Link>
                   </div>
                 );
@@ -519,8 +518,8 @@ export default function MemberDashboard() {
 
         {/* Admin Messages (1/3) */}
         <div
-          className="rounded-2xl p-5 flex flex-col"
-          style={{ background: '#fff', border: `1px solid ${RULE}`, boxShadow: '0 1px 8px rgba(28,25,23,0.05)' }}
+          className="rounded-2xl p-5 flex flex-col border bg-white card-lift"
+          style={{ borderColor: RULE, boxShadow: '0 2px 10px rgba(0,2,1,0.03)' }}
         >
           <div className="mb-4">
             <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
@@ -528,8 +527,6 @@ export default function MemberDashboard() {
             </p>
             <h3 className="mt-0.5 text-[18px] font-bold" style={{ ...SERIF, color: INK }}>
               {tr('Your Messages', 'তোমার জন্য বার্তা')}
-              {' '}
-              <span className="text-[14px] italic font-light" style={{ color: MUTED }}>· Messages</span>
             </h3>
           </div>
 
@@ -540,16 +537,16 @@ export default function MemberDashboard() {
               </p>
             </div>
           ) : (
-            <div className="flex-1 space-y-3">
+            <div className="flex-1 space-y-4">
               {data.adminMsgs.map((msg) => (
                 <div key={msg.id} className="flex gap-3">
                   <SenderAvatar name={msg.sender_name} size={34} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-[12px] font-semibold truncate" style={{ color: INK }}>{msg.sender_name}</span>
-                      <span className="text-[10px] shrink-0" style={{ color: MUTED }}>{fmt.date(msg.created_at)}</span>
+                      <span className="text-[12px] font-extrabold truncate" style={{ color: INK }}>{msg.sender_name}</span>
+                      <span className="text-[10px] opacity-75 shrink-0" style={{ color: MUTED }}>{fmt.date(msg.created_at)}</span>
                     </div>
-                    <p className="mt-0.5 text-[12px] leading-relaxed line-clamp-2" style={{ color: MUTED }}>{msg.message}</p>
+                    <p className="mt-1 text-xs leading-relaxed line-clamp-2" style={{ color: MUTED }}>{msg.message}</p>
                   </div>
                 </div>
               ))}
@@ -558,8 +555,8 @@ export default function MemberDashboard() {
 
           <Link
             to="/member/messages"
-            className="mt-4 block text-center text-[11px] font-semibold uppercase tracking-[0.1em] hover:underline"
-            style={{ color: BRAND }}
+            className="mt-4 block text-center text-[11px] font-bold uppercase tracking-[0.1em] hover:underline border-t pt-3"
+            style={{ color: BRAND, borderColor: RULE }}
           >
             {tr('See all messages →', 'সব বার্তা দেখুন →')}
           </Link>
@@ -571,8 +568,8 @@ export default function MemberDashboard() {
 
         {/* Ledger */}
         <div
-          className="rounded-2xl p-5"
-          style={{ background: '#fff', border: `1px solid ${RULE}`, boxShadow: '0 1px 8px rgba(28,25,23,0.05)' }}
+          className="rounded-2xl p-5 border bg-white card-lift"
+          style={{ borderColor: RULE, boxShadow: '0 2px 10px rgba(0,2,1,0.03)' }}
         >
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -581,68 +578,69 @@ export default function MemberDashboard() {
               </p>
               <h3 className="mt-0.5 text-[18px] font-bold" style={{ ...SERIF, color: INK }}>
                 {tr('Your Contributions', 'তোমার অবদান')}
-                {' '}
-                <span className="text-[13px] italic font-light" style={{ color: MUTED }}>
-                  · {tr('Recent contributions', 'Recent contributions')}
-                </span>
               </h3>
             </div>
-            <Link to="/member/contributions" className="text-[11px] font-semibold uppercase tracking-[0.1em] hover:underline" style={{ color: BRAND }}>
+            <Link to="/member/contributions" className="text-[11px] font-bold uppercase tracking-[0.1em] hover:underline" style={{ color: BRAND }}>
               {tr('History →', 'ইতিহাস →')}
             </Link>
           </div>
 
-          <div className="space-y-3 mb-5">
+          <div className="space-y-3.5 mb-5 border-b pb-4" style={{ borderColor: RULE }}>
             {ledgerItems.length === 0 ? (
               <p className="text-[12px] py-4 text-center" style={{ color: MUTED }}>
                 {tr('No activity yet', 'এখনো কোনো কার্যক্রম নেই')}
               </p>
             ) : ledgerItems.map((item, i) => (
-              <div key={i} className="flex items-center gap-3">
+              <div 
+                key={i} 
+                className="flex items-center gap-3 hover:bg-[#fdf8eb] transition-colors duration-150 p-1.5 rounded-lg cursor-pointer"
+              >
                 <div style={{
                   width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                  background: item.amount ? 'rgba(194,65,12,0.1)' : 'rgba(22,163,74,0.1)',
-                  color: item.amount ? BRAND : '#16a34a',
+                  background: item.type === 'dues' ? 'rgba(12,117,111,0.08)' : 'rgba(22,163,74,0.08)',
+                  color: item.type === 'dues' ? BRAND : '#16a34a',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 12, fontWeight: 700,
-                }}>{item.icon}</div>
+                }}>
+                  {item.type === 'dues' ? <IndianRupee className="h-3.5 w-3.5" /> : <Check className="h-4 w-4" strokeWidth={2.5} />}
+                </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium truncate" style={{ color: INK }}>{item.label}</p>
-                  {item.sub && <p className="text-[11px] truncate" style={{ color: MUTED }}>{item.sub}</p>}
+                  <p className="text-xs font-extrabold truncate" style={{ color: INK }}>{item.label}</p>
+                  {item.sub && <p className="text-[10px] opacity-75 truncate" style={{ color: MUTED }}>{item.sub}</p>}
                 </div>
                 <div className="text-right shrink-0">
                   {item.amount ? (
-                    <p className="text-[13px] font-semibold" style={{ color: BRAND }}>₹{item.amount}</p>
+                    <p className="text-xs font-extrabold" style={{ color: BRAND }}>₹{fmt.num(item.amount)}</p>
                   ) : null}
-                  <p className="text-[10px]" style={{ color: MUTED }}>{fmt.date(item.date)}</p>
+                  <p className="text-[9.5px] font-semibold" style={{ color: MUTED }}>{fmt.date(item.date)}</p>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Footer stats */}
-          <div className="flex items-center justify-around border-t pt-4" style={{ borderColor: RULE }}>
+          <div className="flex items-center justify-around pt-2">
             <div className="text-center">
-              <p className="text-[20px] font-black" style={{ color: INK }}>{fmt.num(data.volunteerCount)}</p>
-              <p className="text-[10px] uppercase tracking-[0.1em]" style={{ color: MUTED }}>{tr('Volunteer', 'স্বেচ্ছাসেবক')}</p>
+              <p className="text-xl font-black leading-none" style={{ color: INK }}>{fmt.num(data.volunteerCount)}</p>
+              <p className="text-[9.5px] uppercase tracking-[0.1em] font-bold mt-1" style={{ color: MUTED }}>{tr('Volunteer', 'স্বেচ্ছাসেবক')}</p>
             </div>
             <div style={{ width: 1, height: 32, background: RULE }} />
             <div className="text-center">
-              <p className="text-[20px] font-black" style={{ color: BRAND }}>₹{fmt.num(data.donations)}</p>
-              <p className="text-[10px] uppercase tracking-[0.1em]" style={{ color: MUTED }}>{tr('Donated', 'দান')}</p>
+              <p className="text-xl font-black leading-none" style={{ color: BRAND }}>₹{fmt.num(data.donations)}</p>
+              <p className="text-[9.5px] uppercase tracking-[0.1em] font-bold mt-1" style={{ color: MUTED }}>{tr('Donated', 'দান')}</p>
             </div>
             <div style={{ width: 1, height: 32, background: RULE }} />
             <div className="text-center">
-              <p className="text-[20px] font-black" style={{ color: INK }}>{fmt.num(data.posts)}</p>
-              <p className="text-[10px] uppercase tracking-[0.1em]" style={{ color: MUTED }}>{tr('Posts', 'পোস্ট')}</p>
+              <p className="text-xl font-black leading-none" style={{ color: INK }}>{fmt.num(data.posts)}</p>
+              <p className="text-[9.5px] uppercase tracking-[0.1em] font-bold mt-1" style={{ color: MUTED }}>{tr('Posts', 'পোস্ট')}</p>
             </div>
           </div>
         </div>
 
         {/* Impact */}
         <div
-          className="rounded-2xl p-5"
-          style={{ background: '#fff', border: `1px solid ${RULE}`, boxShadow: '0 1px 8px rgba(28,25,23,0.05)' }}
+          className="rounded-2xl p-5 border bg-white card-lift"
+          style={{ borderColor: RULE, boxShadow: '0 2px 10px rgba(0,2,1,0.03)' }}
         >
           <div className="mb-4">
             <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
@@ -655,31 +653,35 @@ export default function MemberDashboard() {
 
           <div className="grid grid-cols-2 gap-3 mb-5">
             {[
-              { icon: '🩸', value: data.volunteerCount, label: tr('Blood donations joined', 'রক্তদানে যোগদান'), color: '#dc2626' },
-              { icon: '🌱', value: paidCount, label: tr('Months contributed', 'মাস অবদান রেখেছ'), color: '#16a34a' },
-              { icon: '📚', value: data.attendedIds.size, label: tr('Events attended', 'অনুষ্ঠানে অংশগ্রহণ'), color: '#2563eb' },
-              { icon: '❤', value: Math.round(data.donations / 100) || 0, label: tr('Lives impacted (est.)', 'জীবন স্পর্শ করেছ'), color: '#c2410c' },
-            ].map((item) => (
-              <div key={item.label} className="rounded-xl p-3 text-center" style={{ background: CREAM, border: `1px solid ${RULE}` }}>
-                <div className="text-[28px] leading-none mb-1">{item.icon}</div>
-                <div className="text-[28px] font-black" style={{ color: item.color }}>
+              { icon: Droplet, value: data.volunteerCount, label: tr('Blood donations', 'রক্তদান শিবিরের অংশীদার'), color: '#ef4444', bg: '#fef2f2' },
+              { icon: Calendar, value: paidCount, label: tr('Months contribution', 'মাসিক চাঁদা পরিশোধিত'), color: '#16a34a', bg: '#f0fdf4' },
+              { icon: Award, value: data.attendedIds.size, label: tr('Programs joined', 'কর্মসূচিতে সরাসরি অংশগ্রহণ'), color: '#2563eb', bg: '#eff6ff' },
+              { icon: Sparkles, value: Math.round(data.donations / 100) || 0, label: tr('Lives impacted (est.)', 'মানুষের মুখে হাসি ফুটিয়েছেন'), color: '#eab308', bg: '#fefbeb' },
+            ].map((item, i) => (
+              <div key={i} className="rounded-xl p-3 text-center border shadow-xs" style={{ background: '#faf9f6', borderColor: RULE }}>
+                <div className="flex justify-center mb-1">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg shadow-xs" style={{ background: item.bg, color: item.color }}>
+                    <item.icon className="h-4.5 w-4.5" />
+                  </span>
+                </div>
+                <div className="text-xl font-black mt-1" style={{ color: INK }}>
                   {lang === 'bn' ? toBengaliDigits(item.value) : item.value}
                 </div>
-                <p className="text-[10px] leading-tight mt-1" style={{ color: MUTED }}>{item.label}</p>
+                <p className="text-[10px] leading-tight font-bold opacity-75 mt-0.5" style={{ color: MUTED }}>{item.label}</p>
               </div>
             ))}
           </div>
 
           {/* Quote */}
-          <div className="rounded-xl p-4" style={{ background: CREAM, border: `1px solid ${RULE}` }}>
-            <p className="text-[12px] italic leading-relaxed" style={{ color: MUTED }}>
+          <div className="rounded-xl p-3 border" style={{ background: '#faf9f6', borderColor: RULE }}>
+            <p className="text-[11.5px] italic leading-relaxed" style={{ color: MUTED }}>
               &ldquo;{tr(
                 'Your every contribution strengthens the foundation of Chatrodol. Every step, every moment carries weight.',
                 'তোমার মেধা সমাজরক্ষায় ছাত্রদলের প্রতিটি পদক্ষেপ। প্রতিটি মুহূর্ত, প্রতিটি কাজ গণ্য হয়।'
               )}&rdquo;
             </p>
-            <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.1em]" style={{ color: BRAND }}>
-              — {tr('General Secretary, Chatrodol', 'সাধারণ সম্পাদক, ছাত্রদল')}
+            <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: BRAND }}>
+              — {tr('Governing Board, Chatrodol Trust', 'পরিচালনা পর্ষদ, ছাত্রদল ট্রাস্ট')}
             </p>
           </div>
         </div>

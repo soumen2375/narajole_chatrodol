@@ -15,7 +15,7 @@ const MUTED  = '#78716c';
 const ADMIN_DARK = '#0f172a'; // dark navy for admin accent
 
 export default function AdminLogin() {
-  const { signIn } = useAuth();
+  const { signIn, signOut } = useAuth();
   const { t, lang } = useT();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -33,6 +33,7 @@ export default function AdminLogin() {
         setError(lang === 'bn'
           ? 'এই পেজটি শুধুমাত্র অ্যাডমিনদের জন্য। সদস্য লগইনের জন্য সদস্য লগইন পেজ ব্যবহার করুন।'
           : 'This page is for administrators only. Please use the Member Login page instead.');
+        await signOut();
         return;
       }
       navigate('/admin');

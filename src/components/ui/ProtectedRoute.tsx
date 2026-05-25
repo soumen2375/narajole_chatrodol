@@ -86,12 +86,10 @@ export default function ProtectedRoute({
     return <Navigate to="/login" replace />;
   }
 
-  // Admin-panel access: allow full admins OR members with any management capability.
-  // While background-revalidating we show a loader instead of redirecting,
-  // because the stale cache may not yet have the newly-assigned capabilities.
+  // Admin-panel access: strictly allow full admins only.
+  // Members with management capabilities manage their assigned features directly inside the Member Panel.
   if (requireAdmin) {
-    const hasManagement = canManagePosts || canManageEvents || canManageFinance;
-    if (!isAdmin && !hasManagement) {
+    if (!isAdmin) {
       if (revalidating) return <Loader />;
       return <Navigate to="/member" replace />;
     }

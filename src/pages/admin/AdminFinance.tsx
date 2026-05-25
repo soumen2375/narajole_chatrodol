@@ -7,7 +7,6 @@ import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { Sparkline, BarLineChart } from '@/components/ui/charts';
-import { logAudit } from '@/lib/audit';
 
 const INK = '#1c1917';
 const INK2 = '#44403c';
@@ -138,7 +137,6 @@ export default function AdminFinance() {
 
   const toggleFund = async (fund: CswoFund, field: 'is_restricted' | 'is_frozen') => {
     await supabase.from('cswo_funds').update({ [field]: !fund[field] }).eq('id', fund.id);
-    await logAudit(`fund.${field}`, 'cswo_funds', fund.id, { value: !fund[field] });
     setTick((t) => t + 1);
   };
 
@@ -289,6 +287,20 @@ export default function AdminFinance() {
                       </tr>
                     );
                   })}
+                  {/* Monthly Donation Row */}
+                  <tr style={{ borderBottom: `1px solid ${RULE}` }}>
+                    <td className="px-5 py-3">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-sm" style={{ background: '#1d4ed8' }} />
+                        <span style={{ color: INK }}>{tr('Monthly Donation', 'মাসিক অনুদান')}</span>
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-right" style={{ color: GREEN }}>{fmt.money(data.contributions)}</td>
+                    <td className="px-5 py-3 text-right" style={{ color: MUTED }}>—</td>
+                    <td className="px-5 py-3 text-right" style={{ color: MUTED }}>—</td>
+                    <td className="px-5 py-3 text-right font-semibold" style={{ color: GREEN }}>{fmt.money(data.contributions)}</td>
+                    <td className="px-5 py-3" />
+                  </tr>
                   {(data.unassignedDon > 0 || data.unassignedExp > 0) && (
                     <tr style={{ borderBottom: `1px solid ${RULE}` }}>
                       <td className="px-5 py-3"><span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: '#a8a29e' }} /><span style={{ color: INK2 }}>{tr('Unassigned / General', 'অনির্ধারিত / সাধারণ')}</span></span></td>
@@ -301,7 +313,7 @@ export default function AdminFinance() {
                   )}
                   <tr style={{ background: INK }}>
                     <td className="px-5 py-3 font-semibold" style={{ color: CREAM }}>{tr('Total', 'সর্বমোট')}</td>
-                    <td className="px-5 py-3 text-right font-semibold" style={{ color: '#86efac' }}>{fmt.money(data.donations)}</td>
+                    <td className="px-5 py-3 text-right font-semibold" style={{ color: '#86efac' }}>{fmt.money(data.income)}</td>
                     <td className="px-5 py-3 text-right font-semibold" style={{ color: '#fca47e' }}>{fmt.money(data.expenses)}</td>
                     <td className="px-5 py-3" />
                     <td className="px-5 py-3 text-right font-semibold" style={{ color: CREAM }}>{fmt.money(net)}</td>
@@ -310,7 +322,7 @@ export default function AdminFinance() {
                 </tbody>
               </table>
             </div>
-            <p className="px-5 py-3 text-[11px]" style={{ color: MUTED }}>* {tr('Contributions (monthly dues) are unrestricted and counted in Net Balance, not per-fund.', 'মাসিক চাঁদা নির্দিষ্ট ফান্ডে বরাদ্দ নয়; শুধু নিট ব্যালেন্সে গণ্য।')}</p>
+            <p className="px-5 py-3 text-[11px]" style={{ color: MUTED }}>* {tr('Monthly Donation is unrestricted and counted in Net Balance.', 'মাসিক অনুদান নির্দিষ্ট ফান্ডের আওতাভুক্ত নয় এবং নিট ব্যালেন্সে যুক্ত করা হয়েছে।')}</p>
           </div>
 
           {/* Fund controls + restricted split */}
