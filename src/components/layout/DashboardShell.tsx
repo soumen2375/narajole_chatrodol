@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/i18n';
 import LanguageToggle from '@/components/ui/LanguageToggle';
+import NotificationBell from '@/components/ui/NotificationBell';
 import { memberDisplayId } from '@/types';
 import { 
   ChevronDown, 
@@ -319,6 +320,7 @@ export default function DashboardShell({
           </div>
 
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <LanguageToggle />
             {member && (
               <MemberAvatar avatarUrl={member.avatar_url} name={member.full_name} size={32} />

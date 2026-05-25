@@ -103,6 +103,7 @@ export interface Donation {
   purpose: string | null;
   member_id: string | null;
   fund_id: string | null;
+  campaign_id: string | null;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
   razorpay_signature: string | null;
@@ -149,7 +150,7 @@ export interface CswoFund {
   created_at: string;
 }
 
-export type LedgerEntryType = 'donation' | 'contribution' | 'expense' | 'adjustment';
+export type LedgerEntryType = 'donation' | 'contribution' | 'expense' | 'adjustment' | 'payroll' | 'grant';
 export type LedgerDirection = 'credit' | 'debit';
 
 export interface CswoLedgerEntry {
@@ -200,6 +201,158 @@ export interface CswoBudget {
   fiscal_year: string;
   allocated_amount: number;
   note: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CswoCompliance {
+  id: string;
+  ckey: string;
+  name_bn: string;
+  name_en: string;
+  authority: string;
+  reg_number: string;
+  issued_on: string | null;
+  expiry_on: string | null;
+  note: string;
+  sort_order: number;
+  updated_at: string;
+  created_at: string;
+}
+
+export interface CswoDocument {
+  id: string;
+  title: string;
+  category: string;
+  file_url: string;
+  file_type: string;
+  uploaded_by: string | null;
+  created_at: string;
+}
+
+export type BankAccountType = 'savings' | 'current' | 'cash' | 'other';
+export interface CswoBankAccount {
+  id: string;
+  label: string;
+  bank_name: string;
+  account_name: string;
+  account_number: string;
+  ifsc: string;
+  branch: string;
+  account_type: BankAccountType;
+  opening_balance: number;
+  is_active: boolean;
+  note: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CswoBankTransaction {
+  id: string;
+  account_id: string;
+  txn_date: string;
+  description: string;
+  reference: string;
+  direction: LedgerDirection;
+  amount: number;
+  reconciled: boolean;
+  note: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type GrantStatus = 'pending' | 'active' | 'completed' | 'closed';
+export interface CswoGrant {
+  id: string;
+  grantor: string;
+  title: string;
+  reference: string;
+  fund_id: string | null;
+  sanctioned_amount: number;
+  start_date: string | null;
+  end_date: string | null;
+  status: GrantStatus;
+  contact_person: string;
+  note: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type TrancheStatus = 'expected' | 'received';
+export interface CswoGrantTranche {
+  id: string;
+  grant_id: string;
+  tranche_no: number;
+  amount: number;
+  received_on: string | null;
+  status: TrancheStatus;
+  reference: string;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type NotificationKind = 'info' | 'finance' | 'approval' | 'member' | 'system';
+export interface CswoNotification {
+  id: string;
+  recipient_id: string;
+  title: string;
+  body: string;
+  kind: NotificationKind;
+  link: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export type PayrollKind = 'salary' | 'honorarium' | 'stipend' | 'reimbursement';
+export type PayrollStatus = 'pending' | 'paid' | 'cancelled';
+export interface CswoPayroll {
+  id: string;
+  member_id: string | null;
+  payee_name: string;
+  designation: string;
+  kind: PayrollKind;
+  period: string;
+  amount: number;
+  fund_id: string | null;
+  status: PayrollStatus;
+  note: string;
+  paid_on: string | null;
+  created_by: string | null;
+  approved_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type RefundStatus = 'requested' | 'approved' | 'processed' | 'rejected';
+export interface CswoRefund {
+  id: string;
+  donation_id: string | null;
+  amount: number;
+  reason: string;
+  status: RefundStatus;
+  requested_by: string | null;
+  approved_by: string | null;
+  note: string;
+  created_at: string;
+  processed_at: string | null;
+}
+
+export interface CswoCampaign {
+  id: string;
+  name_bn: string;
+  name_en: string;
+  slug: string;
+  goal_amount: number;
+  fund_id: string | null;
+  starts_on: string | null;
+  ends_on: string | null;
+  is_active: boolean;
+  description: string;
+  cover_image: string | null;
   created_at: string;
   updated_at: string;
 }
