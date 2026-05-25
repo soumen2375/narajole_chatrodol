@@ -10,11 +10,6 @@ import { useT } from '@/i18n';
 
 const CYAN = '#27c4e1';
 const HERO_IMG = '/assets/images/impacts/education.jpg';
-const GALLERY = [
-  '/assets/images/service/post-33-raktokotha-camp.jpg',
-  '/assets/images/service/post-34-students-book-support.jpg',
-  '/assets/images/service/post-20-winter-clothes.jpg',
-];
 
 type Cause = { key: string; icon: typeof Icon.Heart; bn: string; en: string; purpose: string };
 const CAUSES: Cause[] = [
@@ -45,7 +40,7 @@ const FAQ_ITEMS = [
   { q: { bn: 'মাসিক অনুদান কি বাতিল করা যায়?', en: 'Can I cancel my monthly donation?' },
     a: { bn: 'হ্যাঁ, যেকোনো সময়। আপনার সদস্য পোর্টাল থেকে এক ক্লিকে বন্ধ করতে পারবেন।', en: 'Yes, any time. Cancel with one click from your member portal.' } },
   { q: { bn: 'আমার অর্থ কোথায় ব্যবহৃত হয়?', en: 'Where is my money used?' },
-    a: { bn: '৮৫% সরাসরি মাঠ-পর্যায়ের কর্মসূচিতে যায়, ১০% অপারেশনস ও ৫% অডিট-কমপ্লায়েন্সে। সম্পূর্ণ হিসাব আমাদের স্বচ্ছতা পেজে দেখুন।', en: '85% goes directly to field programmes, 10% to operations and 5% to audit & compliance. See the full breakdown on our Transparency page.' } },
+    a: { bn: '৮৫% সরাসরি মাঠ-পর্যায়ের কর্মসূচিতে যায়, ১০% অপারেশনস ও ৫% অডিট-কমপ্লায়েন্সে। সম্পূর্ণ হিসাব আমাদের ইমপ্যাক্ট পেজে দেখুন।', en: '85% goes directly to field programmes, 10% to operations and 5% to audit & compliance. See the full breakdown on our Impacts page.' } },
 ];
 
 type Frequency = 'once' | 'monthly';
@@ -329,7 +324,7 @@ export default function Donate() {
               <div className="rounded-[12px] border p-5" style={{ borderColor: FJ.rule, background: FJ.paper }}>
                 <div className="flex items-center justify-between">
                   <span className="font-bengali text-[13.5px] font-semibold" style={{ color: FJ.ink }}>{tr('আপনার অর্থ যেখানে যায়', 'Where your money goes')}</span>
-                  <Link to="/transparency" className="inline-flex items-center gap-1 font-bengali text-[12px] font-medium" style={{ color: FJ.brand }}>{tr('স্বচ্ছতা দেখুন', 'View Transparency')} <Icon.Arrow className="h-2.5 w-2.5" /></Link>
+                  <Link to="/impacts" className="inline-flex items-center gap-1 font-bengali text-[12px] font-medium" style={{ color: FJ.brand }}>{tr('প্রভাব দেখুন', 'View Impact')} <Icon.Arrow className="h-2.5 w-2.5" /></Link>
                 </div>
                 <div className="mt-3 flex h-2 overflow-hidden rounded-full" style={{ background: FJ.rule }}>
                   <span style={{ width: '85%', background: FJ.brand }} />
@@ -393,28 +388,6 @@ export default function Donate() {
         </div>
       </section>
 
-      {/* transparency callout */}
-      <section style={{ background: FJ.ink }}>
-        <div className="mx-auto flex max-w-[1320px] flex-col items-center gap-6 px-6 py-10 md:flex-row md:justify-between md:px-10">
-          <div className="flex items-center gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
-              <Icon.Shield className="h-5 w-5" style={{ color: '#fca47e' }} />
-            </span>
-            <div>
-              <h3 className="font-bengali text-[20px]" style={{ ...SERIF_BN, color: '#fff' }}>{tr('আমরা সম্পূর্ণ স্বচ্ছতায় বিশ্বাসী', 'We believe in complete transparency')}</h3>
-              <p className="mt-1 font-bengali text-[13.5px] text-white/65">{tr('আমাদের আর্থিক প্রতিবেদন, অডিট বিবরণী ও প্রভাবের গল্প দেখুন।', 'Explore our financial reports, audit statements, and impact stories.')}</p>
-              <Link to="/transparency" className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 font-bengali text-[13px] font-semibold" style={{ background: FJ.brand, color: '#fff' }}>
-                {tr('স্বচ্ছতা প্রতিবেদন দেখুন', 'View Transparency Report')} <Icon.Arrow className="h-3 w-3" />
-              </Link>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            {GALLERY.map((src) => (
-              <div key={src} className="h-20 w-28 overflow-hidden rounded-[8px]"><img src={src} alt="" className="h-full w-full object-cover" /></div>
-            ))}
-          </div>
-        </div>
-      </section>
     </PageShell>
   );
 }

@@ -178,7 +178,7 @@ export interface MonthlyContribution {
   member?: Member;
 }
 
-export type ExpenseStatus = 'draft' | 'approved';
+export type ExpenseStatus = 'draft' | 'approved' | 'rejected';
 export type CswoPaymentMethod = 'cash' | 'bank_transfer' | 'upi' | 'cheque' | 'online' | 'other';
 
 export interface CswoFund {
@@ -233,6 +233,8 @@ export interface CswoExpense {
   recorded_by: string;
   approved_by: string | null;
   status: ExpenseStatus;
+  rejection_reason?: string | null;
+  bank_account_id: string | null;
   created_at: string;
   updated_at: string;
   fund?: CswoFund;
@@ -258,6 +260,8 @@ export interface CswoCompliance {
   issued_on: string | null;
   expiry_on: string | null;
   note: string;
+  file_url: string;
+  file_type: string;
   sort_order: number;
   updated_at: string;
   created_at: string;
@@ -284,6 +288,7 @@ export interface CswoBankAccount {
   branch: string;
   account_type: BankAccountType;
   opening_balance: number;
+  statement_balance: number;
   is_active: boolean;
   note: string;
   sort_order: number;
@@ -468,6 +473,7 @@ export interface CswoPayroll {
   status: PayrollStatus;
   note: string;
   paid_on: string | null;
+  bank_account_id: string | null;
   created_by: string | null;
   approved_by: string | null;
   created_at: string;

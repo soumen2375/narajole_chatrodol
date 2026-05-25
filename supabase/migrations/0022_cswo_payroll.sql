@@ -50,12 +50,12 @@ BEGIN
     IF EXISTS (SELECT 1 FROM public.cswo_finance_ledger WHERE entry_type = 'payroll' AND source_id = NEW.id) THEN
       UPDATE public.cswo_finance_ledger
         SET amount = NEW.amount, fund_id = NEW.fund_id,
-            occurred_at = COALESCE(NEW.paid_on::timestamptz, NEW.created_at, now()),
+            occurred_at = COALESCE(NEW.updated_at, NEW.created_at, now()),
             actor_id = COALESCE(NEW.approved_by, NEW.created_by), note = v_note
       WHERE entry_type = 'payroll' AND source_id = NEW.id;
     ELSE
       INSERT INTO public.cswo_finance_ledger (entry_type, source_id, fund_id, direction, amount, occurred_at, actor_id, note)
-      VALUES ('payroll', NEW.id, NEW.fund_id, 'debit', NEW.amount, COALESCE(NEW.paid_on::timestamptz, NEW.created_at, now()), COALESCE(NEW.approved_by, NEW.created_by), v_note);
+      VALUES ('payroll', NEW.id, NEW.fund_id, 'debit', NEW.amount, COALESCE(NEW.updated_at, NEW.created_at, now()), COALESCE(NEW.approved_by, NEW.created_by), v_note);
     END IF;
   ELSE
     DELETE FROM public.cswo_finance_ledger WHERE entry_type = 'payroll' AND source_id = NEW.id;

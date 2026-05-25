@@ -78,7 +78,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-[10px] shadow-xl" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
+        <div className="fixed md:absolute top-[60px] md:top-auto right-4 left-4 md:right-0 md:left-auto z-50 mt-2 md:w-80 overflow-hidden rounded-[10px] shadow-xl" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${RULE}` }}>
             <span className="text-[13px] font-semibold" style={{ color: INK }}>{tr('Notifications', 'বিজ্ঞপ্তি')}</span>
             {unread > 0 && <button onClick={markAllRead} className="text-[11px] font-medium hover:underline" style={{ color: BRAND }}>{tr('Mark all read', 'সব পঠিত')}</button>}

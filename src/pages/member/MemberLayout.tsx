@@ -16,7 +16,15 @@ import {
   Wallet,
   Scale,
   ReceiptText,
-  BookOpenText
+  BookOpenText,
+  ClipboardCheck,
+  HandCoins,
+  Megaphone,
+  Undo2,
+  Coins,
+  Landmark,
+  BarChart3,
+  FileCheck
 } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -76,6 +84,14 @@ export default function MemberLayout() {
       { to: '/member/donations-manage',     label: t('a.donations'),      icon: HeartHandshake } as NavItem,
       { to: '/member/expenses',             label: t('a.expenses'),       icon: ReceiptText } as NavItem,
       { to: '/member/ledger',               label: t('a.ledger'),         icon: BookOpenText } as NavItem,
+      { to: '/member/approvals',            label: t('a.approvals'),      icon: ClipboardCheck } as NavItem,
+      { to: '/member/grants',               label: t('a.grants'),         icon: HandCoins } as NavItem,
+      { to: '/member/campaigns',            label: t('a.campaigns'),      icon: Megaphone } as NavItem,
+      { to: '/member/refunds',              label: t('a.refunds'),        icon: Undo2 } as NavItem,
+      { to: '/member/payroll',              label: t('a.payroll'),        icon: Coins } as NavItem,
+      { to: '/member/bank',                 label: t('a.bank'),           icon: Landmark } as NavItem,
+      { to: '/member/reports',              label: t('a.reports'),        icon: BarChart3 } as NavItem,
+      { to: '/member/compliance',           label: t('a.compliance'),     icon: FileCheck } as NavItem,
     ] : []),
   ];
 

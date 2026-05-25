@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-import type { CswoExpense, CswoFund, CswoPaymentMethod, ExpenseStatus } from '@/types';
+import type { CswoExpense, CswoFund, CswoPaymentMethod, ExpenseStatus, CswoBankAccount } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
@@ -17,6 +17,8 @@ type Form = {
   payment_method: CswoPaymentMethod;
   receipt_image: string;
   status: ExpenseStatus;
+  rejection_reason?: string;
+  bank_account_id: string;
 };
 
 const EMPTY_FORM: Form = {
@@ -29,6 +31,8 @@ const EMPTY_FORM: Form = {
   payment_method: 'cash',
   receipt_image: '',
   status: 'draft',
+  rejection_reason: '',
+  bank_account_id: '',
 };
 
 const PM_LABELS: Record<CswoPaymentMethod, { en: string; bn: string }> = {
@@ -52,6 +56,7 @@ export default function AdminExpenses() {
   const [expenses, setExpenses] = useState<CswoExpense[]>([]);
   const [funds, setFunds] = useState<CswoFund[]>([]);
   const [events, setEvents] = useState<{ id: string; title: string; event_code: string | null }[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<CswoBankAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterFund, setFilterFund] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -63,13 +68,72 @@ export default function AdminExpenses() {
   const [err, setErr] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const checkBudgetExceeded = async (fundId: string, amount: number, spentOn: string): Promise<{ exceeded: boolean; msg: string; frozen: boolean }> => {
+    const { data: fund, error: fundErr } = await supabase
+      .from('cswo_funds')
+      .select('*')
+      .eq('id', fundId)
+      .single();
+    
+    if (fundErr || !fund) {
+      return { exceeded: false, msg: tr('Fund not found.', 'ফান্ড পাওয়া যায়নি।'), frozen: false };
+    }
+    if (fund.is_frozen) {
+      return { exceeded: false, msg: tr('This fund is frozen. Spend/approval is blocked.', 'এই ফান্ডটি স্থগিত করা হয়েছে। নতুন ব্যয়/অনুমোদন নিষিদ্ধ।'), frozen: true };
+    }
+
+    const d = new Date(spentOn);
+    const y = d.getFullYear();
+    const fy = d.getMonth() >= 3 ? `${y}-${String(y + 1).slice(-2)}` : `${y - 1}-${String(y).slice(-2)}`;
+
+    const { data: budget } = await supabase
+      .from('cswo_budgets')
+      .select('*')
+      .eq('fund_id', fundId)
+      .eq('fiscal_year', fy)
+      .maybeSingle();
+
+    if (!budget) {
+      return { exceeded: false, msg: '', frozen: false };
+    }
+
+    const budgetLimit = Number(budget.allocated_amount);
+    const startYear = parseInt(fy.split('-')[0]);
+    const startDate = `${startYear}-04-01`;
+    const endDate = `${startYear + 1}-03-31`;
+
+    const { data: approvedExpenses } = await supabase
+      .from('cswo_expenses')
+      .select('amount')
+      .eq('fund_id', fundId)
+      .eq('status', 'approved')
+      .gte('spent_on', startDate)
+      .lte('spent_on', endDate);
+
+    const totalSpent = (approvedExpenses ?? []).reduce((sum, item) => sum + Number(item.amount), 0);
+
+    if (totalSpent + amount > budgetLimit) {
+      const remaining = budgetLimit - totalSpent;
+      return {
+        exceeded: true,
+        msg: tr(
+          `Budget exceeded! Maximum allowed budget is ₹${budgetLimit.toLocaleString('en-IN')}. Current spent is ₹${totalSpent.toLocaleString('en-IN')} (Remaining: ₹${remaining.toLocaleString('en-IN')}).`,
+          `বাজেট অতিক্রম করেছে! সর্বোচ্চ অনুমোদিত বাজেট ₹${budgetLimit.toLocaleString('en-IN')}। বর্তমান ব্যয় ₹${totalSpent.toLocaleString('en-IN')} (অবশিষ্ট: ₹${remaining.toLocaleString('en-IN')})।`
+        ),
+        frozen: false
+      };
+    }
+
+    return { exceeded: false, msg: '', frozen: false };
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
-    const [ef, ff, ev] = await Promise.all([
+    const [ef, ff, ev, ba] = await Promise.all([
       supabase
         .from('cswo_expenses')
         .select('*, fund:cswo_funds(id,name_bn,name_en,slug)')
-        .order('spent_on', { ascending: false }),
+        .order('created_at', { ascending: false }),
       supabase
         .from('cswo_funds')
         .select('*')
@@ -79,10 +143,16 @@ export default function AdminExpenses() {
         .from('cswo_events')
         .select('id,title,event_code')
         .order('event_date', { ascending: false }),
+      supabase
+        .from('cswo_bank_accounts')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order'),
     ]);
     setExpenses((ef.data ?? []) as CswoExpense[]);
     setFunds((ff.data ?? []) as CswoFund[]);
     setEvents((ev.data ?? []) as { id: string; title: string; event_code: string | null }[]);
+    setBankAccounts((ba.data ?? []) as CswoBankAccount[]);
     setLoading(false);
   }, []);
 
@@ -90,7 +160,7 @@ export default function AdminExpenses() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ ...EMPTY_FORM, fund_id: funds[0]?.id ?? '' });
+    setForm({ ...EMPTY_FORM, fund_id: funds[0]?.id ?? '', status: 'draft' });
     setErr('');
     setShowModal(true);
   };
@@ -107,6 +177,8 @@ export default function AdminExpenses() {
       payment_method: e.payment_method,
       receipt_image: e.receipt_image ?? '',
       status: e.status,
+      rejection_reason: e.rejection_reason ?? '',
+      bank_account_id: e.bank_account_id ?? '',
     });
     setErr('');
     setShowModal(true);
@@ -137,6 +209,23 @@ export default function AdminExpenses() {
     }
     setSaving(true);
     setErr('');
+
+    if (form.status === 'approved') {
+      const res = await checkBudgetExceeded(form.fund_id, parseFloat(form.amount), form.spent_on);
+      if (res.frozen) {
+        setErr(res.msg);
+        setSaving(false);
+        return;
+      }
+      if (res.exceeded) {
+        const ok = window.confirm(res.msg + "\n\n" + tr("Do you still want to approve this expense?", "আপনি কি তবুও এই ব্যয়টি অনুমোদন করতে চান?"));
+        if (!ok) {
+          setSaving(false);
+          return;
+        }
+      }
+    }
+
     const payload = {
       fund_id: form.fund_id,
       event_id: form.event_id || null,
@@ -148,7 +237,10 @@ export default function AdminExpenses() {
       receipt_image: form.receipt_image.trim() || null,
       status: form.status,
       recorded_by: me!.id,
+      rejection_reason: form.status === 'rejected' ? (form.rejection_reason?.trim() || null) : null,
+      bank_account_id: form.bank_account_id || null,
       ...(form.status === 'approved' && !editing ? { approved_by: me!.id } : {}),
+      ...(form.status === 'rejected' && !editing ? { approved_by: me!.id } : {}),
     };
     const { error } = editing
       ? await supabase.from('cswo_expenses').update(payload).eq('id', editing.id)
@@ -166,8 +258,32 @@ export default function AdminExpenses() {
   };
 
   const approve = async (e: CswoExpense) => {
+    setLoading(true);
+    const res = await checkBudgetExceeded(e.fund_id, Number(e.amount), e.spent_on);
+    if (res.frozen) {
+      alert(res.msg);
+      setLoading(false);
+      return;
+    }
+    if (res.exceeded) {
+      const ok = window.confirm(res.msg + "\n\n" + tr("Do you still want to approve this expense?", "আপনি কি তবুও এই ব্যয়টি অনুমোদন করতে চান?"));
+      if (!ok) {
+        setLoading(false);
+        return;
+      }
+    }
     await supabase.from('cswo_expenses')
       .update({ status: 'approved', approved_by: me!.id })
+      .eq('id', e.id);
+    await load();
+  };
+
+  const reject = async (e: CswoExpense) => {
+    const reason = window.prompt(tr('Why is this expense rejected?', 'এই ব্যয়টি কেন প্রত্যাখ্যাত হলো?'));
+    if (reason === null) return; // cancelled
+    setLoading(true);
+    await supabase.from('cswo_expenses')
+      .update({ status: 'rejected', rejection_reason: reason.trim(), approved_by: me!.id })
       .eq('id', e.id);
     await load();
   };
@@ -233,6 +349,7 @@ export default function AdminExpenses() {
           <option value="">{tr('All status', 'সব অবস্থা')}</option>
           <option value="draft">{tr('Draft', 'খসড়া')}</option>
           <option value="approved">{tr('Approved', 'অনুমোদিত')}</option>
+          <option value="rejected">{tr('Rejected', 'প্রত্যাখ্যাত')}</option>
         </select>
       </div>
 
@@ -273,6 +390,11 @@ export default function AdminExpenses() {
                   <td className="px-4 py-3">{pmLabel(e.payment_method)}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={e.status} />
+                    {e.status === 'rejected' && e.rejection_reason && (
+                      <div className="mt-1 text-[11px] text-red-600 font-medium">
+                        {tr('Reason: ', 'কারণ: ')}{e.rejection_reason}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
@@ -282,15 +404,23 @@ export default function AdminExpenses() {
                       >
                         {tr('Edit', 'সম্পাদনা')}
                       </button>
-                      {e.status === 'draft' && (
-                        <button
-                          onClick={() => approve(e)}
-                          className="text-xs text-green-600 hover:underline"
-                        >
-                          {tr('Approve', 'অনুমোদন')}
-                        </button>
+                      {e.status === 'draft' && me?.role === 'admin' && (
+                        <>
+                          <button
+                            onClick={() => approve(e)}
+                            className="text-xs text-green-600 hover:underline font-semibold"
+                          >
+                            {tr('Approve', 'অনুমোদন')}
+                          </button>
+                          <button
+                            onClick={() => reject(e)}
+                            className="text-xs text-red-600 hover:underline font-semibold"
+                          >
+                            {tr('Reject', 'প্রত্যাখ্যাত')}
+                          </button>
+                        </>
                       )}
-                      {e.status === 'draft' && (
+                      {(e.status === 'draft' || me?.role === 'admin') && (
                         <button
                           onClick={() => remove(e.id)}
                           className="text-xs text-red-600 hover:underline"
@@ -425,19 +555,51 @@ export default function AdminExpenses() {
                   </select>
                 </div>
                 <div>
+                  <label className="label">{tr('Bank / Cash Account', 'ব্যাংক / নগদ অ্যাকাউন্ট')}</label>
+                  <select
+                    className="input"
+                    value={form.bank_account_id}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, bank_account_id: e.target.value }))
+                    }
+                  >
+                    <option value="">{tr('-- Select Account --', '-- অ্যাকাউন্ট নির্বাচন করুন --')}</option>
+                    {bankAccounts.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.label} ({b.bank_name || 'Cash'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="label">{tr('Status', 'অবস্থা')}</label>
                   <select
                     className="input"
                     value={form.status}
+                    disabled={me?.role !== 'admin'}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, status: e.target.value as ExpenseStatus }))
                     }
                   >
                     <option value="draft">{tr('Draft', 'খসড়া')}</option>
-                    <option value="approved">{tr('Approved', 'অনুমোদিত')}</option>
+                    {me?.role === 'admin' && <option value="approved">{tr('Approved', 'অনুমোদিত')}</option>}
+                    {me?.role === 'admin' && <option value="rejected">{tr('Rejected', 'প্রত্যাখ্যাত')}</option>}
                   </select>
                 </div>
               </div>
+
+              {form.status === 'rejected' && (
+                <div>
+                  <label className="label">{tr('Rejection Reason', 'প্রত্যাখ্যাত করার কারণ')}</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder={tr('Enter reason why this was rejected...', 'কেন এটি প্রত্যাখ্যাত হলো তার কারণ লিখুন...')}
+                    value={form.rejection_reason || ''}
+                    onChange={(e) => setForm((f) => ({ ...f, rejection_reason: e.target.value }))}
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="label">{tr('Receipt image', 'রসিদ ছবি')}</label>

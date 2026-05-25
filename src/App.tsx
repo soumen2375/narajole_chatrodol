@@ -12,7 +12,6 @@ const Events = lazy(() => import('@/pages/Events'));
 const EventDetail = lazy(() => import('@/pages/EventDetail'));
 const Gallery = lazy(() => import('@/pages/Gallery'));
 const Impacts = lazy(() => import('@/pages/Impacts'));
-const Transparency = lazy(() => import('@/pages/Transparency'));
 const Contact = lazy(() => import('@/pages/Contact'));
 const Volunteer = lazy(() => import('@/pages/Volunteer'));
 const Donate = lazy(() => import('@/pages/Donate'));
@@ -83,7 +82,6 @@ export default function App() {
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/impacts" element={<Impacts />} />
-            <Route path="/transparency" element={<Transparency />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/volunteer" element={<Volunteer />} />
             <Route path="/donate" element={<Donate />} />
@@ -135,6 +133,14 @@ export default function App() {
             <Route path="donations-manage" element={<ProtectedRoute require="canManageFinance"><AdminDonations /></ProtectedRoute>} />
             <Route path="expenses" element={<ProtectedRoute require="canManageFinance"><AdminExpenses /></ProtectedRoute>} />
             <Route path="ledger" element={<ProtectedRoute require="canManageFinance"><AdminLedger /></ProtectedRoute>} />
+            <Route path="approvals" element={<ProtectedRoute require="canManageFinance"><AdminApprovals /></ProtectedRoute>} />
+            <Route path="grants" element={<ProtectedRoute require="canManageFinance"><AdminGrants /></ProtectedRoute>} />
+            <Route path="campaigns" element={<ProtectedRoute require="canManageFinance"><AdminCampaigns /></ProtectedRoute>} />
+            <Route path="refunds" element={<ProtectedRoute require="canManageFinance"><AdminRefunds /></ProtectedRoute>} />
+            <Route path="payroll" element={<ProtectedRoute require="canManageFinance"><AdminPayroll /></ProtectedRoute>} />
+            <Route path="bank" element={<ProtectedRoute require="canManageFinance"><AdminBankAccounts /></ProtectedRoute>} />
+            <Route path="reports" element={<ProtectedRoute require="canManageFinance"><AdminReports /></ProtectedRoute>} />
+            <Route path="compliance" element={<ProtectedRoute require="canManageFinance"><AdminCompliance /></ProtectedRoute>} />
           </Route>
 
           <Route
