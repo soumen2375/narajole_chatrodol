@@ -290,6 +290,7 @@ const D: Dict = {
   'a.campaigns': { bn: 'ক্যাম্পেইন', en: 'Campaigns' },
   'a.payroll': { bn: 'বেতন', en: 'Payroll' },
   'a.bank': { bn: 'ব্যাংক', en: 'Bank' },
+  'a.approvals': { bn: 'অনুমোদন', en: 'Approvals' },
   'a.newMember': { bn: '+ নতুন সদস্য', en: '+ New member' },
   'a.categories': { bn: 'বিভাগ ব্যবস্থাপনা', en: 'Categories' },
   'a.directory': { bn: 'সদস্য তালিকা', en: 'Directory' },

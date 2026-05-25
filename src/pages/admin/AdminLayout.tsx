@@ -2,7 +2,7 @@ import {
   FaGauge, FaUsers, FaFileLines, FaCalendarDays,
   FaClipboardList, FaCoins, FaHeart, FaEnvelope, FaImages,
   FaChartPie, FaReceipt, FaFolderOpen, FaScaleBalanced, FaBookOpen, FaShieldHalved, FaFileContract,
-  FaRotateLeft, FaBullhorn, FaSackDollar, FaBuildingColumns,
+  FaRotateLeft, FaBullhorn, FaSackDollar, FaBuildingColumns, FaListCheck,
 } from 'react-icons/fa6';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -42,6 +42,7 @@ export default function AdminLayout() {
     ...(isAdmin || canManageFinance ? [
       { to: '/admin/finance',        label: t('a.finance'),        icon: FaChartPie,
         sectionLabel: isAdmin ? tr('Finance', 'অর্থ') : tr('Treasurer', 'কোষাধ্যক্ষ') } as NavItem,
+      { to: '/admin/approvals',      label: t('a.approvals'),      icon: FaListCheck } as NavItem,
       { to: '/admin/budgets',        label: t('a.budgets'),        icon: FaScaleBalanced } as NavItem,
       { to: '/admin/contributions',  label: t('a.contributions'),  icon: FaCoins } as NavItem,
       { to: '/admin/donations',      label: t('a.donations'),      icon: FaHeart } as NavItem,
