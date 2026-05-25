@@ -338,6 +338,50 @@ export interface CswoGrantTranche {
   updated_at: string;
 }
 
+export type BloodGroup = '' | 'A+' | 'A-' | 'B+' | 'B-' | 'O+' | 'O-' | 'AB+' | 'AB-';
+export type DonorStatus = 'registered' | 'eligible' | 'rejected' | 'donated';
+export interface CswoBloodDonor {
+  id: string;
+  event_id: string;
+  donor_code: string | null;
+  name: string;
+  age: number | null;
+  gender: '' | 'male' | 'female' | 'other';
+  blood_group: BloodGroup;
+  phone: string;
+  email: string;
+  address: string;
+  member_id: string | null;
+  weight: number | null;
+  bp: string;
+  hemoglobin: number | null;
+  last_donation: string | null;
+  status: DonorStatus;
+  units: number;
+  consent: boolean;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CswoBloodBank {
+  id: string;
+  event_id: string;
+  name: string;
+  contact_person: string;
+  phone: string;
+  email: string;
+  license_no: string;
+  team_size: number;
+  beds: number;
+  ambulance: boolean;
+  generator: boolean;
+  equipment: string;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export type NotificationKind = 'info' | 'finance' | 'approval' | 'member' | 'system';
 export interface CswoNotification {
   id: string;

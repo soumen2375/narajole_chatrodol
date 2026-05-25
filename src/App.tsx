@@ -44,6 +44,7 @@ const AdminPosts = lazy(() => import('@/pages/admin/AdminPosts'));
 const AdminGallery = lazy(() => import('@/pages/admin/AdminGallery'));
 const AdminEvents = lazy(() => import('@/pages/admin/AdminEvents'));
 const AdminEventDetail = lazy(() => import('@/pages/admin/AdminEventDetail'));
+const AdminBloodCamp = lazy(() => import('@/pages/admin/AdminBloodCamp'));
 const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
 const AdminContributions = lazy(() => import('@/pages/admin/AdminContributions'));
 const AdminDonations = lazy(() => import('@/pages/admin/AdminDonations'));
@@ -115,6 +116,7 @@ export default function App() {
             
             <Route path="events" element={<ProtectedRoute require="canManageEvents"><AdminEvents /></ProtectedRoute>} />
             <Route path="events/:id" element={<ProtectedRoute require="canManageEvents"><AdminEventDetail /></ProtectedRoute>} />
+            <Route path="events/:id/blood" element={<ProtectedRoute require="canManageEvents"><AdminBloodCamp /></ProtectedRoute>} />
             <Route path="attendance-manage" element={<ProtectedRoute require="canManageEvents"><AdminAttendance /></ProtectedRoute>} />
 
             <Route path="finance" element={<ProtectedRoute require="canManageFinance"><AdminFinance /></ProtectedRoute>} />
@@ -141,6 +143,7 @@ export default function App() {
             <Route path="gallery" element={<AdminGallery />} />
             <Route path="events" element={<AdminEvents />} />
             <Route path="events/:id" element={<AdminEventDetail />} />
+            <Route path="events/:id/blood" element={<AdminBloodCamp />} />
             <Route path="attendance" element={<AdminAttendance />} />
             <Route path="contributions" element={<AdminContributions />} />
             <Route path="donations" element={<AdminDonations />} />

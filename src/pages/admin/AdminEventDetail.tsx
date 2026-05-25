@@ -134,6 +134,11 @@ export default function AdminEventDetail() {
             )}
             {event.description && <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed" style={{ color: INK2 }}>{event.description}</p>}
           </div>
+          {(event.type === 'camp' || event.category.toLowerCase().includes('blood')) && (
+            <Link to="blood" className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white" style={{ background: '#b91c1c' }}>
+              🩸 {tr('Blood Camp', 'রক্তদান শিবির')} →
+            </Link>
+          )}
         </div>
       </div>
 
