@@ -145,6 +145,9 @@ export default function AdminEventDetail() {
                 📦 {tr('Relief / Distribution', 'ত্রাণ / বিতরণ')} →
               </Link>
             )}
+            <Link to="certificates" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold" style={{ background: '#fff7ed', color: '#b8860b', border: '1px solid #f0d090' }}>
+              🏅 {tr('Certificates', 'সার্টিফিকেট')} →
+            </Link>
           </div>
         </div>
       </div>

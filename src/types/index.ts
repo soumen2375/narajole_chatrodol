@@ -417,6 +417,20 @@ export interface CswoEventBeneficiary {
   updated_at: string;
 }
 
+export type CertRecipientType = 'participant' | 'winner' | 'volunteer' | 'donor' | 'custom';
+export interface CswoEventCertificate {
+  id: string;
+  event_id: string;
+  cert_code: string | null;
+  recipient_name: string;
+  recipient_type: CertRecipientType;
+  category: string;
+  position: string;
+  note: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export type NotificationKind = 'info' | 'finance' | 'approval' | 'member' | 'system';
 export interface CswoNotification {
   id: string;
