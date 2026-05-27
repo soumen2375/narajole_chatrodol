@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   FaEllipsis, FaPlus, FaDownload, FaCheck, FaUsers, FaUserClock,
   FaUserCheck, FaUserPlus, FaMagnifyingGlass, FaEye, FaPen,
@@ -353,11 +354,11 @@ export default function AdminMembers() {
             {tr('Showing', 'দেখাচ্ছে')} {num(filtered.length ? safePage * PAGE_SIZE + 1 : 0)}–{num(Math.min((safePage + 1) * PAGE_SIZE, filtered.length))} {tr('of', 'মোট')} {num(filtered.length)}
           </span>
           <div className="flex items-center gap-1">
-            <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={safePage === 0} className="rounded-[5px] px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] transition-colors disabled:opacity-40" style={{ border: `1px solid ${RULE}`, color: INK2 }}>← {tr('Prev', 'আগে')}</button>
+            <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={safePage === 0} className="rounded-[5px] px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] transition-colors disabled:opacity-40 inline-flex items-center gap-1" style={{ border: `1px solid ${RULE}`, color: INK2 }}><ChevronLeft className="h-3.5 w-3.5" /> {tr('Prev', 'আগে')}</button>
             {Array.from({ length: totalPages }, (_, i) => i).slice(Math.max(0, safePage - 2), Math.max(0, safePage - 2) + 5).map((i) => (
               <button key={i} onClick={() => setPage(i)} className="h-7 w-7 rounded-[5px] font-mono text-[11px] font-semibold transition-colors" style={i === safePage ? { background: INK, color: CREAM } : { border: `1px solid ${RULE}`, color: INK2 }}>{num(i + 1)}</button>
             ))}
-            <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1} className="rounded-[5px] px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] transition-colors disabled:opacity-40" style={{ border: `1px solid ${RULE}`, color: INK2 }}>{tr('Next', 'পরে')} →</button>
+            <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1} className="rounded-[5px] px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] transition-colors disabled:opacity-40 inline-flex items-center gap-1" style={{ border: `1px solid ${RULE}`, color: INK2 }}>{tr('Next', 'পরে')} <ChevronRight className="h-3.5 w-3.5" /></button>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { FaArrowLeft, FaPlus, FaTrash, FaLocationDot, FaUpRightFromSquare } from 'react-icons/fa6';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { FaPlus, FaTrash, FaLocationDot, FaUpRightFromSquare } from 'react-icons/fa6';
+import { ArrowLeft, ArrowRight, Droplet, Package, Award, FileText, BarChart3 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { CswoEvent, CswoEventBudgetItem, CswoEventVolunteer, EventBudgetStatus } from '@/types';
 import { useFmt } from '@/lib/format';
@@ -26,6 +27,7 @@ const emptyVol = { name: '', role: '', phone: '', department: '', shift: '' };
 
 export default function AdminEventDetail() {
   const { id = '' } = useParams();
+  const navigate = useNavigate();
   const { lang } = useT();
   const fmt = useFmt();
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
@@ -94,7 +96,13 @@ export default function AdminEventDetail() {
   if (!event) return (
     <div className="py-16 text-center">
       <p style={{ color: MUTED }}>{tr('Event not found.', 'অনুষ্ঠান পাওয়া যায়নি।')}</p>
-      <Link to=".." className="mt-3 inline-block font-semibold" style={{ color: TEAL }}>← {tr('Back to events', 'অনুষ্ঠানে ফিরুন')}</Link>
+      <button 
+         onClick={() => navigate(-1)} 
+        className="mt-3 inline-flex items-center gap-1.5 font-semibold bg-transparent border-0 p-0 cursor-pointer" 
+        style={{ color: TEAL }}
+      >
+        <ArrowLeft className="h-4 w-4" /> {tr('Back to events', 'অনুষ্ঠানে ফিরুন')}
+      </button>
     </div>
   );
 
@@ -107,9 +115,13 @@ export default function AdminEventDetail() {
 
   return (
     <div className="space-y-6">
-      <Link to=".." className="inline-flex items-center gap-2 text-[13px] font-medium" style={{ color: MUTED }}>
-        <FaArrowLeft className="h-3 w-3" /> {tr('All events', 'সব অনুষ্ঠান')}
-      </Link>
+      <button 
+        onClick={() => navigate(-1)} 
+        className="inline-flex items-center gap-2 text-[13px] font-medium cursor-pointer bg-transparent border-0 p-0 hover:opacity-80" 
+        style={{ color: MUTED }}
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> {tr('All events', 'সব অনুষ্ঠান')}
+      </button>
 
       {/* Header */}
       <div className="rounded-[10px] p-6" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
@@ -136,23 +148,23 @@ export default function AdminEventDetail() {
           </div>
           <div className="flex flex-col gap-2">
             {(event.type === 'camp' || event.category.toLowerCase().includes('blood')) && (
-              <Link to="blood" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white" style={{ background: '#b91c1c' }}>
-                🩸 {tr('Blood Camp', 'রক্তদান শিবির')} →
+              <Link to="blood" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90" style={{ background: '#b91c1c' }}>
+                <Droplet className="h-4 w-4 shrink-0" /> {tr('Blood Camp', 'রক্তদান শিবির')} <ArrowRight className="h-3.5 w-3.5 shrink-0" />
               </Link>
             )}
             {['relief', 'cloth', 'food', 'distribut', 'icche', 'scholarship'].some((k) => event.category.toLowerCase().includes(k)) && (
-              <Link to="relief" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white" style={{ background: TEAL }}>
-                📦 {tr('Relief / Distribution', 'ত্রাণ / বিতরণ')} →
+              <Link to="relief" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90" style={{ background: TEAL }}>
+                <Package className="h-4 w-4 shrink-0" /> {tr('Relief / Distribution', 'ত্রাণ / বিতরণ')} <ArrowRight className="h-3.5 w-3.5 shrink-0" />
               </Link>
             )}
-            <Link to="certificates" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold" style={{ background: '#fff7ed', color: '#b8860b', border: '1px solid #f0d090' }}>
-              🏅 {tr('Certificates', 'সার্টিফিকেট')} →
+            <Link to="certificates" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-orange-50" style={{ background: '#fff7ed', color: '#b8860b', border: '1px solid #f0d090' }}>
+              <Award className="h-4 w-4 shrink-0" /> {tr('Certificates', 'সার্টিফিকেট')} <ArrowRight className="h-3.5 w-3.5 shrink-0" />
             </Link>
-            <Link to="documents" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
-              📄 {tr('Documents', 'নথি')} →
+            <Link to="documents" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-stone-50" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
+              <FileText className="h-4 w-4 shrink-0" /> {tr('Documents', 'নথি')} <ArrowRight className="h-3.5 w-3.5 shrink-0" />
             </Link>
-            <Link to="report" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
-              📊 {tr('Report', 'প্রতিবেদন')} →
+            <Link to="report" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-stone-50" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
+              <BarChart3 className="h-4 w-4 shrink-0" /> {tr('Report', 'প্রতিবেদন')} <ArrowRight className="h-3.5 w-3.5 shrink-0" />
             </Link>
           </div>
         </div>
@@ -227,7 +239,7 @@ export default function AdminEventDetail() {
       </Card>
 
       {/* Donations */}
-      <Card title={tr('Donations Received', 'প্রাপ্ত অনুদান')} hint={<Link to="/admin/donations" className="text-[12px] font-semibold" style={{ color: TEAL }}>{tr('Manage in Donations', 'অনুদানে পরিচালনা')} →</Link>}>
+      <Card title={tr('Donations Received', 'প্রাপ্ত অনুদান')} hint={<Link to="/admin/donations" className="text-[12px] font-semibold inline-flex items-center gap-1" style={{ color: TEAL }}>{tr('Manage in Donations', 'অনুদানে পরিচালনা')} <ArrowRight className="h-3.5 w-3.5" /></Link>}>
         <Table head={[tr('Date', 'তারিখ'), tr('Donor', 'দাতা'), tr('Status', 'অবস্থা'), tr('Amount', 'পরিমাণ')]}>
           {donations.map((d) => (
             <tr key={d.id} style={{ borderTop: `1px solid ${RULE}` }}>
@@ -242,7 +254,7 @@ export default function AdminEventDetail() {
       </Card>
 
       {/* Linked expenses */}
-      <Card title={tr('Linked Expenses', 'যুক্ত ব্যয়')} hint={<Link to="/admin/expenses" className="text-[12px] font-semibold" style={{ color: TEAL }}>{tr('Manage in Expenses', 'ব্যয়ে পরিচালনা')} →</Link>}>
+      <Card title={tr('Linked Expenses', 'যুক্ত ব্যয়')} hint={<Link to="/admin/expenses" className="text-[12px] font-semibold inline-flex items-center gap-1" style={{ color: TEAL }}>{tr('Manage in Expenses', 'ব্যয়ে পরিচালনা')} <ArrowRight className="h-3.5 w-3.5" /></Link>}>
         <Table head={[tr('Date', 'তারিখ'), tr('Description', 'বিবরণ'), tr('Vendor', 'বিক্রেতা'), tr('Status', 'অবস্থা'), tr('Amount', 'পরিমাণ')]}>
           {expenses.map((e) => (
             <tr key={e.id} style={{ borderTop: `1px solid ${RULE}` }}>

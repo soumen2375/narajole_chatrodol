@@ -165,6 +165,35 @@ export default function AdminDashboard() {
     }
   };
 
+  if (d.error) {
+    return (
+      <div className="rounded-2xl border p-8 text-center max-w-xl mx-auto mt-12 space-y-5 animate-fade-in" style={{ background: PAPER, borderColor: RULE }}>
+        <span className="flex h-12 w-12 items-center justify-center rounded-xl mx-auto" style={{ background: 'rgba(220,38,38,0.08)' }}>
+          <X className="h-6 w-6 text-red-600" />
+        </span>
+        <h2 className="text-xl font-bold" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>
+          {tr('Database connection issue', 'ডাটাবেস সংযোগ সমস্যা')}
+        </h2>
+        <p className="text-sm leading-relaxed" style={{ color: INK2 }}>
+          {tr(
+            'We encountered a problem loading dashboard metrics. Please check your internet connection or try again.',
+            'ড্যাশবোর্ড লোড করতে সমস্যা হয়েছে। দয়া করে ইন্টারনেট সংযোগ পরীক্ষা করুন অথবা পুনরায় চেষ্টা করুন।'
+          )}
+        </p>
+        <div className="text-[11px] font-mono p-3 rounded-lg bg-red-50 text-red-700 border border-red-100/50 overflow-x-auto text-left max-h-36">
+          {d.error}
+        </div>
+        <button
+          onClick={() => d.refresh()}
+          className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold text-white transition-opacity hover:opacity-90 shadow-sm"
+          style={{ background: BRAND }}
+        >
+          {tr('Retry Loading', 'পুনরায় চেষ্টা করুন')}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* ───────── Greeting ───────── */}

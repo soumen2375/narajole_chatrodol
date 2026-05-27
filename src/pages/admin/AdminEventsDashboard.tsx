@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useFmt } from '@/lib/format';
@@ -190,7 +191,7 @@ export default function AdminEventsDashboard() {
         <div className="rounded-[10px] p-5 lg:col-span-2" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[15px] font-semibold" style={{ color: INK }}>{tr('Upcoming events', 'আসন্ন অনুষ্ঠান')}</h2>
-            <Link to="/admin/events" className="text-[12px] font-semibold" style={{ color: TEAL }}>{tr('All events', 'সব অনুষ্ঠান')} →</Link>
+            <Link to="/admin/events" className="text-[12px] font-semibold inline-flex items-center gap-1" style={{ color: TEAL }}>{tr('All events', 'সব অনুষ্ঠান')} <ArrowRight className="h-3.5 w-3.5" /></Link>
           </div>
           <div className="divide-y" style={{ borderColor: RULE }}>
             {upcoming.slice(0, 6).map((e) => (

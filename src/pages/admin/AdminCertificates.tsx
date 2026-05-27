@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { FaArrowLeft, FaPlus, FaPrint, FaAward, FaUserPlus } from 'react-icons/fa6';
+import { useParams, useNavigate } from 'react-router-dom';
+import { FaPlus, FaPrint, FaAward, FaUserPlus } from 'react-icons/fa6';
+import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { CswoEvent, CswoEventCertificate, CertRecipientType } from '@/types';
 import { useFmt } from '@/lib/format';
@@ -21,6 +22,7 @@ const emptyForm = { recipient_name: '', recipient_type: 'participant' as CertRec
 
 export default function AdminCertificates() {
   const { id = '' } = useParams();
+  const navigate = useNavigate();
   const { lang } = useT();
   const fmt = useFmt();
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
@@ -136,14 +138,29 @@ export default function AdminCertificates() {
 
   if (loading) return <TableSkeleton rows={6} />;
   if (!event) return (
-    <div className="py-16 text-center"><p style={{ color: MUTED }}>{tr('Event not found.', 'অনুষ্ঠান পাওয়া যায়নি।')}</p><Link to=".." className="mt-3 inline-block font-semibold" style={{ color: TEAL }}>← {tr('Back', 'ফিরুন')}</Link></div>
+    <div className="py-16 text-center">
+      <p style={{ color: MUTED }}>{tr('Event not found.', 'অনুষ্ঠান পাওয়া যায়নি।')}</p>
+      <button 
+        onClick={() => navigate(-1)} 
+        className="mt-3 inline-flex items-center gap-1.5 font-semibold bg-transparent border-0 p-0 cursor-pointer" 
+        style={{ color: TEAL }}
+      >
+        <ArrowLeft className="h-4 w-4" /> {tr('Back', 'ফিরুন')}
+      </button>
+    </div>
   );
 
   const typeLabel = (t: CertRecipientType) => ({ participant: tr('Participant', 'অংশগ্রহণকারী'), winner: tr('Winner', 'বিজয়ী'), volunteer: tr('Volunteer', 'স্বেচ্ছাসেবক'), donor: tr('Donor', 'দাতা'), custom: tr('Custom', 'কাস্টম') }[t]);
 
   return (
     <div className="space-y-6">
-      <Link to=".." className="inline-flex items-center gap-2 text-[13px] font-medium" style={{ color: MUTED }}><FaArrowLeft className="h-3 w-3" /> {tr('Back to event', 'অনুষ্ঠানে ফিরুন')}</Link>
+      <button 
+        onClick={() => navigate(-1)} 
+        className="inline-flex items-center gap-2 text-[13px] font-medium cursor-pointer bg-transparent border-0 p-0 hover:opacity-80" 
+        style={{ color: MUTED }}
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> {tr('Back to event', 'অনুষ্ঠানে ফিরুন')}
+      </button>
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>

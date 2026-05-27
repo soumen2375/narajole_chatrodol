@@ -39,6 +39,7 @@ function mapRow(g: Record<string, unknown>): GalleryItem {
 export function useGallery() {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -48,60 +49,83 @@ export function useGallery() {
       .eq('is_active', true)
       .is('deleted_at', null)
       .order('sort_order', { ascending: true })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (!active) return;
-        setItems((data ?? []).map(mapRow));
+        if (error) {
+          setError(error.message);
+        } else {
+          setItems((data ?? []).map(mapRow));
+          setError(null);
+        }
         setLoading(false);
       });
     return () => { active = false; };
   }, []);
 
-  return { items, loading };
+  return { items, loading, error };
 }
 
 export function useGalleryAdmin() {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from('cswo_gallery')
-      .select('*')
-      .is('deleted_at', null)
-      .order('sort_order', { ascending: true });
-    setItems((data ?? []).map(mapRow));
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from('cswo_gallery')
+        .select('*')
+        .is('deleted_at', null)
+        .order('sort_order', { ascending: true });
+      if (error) {
+        setError(error.message);
+      } else {
+        setItems((data ?? []).map(mapRow));
+        setError(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown database error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
 
-  return { items, loading, reload: load };
+  return { items, loading, error, reload: load };
 }
 
 export function useGalleryCategoryOptions() {
   const [categories, setCategories] = useState<GalleryCategoryOption[]>([]);
   const [subCategories, setSubCategories] = useState<GalleryCategoryOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase
       .from('cswo_gallery')
       .select('category_bn,category_en,sub_category_bn,sub_category_en')
       .is('deleted_at', null)
-      .then(({ data }) => {
-        if (!data) return;
-        const catMap = new Map<string, GalleryCategoryOption>();
-        const subMap = new Map<string, GalleryCategoryOption>();
-        for (const row of data) {
-          const k = `${row.category_en}|${row.category_bn}`;
-          if (row.category_en || row.category_bn) catMap.set(k, { bn: row.category_bn || '', en: row.category_en || '' });
-          const sk = `${row.sub_category_en}|${row.sub_category_bn}`;
-          if (row.sub_category_en || row.sub_category_bn) subMap.set(sk, { bn: row.sub_category_bn || '', en: row.sub_category_en || '' });
+      .then(({ data, error }) => {
+        if (error) {
+          setError(error.message);
+        } else if (data) {
+          const catMap = new Map<string, GalleryCategoryOption>();
+          const subMap = new Map<string, GalleryCategoryOption>();
+          for (const row of data) {
+            const k = `${row.category_en}|${row.category_bn}`;
+            if (row.category_en || row.category_bn) catMap.set(k, { bn: row.category_bn || '', en: row.category_en || '' });
+            const sk = `${row.sub_category_en}|${row.sub_category_bn}`;
+            if (row.sub_category_en || row.sub_category_bn) subMap.set(sk, { bn: row.sub_category_bn || '', en: row.sub_category_en || '' });
+          }
+          setCategories(Array.from(catMap.values()));
+          setSubCategories(Array.from(subMap.values()));
+          setError(null);
         }
-        setCategories(Array.from(catMap.values()));
-        setSubCategories(Array.from(subMap.values()));
+        setLoading(false);
       });
   }, []);
 
-  return { categories, subCategories };
+  return { categories, subCategories, loading, error };
 }
