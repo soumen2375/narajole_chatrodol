@@ -14,7 +14,7 @@ export default function Gallery() {
   const { lang } = useT();
   const bn = lang === 'bn';
   const tr = (en: string, bnT: string) => (bn ? bnT : en);
-  const { items: all } = useGallery();
+  const { items: all, loading } = useGallery();
 
   const ALL = tr('All', 'সব');
   const [filter, setFilter] = useState<string>(ALL);
@@ -134,7 +134,19 @@ export default function Gallery() {
       {/* ════ MASONRY ════ */}
       <section style={{ background: FJ.paper }}>
         <div className="mx-auto max-w-[1320px] px-6 pb-16 pt-6 md:px-10">
-          {shown.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="overflow-hidden rounded-[12px] bg-stone-50 animate-pulse" style={{ border: `1px solid ${FJ.rule}` }}>
+                  <div className="aspect-video w-full" style={{ background: '#f5f5f4' }} />
+                  <div className="p-4 space-y-2" style={{ background: '#fafaf9' }}>
+                    <div className="h-3 w-16 rounded-md" style={{ background: '#e7e5e4' }} />
+                    <div className="h-4 w-3/4 rounded-md" style={{ background: '#e7e5e4' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : shown.length === 0 ? (
             <div className="rounded-[14px] py-20 text-center" style={{ border: `1px dashed ${FJ.rule}` }}>
               <p className="font-bengali text-[15px]" style={{ color: FJ.ink }}>{tr('No photographs match.', 'কোনো ছবি মেলেনি।')}</p>
             </div>

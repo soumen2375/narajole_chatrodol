@@ -35,7 +35,7 @@ function SearchIcon({ className, style }: { className?: string; style?: React.CS
 }
 
 export default function Events() {
-  const { posts } = usePosts();
+  const { posts, loading } = usePosts();
   const { flat: categories } = useCategories();
   const { t, lang } = useT();
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
@@ -171,7 +171,21 @@ export default function Events() {
       {/* ════ GRID ════ */}
       <section style={{ background: FJ.paper }}>
         <div className="mx-auto max-w-[1320px] px-6 pb-16 pt-8 md:px-10">
-          {slice.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex flex-col overflow-hidden rounded-[16px] bg-stone-50 animate-pulse" style={{ border: `1px solid ${FJ.rule}` }}>
+                  <div className="aspect-[16/10] w-full" style={{ background: '#f5f5f4' }} />
+                  <div className="p-5 space-y-3" style={{ background: '#ffffff' }}>
+                    <div className="h-3.5 w-24 rounded-md" style={{ background: '#e7e5e4' }} />
+                    <div className="h-5 w-3/4 rounded-md" style={{ background: '#e7e5e4' }} />
+                    <div className="h-3.5 w-full rounded-md" style={{ background: '#e7e5e4' }} />
+                    <div className="h-7 w-20 rounded-full" style={{ background: '#e7e5e4' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : slice.length === 0 ? (
             <div className="rounded-[14px] py-20 text-center" style={{ border: `1px dashed ${FJ.rule}` }}>
               <p className="font-bengali text-[16px]" style={{ color: FJ.ink }}>{tr('No events match your search.', 'আপনার অনুসন্ধানে কিছু মেলেনি।')}</p>
               <button onClick={() => reset(() => { setFilter('all'); setYear('all'); setQuery(''); })} className="mt-3 font-bengali text-[13px] font-semibold" style={{ color: FJ.brand }}>

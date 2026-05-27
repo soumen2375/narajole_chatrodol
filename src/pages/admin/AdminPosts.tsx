@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { CswoPost, PostStatus } from '@/types';
@@ -352,7 +353,7 @@ export default function AdminPosts() {
         <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b bg-white px-6 py-3 shadow-sm">
           <button onClick={() => { setView('list'); setAutoSaveMsg(''); }}
             className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900">
-            ← {tr('All Posts', 'সব পোস্ট')}
+            <ArrowLeft className="h-4 w-4" /> {tr('All Posts', 'সব পোস্ট')}
           </button>
           <div className="flex items-center gap-2.5">
             {autoSaveMsg && <span className="text-xs text-gray-400">{autoSaveMsg}</span>}

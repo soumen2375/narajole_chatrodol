@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { Attendance, CswoEvent, CswoPost, Donation, Member, MemberRole, MemberStatus, MonthlyContribution } from '@/types';
@@ -14,6 +15,7 @@ const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 export default function AdminMemberDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { member: me } = useAuth();
   const { t, lang } = useT();
   const fmt = useFmt();
@@ -148,7 +150,12 @@ export default function AdminMemberDetail() {
 
   return (
     <div className="space-y-6">
-      <Link to="/admin/members" className="text-sm text-blue-600 hover:underline">← {t('a.members')}</Link>
+      <button 
+        onClick={() => navigate(-1)} 
+        className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline cursor-pointer bg-transparent border-0 p-0"
+      >
+        <ArrowLeft className="h-4 w-4" /> {t('a.members')}
+      </button>
 
       {/* Profile header */}
       <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { CswoEvent, EventType, EventStatus } from '@/types';
@@ -168,7 +169,7 @@ export default function AdminEvents() {
                 </p>
               </div>
               <div className="flex shrink-0 gap-3 text-sm">
-                <Link to={ev.id} className="font-semibold" style={{ color: '#0c756f' }}>{tr('Manage', 'পরিচালনা')} →</Link>
+                <Link to={ev.id} className="font-semibold inline-flex items-center gap-1" style={{ color: '#0c756f' }}>{tr('Manage', 'পরিচালনা')} <ArrowRight className="h-3.5 w-3.5" /></Link>
                 <button onClick={() => startEdit(ev)} className="font-medium text-blue-600 hover:underline">{t('common.edit')}</button>
                 <button onClick={() => remove(ev.id)} className="font-medium text-red-600 hover:underline">{t('common.delete')}</button>
               </div>

@@ -529,4 +529,10 @@ export interface ContactMessage {
   subject: string | null;
   message: string;
   created_at: string;
+  category: string;
+  is_read: boolean;
+  is_starred: boolean;
+  admin_reply: string;
+  replied_at: string | null;
+  replied_by: string | null;
 }
