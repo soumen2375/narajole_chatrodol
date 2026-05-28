@@ -197,7 +197,7 @@ export default function Events() {
               {slice.map((p) => (
                 <article key={p.id} className="card-lift group flex flex-col overflow-hidden rounded-[16px]" style={{ background: FJ.paper, border: `1px solid ${FJ.rule}`, boxShadow: '0 10px 28px -18px rgba(28,25,23,0.22)' }}>
                   <div className="img-zoom relative">
-                    <img src={p.featuredImage || FALLBACK_IMG} onError={onImgError} alt={p.title} className="aspect-[16/10] w-full object-cover" />
+                    <img src={p.featuredImage || FALLBACK_IMG} onError={onImgError} alt={p.title} className="aspect-[16/10] w-full object-cover" loading="lazy" />
                     <span className="absolute left-3 top-3 inline-flex items-center rounded-full px-2.5 py-1 font-mono text-[9.5px] font-bold uppercase tracking-[0.16em] text-white" style={{ background: FJ.brand }}>
                       {p.category}
                     </span>

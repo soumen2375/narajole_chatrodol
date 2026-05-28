@@ -11,3 +11,9 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Optimize browser caching for Vite bundled production assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

@@ -67,6 +67,7 @@ const AdminApprovals = lazy(() => import('@/pages/admin/AdminApprovals'));
 const AdminReports = lazy(() => import('@/pages/admin/AdminReports'));
 const AdminGrants = lazy(() => import('@/pages/admin/AdminGrants'));
 const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'));
+const AdminBloodDonors = lazy(() => import('@/pages/admin/AdminBloodDonors'));
 
 export default function App() {
   return (
@@ -126,6 +127,7 @@ export default function App() {
             <Route path="events/:id/documents" element={<ProtectedRoute require="canManageEvents"><AdminEventDocuments /></ProtectedRoute>} />
             <Route path="events/:id/report" element={<ProtectedRoute require="canManageEvents"><AdminEventReport /></ProtectedRoute>} />
             <Route path="attendance-manage" element={<ProtectedRoute require="canManageEvents"><AdminAttendance /></ProtectedRoute>} />
+            <Route path="blood-donors" element={<ProtectedRoute require="canManageEvents"><AdminBloodDonors /></ProtectedRoute>} />
 
             <Route path="finance" element={<ProtectedRoute require="canManageFinance"><AdminFinance /></ProtectedRoute>} />
             <Route path="budgets" element={<ProtectedRoute require="canManageFinance"><AdminBudgets /></ProtectedRoute>} />
@@ -182,6 +184,7 @@ export default function App() {
             <Route path="reports" element={<AdminReports />} />
             <Route path="grants" element={<AdminGrants />} />
             <Route path="messages" element={<AdminMessages />} />
+            <Route path="blood-donors" element={<AdminBloodDonors />} />
           </Route>
 
           <Route path="/404" element={<NotFound />} />

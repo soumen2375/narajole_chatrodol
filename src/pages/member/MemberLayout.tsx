@@ -24,7 +24,8 @@ import {
   Coins,
   Landmark,
   BarChart3,
-  FileCheck
+  FileCheck,
+  Droplet
 } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -71,8 +72,9 @@ export default function MemberLayout() {
     ...(canManageEvents ? [
       { to: '/member/event-dashboard',   label: t('a.eventsDashboard'), icon: LayoutDashboard,
         sectionLabel: tr('Secretary', 'সেক্রেটারি') } as NavItem,
-      { to: '/member/events',            label: t('a.events'),     icon: CalendarDays } as NavItem,
-      { to: '/member/attendance-manage', label: t('a.attendance'), icon: ClipboardList } as NavItem,
+      { to: '/member/events',            label: t('a.events'),          icon: CalendarDays } as NavItem,
+      { to: '/member/attendance-manage', label: t('a.attendance'),      icon: ClipboardList } as NavItem,
+      { to: '/member/blood-donors',      label: tr('Blood Donors', 'রক্তদাতা তালিকা'), icon: Droplet } as NavItem,
     ] : []),
 
     // ── Treasurer / Finance Capability (Dynamic) ───────────────────────

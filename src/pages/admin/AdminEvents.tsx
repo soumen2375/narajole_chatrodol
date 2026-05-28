@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-import type { CswoEvent, EventType, EventStatus } from '@/types';
+import type { CswoEvent, CswoFund, EventType, EventStatus } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { ListSkeleton } from '@/components/ui/Skeleton';
@@ -18,10 +18,13 @@ const STATUS_COLOR: Record<EventStatus, string> = {
   draft: '#78716c', planned: '#1d4ed8', approved: '#0c756f', live: '#c2410c', completed: '#4d7c0f', cancelled: '#dc2626',
 };
 
+type FormType = 'general' | 'blood_donation' | 'relief_distribution';
+
 const empty = {
   title: '', description: '', category: '', type: 'event' as EventType, status: 'planned' as EventStatus,
   event_date: new Date().toISOString().slice(0, 10), end_date: '', start_time: '', end_time: '',
   location: '', district: '', state: '', pincode: '', map_link: '', expected_participants: '', featured_image: '',
+  fund_id: '' as string, form_type: 'general' as FormType,
 };
 
 export default function AdminEvents() {
@@ -33,6 +36,7 @@ export default function AdminEvents() {
   const statusLabel = (s: EventStatus) => ({ draft: tr('Draft', 'খসড়া'), planned: tr('Planned', 'পরিকল্পিত'), approved: tr('Approved', 'অনুমোদিত'), live: tr('Live', 'চলমান'), completed: tr('Completed', 'সম্পন্ন'), cancelled: tr('Cancelled', 'বাতিল') }[s]);
 
   const [events, setEvents] = useState<CswoEvent[]>([]);
+  const [funds, setFunds]   = useState<CswoFund[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(empty);
@@ -42,9 +46,32 @@ export default function AdminEvents() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from('cswo_events').select('*').order('event_date', { ascending: false });
-    setEvents((data ?? []) as CswoEvent[]);
-    const { data: att } = await supabase.from('cswo_attendance').select('event_id');
+    const [{ data }, { data: att }, { data: fundsData }] = await Promise.all([
+      supabase.from('cswo_events').select('*').order('event_date', { ascending: false }),
+      supabase.from('cswo_attendance').select('event_id'),
+      supabase.from('cswo_funds').select('*').eq('is_active', true).order('sort_order'),
+    ]);
+
+    const sorted = [...(data ?? [])].sort((a, b) => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      if (a.status === 'live' && b.status !== 'live') return -1;
+      if (b.status === 'live' && a.status !== 'live') return 1;
+
+      const aIsUpcoming = a.event_date >= todayStr;
+      const bIsUpcoming = b.event_date >= todayStr;
+
+      if (aIsUpcoming && !bIsUpcoming) return -1;
+      if (!aIsUpcoming && bIsUpcoming) return 1;
+
+      if (aIsUpcoming && bIsUpcoming) {
+        return a.event_date.localeCompare(b.event_date);
+      }
+
+      return b.event_date.localeCompare(a.event_date);
+    });
+
+    setEvents(sorted as CswoEvent[]);
+    setFunds((fundsData ?? []) as CswoFund[]);
     const c: Record<string, number> = {};
     for (const row of att ?? []) c[row.event_id] = (c[row.event_id] ?? 0) + 1;
     setCounts(c);
@@ -64,6 +91,8 @@ export default function AdminEvents() {
       location: form.location || null, district: form.district, state: form.state, pincode: form.pincode,
       map_link: form.map_link, expected_participants: Number(form.expected_participants || 0),
       featured_image: form.featured_image || null,
+      fund_id: form.fund_id || null,
+      form_type: form.form_type,
     };
     if (editingId) await supabase.from('cswo_events').update(payload).eq('id', editingId);
     else await supabase.from('cswo_events').insert({ ...payload, created_by: member.id });
@@ -76,7 +105,10 @@ export default function AdminEvents() {
       title: ev.title, description: ev.description ?? '', category: ev.category ?? '', type: ev.type, status: ev.status ?? 'planned',
       event_date: ev.event_date, end_date: ev.end_date ?? '', start_time: ev.start_time ?? '', end_time: ev.end_time ?? '',
       location: ev.location ?? '', district: ev.district ?? '', state: ev.state ?? '', pincode: ev.pincode ?? '',
-      map_link: ev.map_link ?? '', expected_participants: ev.expected_participants ? String(ev.expected_participants) : '', featured_image: ev.featured_image ?? '',
+      map_link: ev.map_link ?? '', expected_participants: ev.expected_participants ? String(ev.expected_participants) : '',
+      featured_image: ev.featured_image ?? '',
+      fund_id: ev.fund_id ?? '',
+      form_type: ev.form_type ?? 'general',
     });
     setEditingId(ev.id); setShowForm(true);
   };
@@ -123,6 +155,39 @@ export default function AdminEvents() {
             </div>
           </div>
 
+          {/* ── Fund + Form type ── */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-500">
+                {tr('Linked Finance Fund', 'অর্থ তহবিল সংযুক্ত করুন')}
+              </label>
+              <select className="input" value={form.fund_id} onChange={set('fund_id')}>
+                <option value="">{tr('— No fund linked —', '— কোনো তহবিল নেই —')}</option>
+                {funds.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {lang === 'bn' ? f.name_bn : f.name_en}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[11px] text-gray-400">
+                {tr('Budget expenses will be tracked under this fund.', 'বাজেট ব্যয় এই তহবিলের অধীনে ট্র্যাক হবে।')}
+              </p>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-500">
+                {tr('Event Form Type', 'অনুষ্ঠানের ফর্ম ধরন')}
+              </label>
+              <select className="input" value={form.form_type} onChange={set('form_type')}>
+                <option value="general">{tr('General', 'সাধারণ')}</option>
+                <option value="blood_donation">{tr('Blood Donation Camp', 'রক্তদান শিবির')}</option>
+                <option value="relief_distribution">{tr('Relief & Distribution', 'ত্রাণ ও বিতরণ')}</option>
+              </select>
+              <p className="mt-1 text-[11px] text-gray-400">
+                {tr('Determines which special sections appear in event management.', 'অনুষ্ঠান পরিচালনায় কোন বিশেষ বিভাগগুলি দেখাবে তা নির্ধারণ করে।')}
+              </p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div><label className="mb-1 block text-xs font-medium text-gray-500">{tr('Start date', 'শুরুর তারিখ')}</label><input className="input" type="date" required value={form.event_date} onChange={set('event_date')} /></div>
             <div><label className="mb-1 block text-xs font-medium text-gray-500">{tr('End date', 'শেষ তারিখ')}</label><input className="input" type="date" value={form.end_date} onChange={set('end_date')} /></div>
@@ -163,6 +228,21 @@ export default function AdminEvents() {
                   <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold text-white" style={{ background: STATUS_COLOR[ev.status] }}>{statusLabel(ev.status)}</span>
                   <h3 className="font-semibold text-gray-900">{ev.title}</h3>
                   {ev.event_code && <span className="font-mono text-[10px] text-gray-400">{ev.event_code}</span>}
+                  {ev.form_type === 'blood_donation' && (
+                    <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: '#fee2e2', color: '#b91c1c' }}>
+                      {tr('Blood Donation', 'রক্তদান')}
+                    </span>
+                  )}
+                  {ev.form_type === 'relief_distribution' && (
+                    <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: '#fef9c3', color: '#a16207' }}>
+                      {tr('Relief & Distribution', 'ত্রাণ ও বিতরণ')}
+                    </span>
+                  )}
+                  {ev.fund_id && (
+                    <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: '#dcfce7', color: '#15803d' }}>
+                      {funds.find((f) => f.id === ev.fund_id)?.[lang === 'bn' ? 'name_bn' : 'name_en'] ?? tr('Fund linked', 'তহবিল যুক্ত')}
+                    </span>
+                  )}
                 </div>
                 <p className="mt-0.5 text-sm text-gray-500">
                   {ev.category || typeLabel(ev.type)} · {fmt.date(ev.event_date)}{ev.location ? ` · ${ev.location}` : ''} · {tr('attendance', 'উপস্থিতি')}: {fmt.num(counts[ev.id] ?? 0)}

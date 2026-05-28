@@ -326,7 +326,7 @@ function FeaturedStory() {
       <div className="mx-auto max-w-[1320px] px-6 py-28 md:px-10">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">
           <Reveal direction="left" className="relative aspect-[4/5] overflow-hidden rounded-[4px]">
-            <img src={story.img || FALLBACK} alt={story.title[lang]} className="h-full w-full object-cover" onError={onImgErr} />
+            <img src={story.img || FALLBACK} alt={story.title[lang]} className="h-full w-full object-cover" onError={onImgErr} loading="lazy" />
             <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, transparent 50%, rgba(28,25,23,0.55))' }} />
           </Reveal>
           <Reveal direction="right">
@@ -376,7 +376,7 @@ function Latest() {
           <Reveal direction="left" className="lg:col-span-7">
             <article className="group">
               <div className="img-zoom overflow-hidden rounded-[4px]">
-                <img src={featured.featuredImage || FALLBACK} alt={featured.title} className="aspect-[16/10] w-full object-cover" onError={onImgErr} />
+                <img src={featured.featuredImage || FALLBACK} alt={featured.title} className="aspect-[16/10] w-full object-cover" onError={onImgErr} loading="lazy" />
               </div>
               <div className="mt-6 flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-[0.18em]" style={{ color: 'var(--c-muted)' }}>
                 <span style={{ color: 'var(--c-brand)' }}>Featured</span>
@@ -401,7 +401,7 @@ function Latest() {
             {rest.map((post, i) => (
               <article key={post.id} className={`group flex gap-5 ${i === 0 ? 'pb-7' : 'py-7'}`}>
                 <div className="w-28 flex-shrink-0 overflow-hidden rounded-[3px] sm:w-36">
-                  <img src={post.featuredImage || FALLBACK} alt={post.title} className="aspect-square h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]" onError={onImgErr} />
+                  <img src={post.featuredImage || FALLBACK} alt={post.title} className="aspect-square h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]" onError={onImgErr} loading="lazy" />
                 </div>
                 <div className="flex flex-1 flex-col">
                   <div className="font-mono text-[10.5px] uppercase tracking-[0.18em]" style={{ color: 'var(--c-brand)' }}>{post.category}</div>

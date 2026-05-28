@@ -21,7 +21,8 @@ import {
   BarChart3,
   FileCheck,
   Mail,
-  ShieldCheck
+  ShieldCheck,
+  Droplet
 } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -54,8 +55,9 @@ export default function AdminLayout() {
     ...(isAdmin || canManageEvents ? [
       { to: '/admin/event-dashboard', label: t('a.eventsDashboard'), icon: LayoutDashboard,
         sectionLabel: isAdmin ? tr('Events', 'অনুষ্ঠান') : tr('Secretary', 'সেক্রেটারি') } as NavItem,
-      { to: '/admin/events',     label: t('a.events'),     icon: CalendarDays } as NavItem,
-      { to: '/admin/attendance', label: t('a.attendance'), icon: ClipboardList } as NavItem,
+      { to: '/admin/events',       label: t('a.events'),       icon: CalendarDays } as NavItem,
+      { to: '/admin/attendance',   label: t('a.attendance'),   icon: ClipboardList } as NavItem,
+      { to: '/admin/blood-donors', label: tr('Blood Donors', 'রক্তদাতা তালিকা'), icon: Droplet } as NavItem,
     ] : []),
 
     // ── Treasurer / Finance ───────────────────────────────────────────
