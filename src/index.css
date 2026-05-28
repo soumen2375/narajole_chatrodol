@@ -31,6 +31,13 @@
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
 
+  /* Site logo styling */
+  .site-logo {
+    border-radius: 1.5rem;
+    object-fit: contain;
+    display: block;
+  }
+
   /* Card lift — apply to any card that should rise on hover/touch */
   .card-lift {
     transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;

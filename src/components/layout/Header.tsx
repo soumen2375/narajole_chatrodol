@@ -38,9 +38,9 @@ export default function Header() {
       <div className="container mx-auto flex items-center justify-between px-4 py-3.5 md:py-4">
         <Link to="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
           <img
-            src="/assets/images/favicon/favicon512.png"
+            src="assets/images/favicon/android-chrome-512x512.png"
             alt="logo"
-            className="h-11 w-11 rounded-full object-cover"
+            className="h-11 w-11 site-logo"
           />
           <span className="flex flex-col leading-tight">
             <span
