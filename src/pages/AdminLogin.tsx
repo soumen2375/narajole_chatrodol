@@ -52,7 +52,7 @@ export default function AdminLogin() {
         style={{ background: ADMIN_DARK, borderBottom: `1px solid rgba(255,255,255,0.08)` }}
       >
         <Link to="/" className="flex items-center gap-2.5">
-          <img src="/assets/images/favicon/favicon512.png" alt="logo" className="h-8 w-8 rounded-full object-cover" style={{ background: CREAM }} />
+          <img src="assets/images/favicon/android-chrome-512x512.png" alt="logo" className="h-8 w-8 site-logo" style={{ background: CREAM }} />
           <div>
             <span className="block text-[15px] font-bold" style={{ ...SERIF_BN, color: CREAM }}>{lang === 'en' ? ORG.shortEn : ORG.shortBn}</span>
             <span className="block font-mono text-[9px] uppercase tracking-[0.22em]" style={{ color: 'rgba(255,255,255,0.45)' }}>Admin Portal</span>
