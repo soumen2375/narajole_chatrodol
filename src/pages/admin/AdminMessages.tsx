@@ -10,6 +10,12 @@ interface AdminMsg {
   id: string; member_id: string; sender_name: string; message: string;
   is_read: boolean; created_at: string; member?: { full_name: string };
 }
+interface MemberDM {
+  id: string; from_id: string; to_id: string | null; to_role: string | null;
+  subject: string; body: string; is_read: boolean; created_at: string;
+  from?: { full_name: string; avatar_url: string | null };
+  to?:   { full_name: string; avatar_url: string | null };
+}
 
 const TEAL = '#0c756f';
 const GOLD = '#b8860b';
@@ -71,7 +77,7 @@ const DRAFTS: Record<string, { en: string; bn: string }[]> = {
   ],
 };
 
-type Tab = 'inbox' | 'volunteer' | 'compose';
+type Tab = 'inbox' | 'volunteer' | 'member_dms' | 'compose';
 type Filter = 'all' | 'unread' | 'starred' | 'help' | 'blood' | 'donation';
 
 export default function AdminMessages() {
@@ -86,6 +92,10 @@ export default function AdminMessages() {
   const [apps, setApps] = useState<VolunteerApplication[]>([]);
   const [adminMsgs, setAdminMsgs] = useState<AdminMsg[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [memberDMs, setMemberDMs] = useState<MemberDM[]>([]);
+  const [selectedDM, setSelectedDM] = useState<MemberDM | null>(null);
+  const [dmReply, setDmReply] = useState('');
+  const [sendingDmReply, setSendingDmReply] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -102,19 +112,50 @@ export default function AdminMessages() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [m, v, am, mem] = await Promise.all([
+    const [m, v, am, mem, dm] = await Promise.all([
       supabase.from('cswo_contact_messages').select('*').order('created_at', { ascending: false }),
       supabase.from('cswo_volunteer_applications').select('*').order('created_at', { ascending: false }),
       supabase.from('cswo_admin_messages').select('*, member:cswo_members(full_name)').order('created_at', { ascending: false }),
       supabase.from('cswo_members').select('id,full_name,status').eq('status', 'approved').order('full_name'),
+      supabase.from('cswo_member_messages')
+        .select('*, from:from_id(full_name,avatar_url), to:to_id(full_name,avatar_url)')
+        .or('to_role.eq.admin,to_role.eq.treasurer,to_role.eq.secretary,to_role.eq.digital')
+        .order('created_at', { ascending: false }),
     ]);
     setMessages((m.data ?? []) as ContactMessage[]);
     setApps((v.data ?? []) as VolunteerApplication[]);
     setAdminMsgs((am.data ?? []) as AdminMsg[]);
     setMembers((mem.data ?? []) as Member[]);
+    setMemberDMs((dm.data ?? []) as MemberDM[]);
     setLoading(false);
   }, []);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    if (!me) return;
+
+    const channel = supabase
+      .channel('admin_messages_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'cswo_contact_messages' },
+        () => { load(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'cswo_volunteer_applications' },
+        () => { load(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'cswo_member_messages' },
+        () => { load(); }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [load, me]);
 
   const filtered = useMemo(() => {
     return messages.filter((m) => {
@@ -208,6 +249,7 @@ export default function AdminMessages() {
         {([
           { k: 'inbox' as Tab, l: `${tr('Inbox', 'ইনবক্স')}${unreadCount ? ` · ${fmt.num(unreadCount)}` : ''}` },
           { k: 'volunteer' as Tab, l: `${tr('Volunteer', 'স্বেচ্ছাসেবক')} · ${fmt.num(apps.length)}` },
+          { k: 'member_dms' as Tab, l: `${tr('Member DMs', 'সদস্য বার্তা')}${memberDMs.filter((d) => !d.is_read).length ? ` · ${memberDMs.filter((d) => !d.is_read).length}` : ''}` },
           { k: 'compose' as Tab, l: tr('Compose', 'লিখুন') },
         ]).map(({ k, l }) => (
           <button key={k} onClick={() => setTab(k)}
@@ -362,6 +404,74 @@ export default function AdminMessages() {
               {a.message && <p className="mt-1 whitespace-pre-line text-[13px]" style={{ color: INK }}>{a.message}</p>}
             </div>
           ))}
+        </div>
+      ) : tab === 'member_dms' ? (
+        /* ── Member DMs ─────────────────────────────────────────── */
+        <div className="space-y-3">
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Direct messages from members to roles', 'সদস্যদের ভূমিকা-বার্তা')}</div>
+          {memberDMs.length === 0 ? (
+            <p className="py-10 text-center text-[13px]" style={{ color: MUTED }}>{tr('No member messages yet.', 'কোনো সদস্য বার্তা নেই।')}</p>
+          ) : (
+            <div className="rounded-[10px] overflow-hidden" style={{ border: `1px solid ${RULE}` }}>
+              {memberDMs.map((dm, i) => (
+                <div key={dm.id}>
+                  {i > 0 && <div style={{ height: 1, background: RULE }} />}
+                  <div
+                    className="p-4 cursor-pointer hover:bg-stone-50 transition-colors"
+                    style={{ background: selectedDM?.id === dm.id ? '#f0fdf8' : (!dm.is_read ? 'rgba(12,117,111,0.03)' : PAPER) }}
+                    onClick={async () => {
+                      setSelectedDM(dm);
+                      setDmReply('');
+                      if (!dm.is_read) {
+                        await supabase.from('cswo_member_messages').update({ is_read: true }).eq('id', dm.id);
+                        setMemberDMs((arr) => arr.map((d) => d.id === dm.id ? { ...d, is_read: true } : d));
+                      }
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: TEAL }}>
+                        {(dm.from?.full_name ?? '?').split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[12.5px] font-semibold" style={{ color: INK }}>{dm.from?.full_name ?? '—'}</span>
+                          <span className="text-[10px]" style={{ color: MUTED }}>{fmt.date(dm.created_at)}</span>
+                        </div>
+                        <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize" style={{ background: 'rgba(12,117,111,0.1)', color: TEAL }}>{tr('To', 'প্রেরণ:')} {dm.to_role}</span>
+                        <p className="mt-0.5 text-[12px] font-medium" style={{ color: INK2 }}>{dm.subject}</p>
+                        <p className="mt-0.5 line-clamp-1 text-[12px]" style={{ color: MUTED }}>{dm.body}</p>
+                      </div>
+                      {!dm.is_read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ background: TEAL }} />}
+                    </div>
+                    {selectedDM?.id === dm.id && (
+                      <div className="mt-3 space-y-2 border-t pt-3" style={{ borderColor: RULE }} onClick={(e) => e.stopPropagation()}>
+                        <p className="text-[13px] leading-relaxed whitespace-pre-line" style={{ color: INK }}>{dm.body}</p>
+                        <div className="flex items-center gap-2">
+                          <textarea rows={2} value={dmReply} onChange={(e) => setDmReply(e.target.value)} placeholder={tr('Reply…', 'উত্তর দিন…')} className="flex-1 rounded-[6px] px-3 py-2 text-[12.5px] outline-none resize-none" style={{ border: `1px solid ${RULE}` }} />
+                          <button
+                            disabled={sendingDmReply || !dmReply.trim()}
+                            onClick={async () => {
+                              if (!me || !dmReply.trim()) return;
+                              setSendingDmReply(true);
+                              await supabase.from('cswo_member_messages').insert({ from_id: me.id, to_id: dm.from_id, subject: `Re: ${dm.subject}`, body: dmReply.trim(), parent_id: dm.id });
+                              setSendingDmReply(false);
+                              setDmReply('');
+                              setSelectedDM(null);
+                              await load();
+                            }}
+                            className="shrink-0 rounded-full px-4 py-2 text-[12.5px] font-semibold text-white disabled:opacity-60"
+                            style={{ background: TEAL }}
+                          >
+                            {sendingDmReply ? '…' : tr('Send', 'পাঠান')}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <form onSubmit={handleSend} className="space-y-3 rounded-[10px] p-5" style={{ background: PAPER, border: `1px solid ${RULE}` }}>

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Camera } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { Attendance, CswoEvent, CswoPost, Donation, Member, MemberRole, MemberStatus, MonthlyContribution } from '@/types';
@@ -43,6 +43,8 @@ export default function AdminMemberDetail() {
   } | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarFileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -141,6 +143,36 @@ export default function AdminMemberDetail() {
     setBusyMonth(null);
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
+    setAvatarUploading(true);
+    try {
+      // 1. List files starting with member ID to clean up
+      const { data: files } = await supabase.storage
+        .from('avatars')
+        .list('', { search: id });
+      
+      if (files && files.length > 0) {
+        const pathsToDelete = files.map((f) => f.name);
+        await supabase.storage.from('avatars').remove(pathsToDelete);
+      }
+
+      // 2. Upload timestamped avatar
+      const ext  = file.name.split('.').pop() ?? 'jpg';
+      const path = `${id}_${Date.now()}.${ext}`;
+      await supabase.storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type });
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+      await supabase.from('cswo_members').update({ avatar_url: publicUrl }).eq('id', id);
+      await load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setAvatarUploading(false);
+      if (avatarFileRef.current) avatarFileRef.current.value = '';
+    }
+  };
+
   if (loading) return <DashboardSkeleton />;
   if (!m) return <p className="text-gray-600">{tr('Member not found.', 'সদস্য পাওয়া যায়নি।')}</p>;
 
@@ -160,11 +192,35 @@ export default function AdminMemberDetail() {
       {/* Profile header */}
       <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{m.full_name}</h1>
-            <p className="text-gray-600">
-              {m.designation || (m.role === 'admin' ? t('common.admin') : t('common.member'))} · {m.email}
-            </p>
+          <div className="flex items-center gap-4">
+            {/* Avatar */}
+            <div className="relative shrink-0">
+              {m.avatar_url ? (
+                <img src={`${m.avatar_url}?v=${m.updated_at}`} alt={m.full_name} className="h-16 w-16 rounded-full object-cover ring-2 ring-gray-200" />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal-700 text-xl font-bold text-white ring-2 ring-gray-200">
+                  {m.full_name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => avatarFileRef.current?.click()}
+                disabled={avatarUploading}
+                className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                title="Change avatar"
+              >
+                {avatarUploading
+                  ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+                  : <Camera className="h-3.5 w-3.5 text-gray-500" />}
+              </button>
+              <input ref={avatarFileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleAvatarUpload} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{m.full_name}</h1>
+              <p className="text-gray-600">
+                {m.designation || (m.role === 'admin' ? t('common.admin') : t('common.member'))} · {m.email}
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="badge bg-blue-100 text-blue-800">

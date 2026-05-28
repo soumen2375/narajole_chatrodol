@@ -91,6 +91,8 @@ export interface CswoEvent {
   pincode: string;
   map_link: string;
   expected_participants: number;
+  fund_id: string | null;
+  form_type: 'general' | 'blood_donation' | 'relief_distribution';
 }
 
 export type EventBudgetStatus = 'planned' | 'approved' | 'paid';

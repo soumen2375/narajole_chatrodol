@@ -155,14 +155,17 @@ export default function DashboardShell({
 
         {/* Sidebar header (Glass Card design) */}
         <div className="p-4 pb-1 shrink-0 z-10">
-          <div
-            className="flex items-center gap-3 px-3.5 backdrop-blur-[10px]"
+          <Link
+            to="/member/profile"
+            className="flex items-center gap-3 px-3.5 backdrop-blur-[10px] transition-all hover:bg-white/[0.04]"
             style={{
               height: '84px',
               background: 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))',
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: '16px',
+              display: 'flex'
             }}
+            title={t('m.profile')}
           >
             <MemberAvatar avatarUrl={member?.avatar_url ?? null} name={member?.full_name ?? 'M'} size={40} />
             <div className="min-w-0 flex-1">
@@ -176,7 +179,7 @@ export default function DashboardShell({
                 {title}
               </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Scrollable nav area */}
@@ -323,7 +326,9 @@ export default function DashboardShell({
             <NotificationBell />
             <LanguageToggle />
             {member && (
-              <MemberAvatar avatarUrl={member.avatar_url} name={member.full_name} size={32} />
+              <Link to="/member/profile" title={t('m.profile')} className="transition-transform hover:scale-105 active:scale-95">
+                <MemberAvatar avatarUrl={member.avatar_url} name={member.full_name} size={32} />
+              </Link>
             )}
           </div>
         </header>

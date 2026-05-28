@@ -55,7 +55,8 @@ export default function AdminExpenses() {
 
   const [expenses, setExpenses] = useState<CswoExpense[]>([]);
   const [funds, setFunds] = useState<CswoFund[]>([]);
-  const [events, setEvents] = useState<{ id: string; title: string; event_code: string | null }[]>([]);
+  const [events, setEvents] = useState<{ id: string; title: string; event_code: string | null; fund_id: string | null }[]>([]);
+  const [eventBudgetCats, setEventBudgetCats] = useState<string[]>([]);
   const [bankAccounts, setBankAccounts] = useState<CswoBankAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterFund, setFilterFund] = useState('');
@@ -141,7 +142,7 @@ export default function AdminExpenses() {
         .order('sort_order'),
       supabase
         .from('cswo_events')
-        .select('id,title,event_code')
+        .select('id,title,event_code,fund_id')
         .order('event_date', { ascending: false }),
       supabase
         .from('cswo_bank_accounts')
@@ -151,21 +152,31 @@ export default function AdminExpenses() {
     ]);
     setExpenses((ef.data ?? []) as CswoExpense[]);
     setFunds((ff.data ?? []) as CswoFund[]);
-    setEvents((ev.data ?? []) as { id: string; title: string; event_code: string | null }[]);
+    setEvents((ev.data ?? []) as { id: string; title: string; event_code: string | null; fund_id: string | null }[]);
     setBankAccounts((ba.data ?? []) as CswoBankAccount[]);
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
+  const loadBudgetCats = async (eventId: string) => {
+    if (!eventId) { setEventBudgetCats([]); return; }
+    const { data } = await supabase
+      .from('cswo_event_budget_items')
+      .select('category')
+      .eq('event_id', eventId);
+    setEventBudgetCats([...new Set((data ?? []).map((b: { category: string }) => b.category).filter(Boolean))]);
+  };
+
   const openAdd = () => {
     setEditing(null);
+    setEventBudgetCats([]);
     setForm({ ...EMPTY_FORM, fund_id: funds[0]?.id ?? '', status: 'draft' });
     setErr('');
     setShowModal(true);
   };
 
-  const openEdit = (e: CswoExpense) => {
+  const openEdit = async (e: CswoExpense) => {
     setEditing(e);
     setForm({
       fund_id: e.fund_id,
@@ -181,6 +192,8 @@ export default function AdminExpenses() {
       bank_account_id: e.bank_account_id ?? '',
     });
     setErr('');
+    if (e.event_id) await loadBudgetCats(e.event_id);
+    else setEventBudgetCats([]);
     setShowModal(true);
   };
 
@@ -469,7 +482,14 @@ export default function AdminExpenses() {
                 <select
                   className="input"
                   value={form.fund_id}
-                  onChange={(e) => setForm((f) => ({ ...f, fund_id: e.target.value }))}
+                  onChange={(e) => {
+                    const newFund = e.target.value;
+                    // If current event doesn't belong to this fund, clear it
+                    const curEvFund = events.find((ev) => ev.id === form.event_id)?.fund_id ?? null;
+                    const clearEvent = form.event_id && curEvFund && curEvFund !== newFund;
+                    setForm((f) => ({ ...f, fund_id: newFund, event_id: clearEvent ? '' : f.event_id }));
+                    if (clearEvent) setEventBudgetCats([]);
+                  }}
                 >
                   <option value="">{tr('Select fund…', 'ফান্ড বেছে নিন…')}</option>
                   {funds.filter((f) => !f.is_frozen).map((f) => (
@@ -481,17 +501,35 @@ export default function AdminExpenses() {
               </div>
 
               <div>
-                <label className="label">{tr('Event / camp (optional)', 'অনুষ্ঠান / ক্যাম্প (ঐচ্ছিক)')}</label>
+                <label className="label">
+                  {tr('Event / camp (optional)', 'অনুষ্ঠান / ক্যাম্প (ঐচ্ছিক)')}
+                  {form.fund_id && (
+                    <span className="ml-2 text-[11px] font-normal" style={{ color: '#15803d' }}>
+                      {tr('— showing events for selected fund', '— নির্বাচিত তহবিলের অনুষ্ঠান দেখানো হচ্ছে')}
+                    </span>
+                  )}
+                </label>
                 <select
                   className="input"
                   value={form.event_id}
-                  onChange={(e) => setForm((f) => ({ ...f, event_id: e.target.value }))}
+                  onChange={async (e) => {
+                    const newEventId = e.target.value;
+                    setForm((f) => ({ ...f, event_id: newEventId }));
+                    await loadBudgetCats(newEventId);
+                  }}
                 >
                   <option value="">{tr('Not linked to an event', 'কোনো অনুষ্ঠানে যুক্ত নয়')}</option>
-                  {events.map((ev) => (
-                    <option key={ev.id} value={ev.id}>{ev.title}{ev.event_code ? ` · ${ev.event_code}` : ''}</option>
-                  ))}
+                  {events
+                    .filter((ev) => !form.fund_id || !ev.fund_id || ev.fund_id === form.fund_id)
+                    .map((ev) => (
+                      <option key={ev.id} value={ev.id}>{ev.title}{ev.event_code ? ` · ${ev.event_code}` : ''}</option>
+                    ))}
                 </select>
+                {eventBudgetCats.length > 0 && (
+                  <p className="mt-1 text-[11px]" style={{ color: '#0c756f' }}>
+                    {tr('Budget categories:', 'বাজেট বিভাগ:')} {eventBudgetCats.join(' · ')}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -528,13 +566,21 @@ export default function AdminExpenses() {
               </div>
 
               <div>
-                <label className="label">{tr('Description', 'বিবরণ')}</label>
-                <textarea
-                  className="input resize-none"
-                  rows={2}
+                <label className="label">{tr('Description / Sub-category', 'বিবরণ / উপ-বিভাগ')}</label>
+                <input
+                  list="exp-budget-cats"
+                  className="input"
+                  placeholder={eventBudgetCats.length > 0
+                    ? tr('Type or choose a budget category…', 'বাজেট বিভাগ টাইপ বা নির্বাচন করুন…')
+                    : tr('Description', 'বিবরণ')}
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 />
+                {eventBudgetCats.length > 0 && (
+                  <datalist id="exp-budget-cats">
+                    {eventBudgetCats.map((cat) => <option key={cat} value={cat} />)}
+                  </datalist>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">

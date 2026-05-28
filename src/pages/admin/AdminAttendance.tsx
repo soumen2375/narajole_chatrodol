@@ -24,7 +24,26 @@ export default function AdminAttendance() {
         supabase.from('cswo_events').select('*').order('event_date', { ascending: false }),
         supabase.from('cswo_members').select('*').eq('status', 'approved').order('full_name'),
       ]);
-      const evList = (ev.data ?? []) as CswoEvent[];
+      
+      const sorted = [...(ev.data ?? [])].sort((a, b) => {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        if (a.status === 'live' && b.status !== 'live') return -1;
+        if (b.status === 'live' && a.status !== 'live') return 1;
+
+        const aIsUpcoming = a.event_date >= todayStr;
+        const bIsUpcoming = b.event_date >= todayStr;
+
+        if (aIsUpcoming && !bIsUpcoming) return -1;
+        if (!aIsUpcoming && bIsUpcoming) return 1;
+
+        if (aIsUpcoming && bIsUpcoming) {
+          return a.event_date.localeCompare(b.event_date);
+        }
+
+        return b.event_date.localeCompare(a.event_date);
+      });
+
+      const evList = sorted as CswoEvent[];
       setEvents(evList);
       setMembers((mem.data ?? []) as Member[]);
       if (evList.length) setSelected(evList[0].id);

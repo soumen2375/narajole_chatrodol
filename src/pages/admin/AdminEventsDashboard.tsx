@@ -50,7 +50,24 @@ export default function AdminEventsDashboard() {
         supabase.from('cswo_attendance').select('id', { count: 'exact', head: true }),
         supabase.from('cswo_event_volunteers').select('id', { count: 'exact', head: true }),
       ]);
-      setEvents((evR.data ?? []) as Ev[]);
+      const sortedEv = [...(evR.data ?? [])].sort((a, b) => {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        if (a.status === 'live' && b.status !== 'live') return -1;
+        if (b.status === 'live' && a.status !== 'live') return 1;
+
+        const aIsUpcoming = a.event_date >= todayStr;
+        const bIsUpcoming = b.event_date >= todayStr;
+
+        if (aIsUpcoming && !bIsUpcoming) return -1;
+        if (!aIsUpcoming && bIsUpcoming) return 1;
+
+        if (aIsUpcoming && bIsUpcoming) {
+          return a.event_date.localeCompare(b.event_date);
+        }
+
+        return b.event_date.localeCompare(a.event_date);
+      });
+      setEvents(sortedEv as Ev[]);
       setExpenses((exR.data ?? []) as Ex[]);
       setDonations((dnR.data ?? []) as Dn[]);
       setDonors((bdR.data ?? []) as Bd[]);

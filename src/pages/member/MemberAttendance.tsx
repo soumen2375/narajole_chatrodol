@@ -25,7 +25,24 @@ export default function MemberAttendance() {
       supabase.from('cswo_events').select('*').order('event_date', { ascending: false }),
       supabase.from('cswo_attendance').select('*').eq('member_id', member.id),
     ]);
-    setEvents((ev.data ?? []) as CswoEvent[]);
+    const sorted = [...(ev.data ?? [])].sort((a, b) => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      if (a.status === 'live' && b.status !== 'live') return -1;
+      if (b.status === 'live' && a.status !== 'live') return 1;
+
+      const aIsUpcoming = a.event_date >= todayStr;
+      const bIsUpcoming = b.event_date >= todayStr;
+
+      if (aIsUpcoming && !bIsUpcoming) return -1;
+      if (!aIsUpcoming && bIsUpcoming) return 1;
+
+      if (aIsUpcoming && bIsUpcoming) {
+        return a.event_date.localeCompare(b.event_date);
+      }
+
+      return b.event_date.localeCompare(a.event_date);
+    });
+    setEvents(sorted as CswoEvent[]);
     const map: Record<string, Attendance> = {};
     for (const a of (att.data ?? []) as Attendance[]) map[a.event_id] = a;
     setMine(map);
