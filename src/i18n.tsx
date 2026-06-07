@@ -139,6 +139,11 @@ const D: Dict = {
   'events.catRelief': { bn: 'ত্রাণ', en: 'Relief' },
   'events.heroTitle': { bn: 'মাঠ থেকে — আমাদের সাম্প্রতিক কর্মসূচি ও ইভেন্ট।', en: 'From the field — our recent programmes & events.' },
   'events.heroLede': { bn: 'রক্তদান, স্বাস্থ্য শিবির, পরিবেশ অভিযান, সাংস্কৃতিক উদযাপন — সব কিছুর সাম্প্রতিক রিপোর্ট এখানে।', en: 'Blood donation, health camps, environmental drives, cultural celebrations — the latest reports from every front.' },
+  'events.sortNewest': { bn: 'নতুন থেকে পুরানো', en: 'Newest to Oldest' },
+  'events.sortOldest': { bn: 'পুরানো থেকে নতুন', en: 'Oldest to Newest' },
+  'events.sort': { bn: 'সাজান:', en: 'Sort:' },
+  'events.bloodRequest': { bn: 'রক্তের আবেদন', en: 'Blood Request' },
+  'events.bloodCamp': { bn: 'রক্তদান শিবির আয়োজন করুন', en: 'Organise Blood Camp' },
 
   // ---- gallery ----
   'gallery.title': { bn: 'চিত্রশালা', en: 'Gallery' },
@@ -179,8 +184,8 @@ const D: Dict = {
   'contact.anotherMsg': { bn: 'আরেকটি বার্তা', en: 'Send another' },
   'contact.office': { bn: 'দফতর', en: 'Office' },
   'contact.subjectOpts': {
-    bn: 'বিষয় বেছে নিন…,স্বেচ্ছাসেবী হতে চাই,দান সংক্রান্ত জিজ্ঞাসা,কর্মসূচি সম্পর্কে,মিডিয়া / সংবাদ,অন্যান্য',
-    en: 'Choose a subject…,I want to volunteer,Donation enquiry,About a programme,Media / press,Other',
+    bn: 'বিষয় বেছে নিন…,স্বেচ্ছাসেবী হতে চাই,দান সংক্রান্ত জিজ্ঞাসা,কর্মসূচি সম্পর্কে,শিক্ষা বিষয়ক,রক্তের প্রয়োজন,মিডিয়া / সংবাদ,অন্যান্য',
+    en: 'Choose a subject…,I want to volunteer,Donation enquiry,About a programme,Education related,Blood required,Media / press,Other',
   },
 
   // ---- volunteer ----
@@ -231,6 +236,24 @@ const D: Dict = {
     en: 'Payment could not be completed. Please try again later.',
   },
   'pay.cancelled': { bn: 'পেমেন্ট বাতিল করা হয়েছে।', en: 'Payment was cancelled.' },
+
+  // ---- blood request ----
+  'blood.requestTitle': { bn: 'রক্তের আবেদন', en: 'Blood Request' },
+  'blood.requestSubtitle': { bn: 'জরুরি রক্তের প্রয়োজন? এখানে আবেদন করুন', en: 'Need blood urgently? Apply here' },
+  'blood.patientName': { bn: 'রোগীর নাম', en: 'Patient Name' },
+  'blood.bloodGroup': { bn: 'রক্তের গ্রুপ', en: 'Blood Group' },
+  'blood.hospital': { bn: 'হাসপাতাল', en: 'Hospital' },
+  'blood.contactPhone': { bn: 'যোগাযোগের নম্বর', en: 'Contact Phone' },
+  'blood.unitsNeeded': { bn: 'কত ইউনিট প্রয়োজন', en: 'Units Needed' },
+  'blood.requiredDate': { bn: 'কত তারিখের মধ্যে', en: 'Required By' },
+  'blood.campTitle': { bn: 'রক্তদান শিবির আয়োজন করুন', en: 'Organise a Blood Camp' },
+  'blood.campSubtitle': { bn: 'আমাদের সাথে একটি রক্তদান শিবির আয়োজন করতে চান?', en: 'Want to organise a blood donation camp with us?' },
+  'blood.orgName': { bn: 'সংগঠনের নাম', en: 'Organisation Name' },
+  'blood.proposedDate': { bn: 'প্রস্তাবিত তারিখ', en: 'Proposed Date' },
+  'blood.proposedVenue': { bn: 'প্রস্তাবিত স্থান', en: 'Proposed Venue' },
+  'blood.expectedDonors': { bn: 'প্রত্যাশিত দাতার সংখ্যা', en: 'Expected Donors' },
+  'blood.submitRequest': { bn: 'আবেদন জমা দিন', en: 'Submit Request' },
+  'blood.submitSuccess': { bn: 'আপনার আবেদন পাঠানো হয়েছে। আমরা শীঘ্রই যোগাযোগ করব।', en: 'Your request has been submitted. We will be in touch soon.' },
 
   // ---- footer ----
   'footer.about': {
@@ -316,7 +339,7 @@ const I18nContext = createContext<I18nValue | undefined>(undefined);
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
     const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('cswo_lang') : null;
-    return saved === 'en' || saved === 'bn' ? saved : 'bn';
+    return saved === 'en' || saved === 'bn' ? saved : 'en';
   });
 
   useEffect(() => {

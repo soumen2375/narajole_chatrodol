@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/i18n';
 import LanguageToggle from '@/components/ui/LanguageToggle';
 import { ORG } from '@/data/content';
+import { supabase } from '@/lib/supabase';
 
 const SERIF_BN = { fontFamily: '"Noto Serif Bengali", "Noto Sans Bengali", serif' };
 const INK    = '#1c1917';
@@ -21,6 +22,9 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotStatus, setForgotStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +42,15 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotStatus('sending');
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/member/profile`,
+    });
+    setForgotStatus(error ? 'error' : 'sent');
   };
 
   return (
@@ -109,6 +122,17 @@ export default function Login() {
                   placeholder="••••••••"
                 />
               </div>
+              {/* Forgot password link */}
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => setForgotMode(true)}
+                  className="font-bengali text-[12.5px] transition-opacity hover:opacity-70"
+                  style={{ color: BRAND }}
+                >
+                  {lang === 'bn' ? 'পাসওয়ার্ড ভুলে গেছেন?' : 'Forgot password?'}
+                </button>
+              </div>
               <button
                 type="submit"
                 disabled={loading}
@@ -139,6 +163,53 @@ export default function Login() {
               {lang === 'bn' ? 'অ্যাডমিন লগইন পেজে যান' : 'Go to Admin Login'}
             </Link>
           </div>
+
+          {/* Forgot password modal */}
+          {forgotMode && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+              <div className="w-full max-w-sm rounded-[4px] p-8" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
+                <h2 className="font-bengali text-[22px] font-bold" style={{ ...SERIF_BN, color: INK }}>
+                  {lang === 'bn' ? 'পাসওয়ার্ড রিসেট' : 'Reset Password'}
+                </h2>
+                <p className="mt-2 mb-5 font-bengali text-[13px]" style={{ color: MUTED }}>
+                  {lang === 'bn' ? 'আপনার ইমেল দিন, আমরা রিসেট লিংক পাঠাব।' : 'Enter your email and we will send a reset link.'}
+                </p>
+                {forgotStatus === 'sent' ? (
+                  <div className="rounded-[4px] px-4 py-3 font-bengali text-[13px]" style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', color: '#15803d' }}>
+                    {lang === 'bn' ? '✓ রিসেট লিংক পাঠানো হয়েছে। আপনার ইমেল চেক করুন।' : '✓ Reset link sent. Please check your email.'}
+                  </div>
+                ) : (
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <input
+                      type="email"
+                      required
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      className="w-full rounded-[4px] border bg-transparent px-4 py-3 text-[14px] outline-none focus:border-[#c2410c]"
+                      style={{ borderColor: RULE, color: INK }}
+                    />
+                    {forgotStatus === 'error' && (
+                      <p className="font-bengali text-[12.5px]" style={{ color: BRAND }}>
+                        {lang === 'bn' ? 'পাঠাতে সমস্যা হয়েছে।' : 'Could not send reset link.'}
+                      </p>
+                    )}
+                    <div className="flex gap-3">
+                      <button type="button" onClick={() => { setForgotMode(false); setForgotStatus('idle'); setForgotEmail(''); }}
+                        className="flex-1 rounded-full border py-2.5 font-bengali text-[13px]" style={{ borderColor: RULE, color: INK }}>
+                        {lang === 'bn' ? 'বাতিল' : 'Cancel'}
+                      </button>
+                      <button type="submit" disabled={forgotStatus === 'sending'}
+                        className="flex-1 rounded-full py-2.5 font-bengali text-[13px] font-semibold text-white disabled:opacity-60"
+                        style={{ background: BRAND }}>
+                        {forgotStatus === 'sending' ? (lang === 'bn' ? 'পাঠানো হচ্ছে…' : 'Sending…') : (lang === 'bn' ? 'লিংক পাঠান' : 'Send Link')}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+          )}
 
           <p className="mt-6 text-center font-mono text-[11px] uppercase tracking-[0.18em]">
             <Link to="/" style={{ color: MUTED }} className="transition-colors hover:opacity-70">

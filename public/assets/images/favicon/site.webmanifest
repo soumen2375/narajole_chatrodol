@@ -1,7 +1,7 @@
 {
   "name": "Chhatradol Social Welfare Organisation",
-  "short_name": "Chhatradol SWO",
-  "description": "নাড়াজোল ছাত্রদল - A public charitable trust working for education, health, environment and relief of the poor.",
+  "short_name": "Chhatradol",
+  "description": "Chhatradol - A public charitable trust working for education, health, environment and relief of the poor.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",

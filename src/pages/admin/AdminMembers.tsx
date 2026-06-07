@@ -97,6 +97,9 @@ export default function AdminMembers() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [menu, setMenu] = useState<{ id: string; top: number; bottom: number; right: number } | null>(null);
+  const [pwdMemberId, setPwdMemberId] = useState<string | null>(null);
+  const [newPwd, setNewPwd] = useState('');
+  const [pwdStatus, setPwdStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -142,6 +145,23 @@ export default function AdminMembers() {
   const setStatus = async (id: string, status: Member['status']) => { await supabase.from('cswo_members').update({ status }).eq('id', id); await load(); };
   const setRole = async (id: string, role: Member['role']) => { await supabase.from('cswo_members').update({ role }).eq('id', id); await load(); };
   const setCapability = async (id: string, cap: CapKey) => { await supabase.from('cswo_members').update(capFlags(cap)).eq('id', id); await load(); };
+
+  const updatePassword = async () => {
+    if (!pwdMemberId || newPwd.length < 6) return;
+    setPwdStatus('saving');
+    // Call Supabase admin function to update password
+    const { error } = await supabase.functions.invoke('admin-update-password', {
+      body: { memberId: pwdMemberId, newPassword: newPwd },
+    });
+    setPwdStatus(error ? 'error' : 'done');
+    if (!error) { setTimeout(() => { setPwdMemberId(null); setNewPwd(''); setPwdStatus('idle'); }, 2000); }
+  };
+
+  const deleteMember = async (memberId: string, memberName: string) => {
+    if (!window.confirm(tr(`Delete member "${memberName}"? This cannot be undone.`, `সদস্য "${memberName}" মুছবেন? এটি পূরবাস যায় না।`))) return;
+    await supabase.from('cswo_members').delete().eq('id', memberId);
+    await load();
+  };
 
   // ── counts for chips / stat cards ──
   const counts = useMemo(() => ({
@@ -333,6 +353,8 @@ export default function AdminMembers() {
                             <FaCheck className="h-2.5 w-2.5" /> OK
                           </button>
                         )}
+                        <button onClick={() => { setPwdMemberId(m.id); setNewPwd(''); setPwdStatus('idle'); }} className="text-[12px] font-medium" style={{ color: '#6366f1' }}>{tr('Edit Password', 'পাসওয়ার্ড সম্পাদনা')}</button>
+                        <button onClick={() => deleteMember(m.id, m.full_name)} className="text-[12px] font-medium text-red-600">{tr('Delete', 'মুছুন')}</button>
                         <button onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setMenu(menu?.id === m.id ? null : { id: m.id, top: r.top, bottom: r.bottom, right: r.right }); }} className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-black/5" style={{ color: MUTED }} aria-label="Actions">
                           <FaEllipsis className="h-4 w-4" />
                         </button>
@@ -366,6 +388,35 @@ export default function AdminMembers() {
       {menu && menuMember && createPortal(
         <RowMenu rect={menu} m={menuMember} me={me} tr={tr} navigate={navigate} onClose={() => setMenu(null)} setRole={setRole} setStatus={setStatus} setCapability={setCapability} />,
         document.body,
+      )}
+
+      {pwdMemberId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full max-w-sm rounded-[8px] p-6" style={{ background: '#fff', border: '1px solid #e7e5e4' }}>
+            <h3 className="mb-4 text-[16px] font-bold" style={{ color: '#1c1917' }}>{tr('Update Password', 'পাসওয়ার্ড আপডেট')}</h3>
+            <input
+              type="password"
+              value={newPwd}
+              onChange={(e) => setNewPwd(e.target.value)}
+              placeholder={tr('New password (min 6 chars)', 'নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)')}
+              className="w-full rounded-[6px] border px-3 py-2 text-[13px] outline-none mb-4 focus:border-indigo-500"
+              style={{ borderColor: '#e7e5e4' }}
+            />
+            {pwdStatus === 'done' && <p className="mb-3 text-[12.5px]" style={{ color: '#16a34a' }}>{tr('✓ Password updated.', '✓ পাসওয়ার্ড আপডেট হয়েছে।')}</p>}
+            {pwdStatus === 'error' && <p className="mb-3 text-[12.5px]" style={{ color: '#dc2626' }}>{tr('Error updating password.', 'পাসওয়ার্ড আপডেট সমস্যা।')}</p>}
+            <div className="flex gap-3">
+              <button onClick={() => { setPwdMemberId(null); setNewPwd(''); setPwdStatus('idle'); }}
+                className="flex-1 rounded-full border py-2 text-[12.5px]" style={{ borderColor: '#e7e5e4', color: '#78716c' }}>
+                {tr('Cancel', 'বাতিল')}
+              </button>
+              <button onClick={updatePassword} disabled={pwdStatus === 'saving' || newPwd.length < 6}
+                className="flex-1 rounded-full py-2 text-[12.5px] font-semibold text-white disabled:opacity-50"
+                style={{ background: '#6366f1' }}>
+                {pwdStatus === 'saving' ? tr('Saving…', 'সংরক্ষণ…') : tr('Update', 'আপডেট')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

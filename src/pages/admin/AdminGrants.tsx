@@ -265,8 +265,22 @@ export default function AdminGrants() {
             <h2 className="mb-4 text-[18px] font-bold" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>{editingG ? tr('Edit grant', 'অনুদান সম্পাদনা') : tr('New grant', 'নতুন অনুদান')}</h2>
             {gErr && <p className="mb-3 rounded px-3 py-2 text-[13px]" style={{ background: 'rgba(194,65,12,0.1)', color: BRAND }}>{gErr}</p>}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {/* Key identification fields */}
               <input className="input" placeholder={tr('Grantor / agency', 'অনুদানদাতা / সংস্থা')} value={gForm.grantor} onChange={(e) => setGForm((f) => ({ ...f, grantor: e.target.value }))} />
               <input className="input" placeholder={tr('Grant / project title', 'অনুদান / প্রকল্পের শিরোনাম')} value={gForm.title} onChange={(e) => setGForm((f) => ({ ...f, title: e.target.value }))} />
+              {/* Contact person - moved to top */}
+              <input className="input sm:col-span-2" placeholder={tr('Contact person name & phone', 'যোগাযোগের ব্যক্তির নাম ও ফোন')} value={gForm.contact_person} onChange={(e) => setGForm((f) => ({ ...f, contact_person: e.target.value }))} />
+              {/* Date fields - moved up */}
+              <div className="sm:col-span-2">
+                <div className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em]" style={{ color: '#78716c' }}>
+                  {tr('Grant Period', 'অনুদানের মেয়াদ')}
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <input className="input" type="date" value={gForm.start_date} onChange={(e) => setGForm((f) => ({ ...f, start_date: e.target.value }))} />
+                  <input className="input" type="date" value={gForm.end_date} onChange={(e) => setGForm((f) => ({ ...f, end_date: e.target.value }))} />
+                </div>
+              </div>
+              {/* Financial details */}
               <input className="input" placeholder={tr('Reference / agreement no.', 'রেফারেন্স / চুক্তি নং')} value={gForm.reference} onChange={(e) => setGForm((f) => ({ ...f, reference: e.target.value }))} />
               <input className="input" type="number" placeholder={tr('Sanctioned amount (₹)', 'অনুমোদিত পরিমাণ (₹)')} value={gForm.sanctioned_amount} onChange={(e) => setGForm((f) => ({ ...f, sanctioned_amount: e.target.value }))} />
               <select className="input" value={gForm.fund_id} onChange={(e) => setGForm((f) => ({ ...f, fund_id: e.target.value }))}>
@@ -276,9 +290,6 @@ export default function AdminGrants() {
               <select className="input" value={gForm.status} onChange={(e) => setGForm((f) => ({ ...f, status: e.target.value as GrantStatus }))}>
                 {GRANT_STATUS.map((s) => <option key={s} value={s}>{statusLabel(s)}</option>)}
               </select>
-              <input className="input" type="date" value={gForm.start_date} onChange={(e) => setGForm((f) => ({ ...f, start_date: e.target.value }))} />
-              <input className="input" type="date" value={gForm.end_date} onChange={(e) => setGForm((f) => ({ ...f, end_date: e.target.value }))} />
-              <input className="input sm:col-span-2" placeholder={tr('Contact person', 'যোগাযোগের ব্যক্তি')} value={gForm.contact_person} onChange={(e) => setGForm((f) => ({ ...f, contact_person: e.target.value }))} />
               <textarea className="input resize-none sm:col-span-2" rows={2} placeholder={tr('Note', 'নোট')} value={gForm.note} onChange={(e) => setGForm((f) => ({ ...f, note: e.target.value }))} />
             </div>
             <div className="mt-5 flex justify-end gap-3">

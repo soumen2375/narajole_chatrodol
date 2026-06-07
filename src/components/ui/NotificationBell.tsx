@@ -32,7 +32,12 @@ export default function NotificationBell() {
 
   const load = useCallback(async () => {
     if (!member) return;
-    const { data } = await supabase.from('cswo_notifications').select('*').order('created_at', { ascending: false }).limit(30);
+    const { data } = await supabase
+      .from('cswo_notifications')
+      .select('*')
+      .eq('recipient_id', member.id)
+      .order('created_at', { ascending: false })
+      .limit(30);
     setItems((data ?? []) as CswoNotification[]);
   }, [member]);
 
@@ -48,7 +53,6 @@ export default function NotificationBell() {
           event: '*',
           schema: 'public',
           table: 'cswo_notifications',
-          filter: `recipient_id=eq.${member.id}`,
         },
         () => {
           load();

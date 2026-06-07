@@ -31,6 +31,23 @@ export default function Volunteer() {
       message: form.message || null,
     });
     if (err) { setStatus('error'); setError(t('volunteer.error')); return; }
+
+    // Send confirmation email to user if email provided
+    if (form.email) {
+      try {
+        await supabase.functions.invoke('send-volunteer-confirmation', {
+          body: {
+            name: form.name,
+            email: form.email,
+            area: form.area,
+          },
+        });
+      } catch {
+        // Email sending failure should not block success state
+        console.warn('Confirmation email could not be sent');
+      }
+    }
+
     setStatus('sent');
     setForm({ name: '', email: '', phone: '', area: VOLUNTEER_PROGRAM_OPTIONS[0].en, message: '', agree: false });
   };
@@ -70,6 +87,11 @@ export default function Volunteer() {
                     {bn ? 'আবেদন জমা হয়েছে।' : 'Application submitted.'}
                   </p>
                   <p className="mt-2 font-bengali text-[13.5px]" style={{ color: 'var(--c-ink-2)' }}>{t('volunteer.success')}</p>
+                  {form.email === '' && (
+                    <p className="mt-2 font-bengali text-[12px]" style={{ color: 'var(--c-muted)' }}>
+                      {bn ? '\u0987\u09ae\u09c7\u09b2 \u09a6\u09bf\u09b2\u09c7 \u09a8\u09bf\u09b6\u09cd\u099a\u09bf\u09a4\u0995\u09b0\u09a3 \u099c\u09be\u09a8\u09be\u09a8\u09cb \u09b9\u09a4\u09cb\u0964' : 'Provide your email to receive a confirmation.'}
+                    </p>
+                  )}
                   <button
                     type="button"
                     onClick={() => setStatus('idle')}

@@ -32,7 +32,7 @@ export default function AdminCertificates() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState<string | null>(null);
-  const [sign, setSign] = useState({ left: '', right: '', date: '' });
+  const [sign, setSign] = useState({ left: '', right: '', date: '', leftImage: '', rightImage: '', autoSign: false });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -108,7 +108,19 @@ export default function AdminCertificates() {
         <div class="pre">This is proudly presented to</div>
         <div class="name">${c.recipient_name}</div>
         <div class="body">${bodyOf(c)}, held on ${dateStr}${venue ? ` at ${venue}` : ''}.</div>
-        <div class="sign"><div class="b"><div class="line">${sign.left || 'Organiser'}</div>Organiser</div><div class="seal">★</div><div class="b"><div class="line">${sign.right || 'Secretary'}</div>Secretary</div></div>
+        <div class="sign">
+          <div class="b">
+            ${sign.autoSign && sign.leftImage ? `<img src="${sign.leftImage}" alt="signature" style="max-height:40px;max-width:120px;display:block;margin-bottom:2px;" />` : ''}
+            <div class="line">${sign.left || 'Organiser'}</div>
+            Organiser
+          </div>
+          <div class="seal">★</div>
+          <div class="b">
+            ${sign.autoSign && sign.rightImage ? `<img src="${sign.rightImage}" alt="signature" style="max-height:40px;max-width:120px;display:block;margin-bottom:2px;" />` : ''}
+            <div class="line">${sign.right || 'Secretary'}</div>
+            Secretary
+          </div>
+        </div>
         <div class="code">${c.cert_code ?? ''}</div>
       </div></div>`).join('');
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Certificates</title>
@@ -175,12 +187,45 @@ export default function AdminCertificates() {
 
       {/* Signatories */}
       <div className="rounded-[10px] p-4" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
-        <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em]" style={{ color: MUTED }}>{tr('Certificate settings', 'সার্টিফিকেট সেটিংস')}</div>
+        <div className="mb-3 flex items-center justify-between">
+          <div className="font-mono text-[10px] uppercase tracking-[0.16em]" style={{ color: MUTED }}>{tr('Certificate settings', 'সার্টিফিকেট সেটিংস')}</div>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input type="checkbox" checked={sign.autoSign} onChange={(e) => setSign((s) => ({ ...s, autoSign: e.target.checked }))}
+              className="h-4 w-4 rounded accent-teal-700" />
+            <span className="text-[12px] font-medium" style={{ color: INK2 }}>{tr('Auto Signature Print', 'স্বয়ংক্রিয় স্বাক্ষর')}</span>
+          </label>
+        </div>
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-          <input value={sign.left} onChange={(e) => setSign((s) => ({ ...s, left: e.target.value }))} placeholder={tr('Left signatory (Organiser)', 'বাম স্বাক্ষর (সংগঠক)')} className="rounded-[6px] px-3 py-2 text-[13px] outline-none" style={{ border: `1px solid ${RULE}`, color: INK }} />
-          <input value={sign.right} onChange={(e) => setSign((s) => ({ ...s, right: e.target.value }))} placeholder={tr('Right signatory (Secretary)', 'ডান স্বাক্ষর (সম্পাদক)')} className="rounded-[6px] px-3 py-2 text-[13px] outline-none" style={{ border: `1px solid ${RULE}`, color: INK }} />
+          <input value={sign.left} onChange={(e) => setSign((s) => ({ ...s, left: e.target.value }))} placeholder={tr('Left signatory (Organiser)', 'বাম স্বাক্ষর (সংগঠক)')} className="w-full rounded-[6px] px-3 py-2 text-[13px] outline-none" style={{ border: `1px solid ${RULE}`, color: INK }} />
+          <input value={sign.right} onChange={(e) => setSign((s) => ({ ...s, right: e.target.value }))} placeholder={tr('Right signatory (Secretary)', 'ডান স্বাক্ষর (সম্পাদক)')} className="w-full rounded-[6px] px-3 py-2 text-[13px] outline-none" style={{ border: `1px solid ${RULE}`, color: INK }} />
           <input type="date" value={sign.date} onChange={(e) => setSign((s) => ({ ...s, date: e.target.value }))} className="rounded-[6px] px-3 py-2 text-[13px] outline-none" style={{ border: `1px solid ${RULE}`, color: INK2 }} />
         </div>
+        {sign.autoSign && (
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-[8px] p-3" style={{ border: `1px dashed ${RULE}` }}>
+              <label className="mb-1 block text-[10px] font-mono uppercase tracking-[0.14em]" style={{ color: MUTED }}>{tr('Signature image (left)', 'দস্তখত ছবি (বাম)')}</label>
+              <input type="file" accept="image/*" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => setSign((s) => ({ ...s, leftImage: ev.target?.result as string }));
+                reader.readAsDataURL(file);
+              }} className="w-full text-[11.5px]" style={{ color: INK2 }} />
+              {sign.leftImage && <img src={sign.leftImage} alt="Left signature" className="mt-1.5 max-h-12 rounded border" style={{ borderColor: RULE }} />}
+            </div>
+            <div className="rounded-[8px] p-3" style={{ border: `1px dashed ${RULE}` }}>
+              <label className="mb-1 block text-[10px] font-mono uppercase tracking-[0.14em]" style={{ color: MUTED }}>{tr('Signature image (right)', 'দস্তখত ছবি (ডান)')}</label>
+              <input type="file" accept="image/*" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => setSign((s) => ({ ...s, rightImage: ev.target?.result as string }));
+                reader.readAsDataURL(file);
+              }} className="w-full text-[11.5px]" style={{ color: INK2 }} />
+              {sign.rightImage && <img src={sign.rightImage} alt="Right signature" className="mt-1.5 max-h-12 rounded border" style={{ borderColor: RULE }} />}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add + import */}

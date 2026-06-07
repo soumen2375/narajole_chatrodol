@@ -84,8 +84,8 @@ function Hero() {
 
           <p className="mt-7 max-w-lg font-bengali text-[16px] leading-[1.75] text-white/75 md:text-[18px]">
             {bn
-              ? 'শিক্ষা, স্বাস্থ্য, পরিবেশ ও দরিদ্রসেবা — সাত বছর ধরে নাড়াজোলের প্রতিটি মানুষের পাশে।'
-              : 'Education, health, environment and service to the poor — seven years of standing beside every person in Narajole.'}
+              ? 'শিক্ষা, স্বাস্থ্য, পরিবেশ ও দরিদ্রসেবা — সাত বছর ধরে প্রতিটি মানুষের পাশে।'
+              : 'Education, health, environment and service to the poor — seven years of standing beside every person'}
           </p>
 
           <div className="mt-9 flex flex-wrap gap-3">
@@ -177,8 +177,8 @@ function Mission() {
             </h2>
             <p className="mt-7 font-bengali text-[16px] leading-[1.75]" style={{ color: 'var(--c-ink-2)' }}>
               {bn
-                ? '২০১৯ সালে নাড়াজোলের একদল তরুণ ছাত্রছাত্রীর হাত ধরে শুরু হয়েছিল আমাদের পথচলা। আজ আমরা একটি রেজিস্টার্ড পাবলিক চ্যারিটেবল ট্রাস্ট, যা পশ্চিম মেদিনীপুরের প্রান্তিক মানুষের পাশে নিরলসভাবে কাজ করে।'
-                : 'Our journey began in 2019, led by a group of young students from Narajole. Today we are a registered public charitable trust, tirelessly working beside the marginalised people of Paschim Medinipur.'}
+                ? '২০১৯ সালে মেদিনীপুরের একদল তরুণ ছাত্রছাত্রীর হাত ধরে শুরু হয়েছিল আমাদের পথচলা। আজ আমরা একটি রেজিস্টার্ড পাবলিক চ্যারিটেবল ট্রাস্ট, যা বাংলার প্রান্তিক মানুষের পাশে নিরলসভাবে কাজ করে।'
+                : 'Our journey began in 2019, led by a group of young students from Medinipur. Today we are a registered public charitable trust, tirelessly working beside the marginalised people of Bengal.'}
             </p>
             <p className="mt-4 font-bengali text-[16px] leading-[1.75]" style={{ color: 'var(--c-ink-2)' }}>
               {bn

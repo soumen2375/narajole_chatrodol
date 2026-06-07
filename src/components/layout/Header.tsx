@@ -14,21 +14,23 @@ const CREAM = '#faf6ef';
 const NAV_KEYS = [
   { to: '/',         key: 'nav.home',     exact: true },
   { to: '/about',    key: 'nav.about' },
-  { to: '/programs', key: 'nav.programs' },
   { to: '/events',   key: 'nav.events' },
   { to: '/gallery',  key: 'nav.gallery' },
-  { to: '/impacts',  key: 'nav.impacts' },
+  // { to: '/programs', key: 'nav.programs' },
+  // { to: '/impacts',  key: 'nav.impacts' },
   { to: '/contact',  key: 'nav.contact' },
+  { to: '/volunteer',  key: 'nav.volunteer' },
 ];
 
 export default function Header() {
   const [open, setOpen] = useState(false);
   const { member, isAdmin } = useAuth();
-  const { t, lang } = useT();
+  const { t } = useT();
 
   const dashboardPath = isAdmin ? '/admin' : '/member';
 
-  const orgName = lang === 'en' ? ORG.shortEn : ORG.shortBn;
+  // const orgName = lang === 'en' ? ORG.shortEn : ORG.shortBn;
+  const orgName = ORG.shortEn;
 
   return (
     <header
@@ -50,7 +52,7 @@ export default function Header() {
               {orgName}
             </span>
             <span className="hidden text-[10.5px] font-medium uppercase tracking-[0.18em] sm:block" style={{ color: 'rgba(250,246,239,0.75)' }}>
-              Chhatradol · Public Charitable Trust
+              Public Charitable Trust
             </span>
           </span>
         </Link>
@@ -93,10 +95,10 @@ export default function Header() {
           )}
           <Link
             to="/donate"
-            className="inline-flex items-center gap-1.5 rounded-full px-5 py-2 font-bengali text-[13px] font-semibold transition-all hover:-translate-y-[1px]"
+            className="inline-flex items-center gap-1.5 rounded-full px-5 py-2 font-bengali text-[13px] font-semibold transition-all hover:-translate-y-[1px] donate-blink"
             style={{ background: INK, color: CREAM, boxShadow: '0 8px 18px -10px rgba(0,0,0,0.5)' }}
           >
-            {t('nav.donate')} →
+            {t('nav.donate')} ❤
           </Link>
         </nav>
 
@@ -159,10 +161,10 @@ export default function Header() {
                 <Link
                   to="/donate"
                   onClick={() => setOpen(false)}
-                  className="rounded-full px-4 py-2.5 text-center font-bengali font-semibold"
+                  className="rounded-full px-4 py-2.5 text-center font-bengali font-semibold donate-blink"
                   style={{ background: INK, color: CREAM }}
                 >
-                  {t('nav.donate')} →
+                  {t('nav.donate')} ❤
                 </Link>
               </div>
             </div>

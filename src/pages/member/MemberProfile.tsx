@@ -3,6 +3,7 @@ import { Camera } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
+import { compressImage } from '@/lib/imageCompression';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -48,11 +49,12 @@ export default function MemberProfile() {
       }
 
       // 2. Upload timestamped avatar
+      const compressed = await compressImage(file, 'avatar');
       const ext  = file.name.split('.').pop() ?? 'jpg';
       const path = `${member.id}_${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from('avatars')
-        .upload(path, file, { upsert: true, contentType: file.type });
+        .upload(path, compressed, { upsert: true, contentType: file.type });
       if (upErr) throw upErr;
 
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);

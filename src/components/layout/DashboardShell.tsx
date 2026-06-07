@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { ComponentType, SVGProps } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/i18n';
 import LanguageToggle from '@/components/ui/LanguageToggle';
@@ -100,8 +100,49 @@ export default function DashboardShell({
   const { member, isAdmin, canManagePosts, canManageEvents, canManageFinance, signOut } = useAuth();
   const { t } = useT();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const groups = useMemo(() => groupItems(items), [items]);
+
   const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    for (const group of groups) {
+      if (group.label) {
+        const hasActive = group.items.some((it) => {
+          if (it.end) return location.pathname === it.to;
+          return location.pathname.startsWith(it.to);
+        });
+        if (hasActive) {
+          initial[group.label] = true;
+        }
+      }
+    }
+    return initial;
+  });
+
+  useEffect(() => {
+    for (const group of groups) {
+      if (group.label) {
+        const hasActive = group.items.some((it) => {
+          if (it.end) return location.pathname === it.to;
+          return location.pathname.startsWith(it.to);
+        });
+        if (hasActive) {
+          setExpanded((prev) => ({ ...prev, [group.label!]: true }));
+        }
+      }
+    }
+  }, [location.pathname, groups]);
+
+  const toggle = (label: string) => setExpanded((p) => ({ ...p, [label]: !p[label] }));
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const displayId = member ? memberDisplayId(member) : '';
 
   const roleLabel = (() => {
     if (panel === 'admin' || isAdmin) return 'Admin';
@@ -114,16 +155,6 @@ export default function DashboardShell({
     if (parts.length >= 3) return 'All Roles';
     return parts.join(' · ');
   })();
-
-  const groups = useMemo(() => groupItems(items), [items]);
-  const toggle = (label: string) => setExpanded((p) => ({ ...p, [label]: !p[label] }));
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
-
-  const displayId = member ? memberDisplayId(member) : '';
 
   return (
     <div className="flex min-h-screen" style={{ background: CREAM }}>
@@ -182,6 +213,18 @@ export default function DashboardShell({
           </Link>
         </div>
 
+        {/* Mobile close button */}
+        <button
+          className="absolute top-3 right-3 lg:hidden flex items-center justify-center rounded-full p-1.5 transition-colors hover:bg-white/10"
+          onClick={() => setOpen(false)}
+          aria-label="Close menu"
+          style={{ color: 'rgba(250,246,239,0.7)' }}
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         {/* Scrollable nav area */}
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3.5 py-2 z-10 premium-sidebar-nav">
           {groups.map((group) => (
@@ -210,10 +253,10 @@ export default function DashboardShell({
               <div
                 className="transition-all duration-220 ease-in-out overflow-hidden"
                 style={{
-                  maxHeight: (!group.label || !!expanded[group.label]) ? '1000px' : '0',
+                  maxHeight: !group.label ? 'none' : (expanded[group.label] ? '700px' : '0'),
                   opacity: (!group.label || !!expanded[group.label]) ? 1 : 0,
                   transform: (!group.label || !!expanded[group.label]) ? 'translateY(0)' : 'translateY(-8px)',
-                  transitionProperty: 'all',
+                  transitionProperty: !group.label ? 'none' : 'all',
                 }}
               >
                 {group.items.map((it) => (
@@ -299,9 +342,11 @@ export default function DashboardShell({
       </aside>
 
       {/* Backdrop */}
-      {open && (
-        <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-xs lg:hidden" onClick={() => setOpen(false)} />
-      )}
+      <div 
+        className={`fixed inset-0 z-30 lg:hidden transition-all duration-200 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        style={{ background: 'rgba(0,0,0,0.4)' }}
+        onClick={() => setOpen(false)} 
+      />
 
       {/* Main content */}
       <div className="flex min-w-0 flex-1 flex-col lg:pl-[280px]">
@@ -311,12 +356,20 @@ export default function DashboardShell({
           style={{ background: PAPER, borderBottom: `1px solid ${RULE}`, boxShadow: '0 1px 8px rgba(0,2,1,0.04)' }}
         >
           <button
-            className="lg:hidden rounded-[4px] p-1.5 transition-colors hover:bg-gray-100"
-            onClick={() => setOpen(true)}
-            aria-label="Open menu"
+            className="lg:hidden rounded-[8px] p-2 transition-colors hover:bg-gray-100 active:bg-gray-200"
+            onClick={() => setOpen(!open)}
+            aria-label={open ? 'Close menu' : 'Open menu'}
             style={{ color: INK }}
           >
-            <ChevronDown className="h-5 w-5 rotate-90" />
+            {open ? (
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
           </button>
 
           <div className="hidden text-sm font-semibold lg:block" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>

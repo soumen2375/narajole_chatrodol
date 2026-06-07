@@ -6,7 +6,7 @@ export default function Terms() {
     <LegalLayout title="Terms & Conditions">
       <p>
         These Terms &amp; Conditions ("Terms") govern your use of the website operated by{' '}
-        <strong>{ORG.nameEn}</strong> (also known as নাড়াজোল ছাত্রদল), a public charitable trust registered under the
+        <strong>{ORG.nameEn}</strong> (also known as ছাত্রদল), a public charitable trust registered under the
         Indian Trusts Act, 1882, having its registered office at {ORG.address.en.join(', ')} ("the Organisation",
         "we", "us", or "our"). By accessing or using this website, making a donation, or registering as a member,
         you agree to be bound by these Terms.

@@ -59,6 +59,7 @@ export default function MemberLayout() {
     { to: '/member/contributions', label: t('m.contributions'), icon: BadgeIndianRupee },
     { to: '/member/donations',     label: t('m.donations'),     icon: HeartHandshake },
     { to: '/member/messages',      label: t('m.messages'),      icon: Mail, badge: unreadMsgs },
+    { to: '/member/blood-donors',  label: tr('Blood Donors', 'রক্তদাতা'), icon: Droplet },
 
     // ── Digital Media Capability (Dynamic) ─────────────────────────────
     ...(canManagePosts ? [

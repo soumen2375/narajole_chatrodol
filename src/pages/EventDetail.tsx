@@ -1,9 +1,9 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FaFacebook, FaWhatsapp, FaXTwitter, FaLink } from 'react-icons/fa6';
 import { usePosts } from '@/hooks/usePosts';
 import { useT } from '@/i18n';
-import { PageShell, SERIF_BN, Icon } from './_field-journal';
+import { PageShell, SERIF_BN, SERIF_EN, Icon } from './_field-journal';
 
 const FALLBACK = '/assets/images/chatrodol.jpg';
 const onImgErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -94,6 +94,90 @@ function RelatedCard({ id, title, featuredImage, category, publishedDate }: {
   );
 }
 
+// ─── Translation helpers ─────────────────────────────────────────────
+async function fetchTranslation(text: string): Promise<string> {
+  const trimmed = text.trim();
+  if (!trimmed) return text;
+  
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=bn|en`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Network error');
+  const data = await res.json();
+  if (data.responseData && data.responseData.translatedText) {
+    const trans = data.responseData.translatedText;
+    if (trans.includes('IS EXCEEDED') || trans.includes('MYMEMORY WARNING')) {
+      throw new Error('API limit reached');
+    }
+    return trans;
+  }
+  throw new Error('No translation returned');
+}
+
+async function translateTextChunk(text: string): Promise<string> {
+  const trimmed = text.trim();
+  if (!trimmed) return text;
+  
+  if (trimmed.length < 500) {
+    return fetchTranslation(trimmed);
+  }
+  
+  const segments = trimmed.split(/([।!?\n.])/g);
+  let currentChunk = '';
+  const chunks: string[] = [];
+  
+  for (const part of segments) {
+    if ((currentChunk + part).length > 450) {
+      if (currentChunk) chunks.push(currentChunk);
+      currentChunk = part;
+    } else {
+      currentChunk += part;
+    }
+  }
+  if (currentChunk) chunks.push(currentChunk);
+  
+  try {
+    const results = await Promise.all(chunks.map(chunk => fetchTranslation(chunk)));
+    return results.join('');
+  } catch (error) {
+    console.error('Translation failed, returning original text:', error);
+    return text;
+  }
+}
+
+async function translateHTML(htmlContent: string): Promise<string> {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlContent, 'text/html');
+  
+  const textNodes: { node: Node; text: string }[] = [];
+  
+  function walk(node: Node) {
+    if (node.nodeType === Node.TEXT_NODE && node.nodeValue?.trim()) {
+      textNodes.push({ node, text: node.nodeValue });
+    } else {
+      for (let i = 0; i < node.childNodes.length; i++) {
+        walk(node.childNodes[i]);
+      }
+    }
+  }
+  
+  walk(doc.body);
+  
+  if (textNodes.length > 0) {
+    try {
+      const translatedTexts = await Promise.all(
+        textNodes.map(item => translateTextChunk(item.text))
+      );
+      for (let i = 0; i < textNodes.length; i++) {
+        textNodes[i].node.nodeValue = translatedTexts[i];
+      }
+    } catch (error) {
+      console.error('HTML translation failed:', error);
+    }
+  }
+  
+  return doc.body.innerHTML;
+}
+
 // ════════════════════════════════════════════════════════════════════
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
@@ -103,6 +187,53 @@ export default function EventDetail() {
   const bn = lang === 'bn';
 
   const post = useMemo(() => posts.find((p) => p.id === id), [posts, id]);
+
+  const [translated, setTranslated] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [transTitle, setTransTitle] = useState('');
+  const [transContent, setTransContent] = useState('');
+  const [transError, setTransError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTranslated(false);
+    setTransTitle('');
+    setTransContent('');
+    setTransError(null);
+  }, [id, lang]);
+
+  const isHtml = post ? post.content.trim().startsWith('<') : false;
+  const paragraphs = post && !isHtml ? post.content.split('\n').filter(Boolean) : [];
+
+  const toggleTranslation = async () => {
+    if (!post) return;
+    if (translated) {
+      setTranslated(false);
+      return;
+    }
+    if (transTitle && transContent) {
+      setTranslated(true);
+      return;
+    }
+    setTranslating(true);
+    setTransError(null);
+    try {
+      const tTitle = await translateTextChunk(post.title);
+      let tContent = '';
+      if (isHtml) {
+        tContent = await translateHTML(post.content);
+      } else {
+        tContent = await translateTextChunk(post.content);
+      }
+      setTransTitle(tTitle);
+      setTransContent(tContent);
+      setTranslated(true);
+    } catch (err) {
+      console.error(err);
+      setTransError(lang === 'en' ? 'Translation failed. Please try again.' : 'অনুবাদ সফল হয়নি। আবার চেষ্টা করুন।');
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   // Inject SEO meta tags into <head> while this post is mounted
   useEffect(() => {
@@ -169,8 +300,6 @@ export default function EventDetail() {
 
   const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
   const mins = readingMinutes(post.content);
-  const isHtml = post.content.trim().startsWith('<');
-  const paragraphs = isHtml ? [] : post.content.split('\n').filter(Boolean);
 
   return (
     <PageShell>
@@ -196,14 +325,43 @@ export default function EventDetail() {
 
             {/* ── Article ────────────────────────────────── */}
             <article className="lg:col-span-8">
-              {/* Category chip */}
-              <span className="inline-flex items-center rounded-full px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.18em]" style={{ background: 'rgba(194,65,12,0.08)', color: 'var(--c-brand)' }}>
-                {post.category}
-              </span>
+              {/* Category chip & Translate Button */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="inline-flex items-center rounded-full px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.18em]" style={{ background: 'rgba(194,65,12,0.08)', color: 'var(--c-brand)' }}>
+                  {post.category}
+                </span>
+
+                {lang === 'en' && (
+                  <button
+                    onClick={toggleTranslation}
+                    disabled={translating}
+                    className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-all hover:bg-[color:var(--c-brand)] hover:text-white disabled:opacity-50"
+                    style={{ borderColor: 'var(--c-rule)', color: 'var(--c-brand)' }}
+                  >
+                    {translating ? (
+                      <>
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Translating...
+                      </>
+                    ) : translated ? (
+                      'Show Original (Bn)'
+                    ) : (
+                      'Translate to En'
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* Translation Error */}
+              {transError && (
+                <p className="mt-2 font-mono text-[11px] text-red-500">
+                  {transError}
+                </p>
+              )}
 
               {/* Title */}
-              <h1 className="mt-4 font-bengali text-[30px] leading-[1.13] md:text-[42px]" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>
-                {post.title}
+              <h1 className="mt-4 text-[30px] leading-[1.13] md:text-[42px]" style={{ ...(translated ? SERIF_EN : SERIF_BN), color: 'var(--c-ink)' }}>
+                {translated && transTitle ? transTitle : post.title}
               </h1>
 
               {/* Meta */}
@@ -226,20 +384,20 @@ export default function EventDetail() {
 
               {/* Share — top */}
               <div className="mt-5 pb-6 border-b" style={{ borderColor: 'var(--c-rule)' }}>
-                <ShareBar title={post.title} url={pageUrl} />
+                <ShareBar title={translated && transTitle ? transTitle : post.title} url={pageUrl} />
               </div>
 
               {/* Body */}
               {isHtml ? (
                 <div
-                  className="prose prose-lg mt-8 max-w-none font-bengali"
+                  className={`prose prose-lg mt-8 max-w-none ${translated ? 'font-sans' : 'font-bengali'}`}
                   style={{ color: 'var(--c-ink-2)' }}
-                  dangerouslySetInnerHTML={{ __html: post.content }}
+                  dangerouslySetInnerHTML={{ __html: translated && transContent ? transContent : post.content }}
                 />
               ) : (
-                <div className="mt-8 space-y-5">
-                  {paragraphs.map((para, i) => (
-                    <p key={i} className="font-bengali text-[16px] leading-[1.88]" style={{ color: 'var(--c-ink-2)' }}>
+                <div className={`mt-8 space-y-5 ${translated ? 'font-sans' : 'font-bengali'}`}>
+                  {(translated && transContent ? transContent.split('\n').filter(Boolean) : paragraphs).map((para, i) => (
+                    <p key={i} className="text-[16px] leading-[1.88]" style={{ color: 'var(--c-ink-2)' }}>
                       {para}
                     </p>
                   ))}

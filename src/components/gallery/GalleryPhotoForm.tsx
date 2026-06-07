@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
 import { useGalleryCategoryOptions } from '@/hooks/useGallery';
+import { compressImage } from '@/lib/imageCompression';
 
 export interface GalleryFormData {
   src: string;
@@ -75,9 +76,10 @@ export default function GalleryPhotoForm({ title, initial, nextSortOrder, isAdmi
       }
       if (selectedFile) {
         setUploading(true);
+        const compressed = await compressImage(selectedFile, 'media');
         const ext = selectedFile.name.split('.').pop() ?? 'jpg';
         const path = `gallery/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: uploadErr } = await supabase.storage.from('post-images').upload(path, selectedFile);
+        const { error: uploadErr } = await supabase.storage.from('post-images').upload(path, compressed);
         if (uploadErr) {
           setUploading(false);
           setError(tr(`Upload failed: ${uploadErr.message}`, `আপলোড ব্যর্থ: ${uploadErr.message}`));

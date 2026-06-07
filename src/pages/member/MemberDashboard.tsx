@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useFmt, monthNames, toBengaliDigits } from '@/lib/format';
 import { useT } from '@/i18n';
+import { subscribeToPush, getNotificationPermission, showLocalNotification } from '@/lib/pushNotifications';
 import { memberDisplayId } from '@/types';
 import type { CswoEvent, MonthlyContribution } from '@/types';
 import { 
@@ -109,6 +110,24 @@ export default function MemberDashboard() {
 
   const [data, setData] = useState<DashData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
+
+  useEffect(() => {
+    const perm = getNotificationPermission();
+    if (perm === 'default') {
+      setShowPushPrompt(true);
+    }
+  }, []);
+
+  const handleEnablePush = async () => {
+    const sub = await subscribeToPush();
+    if (sub) {
+      showLocalNotification(tr('Notifications Enabled ✓', 'বিজ্ঞপ্তি সক্রিয় করা হয়েছে ✓'), {
+        body: tr('You will now receive updates on monthly contributions and events.', 'আপনি এখন থেকে চাঁদা ও অনুষ্ঠানের আপডেট পাবেন।'),
+      });
+    }
+    setShowPushPrompt(false);
+  };
 
   useEffect(() => {
     if (!member) return;
@@ -248,6 +267,42 @@ export default function MemberDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Push notifications prompt */}
+      {showPushPrompt && (
+        <div
+          className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl p-4 border animate-fade-in"
+          style={{ background: 'rgba(253,207,111,0.06)', borderColor: ACCENT }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🔔</span>
+            <div>
+              <p className="text-sm font-bold" style={{ color: INK }}>
+                {tr('Enable Phone Notifications', 'ফোনে নোটিফিকেশন চালু করুন')}
+              </p>
+              <p className="text-xs" style={{ color: MUTED }}>
+                {tr('Never miss monthly dues alerts or event announcements.', 'মাসিক চাঁদা বা কোনো গুরুত্বপূর্ণ নোটিশ মিস করবেন না।')}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={handleEnablePush}
+              className="rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider"
+              style={{ background: BRAND, color: '#fff' }}
+            >
+              {tr('Enable', 'চালু করুন')}
+            </button>
+            <button
+              onClick={() => setShowPushPrompt(false)}
+              className="rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider hover:bg-gray-100"
+              style={{ color: MUTED }}
+            >
+              {tr('Dismiss', 'বাতিল')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Profile Card ───────────────────────────────────────────────────── */}
       <div
@@ -684,6 +739,41 @@ export default function MemberDashboard() {
               — {tr('Governing Board, Chatrodol Trust', 'পরিচালনা পর্ষদ, ছাত্রদল ট্রাস্ট')}
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* ── Blood Donor Directory Card ────────────────────────────────── */}
+      <div
+        className="rounded-2xl p-5 border bg-white card-lift"
+        style={{ borderColor: RULE, boxShadow: '0 2px 10px rgba(0,2,1,0.03)' }}
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
+              style={{ background: 'rgba(185,28,28,0.08)' }}
+            >
+              <Droplet className="h-5 w-5 fill-red-600 text-red-600" />
+            </div>
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: '#b91c1c' }}>
+                BLOOD DONORS · {tr('Directory', 'পরিচিতি')}
+              </p>
+              <h3 className="mt-0.5 text-[18px] font-bold" style={{ ...SERIF, color: INK }}>
+                {tr('Blood Donor Registry', 'রক্তদাতা পঞ্জিকা')}
+              </h3>
+              <p className="mt-1 text-[12px]" style={{ color: MUTED }}>
+                {tr('Find members who have donated blood at our camps. Browse by blood group.', 'আমাদের শিবিরে রক্তদানকারী সদস্যদের খুঁজুন। রক্তের গ্রুপ অনুযায়ী ব্রাউজ করুন।')}
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/member/blood-donors"
+            className="shrink-0 rounded-full px-5 py-2.5 text-[12px] font-extrabold uppercase tracking-[0.12em] transition-all hover:-translate-y-[1px] shadow-sm"
+            style={{ background: '#b91c1c', color: '#fff' }}
+          >
+            {tr('View Donors →', 'দাতা দেখুন →')}
+          </Link>
         </div>
       </div>
     </div>

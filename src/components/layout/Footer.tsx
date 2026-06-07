@@ -63,10 +63,10 @@ export default function Footer() {
         <div className="mt-12 grid grid-cols-2 gap-8 md:grid-cols-4">
           <FooterColumn title={t('footer.quickLinks')} links={[
             { to: '/',         label: t('nav.home') },
-            { to: '/about',    label: t('nav.about') },
             { to: '/programs', label: t('nav.programs') },
-            { to: '/events',   label: t('nav.events') },
             { to: '/impacts',  label: t('nav.impacts') },
+            { to: '/blood-request', label: bn ? 'রক্তের আবেদন' : 'Blood Request' },
+            { to: '/organise-blood-camp', label: bn ? 'রক্তদান শিবির ফর্ম' : 'Organise Blood Camp' },
           ]} />
           <FooterColumn title={t('footer.getInvolved')} links={[
             { to: '/volunteer', label: t('nav.volunteer') },
