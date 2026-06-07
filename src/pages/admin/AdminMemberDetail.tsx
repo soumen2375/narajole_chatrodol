@@ -8,6 +8,7 @@ import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { compressImage } from '@/lib/imageCompression';
 
 type AttendanceWithEvent = Attendance & { event?: CswoEvent | null };
 
@@ -159,9 +160,10 @@ export default function AdminMemberDetail() {
       }
 
       // 2. Upload timestamped avatar
+      const compressed = await compressImage(file, 'avatar');
       const ext  = file.name.split('.').pop() ?? 'jpg';
       const path = `${id}_${Date.now()}.${ext}`;
-      await supabase.storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type });
+      await supabase.storage.from('avatars').upload(path, compressed, { upsert: true, contentType: file.type });
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
       await supabase.from('cswo_members').update({ avatar_url: publicUrl }).eq('id', id);
       await load();

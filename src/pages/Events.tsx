@@ -44,6 +44,7 @@ export default function Events() {
   const [year, setYear] = useState('all');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   const topLevelCats = useMemo(() => {
     const names = new Set(posts.map((p) => p.category));
@@ -58,13 +59,19 @@ export default function Events() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return posts.filter((p) => {
+    const result = posts.filter((p) => {
       if (filter !== 'all' && p.category !== filter) return false;
       if (year !== 'all' && yearOf(p.publishedDate) !== year) return false;
       if (q && !(`${p.title} ${excerpt(p.content, 400)}`.toLowerCase().includes(q))) return false;
       return true;
     });
-  }, [posts, filter, year, query]);
+    // Sort by date
+    return [...result].sort((a, b) => {
+      const da = new Date(a.publishedDate).getTime() || 0;
+      const db = new Date(b.publishedDate).getTime() || 0;
+      return sortOrder === 'newest' ? db - da : da - db;
+    });
+  }, [posts, filter, year, query, sortOrder]);
 
   const isDefaultView = filter === 'all' && year === 'all' && !query.trim();
   const featured = isDefaultView ? filtered[0] : undefined;
@@ -150,6 +157,11 @@ export default function Events() {
             </div>
 
             <div className="flex items-center gap-2.5">
+              <select value={sortOrder} onChange={(e) => reset(() => setSortOrder(e.target.value as 'newest' | 'oldest'))}
+                className="rounded-[8px] px-3 py-2 font-bengali text-[13px] outline-none" style={{ background: FJ.paper, color: FJ.ink2, border: `1px solid ${FJ.rule}` }}>
+                <option value="newest">{tr('Newest First', '\u09a8\u09a4\u09c1\u09a8 \u09aa\u09cd\u09b0\u09a5\u09ae\u09c7')}</option>
+                <option value="oldest">{tr('Oldest First', '\u09aa\u09c1\u09b0\u09be\u09a8\u09cb \u09aa\u09cd\u09b0\u09a5\u09ae\u09c7')}</option>
+              </select>
               <select value={year} onChange={(e) => reset(() => setYear(e.target.value))}
                 className="rounded-[8px] px-3 py-2 font-bengali text-[13px] outline-none" style={{ background: FJ.paper, color: FJ.ink2, border: `1px solid ${FJ.rule}` }}>
                 <option value="all">{tr('All Years', 'সব বছর')}</option>
@@ -244,6 +256,53 @@ export default function Events() {
               </button>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* ════ BLOOD SERVICES ════ */}
+      <section style={{ background: FJ.paper }} className="border-t border-stone-200/50">
+        <div className="mx-auto max-w-[1320px] px-6 py-12 md:px-10">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Request Blood Card */}
+            <div className="rounded-[16px] p-6 flex flex-col justify-between" style={{ background: FJ.bg, border: `1px solid ${FJ.rule}` }}>
+              <div>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full" style={{ background: 'rgba(220,38,38,0.08)' }}>
+                  <Icon.Heart className="h-5 w-5 text-red-600" />
+                </span>
+                <h3 className="mt-4 font-bengali text-[22px] font-bold" style={{ ...SERIF_BN, color: FJ.ink }}>
+                  {t('events.bloodRequest')}
+                </h3>
+                <p className="mt-2 font-bengali text-[14px] leading-relaxed" style={{ color: FJ.ink2 }}>
+                  {tr('Need blood urgently? Submit a request and we will connect you with available donors in our network.', 'জরুরি রক্তের প্রয়োজন? আবেদন করুন এবং আমরা আপনাকে আমাদের নেটওয়ার্কের রক্তদাতাদের সাথে যোগাযোগ করিয়ে দেব।')}
+                </p>
+              </div>
+              <div className="mt-6">
+                <Link to="/blood-request" className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 font-bengali text-[13px] font-semibold text-white transition-opacity hover:opacity-90 animate-pulse" style={{ background: 'rgba(220,38,38,0.9)' }}>
+                  {tr('Request Blood', 'রক্তের আবেদন করুন')} <Icon.Arrow className="h-3 w-3" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Organise Camp Card */}
+            <div className="rounded-[16px] p-6 flex flex-col justify-between" style={{ background: FJ.bg, border: `1px solid ${FJ.rule}` }}>
+              <div>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full" style={{ background: 'rgba(194,65,12,0.08)' }}>
+                  <Icon.Users className="h-5 w-5" style={{ color: FJ.brand }} />
+                </span>
+                <h3 className="mt-4 font-bengali text-[22px] font-bold" style={{ ...SERIF_BN, color: FJ.ink }}>
+                  {t('events.bloodCamp')}
+                </h3>
+                <p className="mt-2 font-bengali text-[14px] leading-relaxed" style={{ color: FJ.ink2 }}>
+                  {tr('Partner with us to host a blood donation camp in your locality, institution, or workplace.', 'আপনার এলাকা, প্রতিষ্ঠান বা কর্মক্ষেত্রে একটি রক্তদান শিবির আয়োজন করতে আমাদের সাথে যুক্ত হন।')}
+                </p>
+              </div>
+              <div className="mt-6">
+                <Link to="/organise-blood-camp" className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 font-bengali text-[13px] font-semibold transition-colors hover:bg-black/5" style={{ border: `1px solid ${FJ.rule}`, color: FJ.ink }}>
+                  {tr('Organise Camp', 'শিবির আয়োজন করুন')} <Icon.Arrow className="h-3 w-3" />
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

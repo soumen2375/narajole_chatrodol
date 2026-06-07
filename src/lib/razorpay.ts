@@ -130,6 +130,9 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<void
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature,
+            year: args.year,
+            month: args.month,
+            amount: args.amount,
           });
           resolve();
         } catch (err) {

@@ -15,6 +15,8 @@ const Impacts = lazy(() => import('@/pages/Impacts'));
 const Contact = lazy(() => import('@/pages/Contact'));
 const Volunteer = lazy(() => import('@/pages/Volunteer'));
 const Donate = lazy(() => import('@/pages/Donate'));
+const BloodRequest = lazy(() => import('@/pages/BloodRequest'));
+const BloodCampApplication = lazy(() => import('@/pages/BloodCampApplication'));
 const Login = lazy(() => import('@/pages/Login'));
 const AdminLogin = lazy(() => import('@/pages/AdminLogin'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
@@ -34,6 +36,7 @@ const MemberDonations = lazy(() => import('@/pages/member/MemberDonations'));
 const MemberGallery = lazy(() => import('@/pages/member/MemberGallery'));
 const MemberDirectory = lazy(() => import('@/pages/member/MemberDirectory'));
 const MemberMessages = lazy(() => import('@/pages/member/MemberMessages'));
+const MemberBloodDonors = lazy(() => import('@/pages/member/MemberBloodDonors'));
 
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
@@ -86,6 +89,8 @@ export default function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/volunteer" element={<Volunteer />} />
             <Route path="/donate" element={<Donate />} />
+            <Route path="/blood-request" element={<BloodRequest />} />
+            <Route path="/organise-blood-camp" element={<BloodCampApplication />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/refunds" element={<Refunds />} />
@@ -112,6 +117,7 @@ export default function App() {
             <Route path="donations" element={<MemberDonations />} />
             <Route path="directory" element={<MemberDirectory />} />
             <Route path="messages" element={<MemberMessages />} />
+            <Route path="blood-donors" element={<MemberBloodDonors />} />
 
             {/* Dynamic Capability-Guarded Sub-Routes inside Member Panel */}
             <Route path="posts-manage" element={<ProtectedRoute require="canManagePosts"><AdminPosts /></ProtectedRoute>} />

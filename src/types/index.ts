@@ -93,6 +93,9 @@ export interface CswoEvent {
   expected_participants: number;
   fund_id: string | null;
   form_type: 'general' | 'blood_donation' | 'relief_distribution';
+  latitude: number | null;
+  longitude: number | null;
+  attendance_radius: number;
 }
 
 export type EventBudgetStatus = 'planned' | 'approved' | 'paid';
@@ -125,6 +128,8 @@ export interface CswoEventVolunteer {
   updated_at: string;
 }
 
+export type AttendanceMarkedType = 'QR' | 'ADMIN' | 'MANUAL' | 'SYSTEM';
+
 export interface Attendance {
   id: string;
   event_id: string;
@@ -133,8 +138,23 @@ export interface Attendance {
   note: string | null;
   marked_by: string | null;
   marked_at: string;
+  marked_type: AttendanceMarkedType;
+  check_in_time: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  distance_m: number | null;
   event?: CswoEvent;
   member?: Member;
+}
+
+export interface QrSession {
+  id: string;
+  event_id: string;
+  session_token: string;
+  expires_at: string;
+  created_by: string | null;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface Donation {

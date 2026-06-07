@@ -8,6 +8,7 @@ import { ListSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 import RichEditor from '@/components/admin/RichEditor';
 import CategorySelector from '@/components/admin/CategorySelector';
+import { compressImage } from '@/lib/imageCompression';
 
 function stripHtml(h: string) { return h.replace(/<[^>]+>/g, ''); }
 function slugify(t: string) {
@@ -182,7 +183,8 @@ export default function MemberPosts() {
     const ext = file.name.split('.').pop() ?? 'jpg';
     const path = `posts/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     setUploading(true);
-    const { error } = await supabase.storage.from('post-images').upload(path, file);
+    const compressed = await compressImage(file, 'post');
+    const { error } = await supabase.storage.from('post-images').upload(path, compressed);
     setUploading(false);
     if (error) { setSaveError(tr(`Upload failed: ${error.message}`, `আপলোড ব্যর্থ: ${error.message}`)); return null; }
     return supabase.storage.from('post-images').getPublicUrl(path).data.publicUrl;

@@ -119,40 +119,80 @@ Deno.serve(async (req) => {
         return json({ error: 'অবৈধ তথ্য।' }, 400);
       }
 
-      const { data: rec, error: upErr } = await db
-        .from('cswo_monthly_contributions')
-        .upsert(
-          { member_id: userId, year, month, amount, status: 'pending' },
-          { onConflict: 'member_id,year,month' },
-        )
-        .select('id')
-        .single();
-      if (upErr) return json({ error: upErr.message }, 400);
+      const tempId = crypto.randomUUID();
+      const receipt = `mc_${userId.slice(0, 12)}_${year}_${month}_${tempId.slice(0, 6)}`;
+      const order = await createRazorpayOrder(Math.round(amount * 100), receipt);
 
-      const order = await createRazorpayOrder(Math.round(amount * 100), `mc_${rec.id}`.slice(0, 40));
-      await db.from('cswo_monthly_contributions').update({ razorpay_order_id: order.id }).eq('id', rec.id);
-
-      return json({ order_id: order.id, amount: order.amount, currency: order.currency, key_id: KEY_ID, record_id: rec.id });
+      return json({
+        order_id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        key_id: KEY_ID,
+        record_id: tempId,
+      });
     }
 
     if (action === 'verify_contribution') {
       if (!userId) return json({ error: 'অনুগ্রহ করে লগইন করুন।' }, 401);
-      const { record_id, razorpay_order_id, razorpay_payment_id, razorpay_signature } = body;
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, year, month, amount } = body;
+      
       const ok = await verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
       if (!ok) {
-        await db.from('cswo_monthly_contributions').update({ status: 'unpaid' }).eq('id', record_id);
         return json({ error: 'পেমেন্ট যাচাই ব্যর্থ হয়েছে।' }, 400);
       }
-      await db
+
+      // Fetch order details from Razorpay to verify details securely on the server
+      const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${razorpay_order_id}`, {
+        headers: {
+          Authorization: `Basic ${btoa(`${KEY_ID}:${KEY_SECRET}`)}`,
+        },
+      });
+      if (!orderRes.ok) {
+        return json({ error: 'Razorpay অর্ডার তথ্য পাওয়া যায়নি।' }, 400);
+      }
+      const orderInfo = await orderRes.json();
+      
+      const receipt = orderInfo.receipt as string;
+      if (!receipt || !receipt.startsWith('mc_')) {
+        return json({ error: 'অবৈধ রশিদ।' }, 400);
+      }
+
+      const parts = receipt.split('_');
+      // Format: mc_userIdSlice_year_month_tempIdSlice
+      if (parts[1] !== userId.slice(0, 12)) {
+        return json({ error: 'ব্যবহারকারী অমিল।' }, 400);
+      }
+
+      const parsedYear = Number(parts[2]);
+      const parsedMonth = Number(parts[3]);
+      const actualAmount = orderInfo.amount / 100;
+
+      if (
+        parsedYear !== Number(year) ||
+        parsedMonth !== Number(month) ||
+        Math.round(actualAmount * 100) !== Math.round(Number(amount) * 100)
+      ) {
+        return json({ error: 'পেমেন্ট তথ্য মিলছে না।' }, 400);
+      }
+
+      const { error: upErr } = await db
         .from('cswo_monthly_contributions')
-        .update({
-          status: 'paid',
-          paid_at: new Date().toISOString(),
-          payment_method: 'razorpay',
-          razorpay_payment_id,
-        })
-        .eq('id', record_id)
-        .eq('member_id', userId);
+        .upsert(
+          {
+            member_id: userId,
+            year: parsedYear,
+            month: parsedMonth,
+            amount: actualAmount,
+            status: 'paid',
+            paid_at: new Date().toISOString(),
+            payment_method: 'razorpay',
+            razorpay_payment_id,
+            razorpay_order_id,
+          },
+          { onConflict: 'member_id,year,month' },
+        );
+
+      if (upErr) return json({ error: upErr.message }, 400);
       return json({ ok: true });
     }
 

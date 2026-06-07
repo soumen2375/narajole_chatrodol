@@ -175,6 +175,13 @@ export default function MemberMessages() {
     if (!error) { setReplyBody(''); setReplying(false); await load(); }
   };
 
+  /* delete own sent message */
+  const deleteMsg = async (msgId: string) => {
+    if (!window.confirm(tr('Delete this message?', 'এই বার্তা মুছবেন?'))) return;
+    await supabase.from('cswo_member_messages').delete().eq('id', msgId);
+    setSent((arr) => arr.filter((m) => m.id !== msgId));
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -356,7 +363,17 @@ export default function MemberMessages() {
                             <span className="text-xs font-semibold" style={{ color: INK }}>
                               {tr('To:', 'প্রাপক:')}  {msg.to_role ? <span className="capitalize">{msg.to_role}</span> : (msg.to?.full_name ?? '—')}
                             </span>
-                            <span className="text-[10.5px]" style={{ color: MUTED }}>{fmt.date(msg.created_at)}</span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-[10.5px]" style={{ color: MUTED }}>{fmt.date(msg.created_at)}</span>
+                              <button
+                                onClick={() => deleteMsg(msg.id)}
+                                className="text-[10.5px] font-medium hover:underline"
+                                style={{ color: '#ef4444' }}
+                                title={tr('Delete message', 'বার্তা মুছুন')}
+                              >
+                                {tr('Delete', 'মুছুন')}
+                              </button>
+                            </div>
                           </div>
                           <p className="text-xs font-semibold" style={{ color: MUTED }}>{msg.subject}</p>
                           <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed" style={{ color: MUTED }}>{msg.body}</p>

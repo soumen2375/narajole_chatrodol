@@ -216,6 +216,9 @@ export default function Donate() {
               <label className="mt-3 flex items-center gap-2 rounded-[10px] border px-4 py-3" style={{ borderColor: custom ? FJ.brand : FJ.rule, background: FJ.bg }}>
                 <span className="font-bengali text-[18px]" style={{ ...SERIF_BN, color: FJ.ink }}>₹</span>
                 <input type="number" placeholder={tr('নিজের পরিমাণ লিখুন', 'Enter your own amount')} value={custom} onChange={(e) => setCustom(e.target.value)}
+                  onFocus={(e) => { if (e.target.value === '0') setCustom(''); }}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  min="10"
                   className="w-full bg-transparent font-bengali text-[15px] focus:outline-none" style={{ color: FJ.ink }} />
                 <span className="font-mono text-[10px] uppercase tracking-[0.18em]" style={{ color: FJ.muted }}>{tr('কাস্টম', 'Custom Amount')}</span>
               </label>
@@ -316,7 +319,21 @@ export default function Donate() {
                     : <>{tr(`₹${amountFmt} নিরাপদে দান করুন`, `Donate ₹${amountFmt} Securely`)}<Icon.Arrow className="h-3.5 w-3.5" /></>}
                 </button>
                 {status === 'done' && <p className="mt-2.5 text-center font-bengali text-[12.5px]" style={{ color: '#86efac' }}>✓ {tr('ধন্যবাদ! আপনার অনুদান সম্পন্ন হয়েছে।', 'Thank you! Your donation was successful.')}</p>}
-                {status === 'error' && <p className="mt-2.5 text-center font-bengali text-[12.5px]" style={{ color: '#fca5a5' }}>{tr('পেমেন্ট সম্পন্ন হয়নি — আবার চেষ্টা করুন।', 'Payment could not be completed — please try again.')}{errMsg ? ` (${errMsg})` : ''}</p>}
+                {status === 'error' && (
+                  <div className="mt-2.5 text-center">
+                    <p className="font-bengali text-[12.5px]" style={{ color: '#fca5a5' }}>
+                      {tr('পেমেন্ট সম্পন্ন হয়নি।', 'Payment could not be completed.')}{errMsg ? ` (${errMsg})` : ''}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => { setStatus('idle'); setErrMsg(''); }}
+                      className="mt-2 font-bengali text-[12px] font-semibold underline"
+                      style={{ color: '#fbbf24' }}
+                    >
+                      {tr('আবার চেষ্টা করুন', 'Try Again')}
+                    </button>
+                  </div>
+                )}
                 <p className="mt-3 text-center font-bengali text-[11.5px] text-white/55">🔒 {tr('Razorpay দ্বারা সুরক্ষিত পেমেন্ট', 'Secure payment powered by Razorpay')}</p>
               </div>
 

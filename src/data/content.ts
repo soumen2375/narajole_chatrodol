@@ -9,17 +9,17 @@ export interface Bi {
 }
 
 export const ORG = {
-  nameEn: 'Chhatradol Social Welfare Organisation',
-  nameBn: 'নাড়াজোল ছাত্রদল',
-  shortEn: 'Chhatradol SWO',
+  nameEn: 'Chhatradol',
+  nameBn: 'ছাত্রদল',
+  shortEn: 'Chhatradol',
   shortBn: 'ছাত্রদল',
   taglineBn: 'একতা, শিক্ষা, উন্নতি',
   taglineEn: 'Unity · Education · Progress',
   established: '2019',
-  email: 'info@narajolchhatrodol.org',
+  email: 'info@chhatrodol.org',
   phones: ['7074074110', '7430029114'],
   address: {
-    bn: ['নাড়াজোল ছাত্রদল অফিস', 'গ্রাম ও পোস্ট: নিজ নাড়াজোল', 'থানা: দাসপুর, জেলা: পশ্চিম মেদিনীপুর', 'পিন: ৭২১২১১, পশ্চিমবঙ্গ, ভারত'],
+    bn: ['ছাত্রদল অফিস', 'গ্রাম ও পোস্ট: নিজ নাড়াজোল', 'থানা: দাসপুর, জেলা: পশ্চিম মেদিনীপুর', 'পিন: ৭২১২১১, পশ্চিমবঙ্গ, ভারত'],
     en: ['Chhatradol Office', 'Vill. & P.O.: Nij Narajole', 'P.S.: Daspur, Dist.: Paschim Medinipur', 'PIN: 721211, West Bengal, India'],
   },
   social: {

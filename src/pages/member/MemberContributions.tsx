@@ -42,12 +42,13 @@ export default function MemberContributions() {
   }, [load]);
 
   const pay = async (month: number) => {
+    if (payingMonth !== null) return;
     setPayingMonth(month);
     setError('');
     try {
       await startRazorpayPayment({
         action: 'create_contribution_order',
-        amount: rows[month]?.amount ? Number(rows[month].amount) : amount,
+        amount: Number(amount),
         year,
         month,
         donorName: member?.full_name,
@@ -66,6 +67,7 @@ export default function MemberContributions() {
 
   const years = [currentYear, currentYear - 1, currentYear - 2];
   const paidCount = Object.values(rows).filter((r) => r.status === 'paid').length;
+  const isValidAmount = amount >= 10;
 
   return (
     <div>
@@ -81,7 +83,20 @@ export default function MemberContributions() {
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">{tr('Monthly amount (₹)', 'মাসিক চাঁদা (₹)')}</label>
-          <input type="number" min={10} className="input" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+          <input
+            type="number"
+            min={10}
+            className="input"
+            value={amount}
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              if (Number.isNaN(value)) {
+                setAmount(0);
+                return;
+              }
+              setAmount(value);
+            }}
+          />
         </div>
         <div className="ml-auto text-right">
           <p className="text-sm text-gray-500">{tr('Months paid', 'পরিশোধিত মাস')}</p>
@@ -138,8 +153,8 @@ export default function MemberContributions() {
                     )}
                   </div>
                 ) : (
-                  <button onClick={() => pay(month)} disabled={payingMonth === month} className="btn-primary mt-3 w-full text-sm">
-                    {payingMonth === month ? t('common.processing') : `${fmt.money(row?.amount ? Number(row.amount) : amount)} ${tr('Pay', 'পরিশোধ করুন')}`}
+                  <button onClick={() => pay(month)} disabled={payingMonth === month || !isValidAmount} className="btn-primary mt-3 w-full text-sm">
+                    {payingMonth === month ? t('common.processing') : `${fmt.money(amount)} ${tr('Pay', 'পরিশোধ করুন')}`}
                   </button>
                 )}
               </div>

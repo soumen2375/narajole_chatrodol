@@ -10,6 +10,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { STATIC_POSTS } from '@/data/posts';
 import RichEditor from '@/components/admin/RichEditor';
 import CategorySelector from '@/components/admin/CategorySelector';
+import { compressImage } from '@/lib/imageCompression';
 
 function slugify(t: string) {
   return t.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').slice(0, 90);
@@ -252,7 +253,8 @@ export default function AdminPosts() {
     const ext = file.name.split('.').pop() ?? 'jpg';
     const path = `posts/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     setUploading(true);
-    const { error } = await supabase.storage.from('post-images').upload(path, file);
+    const compressed = await compressImage(file, 'post');
+    const { error } = await supabase.storage.from('post-images').upload(path, compressed);
     setUploading(false);
     if (error) { setSaveError(tr(`Upload failed: ${error.message}`, `আপলোড ব্যর্থ: ${error.message}`)); return null; }
     return supabase.storage.from('post-images').getPublicUrl(path).data.publicUrl;

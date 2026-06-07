@@ -26,7 +26,7 @@ const RULE   = '#e7e5e4';
 const PAPER  = '#ffffff';
 const CREAM  = '#faf8f5';
 
-const BLOOD_GROUPS = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const BLOOD_GROUPS = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
 
 const BG_COLORS: Record<string, string> = {
   'A+':'#dc2626','A-':'#b91c1c','B+':'#1d4ed8','B-':'#1e40af',
@@ -179,7 +179,7 @@ export default function AdminBloodDonors() {
                   {[
                     tr('Code', 'কোড'), tr('Name', 'নাম'), tr('Blood', 'রক্ত'),
                     tr('Age', 'বয়স'), tr('Phone', 'ফোন'), tr('Address', 'ঠিকানা'),
-                    tr('Camp / Event', 'শিবির / অনুষ্ঠান'), tr('Status', 'অবস্থা'), tr('Units', 'ইউনিট'),
+                    tr('Camp / Event', 'শিবির / অনুষ্ঠান'), tr('Status', 'অবস্থা'), tr('Times Donated', 'দানের সংখ্যা'),
                   ].map((h, i) => (
                     <th key={i} className="px-3 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: MUTED }}>{h}</th>
                   ))}
