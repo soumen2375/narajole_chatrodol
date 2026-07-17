@@ -1,4 +1,4 @@
--- Chhatradol Social Welfare Organisation (CSWO) core schema.
+-- Chhatradol Social Welfare Organization (CSWO) core schema.
 -- Tables are prefixed cswo_* to coexist with anything else in the project.
 
 create extension if not exists pgcrypto;

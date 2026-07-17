@@ -26,7 +26,7 @@ export default function Shipping() {
 
       <Section heading="3. Distribution of relief materials">
         <p>
-          As part of its charitable work, the Organisation may distribute relief materials (such as clothing, food,
+          As part of its charitable work, the Organization may distribute relief materials (such as clothing, food,
           books or medical supplies) directly to beneficiaries in need. Such distribution is a charitable activity and
           is not a sale or shipment to donors or website users.
         </p>

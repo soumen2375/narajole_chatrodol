@@ -353,20 +353,5 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-/* ── Fade-in animation ── */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-  animation: fadeIn 0.4s ease forwards;
-}
-
-/* ── Card lift on hover ── */
-.card-lift {
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-.card-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 28px -8px rgba(0,2,1,0.10);
-}
+/* NOTE: .card-lift and @keyframes fadeIn are defined at the top of this file.
+   Duplicate definitions removed here to prevent silent override of the premium animations. */

@@ -10,6 +10,7 @@ const About = lazy(() => import('@/pages/About'));
 const Programs = lazy(() => import('@/pages/Programs'));
 const Events = lazy(() => import('@/pages/Events'));
 const EventDetail = lazy(() => import('@/pages/EventDetail'));
+const EventFeedback = lazy(() => import('@/pages/EventFeedback'));
 const Gallery = lazy(() => import('@/pages/Gallery'));
 const Impacts = lazy(() => import('@/pages/Impacts'));
 const Contact = lazy(() => import('@/pages/Contact'));
@@ -21,10 +22,10 @@ const Login = lazy(() => import('@/pages/Login'));
 const AdminLogin = lazy(() => import('@/pages/AdminLogin'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
-const Terms = lazy(() => import('@/pages/legal/Terms'));
-const Privacy = lazy(() => import('@/pages/legal/Privacy'));
-const Refunds = lazy(() => import('@/pages/legal/Refunds'));
-const Shipping = lazy(() => import('@/pages/legal/Shipping'));
+const Terms = lazy(() => import('@/pages/admin/legal/Terms'));
+const Privacy = lazy(() => import('@/pages/admin/legal/Privacy'));
+const Refunds = lazy(() => import('@/pages/admin/legal/Refunds'));
+const Shipping = lazy(() => import('@/pages/admin/legal/Shipping'));
 
 const MemberLayout = lazy(() => import('@/pages/member/MemberLayout'));
 const MemberDashboard = lazy(() => import('@/pages/member/MemberDashboard'));
@@ -52,7 +53,7 @@ const AdminBeneficiaries = lazy(() => import('@/pages/admin/AdminBeneficiaries')
 const AdminCertificates = lazy(() => import('@/pages/admin/AdminCertificates'));
 const AdminEventDocuments = lazy(() => import('@/pages/admin/AdminEventDocuments'));
 const AdminEventReport = lazy(() => import('@/pages/admin/AdminEventReport'));
-const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
+const AdminQRAttendance = lazy(() => import('@/pages/admin/AdminQRAttendance'));
 const AdminContributions = lazy(() => import('@/pages/admin/AdminContributions'));
 const AdminDonations = lazy(() => import('@/pages/admin/AdminDonations'));
 const AdminExpenses = lazy(() => import('@/pages/admin/AdminExpenses'));
@@ -72,6 +73,9 @@ const AdminGrants = lazy(() => import('@/pages/admin/AdminGrants'));
 const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'));
 const AdminBloodDonors = lazy(() => import('@/pages/admin/AdminBloodDonors'));
 
+import { EnglishI18nProvider } from '@/i18n';
+
+
 export default function App() {
   return (
     <>
@@ -84,6 +88,7 @@ export default function App() {
             <Route path="/programs" element={<Programs />} />
             <Route path="/events" element={<Events />} />
             <Route path="/events/:id" element={<EventDetail />} />
+            <Route path="/events/:id/feedback" element={<EventFeedback />} />
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/impacts" element={<Impacts />} />
             <Route path="/contact" element={<Contact />} />
@@ -104,7 +109,9 @@ export default function App() {
             path="/member"
             element={
               <ProtectedRoute>
-                <MemberLayout />
+                <EnglishI18nProvider>
+                  <MemberLayout />
+                </EnglishI18nProvider>
               </ProtectedRoute>
             }
           >
@@ -132,8 +139,8 @@ export default function App() {
             <Route path="events/:id/certificates" element={<ProtectedRoute require="canManageEvents"><AdminCertificates /></ProtectedRoute>} />
             <Route path="events/:id/documents" element={<ProtectedRoute require="canManageEvents"><AdminEventDocuments /></ProtectedRoute>} />
             <Route path="events/:id/report" element={<ProtectedRoute require="canManageEvents"><AdminEventReport /></ProtectedRoute>} />
-            <Route path="attendance-manage" element={<ProtectedRoute require="canManageEvents"><AdminAttendance /></ProtectedRoute>} />
-            <Route path="blood-donors" element={<ProtectedRoute require="canManageEvents"><AdminBloodDonors /></ProtectedRoute>} />
+            <Route path="attendance-manage" element={<ProtectedRoute require="canManageEvents"><AdminQRAttendance /></ProtectedRoute>} />
+            <Route path="blood-donors-manage" element={<ProtectedRoute require="canManageEvents"><AdminBloodDonors /></ProtectedRoute>} />
 
             <Route path="finance" element={<ProtectedRoute require="canManageFinance"><AdminFinance /></ProtectedRoute>} />
             <Route path="budgets" element={<ProtectedRoute require="canManageFinance"><AdminBudgets /></ProtectedRoute>} />
@@ -155,7 +162,9 @@ export default function App() {
             path="/admin"
             element={
               <ProtectedRoute requireAdmin>
-                <AdminLayout />
+                <EnglishI18nProvider>
+                  <AdminLayout />
+                </EnglishI18nProvider>
               </ProtectedRoute>
             }
           >
@@ -173,14 +182,13 @@ export default function App() {
             <Route path="events/:id/certificates" element={<AdminCertificates />} />
             <Route path="events/:id/documents" element={<AdminEventDocuments />} />
             <Route path="events/:id/report" element={<AdminEventReport />} />
-            <Route path="attendance" element={<AdminAttendance />} />
+            <Route path="attendance" element={<AdminQRAttendance />} />
             <Route path="contributions" element={<AdminContributions />} />
             <Route path="donations" element={<AdminDonations />} />
             <Route path="expenses" element={<AdminExpenses />} />
             <Route path="finance" element={<AdminFinance />} />
             <Route path="budgets" element={<AdminBudgets />} />
             <Route path="ledger" element={<AdminLedger />} />
-            <Route path="audit" element={<AdminAudit />} />
             <Route path="compliance" element={<AdminCompliance />} />
             <Route path="refunds" element={<AdminRefunds />} />
             <Route path="campaigns" element={<AdminCampaigns />} />
@@ -189,6 +197,7 @@ export default function App() {
             <Route path="approvals" element={<AdminApprovals />} />
             <Route path="reports" element={<AdminReports />} />
             <Route path="grants" element={<AdminGrants />} />
+            <Route path="audit" element={<AdminAudit />} />
             <Route path="messages" element={<AdminMessages />} />
             <Route path="blood-donors" element={<AdminBloodDonors />} />
           </Route>

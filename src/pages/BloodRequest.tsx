@@ -23,6 +23,7 @@ export default function BloodRequest() {
     message: '',
   });
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [errMsg, setErrMsg] = useState('');
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -30,6 +31,7 @@ export default function BloodRequest() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('sending');
+    setErrMsg('');
     const { error } = await supabase.from('cswo_blood_requests').insert({
       patient_name: form.patient_name,
       blood_group: form.blood_group,
@@ -41,6 +43,9 @@ export default function BloodRequest() {
       message: form.message || null,
       status: 'open',
     });
+    if (error) {
+      setErrMsg(error.message || (bn ? 'আবেদন জমা দিতে সমস্যা হয়েছে।' : 'Could not submit your request. Please try again.'));
+    }
     setStatus(error ? 'error' : 'sent');
   };
 
@@ -135,9 +140,17 @@ export default function BloodRequest() {
                     </div>
                   </div>
                   {status === 'error' && (
-                    <p className="font-bengali text-[13px]" style={{ color: '#dc2626' }}>
-                      {bn ? 'আবেদন জমা দিতে সমস্যা হয়েছে।' : 'Could not submit your request.'}
-                    </p>
+                    <div className="rounded-[3px] border px-4 py-3" style={{ borderColor: '#fca5a5', background: '#fef2f2' }}>
+                      <p className="font-bengali text-[13px] font-semibold" style={{ color: '#dc2626' }}>
+                        {bn ? '⚠ আবেদন জমা দিতে সমস্যা হয়েছে।' : '⚠ Could not submit your request.'}
+                      </p>
+                      {errMsg && (
+                        <p className="mt-1 font-mono text-[11px]" style={{ color: '#b91c1c' }}>{errMsg}</p>
+                      )}
+                      <p className="mt-1.5 font-bengali text-[12px]" style={{ color: '#7f1d1d' }}>
+                        {bn ? 'অনুগ্রহ করে আবার চেষ্টা করুন বা সরাসরি যোগাযোগ করুন।' : 'Please try again or contact us directly.'}
+                      </p>
+                    </div>
                   )}
                   <button
                     type="submit"

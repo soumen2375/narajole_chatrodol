@@ -47,7 +47,7 @@ DO $$ BEGIN
     );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
--- 2) Blood camp applications — organisations/individuals apply to host a camp
+-- 2) Blood camp applications — Organizations/individuals apply to host a camp
 CREATE TABLE IF NOT EXISTS public.cswo_blood_camp_applications (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   org_name         text,

@@ -74,8 +74,8 @@ const D: Dict = {
 
   // ---- home ----
   'home.heroSubtitle': {
-    bn: 'আমরা নাড়াজোলের প্রতিটি মানুষের জন্য একটি উজ্জ্বল ও সমৃদ্ধ ভবিষ্যৎ গড়তে প্রতিশ্রুতিবদ্ধ।',
-    en: 'We are committed to building a brighter, more prosperous future for everyone in Narajole.',
+    bn: 'আমরা প্রতিটি মানুষের জন্য একটি উজ্জ্বল ও সমৃদ্ধ ভবিষ্যৎ গড়তে প্রতিশ্রুতিবদ্ধ।',
+    en: 'We are committed to building a brighter, more prosperous future for everyone.',
   },
   'home.donate': { bn: 'অনুদান দিন', en: 'Donate now' },
   'home.join': { bn: 'আমাদের সাথে যোগ দিন', en: 'Join us' },
@@ -86,13 +86,13 @@ const D: Dict = {
   // ---- about ----
   'about.title': { bn: 'আমাদের কথা', en: 'About us' },
   'about.intro': {
-    bn: 'নাড়াজোল ছাত্রদল (Chhatradol Social Welfare Organisation) হল একটি নিবেদিতপ্রাণ সামাজিক কল্যাণমূলক পাবলিক চ্যারিটেবল ট্রাস্ট যা নাড়াজোল এবং এর আশেপাশের সম্প্রদায়ের উন্নতি সাধনে কাজ করে। আমাদের লক্ষ্য হল শিক্ষা, স্বাস্থ্য এবং পরিবেশগত স্থিতিশীলতার মাধ্যমে একটি উজ্জ্বল ভবিষ্যৎ গড়ে তোলা।',
-    en: 'Chhatradol Social Welfare Organisation (নাড়াজোল ছাত্রদল) is a dedicated public charitable trust working for the betterment of Narajole and its surrounding communities. Our goal is to build a brighter future through education, healthcare and environmental sustainability.',
+    bn: 'ছাত্রদল সমাজকল্যাণ সংস্থা(Chhatradol Social Welfare Organization) হল একটি নিবেদিতপ্রাণ সামাজিক কল্যাণমূলক পাবলিক চ্যারিটেবল ট্রাস্ট যা মেদিনীপুর এবং এর আশেপাশের সম্প্রদায়ের উন্নতি সাধনে কাজ করে। আমাদের লক্ষ্য হল শিক্ষা, স্বাস্থ্য এবং পরিবেশগত স্থিতিশীলতার মাধ্যমে একটি উজ্জ্বল ভবিষ্যৎ গড়ে তোলা।',
+    en: 'Chhatradol Social Welfare Organization (ছাত্রদল সমাজকল্যাণ সংস্থা) is a dedicated public charitable trust working for the betterment of Medinipur and its surrounding communities. Our goal is to build a brighter future through education, healthcare and environmental sustainability.',
   },
   'about.historyTitle': { bn: 'আমাদের ইতিহাস', en: 'Our history' },
   'about.historyText': {
-    bn: 'নাড়াজোল ছাত্রদল যাত্রা শুরু করে ২০১৯ সালে, একদল স্বপ্নদর্শী ছাত্র-ছাত্রীর হাত ধরে। প্রথমদিকে ছোট শিক্ষামূলক কর্মসূচি ও পরিবেশ সচেতনতার কাজ দিয়ে শুরু হলেও, সময়ের সাথে আমাদের কার্যক্রমের পরিধি বৃদ্ধি পেয়েছে। আমরা বিনামূল্যে টিউশন, স্বাস্থ্য শিবির, বৃক্ষরোপণ অভিযান এবং দুর্যোগ ত্রাণে অংশ নিয়েছি। ২০২৬ সালে সংস্থাটি একটি পাবলিক চ্যারিটেবল ট্রাস্ট হিসেবে নিবন্ধিত হয়।',
-    en: 'Chhatradol began its journey in 2019, led by a group of visionary students. Starting with small educational programmes and environmental awareness drives, our work has steadily grown to include free tutoring, health camps, tree-plantation drives and disaster relief. In 2026 the organisation was registered as a public charitable trust.',
+    bn: 'ছাত্রদল যাত্রা শুরু করে ২০১৯ সালে, একদল স্বপ্নদর্শী ছাত্র-ছাত্রীর হাত ধরে। প্রথমদিকে ছোট শিক্ষামূলক কর্মসূচি ও পরিবেশ সচেতনতার কাজ দিয়ে শুরু হলেও, সময়ের সাথে আমাদের কার্যক্রমের পরিধি বৃদ্ধি পেয়েছে। আমরা বিনামূল্যে টিউশন, স্বাস্থ্য শিবির, বৃক্ষরোপণ অভিযান এবং দুর্যোগ ত্রাণে অংশ নিয়েছি। ২০২৬ সালে সংস্থাটি একটি পাবলিক চ্যারিটেবল ট্রাস্ট হিসেবে নিবন্ধিত হয়।',
+    en: 'Chhatradol began its journey in 2019, led by a group of visionary students. Starting with small educational programmes and environmental awareness drives, our work has steadily grown to include free tutoring, health camps, tree-plantation drives and disaster relief. In 2026 the Organization was registered as a public charitable trust.',
   },
   'about.missionTitle': { bn: 'আমাদের লক্ষ্য', en: 'Our mission' },
   'about.missionText': {
@@ -198,7 +198,7 @@ const D: Dict = {
   'volunteer.motivation': { bn: 'আপনার প্রেরণা / অভিজ্ঞতা', en: 'Your motivation / experience' },
   'volunteer.agree': {
     bn: 'আমি সংস্থার নীতিমালা ও নির্দেশিকা মেনে চলতে সম্মত।',
-    en: 'I agree to abide by the organisation’s rules and guidelines.',
+    en: 'I agree to abide by the Organization’s rules and guidelines.',
   },
   'volunteer.agreeError': { bn: 'অনুগ্রহ করে নীতিমালায় সম্মতি দিন।', en: 'Please agree to the guidelines.' },
   'volunteer.submit': { bn: 'আবেদন জমা দিন', en: 'Submit application' },
@@ -248,7 +248,7 @@ const D: Dict = {
   'blood.requiredDate': { bn: 'কত তারিখের মধ্যে', en: 'Required By' },
   'blood.campTitle': { bn: 'রক্তদান শিবির আয়োজন করুন', en: 'Organise a Blood Camp' },
   'blood.campSubtitle': { bn: 'আমাদের সাথে একটি রক্তদান শিবির আয়োজন করতে চান?', en: 'Want to organise a blood donation camp with us?' },
-  'blood.orgName': { bn: 'সংগঠনের নাম', en: 'Organisation Name' },
+  'blood.orgName': { bn: 'সংগঠনের নাম', en: 'Organization Name' },
   'blood.proposedDate': { bn: 'প্রস্তাবিত তারিখ', en: 'Proposed Date' },
   'blood.proposedVenue': { bn: 'প্রস্তাবিত স্থান', en: 'Proposed Venue' },
   'blood.expectedDonors': { bn: 'প্রত্যাশিত দাতার সংখ্যা', en: 'Expected Donors' },
@@ -369,3 +369,18 @@ export function useT(): I18nValue {
 export function pick<T>(obj: { bn: T; en: T }, lang: Lang): T {
   return obj[lang];
 }
+
+export function EnglishI18nProvider({ children }: { children: ReactNode }) {
+  const t = (key: string) => {
+    const entry = D[key];
+    if (!entry) return key;
+    return entry.en;
+  };
+
+  return (
+    <I18nContext.Provider value={{ lang: 'en', setLang: () => {}, t }}>
+      {children}
+    </I18nContext.Provider>
+  );
+}
+

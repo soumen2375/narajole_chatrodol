@@ -25,7 +25,7 @@ const PROGRAM_FOCUS = {
   en: ['Health','Humanitarian','Environment','Humanitarian','Education','Relief','Health','Society'],
 };
 
-const FALLBACK = '/assets/images/chatrodol.jpg';
+const FALLBACK = '/assets/images/Chhatradol.jpg';
 const onImgErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
   if (e.currentTarget.src !== window.location.origin + FALLBACK) e.currentTarget.src = FALLBACK;
 };
@@ -67,7 +67,7 @@ function Hero() {
   const bn = lang === 'bn';
   return (
     <section className="relative flex min-h-[94vh] items-center overflow-hidden" style={{ background: FJ.ink }}>
-      <img src="/assets/images/chatrodol.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" onError={onImgErr} />
+      <img src="/assets/images/Chhatradol.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" onError={onImgErr} />
       {/* Multi-layer gradient for depth */}
       <div className="absolute inset-0" style={{ background: 'linear-gradient(110deg, rgba(28,25,23,0.92) 0%, rgba(28,25,23,0.65) 55%, rgba(28,25,23,0.20) 100%)' }} />
       {/* Subtle grain */}
@@ -144,8 +144,8 @@ function Ticker() {
   const { lang } = useT();
   const bn = lang === 'bn';
   const items = bn
-    ? ['শিক্ষা', 'স্বাস্থ্য', 'পরিবেশ', 'ত্রাণ', 'স্বেচ্ছাসেবা', 'সামাজিক উন্নয়ন', 'নাড়াজোল ছাত্রদল']
-    : ['Education', 'Healthcare', 'Environment', 'Relief', 'Volunteering', 'Social Development', 'Narajole Chhatradol'];
+    ? ['শিক্ষা', 'স্বাস্থ্য', 'পরিবেশ', 'ত্রাণ', 'স্বেচ্ছাসেবা', 'সামাজিক উন্নয়ন', 'ছাত্রদল']
+    : ['Education', 'Healthcare', 'Environment', 'Relief', 'Volunteering', 'Social Development', 'Chhatradol'];
   const repeated = [...items, ...items];
   return (
     <div className="overflow-hidden border-y py-3" style={{ background: 'var(--c-brand)', borderColor: 'rgba(255,255,255,0.12)' }}>
@@ -389,7 +389,7 @@ function Latest() {
                 {featured.title}
               </h3>
               <p className="mt-3 font-bengali text-[15px] leading-[1.75]" style={{ color: 'var(--c-ink-2)' }}>
-                {featured.content.split('\n')[0].slice(0, 180)}…
+                {featured.content.replace(/<[^>]+>/g, '').trim().slice(0, 180)}…
               </p>
               <Link to={`/events/${featured.id}`} className="mt-5 inline-flex items-center gap-2 font-bengali text-[14px] font-semibold" style={{ color: 'var(--c-brand)' }}>
                 {bn ? 'পুরো গল্প পড়ুন' : 'Read full story'} <Icon.Arrow className="h-3.5 w-3.5" />
@@ -407,7 +407,7 @@ function Latest() {
                   <div className="font-mono text-[10.5px] uppercase tracking-[0.18em]" style={{ color: 'var(--c-brand)' }}>{post.category}</div>
                   <h4 className="mt-2 font-bengali text-[17px] leading-snug" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>{post.title}</h4>
                   <p className="mt-2 line-clamp-2 font-bengali text-[13px] leading-relaxed" style={{ color: 'var(--c-ink-2)' }}>
-                    {post.content.split('\n')[0].slice(0, 110)}…
+                    {post.content.replace(/<[^>]+>/g, '').trim().slice(0, 110)}…
                   </p>
                 </div>
               </article>

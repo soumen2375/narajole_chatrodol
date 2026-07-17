@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import type { Donation } from '@/types';
-import { useFmt } from '@/lib/format';
+import { useFmt, formatDate } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -107,7 +107,7 @@ export default function MemberDonations() {
                                 name: d.is_anonymous ? tr('Anonymous', 'নাম প্রকাশ অনিচ্ছুক') : (d.donor_name ?? ''),
                                 email: d.donor_email,
                                 amount: Number(d.amount),
-                                date: fmt.date(d.created_at),
+                                date: formatDate(d.created_at, 'en'),
                                 purpose: d.purpose,
                                 paymentMethod: d.razorpay_payment_id ? 'Razorpay' : tr('Offline', 'অফলাইন'),
                                 paymentId: d.razorpay_payment_id,
@@ -127,7 +127,7 @@ export default function MemberDonations() {
                                 receiptNumber: d.receipt_number ?? `DON-${d.id.slice(0, 8).toUpperCase()}`,
                                 name: d.is_anonymous ? tr('Anonymous', 'নাম প্রকাশ অনিচ্ছুক') : (d.donor_name ?? ''),
                                 amount: Number(d.amount),
-                                date: fmt.date(d.created_at),
+                                date: formatDate(d.created_at, 'en'),
                                 fy: fyOf(d.created_at),
                                 purpose: d.purpose,
                                 paymentId: d.razorpay_payment_id,

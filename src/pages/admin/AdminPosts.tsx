@@ -72,7 +72,7 @@ function TwitterPreview({ title, desc, image }: { title: string; desc: string; i
       <div className="p-2.5">
         <p className="truncate font-semibold text-gray-900">{title || 'Post title'}</p>
         <p className="mt-0.5 line-clamp-2 text-gray-500">{desc || 'Post description…'}</p>
-        <p className="mt-1 text-[10px] text-gray-400">{typeof window !== 'undefined' ? window.location.hostname : 'narajolechatrodol.org'}</p>
+        <p className="mt-1 text-[10px] text-gray-400">{typeof window !== 'undefined' ? window.location.hostname : 'narajoleChhatradol.org'}</p>
       </div>
     </div>
   );
@@ -84,7 +84,7 @@ function WhatsAppPreview({ title, desc, image }: { title: string; desc: string; 
         <div className="flex-1 min-w-0">
           <p className="truncate font-semibold text-gray-900">{title || 'Post title'}</p>
           <p className="mt-0.5 line-clamp-2 text-gray-500">{desc || 'Post description…'}</p>
-          <p className="mt-1 text-[10px] text-gray-400">{typeof window !== 'undefined' ? window.location.hostname : 'narajolechatrodol.org'}</p>
+          <p className="mt-1 text-[10px] text-gray-400">{typeof window !== 'undefined' ? window.location.hostname : 'narajoleChhatradol.org'}</p>
         </div>
         {image && (
           <img src={image} alt="" className="h-14 w-14 flex-shrink-0 rounded-lg object-cover"
@@ -549,7 +549,7 @@ export default function AdminPosts() {
                 <label className="mb-1 block text-xs font-medium text-gray-500">{tr('Focus Keyword', 'মূল কীওয়ার্ড')}</label>
                 <input className="input w-full text-sm" value={form.focus_keyword}
                   onChange={e => setForm(f => ({ ...f, focus_keyword: e.target.value }))}
-                  placeholder={tr('e.g. Narajole charity', 'যেমন: নাড়াজোল দাতব্য')} />
+                  placeholder={tr('e.g. charity', 'যেমন: দান')} />
               </div>
             </Accordion>
 

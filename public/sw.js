@@ -1,4 +1,4 @@
-// Narajole Chatrodol — Push Notifications Service Worker
+// Narajole Chhatradol — Push Notifications Service Worker
 // This service worker enables push subscription from the browser.
 
 self.addEventListener('push', (event) => {
@@ -8,7 +8,7 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data.json();
   } catch {
-    data = { title: 'Narajole Chatrodol', body: event.data.text() };
+    data = { title: 'Narajole Chhatradol', body: event.data.text() };
   }
 
   const options = {
@@ -20,7 +20,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Narajole Chatrodol', options)
+    self.registration.showNotification(data.title || 'Narajole Chhatradol', options)
   );
 });
 

@@ -129,8 +129,7 @@ export default function AdminReports() {
   @media print{body{padding:12px}}
 </style></head><body>
   <div class="head">
-    <div class="org">Chhatradol Social Welfare Organisation</div>
-    <div class="sub">নাড়াজোল ছাত্রদল</div>
+    <div class="org">Chhatradol Social Welfare Organization</div>
     <div class="title">${L('Income & Expenditure Statement', 'আয় ও ব্যয় বিবরণী')}</div>
     <div class="period">${periodLabel}</div>
   </div>
@@ -241,8 +240,7 @@ export default function AdminReports() {
   @media print{body{padding:12px}}
 </style></head><body>
   <div class="head">
-    <div class="org">Chhatradol Social Welfare Organisation</div>
-    <div class="sub">নাড়াজোল ছাত্রদল · Govt Regd NGO / Trust</div>
+    <div class="org">Chhatradol Social Welfare Organization</div>
     <div class="title">${L('Comprehensive Financial Audit Pack', 'আর্থিক অডিট ও বাধ্যবাধকতা প্যাকেজ')}</div>
     <div class="period">${L('Statement Period', 'বিবরণীর সময়কাল')}: ${periodLabel}</div>
   </div>

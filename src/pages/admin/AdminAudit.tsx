@@ -421,7 +421,7 @@ export default function AdminAudit() {
       const rowsData = filteredRows.map((r) => {
         const serial = r.actor?.member_serial ? `CSWO-${String(r.actor.member_serial).padStart(4, '0')}` : 'SYS';
         return [
-          new Date(r.created_at).toLocaleString(),
+          new Date(r.created_at).toLocaleString('en-US'),
           serial,
           r.actor?.full_name || 'System',
           r.role,

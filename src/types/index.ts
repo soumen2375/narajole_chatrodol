@@ -96,6 +96,11 @@ export interface CswoEvent {
   latitude: number | null;
   longitude: number | null;
   attendance_radius: number;
+  // Simple static QR attendance fields
+  attendance_qr_token: string | null;
+  attendance_enabled: boolean;
+  attendance_start_time: string | null;
+  attendance_end_time: string | null;
 }
 
 export type EventBudgetStatus = 'planned' | 'approved' | 'paid';
@@ -129,6 +134,7 @@ export interface CswoEventVolunteer {
 }
 
 export type AttendanceMarkedType = 'QR' | 'ADMIN' | 'MANUAL' | 'SYSTEM';
+export type AttendanceMethod = 'qr' | 'manual' | 'admin';
 
 export interface Attendance {
   id: string;
@@ -143,6 +149,9 @@ export interface Attendance {
   latitude: number | null;
   longitude: number | null;
   distance_m: number | null;
+  // Simple QR attendance fields
+  attendance_method: AttendanceMethod;
+  device_info: string | null;
   event?: CswoEvent;
   member?: Member;
 }
@@ -345,6 +354,7 @@ export interface CswoGrant {
   end_date: string | null;
   status: GrantStatus;
   contact_person: string;
+  contact_phone?: string | null;
   note: string;
   created_by: string | null;
   created_at: string;

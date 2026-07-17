@@ -10,10 +10,10 @@ import { PageShell, SERIF_BN, Icon, FJ } from './_field-journal';
 // ════════════════════════════════════════════════════════════════════
 
 const PAGE_SIZE = 9;
-const FALLBACK_IMG = '/assets/images/chatrodol.jpg';
+const FALLBACK_IMG = '/assets/images/Chhatradol.jpg';
 
 const onImgError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-  if (e.currentTarget.src.indexOf('chatrodol') < 0) e.currentTarget.src = FALLBACK_IMG;
+  if (e.currentTarget.src.indexOf('Chhatradol') < 0) e.currentTarget.src = FALLBACK_IMG;
 };
 const excerpt = (html: string, n = 120) =>
   html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, n);

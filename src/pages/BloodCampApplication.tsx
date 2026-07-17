@@ -76,7 +76,7 @@ export default function BloodCampApplication() {
                       <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>
                         {t('blood.orgName')}
                       </label>
-                      <input value={form.org_name} onChange={set('org_name')} placeholder={bn ? 'সংগঠনের নাম (যদি থাকে)' : 'Organisation name (if any)'} className={inputCls} style={inputStyle} />
+                      <input value={form.org_name} onChange={set('org_name')} placeholder={bn ? 'সংগঠনের নাম (যদি থাকে)' : 'Organization name (if any)'} className={inputCls} style={inputStyle} />
                     </div>
                     <div>
                       <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>

@@ -25,6 +25,7 @@ const empty = {
   event_date: new Date().toISOString().slice(0, 10), end_date: '', start_time: '', end_time: '',
   location: '', district: '', state: '', pincode: '', map_link: '', expected_participants: '', featured_image: '',
   fund_id: '' as string, form_type: 'general' as FormType,
+  attendance_enabled: false, attendance_start_time: '', attendance_end_time: '',
 };
 
 export default function AdminEvents() {
@@ -84,6 +85,9 @@ export default function AdminEvents() {
     e.preventDefault();
     if (!member) return;
     setSaving(true);
+    const qrToken = editingId
+      ? undefined  // don't overwrite existing token when editing
+      : (form.attendance_enabled ? crypto.randomUUID() : undefined);
     const payload = {
       title: form.title, description: form.description || null, category: form.category,
       type: form.type, status: form.status, event_date: form.event_date, end_date: form.end_date || null,
@@ -93,9 +97,23 @@ export default function AdminEvents() {
       featured_image: form.featured_image || null,
       fund_id: form.fund_id || null,
       form_type: form.form_type,
+      attendance_enabled: form.attendance_enabled,
+      attendance_start_time: form.attendance_start_time || null,
+      attendance_end_time: form.attendance_end_time || null,
+      ...(qrToken ? { attendance_qr_token: qrToken } : {}),
     };
-    if (editingId) await supabase.from('cswo_events').update(payload).eq('id', editingId);
-    else await supabase.from('cswo_events').insert({ ...payload, created_by: member.id });
+    if (editingId) {
+      // When enabling attendance on an existing event with no QR token, generate one
+      if (form.attendance_enabled) {
+        const { data: existing } = await supabase.from('cswo_events').select('attendance_qr_token').eq('id', editingId).single();
+        if (!existing?.attendance_qr_token) {
+          (payload as Record<string, unknown>).attendance_qr_token = crypto.randomUUID();
+        }
+      }
+      await supabase.from('cswo_events').update(payload).eq('id', editingId);
+    } else {
+      await supabase.from('cswo_events').insert({ ...payload, created_by: member.id });
+    }
     setSaving(false); setShowForm(false); setForm(empty); setEditingId(null);
     await load();
   };
@@ -109,6 +127,9 @@ export default function AdminEvents() {
       featured_image: ev.featured_image ?? '',
       fund_id: ev.fund_id ?? '',
       form_type: ev.form_type ?? 'general',
+      attendance_enabled: ev.attendance_enabled ?? false,
+      attendance_start_time: ev.attendance_start_time ? ev.attendance_start_time.slice(0, 16) : '',
+      attendance_end_time: ev.attendance_end_time ? ev.attendance_end_time.slice(0, 16) : '',
     });
     setEditingId(ev.id); setShowForm(true);
   };
@@ -207,6 +228,47 @@ export default function AdminEvents() {
           </div>
           <input className="input" placeholder={tr('Google Maps link (optional)', 'গুগল ম্যাপ লিংক (ঐচ্ছিক)')} value={form.map_link} onChange={set('map_link')} />
           <input className="input" placeholder={tr('Banner image URL (optional)', 'ব্যানার ছবির URL (ঐচ্ছিক)')} value={form.featured_image} onChange={set('featured_image')} />
+
+          {/* ── Attendance Window ── */}
+          <div className="rounded-xl p-4 space-y-3" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-[13px] text-green-900">{tr('Attendance Window', 'উপস্থিতির উইন্ডো')}</p>
+                <p className="text-[11px] text-green-700 mt-0.5">{tr('Members can only scan QR within this time window.', 'সদস্যরা কেবল এই সময়ের মধ্যে QR স্ক্যান করতে পারবেন।')}</p>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.attendance_enabled}
+                  onChange={e => setForm(f => ({ ...f, attendance_enabled: e.target.checked }))}
+                  className="h-4 w-4 rounded accent-green-700"
+                />
+                <span className="text-[13px] font-semibold text-green-900">{tr('Enable Attendance', 'উপস্থিতি চালু')}</span>
+              </label>
+            </div>
+            {form.attendance_enabled && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-[11px] font-medium text-green-800">{tr('Attendance Opens', 'উপস্থিতি শুরু')}</label>
+                  <input
+                    className="input"
+                    type="datetime-local"
+                    value={form.attendance_start_time}
+                    onChange={e => setForm(f => ({ ...f, attendance_start_time: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] font-medium text-green-800">{tr('Attendance Closes', 'উপস্থিতি শেষ')}</label>
+                  <input
+                    className="input"
+                    type="datetime-local"
+                    value={form.attendance_end_time}
+                    onChange={e => setForm(f => ({ ...f, attendance_end_time: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="flex gap-3">
             <button type="submit" disabled={saving} className="btn-primary">{saving ? t('common.saving') : t('common.save')}</button>

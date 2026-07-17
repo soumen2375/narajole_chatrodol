@@ -4,7 +4,7 @@ import { FaPlus, FaPrint, FaAward, FaUserPlus } from 'react-icons/fa6';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { CswoEvent, CswoEventCertificate, CertRecipientType } from '@/types';
-import { useFmt } from '@/lib/format';
+import { useFmt, formatDate } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 
@@ -88,7 +88,7 @@ export default function AdminCertificates() {
 
   const printCerts = (list: CswoEventCertificate[]) => {
     if (!event || list.length === 0) return;
-    const dateStr = sign.date ? fmt.date(sign.date) : fmt.date(event.event_date);
+    const dateStr = sign.date ? formatDate(sign.date, 'en') : formatDate(event.event_date, 'en');
     const venue = [event.location, event.district].filter(Boolean).join(', ');
     const titleOf = (t: CertRecipientType) => ({
       participant: 'Certificate of Participation', winner: 'Certificate of Achievement',
@@ -103,7 +103,7 @@ export default function AdminCertificates() {
     };
     const pages = list.map((c) => `
       <div class="cert"><div class="frame">
-        <div class="hdr"><div class="org">Chhatradol Social Welfare Organisation</div><div class="orgbn">নাড়াজোল ছাত্রদল</div></div>
+        <div class="hdr"><div class="org">Chhatradol Social Welfare Organization</div></div>
         <div class="title">${titleOf(c.recipient_type)}</div>
         <div class="pre">This is proudly presented to</div>
         <div class="name">${c.recipient_name}</div>

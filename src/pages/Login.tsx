@@ -38,7 +38,14 @@ export default function Login() {
         navigate('/member');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('login.failed'));
+      const m = err instanceof Error ? err.message : 'PAYMENT_FAILED';
+      // Translate internal error codes to user-friendly messages
+      const displayMsg = m === 'PAYMENT_FAILED'
+        ? (lang === 'bn'
+          ? 'পেমেন্ট গেটওয়ে লোড হয়নি। ইন্টারনেট সংযোগ চেক করুন।'
+          : 'Payment gateway could not load. Please check your internet connection.')
+        : m;
+      setError(displayMsg);
     } finally {
       setLoading(false);
     }
@@ -48,7 +55,7 @@ export default function Login() {
     e.preventDefault();
     setForgotStatus('sending');
     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/member/profile`,
+      redirectTo: `${window.location.origin}/login?reset=1`,
     });
     setForgotStatus(error ? 'error' : 'sent');
   };
@@ -168,9 +175,22 @@ export default function Login() {
           {forgotMode && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
               <div className="w-full max-w-sm rounded-[4px] p-8" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
-                <h2 className="font-bengali text-[22px] font-bold" style={{ ...SERIF_BN, color: INK }}>
-                  {lang === 'bn' ? 'পাসওয়ার্ড রিসেট' : 'Reset Password'}
-                </h2>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="font-bengali text-[22px] font-bold" style={{ ...SERIF_BN, color: INK }}>
+                    {lang === 'bn' ? 'পাসওয়ার্ড রিসেট' : 'Reset Password'}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => { setForgotMode(false); setForgotStatus('idle'); setForgotEmail(''); }}
+                    className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-black/5"
+                    style={{ color: MUTED }}
+                    aria-label="Close"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
                 <p className="mt-2 mb-5 font-bengali text-[13px]" style={{ color: MUTED }}>
                   {lang === 'bn' ? 'আপনার ইমেল দিন, আমরা রিসেট লিংক পাঠাব।' : 'Enter your email and we will send a reset link.'}
                 </p>
@@ -211,7 +231,34 @@ export default function Login() {
             </div>
           )}
 
-          <p className="mt-6 text-center font-mono text-[11px] uppercase tracking-[0.18em]">
+          {/* Nav links - showing full header menu */}
+          <div className="mt-8 border-t pt-6" style={{ borderColor: RULE }}>
+            <p className="mb-3 text-center font-mono text-[9.5px] uppercase tracking-[0.22em]" style={{ color: MUTED }}>
+              {lang === 'bn' ? 'পেজগুলি' : 'Navigation'}
+            </p>
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+              {[
+                { to: '/', label: lang === 'bn' ? 'হোম' : 'Home' },
+                { to: '/about', label: lang === 'bn' ? 'আমাদের সম্পর্কে' : 'About' },
+                { to: '/events', label: lang === 'bn' ? 'অনুষ্ঠান' : 'Events' },
+                { to: '/gallery', label: lang === 'bn' ? 'গ্যালারি' : 'Gallery' },
+                { to: '/contact', label: lang === 'bn' ? 'যোগাযোগ' : 'Contact' },
+                { to: '/volunteer', label: lang === 'bn' ? 'স্বেচ্ছাসেবক' : 'Volunteer' },
+                { to: '/donate', label: lang === 'bn' ? 'অনুদান' : 'Donate' },
+              ].map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="font-mono text-[10.5px] uppercase tracking-[0.14em] transition-opacity hover:opacity-70"
+                  style={{ color: MUTED }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <p className="mt-4 text-center font-mono text-[11px] uppercase tracking-[0.18em]">
             <Link to="/" style={{ color: MUTED }} className="transition-colors hover:opacity-70">
               ← {t('common.backToHome')}
             </Link>

@@ -134,6 +134,7 @@ export default function AdminExpenses() {
       supabase
         .from('cswo_expenses')
         .select('*, fund:cswo_funds(id,name_bn,name_en,slug)')
+        .order('spent_on', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false }),
       supabase
         .from('cswo_funds')

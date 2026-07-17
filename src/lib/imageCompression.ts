@@ -11,6 +11,34 @@ const LIMITS: Record<ImageUploadType, number> = {
   general: 500 * 1024,  // 500KB
 };
 
+// Maximum raw file size we'll even attempt to compress (10MB)
+const MAX_RAW_SIZE = 10 * 1024 * 1024;
+
+/**
+ * Validates a file before upload. Throws a user-friendly error if:
+ * - The file is not an image
+ * - The file exceeds the maximum raw size (10MB) — too large to process
+ * Use this BEFORE calling compressImage().
+ */
+export function validateImageUpload(file: File, uploadType: ImageUploadType = 'general'): void {
+  if (!file.type.startsWith('image/')) {
+    throw new Error(`Only image files are allowed. Received: ${file.type || 'unknown file type'}`);
+  }
+  if (file.size > MAX_RAW_SIZE) {
+    throw new Error(
+      `File too large: ${formatFileSize(file.size)}. Maximum allowed raw size is ${formatFileSize(MAX_RAW_SIZE)}. Please use a smaller image file.`
+    );
+  }
+  const limit = LIMITS[uploadType];
+  // If the file is much larger than the limit (> 5x), warn that compression may degrade quality
+  if (file.size > limit * 5) {
+    console.warn(
+      `[imageCompression] File (${formatFileSize(file.size)}) is much larger than target limit (${formatFileSize(limit)}). Heavy compression will be applied.`
+    );
+  }
+}
+
+
 /**
  * Compresses an image file to within the size limit for the given upload type.
  * Uses canvas-based compression with progressive quality reduction.

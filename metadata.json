@@ -1,5 +1,5 @@
 {
-  "name": "Chhatradol Social Welfare Organisation",
-  "description": "A full-stack web platform for Chhatradol Social Welfare Organisation (নাড়াজোল ছাত্রদল), a public charitable trust. Public website plus member and admin portals with attendance, monthly contributions, donations (Razorpay) and post management, powered by React, Vite and Supabase.",
+  "name": "Chhatradol Social Welfare Organization",
+  "description": "A full-stack web platform for Chhatradol Social Welfare Organization (ছাত্রদল সমাজকল্যাণ সংস্থা), a public charitable trust. Public website plus member and admin portals with attendance, monthly contributions, donations (Razorpay) and post management, powered by React, Vite and Supabase.",
   "requestFramePermissions": []
 }

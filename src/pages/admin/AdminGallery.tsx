@@ -155,7 +155,7 @@ export default function AdminGallery() {
                 {pending.map((g) => (
                   <div key={g.id} className="group relative overflow-hidden rounded-xl border-2 border-amber-200 bg-white shadow-sm">
                     <img src={g.src} alt={g.alt.en} className="aspect-square w-full object-cover opacity-80"
-                      onError={(e) => { e.currentTarget.src = '/assets/images/chatrodol.jpg'; }} />
+                      onError={(e) => { e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }} />
                     <div className="absolute left-2 top-2">
                       <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold text-white shadow">
                         ⏳ {tr('Pending', 'অপেক্ষমাণ')}
@@ -194,7 +194,7 @@ export default function AdminGallery() {
                 {published.map((g) => (
                   <div key={g.id} className="group relative overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
                     <img src={g.src} alt={g.alt.en} className="aspect-square w-full object-cover"
-                      onError={(e) => { e.currentTarget.src = '/assets/images/chatrodol.jpg'; }} />
+                      onError={(e) => { e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }} />
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100">
                       <p className="truncate text-[12px] font-medium text-white">{g.alt.bn || g.alt.en}</p>
                       <p className="text-[10px] text-white/70">

@@ -12,6 +12,7 @@ export default function Contact() {
   const bn = lang === 'bn';
   const [form, setForm] = useState({ name: '', phone: '', email: '', subject: '', message: '' });
   const [status, setStatus] = useState<Status>('idle');
+  const [errDetail, setErrDetail] = useState('');
   const [bloodGroup, setBloodGroup] = useState('');
   const [bloodHospital, setBloodHospital] = useState('');
 
@@ -29,6 +30,7 @@ export default function Contact() {
       name: form.name, phone: form.phone, email: form.email,
       subject: form.subject, message: fullMessage,
     }]);
+    if (error) setErrDetail(error.message || '');
     setStatus(error ? 'error' : 'sent');
   }
 
@@ -161,7 +163,15 @@ export default function Contact() {
                     <textarea required rows={6} value={form.message} onChange={set('message')} placeholder={bn ? 'আপনার বার্তা এখানে লিখুন…' : 'Write your message here…'} className={`${inputCls} resize-none`} style={inputStyle} />
                   </div>
                   {status === 'error' && (
-                    <p className="font-bengali text-[13px]" style={{ color: '#dc2626' }}>{t('contact.error')}</p>
+                    <div className="rounded-[3px] border px-4 py-3" style={{ borderColor: '#fca5a5', background: '#fef2f2' }}>
+                      <p className="font-bengali text-[13px] font-semibold" style={{ color: '#dc2626' }}>{t('contact.error')}</p>
+                      {errDetail && (
+                        <p className="mt-1 font-mono text-[11px]" style={{ color: '#b91c1c' }}>{errDetail}</p>
+                      )}
+                      <p className="mt-1 font-bengali text-[12px]" style={{ color: '#7f1d1d' }}>
+                        {bn ? 'অনুগ্রহ করে আবার চেষ্টা করুন বা আমাদের ফোনে যোগাযোগ করুন।' : 'Please try again or reach us by phone.'}
+                      </p>
+                    </div>
                   )}
                   <button
                     type="submit"

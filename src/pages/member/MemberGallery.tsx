@@ -146,7 +146,7 @@ export default function MemberGallery() {
                 <div key={g.id} className="group relative overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
                   <img src={g.src} alt={g.alt_en || g.alt_bn}
                     className="aspect-square w-full object-cover"
-                    onError={(e) => { e.currentTarget.src = '/assets/images/chatrodol.jpg'; }} />
+                    onError={(e) => { e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }} />
                   <div className="absolute left-2 top-2">
                     {g.is_active
                       ? <span className="rounded-full bg-green-500 px-2 py-0.5 text-[10px] font-semibold text-white shadow">✓ {tr('Published', 'প্রকাশিত')}</span>
@@ -183,7 +183,7 @@ export default function MemberGallery() {
                   <div key={g.id} className="group relative overflow-hidden rounded-xl border-2 border-red-100 bg-white shadow-sm opacity-75">
                     <img src={g.src} alt={g.alt_en || g.alt_bn}
                       className="aspect-square w-full object-cover grayscale"
-                      onError={(e) => { e.currentTarget.src = '/assets/images/chatrodol.jpg'; }} />
+                      onError={(e) => { e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }} />
                     <div className="absolute left-2 top-2">
                       <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-semibold text-white shadow">
                         ✕ {tr('Rejected', 'প্রত্যাখ্যাত')}

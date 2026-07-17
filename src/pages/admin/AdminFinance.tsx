@@ -175,7 +175,7 @@ export default function AdminFinance() {
           <h1 className="mt-1.5 text-[28px] leading-tight" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>
             {tr('Finance Summary', 'আর্থিক সারসংক্ষেপ')} <span style={{ color: MUTED }}>· The Quarterly Ledger</span>
           </h1>
-          <p className="mt-1 max-w-2xl text-[13.5px]" style={{ color: INK2 }}>{tr('A complete picture of the trust’s finances — income, expenses and per-fund balances.', 'ছাত্রদলের আর্থিক স্বাস্থের পূর্ণাঙ্গ চিত্র — আয়, ব্যয় ও ফান্ড ব্যালেন্স।')}</p>
+          <p className="mt-1 max-w-2xl text-[13.5px]" style={{ color: INK2 }}>{tr('A complete picture of the trust’s finances — income, expenses and per-fund balances.', 'আর্থিক স্বাস্থের পূর্ণাঙ্গ চিত্র — আয়, ব্যয় ও ফান্ড ব্যালেন্স।')}</p>
         </div>
         <div className="flex items-center gap-2.5">
           <select value={fy} onChange={(e) => setFy(e.target.value)} className="rounded-full px-3.5 py-2 text-[12.5px] outline-none" style={{ border: `1px solid ${RULE}`, color: INK2 }}>

@@ -1,5 +1,16 @@
 import type { Lang } from '@/i18n';
 
+/** Escapes HTML special characters to prevent XSS when building HTML strings */
+function htmlEscape(str: string | null | undefined): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export interface ReceiptData {
   receiptNumber: string;
   type: 'donation' | 'contribution';
@@ -14,18 +25,19 @@ export interface ReceiptData {
   paymentId?: string | null;
 }
 
-export function printReceipt(data: ReceiptData, lang: Lang) {
+export function printReceipt(data: ReceiptData, _langInput: Lang) {
+  const lang: Lang = 'en';
   const L = (en: string, bn: string) => (lang === 'en' ? en : bn);
   const rows: [string, string][] = [
-    [L('Receipt No.', 'রসিদ নং'), data.receiptNumber],
-    [L('Date', 'তারিখ'), data.date],
-    [L('Name', 'নাম'), data.name],
-    ...(data.email ? [[L('Email', 'ইমেল'), data.email] as [string, string]] : []),
+    [L('Receipt No.', 'রসিদ নং'), htmlEscape(data.receiptNumber)],
+    [L('Date', 'তারিখ'), htmlEscape(data.date)],
+    [L('Name', 'নাম'), htmlEscape(data.name)],
+    ...(data.email ? [[L('Email', 'ইমেল'), htmlEscape(data.email)] as [string, string]] : []),
     [L('Amount', 'পরিমাণ'), `₹${Number(data.amount).toLocaleString('en-IN')}`],
-    ...(data.type === 'donation' && data.purpose ? [[L('Purpose', 'উদ্দেশ্য'), data.purpose] as [string, string]] : []),
-    ...(data.type === 'contribution' && data.month ? [[L('Month / Year', 'মাস / বছর'), `${data.month} ${data.year ?? ''}`] as [string, string]] : []),
-    ...(data.paymentMethod ? [[L('Payment Method', 'পেমেন্ট পদ্ধতি'), data.paymentMethod] as [string, string]] : []),
-    ...(data.paymentId ? [[L('Payment ID', 'পেমেন্ট আইডি'), data.paymentId] as [string, string]] : []),
+    ...(data.type === 'donation' && data.purpose ? [[L('Purpose', 'উদ্দেশ্য'), htmlEscape(data.purpose)] as [string, string]] : []),
+    ...(data.type === 'contribution' && data.month ? [[L('Month / Year', 'মাস / বছর'), `${htmlEscape(data.month)} ${data.year ?? ''}`] as [string, string]] : []),
+    ...(data.paymentMethod ? [[L('Payment Method', 'পেমেন্ট পদ্ধতি'), htmlEscape(data.paymentMethod)] as [string, string]] : []),
+    ...(data.paymentId ? [[L('Payment ID', 'পেমেন্ট আইডি'), htmlEscape(data.paymentId)] as [string, string]] : []),
   ];
 
   const tableRows = rows
@@ -56,13 +68,12 @@ export function printReceipt(data: ReceiptData, lang: Lang) {
 </head>
 <body>
   <div class="header">
-    <div class="org-en">Chhatradol Social Welfare Organisation</div>
-    <div class="org-bn">নাড়াজোল ছাত্রদল</div>
+    <div class="org-en">Chhatradol Social Welfare Organization</div>
     <div class="receipt-type">${typeLabel}</div>
   </div>
   <table>${tableRows}</table>
   <div class="seal">${L('This is a computer-generated receipt.', 'এটি একটি কম্পিউটার-জেনারেটেড রসিদ।')}</div>
-  <div class="footer">CSWO Digital Platform · narajole.org</div>
+  <div class="footer">CSWO Digital Platform · chhatradol.org</div>
 </body>
 </html>`;
 
@@ -88,18 +99,19 @@ export interface CertData {
   orgPan?: string | null;    // org PAN
 }
 
-export function printCertificate(data: CertData, lang: Lang) {
+export function printCertificate(data: CertData, _langInput: Lang) {
+  const lang: Lang = 'en';
   const L = (en: string, bn: string) => (lang === 'en' ? en : bn);
   const amt = `₹${Number(data.amount).toLocaleString('en-IN')}`;
   const rows: [string, string][] = [
-    [L('Certificate No.', 'সার্টিফিকেট নং'), data.receiptNumber],
-    [L('Date', 'তারিখ'), data.date],
-    [L('Financial Year', 'অর্থবছর'), data.fy],
-    [L('Donor Name', 'দাতার নাম'), data.name],
-    ...(data.pan ? [[L('Donor PAN', 'দাতার PAN'), data.pan] as [string, string]] : []),
+    [L('Certificate No.', 'সার্টিফিকেট নং'), htmlEscape(data.receiptNumber)],
+    [L('Date', 'তারিখ'), htmlEscape(data.date)],
+    [L('Financial Year', 'অর্থবছর'), htmlEscape(data.fy)],
+    [L('Donor Name', 'দাতার নাম'), htmlEscape(data.name)],
+    ...(data.pan ? [[L('Donor PAN', 'দাতার PAN'), htmlEscape(data.pan)] as [string, string]] : []),
     [L('Donation Amount', 'দানের পরিমাণ'), amt],
-    ...(data.purpose ? [[L('Purpose', 'উদ্দেশ্য'), data.purpose] as [string, string]] : []),
-    ...(data.paymentId ? [[L('Payment Ref.', 'পেমেন্ট রেফ.'), data.paymentId] as [string, string]] : []),
+    ...(data.purpose ? [[L('Purpose', 'উদ্দেশ্য'), htmlEscape(data.purpose)] as [string, string]] : []),
+    ...(data.paymentId ? [[L('Payment Ref.', 'পেমেন্ট রেফ.'), htmlEscape(data.paymentId)] as [string, string]] : []),
   ];
   const tableRows = rows.map(([k, v]) => `<tr><td class="k">${k}</td><td class="v">${v}</td></tr>`).join('');
   const regLine = [
@@ -135,8 +147,7 @@ export function printCertificate(data: CertData, lang: Lang) {
 <body>
   <div class="frame">
     <div class="header">
-      <div class="org-en">Chhatradol Social Welfare Organisation</div>
-      <div class="org-bn">নাড়াজোল ছাত্রদল</div>
+      <div class="org-en">Chhatradol Social Welfare Organization</div>
       <div class="title">${L('Donation Certificate u/s 80G', '৮০জি ধারায় দান সার্টিফিকেট')}</div>
     </div>
     <p class="intro">${L(

@@ -1,6 +1,6 @@
-# Chhatradol Social Welfare Organisation (নাড়াজোল ছাত্রদল)
+# Chhatradol Social Welfare Organization (ছাত্রদল সমাজকল্যাণ সংস্থা)
 
-A full‑stack web platform for **Chhatradol Social Welfare Organisation**, a public
+A full‑stack web platform for **Chhatradol Social Welfare Organization**, a public
 charitable trust based in Nij Narajole, Daspur, Paschim Medinipur, West Bengal.
 
 It combines a public marketing/awareness website with a secure **member portal**
@@ -30,7 +30,7 @@ Built with **React + Vite + TypeScript + Tailwind CSS** on the front end and
 - **Donation history**
 
 ### Admin portal (`/admin`)
-- Dashboard with organisation‑wide stats
+- Dashboard with Organization‑wide stats
 - **Member management** — create member/admin accounts, approve / suspend / reject,
   change roles, remove
 - **Post moderation** — approve, publish, reject, edit, delete, create
@@ -50,7 +50,7 @@ Built with **React + Vite + TypeScript + Tailwind CSS** on the front end and
 | Auth / DB | Supabase (Postgres + GoTrue auth + RLS) |
 | Payments | Razorpay (orders + signature verification in a Supabase Edge Function) |
 
-All organisation tables are prefixed `cswo_` so they coexist safely with anything
+All Organization tables are prefixed `cswo_` so they coexist safely with anything
 else in the Supabase project. Row‑Level Security is enabled on every table; a
 `SECURITY DEFINER` helper (`cswo_is_admin()`) is used to avoid policy recursion.
 

@@ -6,7 +6,7 @@ import {
 } from './_field-journal';
 
 // ════════════════════════════════════════════════════════════════════
-//  About — নাড়াজোলের কথা
+//  About — ছাত্রদলের কথা
 // ════════════════════════════════════════════════════════════════════
 
 const VALUE_ICONS: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> = {
@@ -26,8 +26,8 @@ export default function About() {
           ? 'সাত বছরের পথচলা — একটি ছোট ভাবনা থেকে রেজিস্টার্ড ট্রাস্ট পর্যন্ত।'
           : 'Seven Years of Journey — From a Small Idea to a Registered Trust.'}
         lede={bn
-          ? '২০১৯ সালে নাড়াজোলের একদল ছাত্রছাত্রীর ভাবনায় জন্ম নিয়েছিল নাড়াজোল ছাত্রদল। আজ আমরা একটি পাবলিক চ্যারিটেবল ট্রাস্ট — পশ্চিম মেদিনীপুরের প্রান্তিক মানুষের পাশে নিরলসভাবে দাঁড়াই।'
-          : 'In 2019, Narajole Chhatradol was born from the vision of a group of students from Narajole. Today we are a public charitable trust — standing steadfastly beside the marginalised people of Paschim Medinipur.'}
+          ? '২০১৯ সালে একদল ছাত্রছাত্রীর ভাবনায় জন্ম নিয়েছিল এই ছাত্রদল। আজ আমরা একটি পাবলিক চ্যারিটেবল ট্রাস্ট — পশ্চিম মেদিনীপুরের প্রান্তিক মানুষের পাশে নিরলসভাবে দাঁড়াই।'
+          : 'In 2019, Chhatradol was born from the vision of a group of students. Today we are a public charitable trust — standing steadfastly beside the marginalised people of Paschim Medinipur.'}
       />
 
       {/* Mission / Vision / Values */}
@@ -46,8 +46,8 @@ export default function About() {
                 tag: '02', en: 'Vision',
                 title: bn ? 'ভিশন' : 'Vision',
                 text: bn
-                  ? 'নাড়াজোল ও তার আশপাশের প্রতিটি মানুষের জীবনে শিক্ষা, সুস্বাস্থ্য ও পরিবেশগত সচেতনতা পৌঁছে দেওয়া।'
-                  : 'To bring education, good health and environmental awareness to the life of every person in and around Narajole.',
+                  ? 'প্রতিটি মানুষের জীবনে শিক্ষা, সুস্বাস্থ্য ও পরিবেশগত সচেতনতা পৌঁছে দেওয়া।'
+                  : 'To bring education, good health and environmental awareness to the life of every person.',
               },
               {
                 tag: '03', en: 'Values',
@@ -95,7 +95,7 @@ export default function About() {
               {
                 year: '2019',
                 title: bn ? 'যাত্রা শুরু' : 'Founded',
-                text: bn ? 'নাড়াজোলের একদল ছাত্রছাত্রীর হাত ধরে প্রথম পরিচ্ছন্নতা অভিযান।' : 'First cleanliness drive by a group of students from Narajole.',
+                text: bn ? 'একদল ছাত্রছাত্রীর হাত ধরে প্রথম পরিচ্ছন্নতা অভিযান।' : 'First cleanliness drive by a group of students.',
               },
               {
                 year: '2021',
@@ -131,7 +131,7 @@ export default function About() {
             title={bn ? 'যাঁরা পথ দেখাচ্ছেন' : 'The Ones Leading the Way'}
             kicker={bn
               ? 'আট জন স্বেচ্ছাসেবী ট্রাস্টি — সংগঠনের প্রতিটি সিদ্ধান্তের পিছনে।'
-              : 'Eight volunteer trustees — behind every decision the organisation makes.'}
+              : 'Eight volunteer trustees — behind every decision the Organization makes.'}
           />
           <div className="grid grid-cols-1 gap-px sm:grid-cols-2 lg:grid-cols-4" style={{ background: 'var(--c-rule)' }}>
             {TEAM_MEMBERS.map((m) => (
