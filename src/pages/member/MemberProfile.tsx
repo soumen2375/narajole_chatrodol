@@ -3,7 +3,7 @@ import { Camera } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
-import { compressImage } from '@/lib/imageCompression';
+import { compressImage, validateImageUpload } from '@/lib/imageCompression';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -29,6 +29,7 @@ export default function MemberProfile() {
   const [pwStatus, setPwStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(member?.avatar_url ?? null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
 
   if (!member) return null;
 
@@ -36,6 +37,17 @@ export default function MemberProfile() {
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Pre-upload validation — check file type and maximum size before trying to compress
+    setAvatarError('');
+    try {
+      validateImageUpload(file, 'avatar');
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'Invalid file.');
+      if (fileRef.current) fileRef.current.value = '';
+      return;
+    }
+
     setAvatarUploading(true);
     try {
       // 1. List files starting with member ID to clean up
@@ -147,6 +159,11 @@ export default function MemberProfile() {
           <p className="font-semibold text-gray-900">{member.full_name}</p>
           <p className="text-sm text-gray-500">{member.email}</p>
           <p className="mt-1 text-xs text-gray-400">Click the camera icon to upload a new photo (max 2 MB)</p>
+          {avatarError && (
+            <div className="mt-2 rounded bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+              ⚠ {avatarError}
+            </div>
+          )}
         </div>
       </div>
 

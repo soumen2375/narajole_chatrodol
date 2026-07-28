@@ -100,7 +100,13 @@ export default function Donate() {
     } catch (err) {
       const m = err instanceof Error ? err.message : 'PAYMENT_FAILED';
       if (m === 'CANCELLED') { setStatus('idle'); return; }
-      setErrMsg(m); setStatus('error');
+      // Translate internal error codes to user-friendly messages
+      const displayMsg = m === 'PAYMENT_FAILED'
+        ? (lang === 'bn'
+          ? 'পেমেন্ট গেটওয়ে লোড হয়নি। ইন্টারনেট সংযোগ চেক করুন।'
+          : 'Payment gateway could not load. Please check your internet connection.')
+        : m;
+      setErrMsg(displayMsg); setStatus('error');
     }
   };
 
@@ -115,7 +121,7 @@ export default function Donate() {
               <span style={{ color: FJ.brand }}>{tr('সত্যিকারের পরিবর্তন আনে', 'real change')}</span>
             </h1>
             <p className="mt-5 max-w-xl font-bengali text-[16px] leading-[1.7]" style={{ color: FJ.ink2 }}>
-              {tr('নাড়াজোলে শিক্ষা, স্বাস্থ্যসেবা, রক্তদান শিবির ও সমাজকল্যাণ কর্মসূচিতে সহায়তা করুন।', 'Support education, healthcare, blood donation camps, and community welfare programs in Narajole.')}
+              {tr('শিক্ষা, স্বাস্থ্যসেবা, রক্তদান শিবির ও সমাজকল্যাণ কর্মসূচিতে সহায়তা করুন।', 'Support education, healthcare, blood donation camps, and community welfare programs.')}
             </p>
 
             {/* trust badges */}

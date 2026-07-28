@@ -146,12 +146,14 @@ export default function MemberMessages() {
     if (!member || !body.trim()) return;
     if (recipMode === 'member' && !toMember) { setSendErr(tr('Select a recipient.', 'প্রাপক বেছে নিন।')); return; }
     setSending(true); setSendErr('');
-    const payload: Record<string, unknown> = { from_id: member.id, subject: subject.trim() || tr('(no subject)', '(কোনো বিষয় নেই)'), body: body.trim() };
+    const msgSubject = subject.trim() || tr('(no subject)', '(কোনো বিষয় নেই)');
+    const payload: Record<string, unknown> = { from_id: member.id, subject: msgSubject, body: body.trim() };
     if (recipMode === 'role') payload.to_role = toRole;
     else payload.to_id = toMember;
     const { error } = await supabase.from('cswo_member_messages').insert(payload);
     setSending(false);
     if (error) { setSendErr(error.message); return; }
+
     setComposing(false); setSubject(''); setBody(''); setToMember(''); setMemberSearch('');
     await load();
   };
@@ -169,10 +171,13 @@ export default function MemberMessages() {
   const sendReply = async () => {
     if (!member || !selected || !replyBody.trim()) return;
     setSending(true);
-    const payload = { from_id: member.id, to_id: selected.from_id, subject: `Re: ${selected.subject}`, body: replyBody.trim(), parent_id: selected.id };
+    const replySubject = `Re: ${selected.subject}`;
+    const payload = { from_id: member.id, to_id: selected.from_id, subject: replySubject, body: replyBody.trim(), parent_id: selected.id };
     const { error } = await supabase.from('cswo_member_messages').insert(payload);
     setSending(false);
-    if (!error) { setReplyBody(''); setReplying(false); await load(); }
+    if (!error) {
+      setReplyBody(''); setReplying(false); await load();
+    }
   };
 
   /* delete own sent message */
@@ -180,6 +185,13 @@ export default function MemberMessages() {
     if (!window.confirm(tr('Delete this message?', 'এই বার্তা মুছবেন?'))) return;
     await supabase.from('cswo_member_messages').delete().eq('id', msgId);
     setSent((arr) => arr.filter((m) => m.id !== msgId));
+  };
+
+  /* delete bulletin (admin message) */
+  const deleteBulletin = async (bulletinId: string) => {
+    if (!window.confirm(tr('Delete this notification?', 'এই বিজ্ঞপ্তি মুছবেন?'))) return;
+    await supabase.from('cswo_admin_messages').delete().eq('id', bulletinId);
+    setBulletins((arr) => arr.filter((b) => b.id !== bulletinId));
   };
 
   return (
@@ -400,7 +412,17 @@ export default function MemberMessages() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs font-bold" style={{ color: INK }}>{b.sender_name}</span>
-                          <span className="text-[10.5px]" style={{ color: MUTED }}>{fmt.date(b.created_at)}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10.5px]" style={{ color: MUTED }}>{fmt.date(b.created_at)}</span>
+                            <button
+                              onClick={() => deleteBulletin(b.id)}
+                              className="text-[10.5px] font-medium hover:underline"
+                              style={{ color: '#ef4444' }}
+                              title={tr('Delete notification', 'বিজ্ঞপ্তি মুছুন')}
+                            >
+                              {tr('Delete', 'মুছুন')}
+                            </button>
+                          </div>
                         </div>
                         <p className="mt-1 text-xs leading-relaxed" style={{ color: INK }}>{b.message}</p>
                       </div>

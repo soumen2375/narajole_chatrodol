@@ -11,9 +11,9 @@ import { PageShell, SERIF_BN, Icon, FJ } from './_field-journal';
 //  Gallery — চিত্রশালা
 // ════════════════════════════════════════════════════════════════════
 
-const FALLBACK = '/assets/images/chatrodol.jpg';
+const FALLBACK = '/assets/images/Chhatradol.jpg';
 const onErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
-  if (e.currentTarget.src.indexOf('chatrodol') < 0) e.currentTarget.src = FALLBACK;
+  if (e.currentTarget.src.indexOf('Chhatradol') < 0) e.currentTarget.src = FALLBACK;
 };
 
 export default function Gallery() {

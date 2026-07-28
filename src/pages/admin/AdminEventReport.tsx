@@ -4,7 +4,7 @@ import { FaPrint, FaDownload } from 'react-icons/fa6';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { CswoEvent } from '@/types';
-import { useFmt } from '@/lib/format';
+import { useFmt, formatDate } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 
@@ -93,12 +93,14 @@ export default function AdminEventReport() {
   const dateStr = fmt.date(event.event_date) + (event.end_date ? ` – ${fmt.date(event.end_date)}` : '');
 
   const money = (n: number) => `₹${Number(n).toLocaleString('en-IN')}`;
+  const dateStrEn = formatDate(event.event_date, 'en') + (event.end_date ? ` – ${formatDate(event.end_date, 'en')}` : '');
 
   const exportCSV = () => {
+    const tr = (en: string, _bn: string) => en;
     const L: (string | number)[][] = [];
     L.push([tr('Event Report', 'অনুষ্ঠান প্রতিবেদন'), event.title]);
     L.push([tr('Code', 'কোড'), event.event_code ?? '']);
-    L.push([tr('Date', 'তারিখ'), dateStr]);
+    L.push([tr('Date', 'তারিখ'), dateStrEn]);
     L.push([tr('Venue', 'স্থান'), venue]);
     L.push([]);
     L.push([tr('SUMMARY', 'সারসংক্ষেপ'), '']);
@@ -121,6 +123,7 @@ export default function AdminEventReport() {
   };
 
   const printReport = () => {
+    const tr = (en: string, _bn: string) => en;
     const row = (k: string, v: string) => `<tr><td class="k">${k}</td><td class="v">${v}</td></tr>`;
     const budgetRows = budget.map((b) => `<tr><td>${b.category}</td><td class="r">${money(Number(b.planned))}</td><td class="r">${money(Number(b.approved))}</td><td class="r">${money(Number(b.actual))}</td></tr>`).join('');
     const bloodRows = donors.length ? `<h3>${tr('Blood Donation', 'রক্তদান')}</h3><p>${tr('Donors', 'দাতা')}: ${donors.length} · ${tr('Units', 'ইউনিট')}: ${bloodUnits}</p>` : '';
@@ -143,9 +146,9 @@ export default function AdminEventReport() {
   .foot{margin-top:26px;text-align:center;font-size:10px;color:#aaa}
   @media print{body{padding:14px}}
 </style></head><body>
-  <div class="head"><div class="org">Chhatradol Social Welfare Organisation</div><div class="sub">নাড়াজোল ছাত্রদল</div>
+  <div class="head"><div class="org">Chhatradol Social Welfare Organization</div>
     <div class="title">${tr('Event Report', 'অনুষ্ঠান প্রতিবেদন')} — ${event.title}</div>
-    <div class="meta">${event.event_code ?? ''} · ${dateStr}${venue ? ' · ' + venue : ''}</div>
+    <div class="meta">${event.event_code ?? ''} · ${dateStrEn}${venue ? ' · ' + venue : ''}</div>
   </div>
   <h3>${tr('Overview', 'সারসংক্ষেপ')}</h3>
   <table>
@@ -163,7 +166,7 @@ export default function AdminEventReport() {
   ${budget.length ? `<h3>${tr('Budget detail', 'বাজেট বিবরণ')}</h3><table><tr><th>${tr('Category', 'বিভাগ')}</th><th class="r">${tr('Planned', 'পরিকল্পিত')}</th><th class="r">${tr('Approved', 'অনুমোদিত')}</th><th class="r">${tr('Actual', 'প্রকৃত')}</th></tr>${budgetRows}</table>` : ''}
   ${bloodRows}
   ${benRows}
-  <div class="foot">${tr('Generated', 'তৈরি')} ${new Date().toLocaleString('en-IN')} · narajole.org</div>
+  <div class="foot">${tr('Generated', 'তৈরি')} ${new Date().toLocaleString('en-US')} · narajole.org</div>
 </body></html>`;
     const w = window.open('', '_blank', 'width=820,height=900');
     if (!w) return;

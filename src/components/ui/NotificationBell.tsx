@@ -46,13 +46,14 @@ export default function NotificationBell() {
     if (!member) return;
 
     const channel = supabase
-      .channel('realtime_notifications')
+      .channel(`realtime_notifications_${member.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'cswo_notifications',
+          filter: `recipient_id=eq.${member.id}`,
         },
         () => {
           load();

@@ -11,7 +11,7 @@ export default function Refunds() {
 
       <Section heading="1. Nature of donations">
         <p>
-          Donations and monthly contributions to the Organisation are voluntary charitable gifts. As they are applied
+          Donations and monthly contributions to the Organization are voluntary charitable gifts. As they are applied
           towards charitable activities, they are generally <strong>non-refundable</strong> once successfully processed.
         </p>
       </Section>
@@ -47,7 +47,7 @@ export default function Refunds() {
         <p>
           Approved refunds are processed back to the original payment method through Razorpay. Once initiated, it
           typically takes <strong>5–7 business days</strong> for the amount to reflect, depending on your bank or card
-          issuer. No cancellation or processing fee is charged by the Organisation for genuine erroneous transactions.
+          issuer. No cancellation or processing fee is charged by the Organization for genuine erroneous transactions.
         </p>
       </Section>
 

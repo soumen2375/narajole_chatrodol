@@ -48,7 +48,7 @@ export default function Privacy() {
           items={[
             'with trusted service providers who help us run the website (e.g. our hosting and database provider Supabase, and our payment partner Razorpay);',
             'when required by law, regulation, or a valid legal request;',
-            'with the Organisation’s administrators and trustees for legitimate operational purposes.',
+            'with the Organization’s administrators and trustees for legitimate operational purposes.',
           ]}
         />
       </Section>
@@ -77,7 +77,7 @@ export default function Privacy() {
 
       <Section heading="8. Children’s privacy">
         <p>
-          The member portal is intended for use by adults acting on behalf of the Organisation. We do not knowingly
+          The member portal is intended for use by adults acting on behalf of the Organization. We do not knowingly
           collect personal information from children without appropriate consent.
         </p>
       </Section>

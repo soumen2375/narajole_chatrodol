@@ -1,17 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Donation } from '@/types';
-import { useFmt } from '@/lib/format';
+import { useFmt, formatDate } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { printReceipt, printCertificate } from '@/lib/receipt';
+import { useAuth } from '@/context/AuthContext';
 
 interface DonationRow extends Omit<Donation, 'member'> {
   member?: { full_name: string; email: string } | null;
 }
 
 export default function AdminDonations() {
+  const { member: me } = useAuth();
   const { t, lang } = useT();
   const fmt = useFmt();
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
@@ -30,6 +32,26 @@ export default function AdminDonations() {
   const [regs, setRegs] = useState({ reg80g: '', reg12a: '', orgPan: '' });
   const [campaigns, setCampaigns] = useState<{ id: string; name_en: string; name_bn: string }[]>([]);
   const [events, setEvents] = useState<{ id: string; title: string }[]>([]);
+  const [funds, setFunds] = useState<{ id: string; name_en: string; name_bn: string }[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<{ id: string; account_name: string; account_number: string }[]>([]);
+
+  // Manual donation modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [form, setForm] = useState({
+    donor_name: '',
+    donor_email: '',
+    donor_phone: '',
+    amount: '',
+    purpose: tr('Donation', 'দান'),
+    is_anonymous: false,
+    campaign_id: '',
+    event_id: '',
+    fund_id: '',
+    bank_account_id: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
   useEffect(() => {
     supabase.from('cswo_compliance').select('ckey,reg_number').then(({ data }) => {
       const m = Object.fromEntries(((data ?? []) as { ckey: string; reg_number: string }[]).map((r) => [r.ckey, r.reg_number]));
@@ -40,6 +62,12 @@ export default function AdminDonations() {
     });
     supabase.from('cswo_events').select('id,title').order('event_date', { ascending: false }).then(({ data }) => {
       setEvents((data ?? []) as { id: string; title: string }[]);
+    });
+    supabase.from('cswo_funds').select('id,name_en,name_bn').eq('is_active', true).order('sort_order').then(({ data }) => {
+      setFunds((data ?? []) as { id: string; name_en: string; name_bn: string }[]);
+    });
+    supabase.from('cswo_bank_accounts').select('id,account_name,account_number').eq('is_active', true).order('sort_order').then(({ data }) => {
+      setBankAccounts((data ?? []) as { id: string; account_name: string; account_number: string }[]);
     });
   }, []);
 
@@ -58,7 +86,7 @@ export default function AdminDonations() {
       receiptNumber: d.receipt_number ?? `DON-${d.id.slice(0, 8).toUpperCase()}`,
       name: d.is_anonymous ? tr('Anonymous', 'নাম প্রকাশ অনিচ্ছুক') : (d.donor_name ?? '—'),
       amount: Number(d.amount),
-      date: fmt.date(d.created_at),
+      date: formatDate(d.created_at, 'en'),
       fy: fyOf(d.created_at),
       purpose: d.purpose,
       paymentId: d.razorpay_payment_id,
@@ -66,7 +94,7 @@ export default function AdminDonations() {
     }, lang);
   };
 
-  useEffect(() => {
+  const loadDonations = useCallback(() => {
     setLoading(true);
     let q = supabase
       .from('cswo_donations')
@@ -81,6 +109,67 @@ export default function AdminDonations() {
       setLoading(false);
     });
   }, [onlyPaid, onlyRecurring, dateFrom, dateTo]);
+
+  useEffect(() => {
+    loadDonations();
+  }, [loadDonations]);
+
+  const saveManual = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.donor_name.trim() && !form.is_anonymous) {
+      setErr(tr('Donor name is required unless anonymous.', 'অজ্ঞাতনামা না হলে দাতার নাম আবশ্যক।'));
+      return;
+    }
+    if (!form.amount || Number(form.amount) <= 0) {
+      setErr(tr('Please enter a valid amount.', 'সঠিক পরিমাণ লিখুন।'));
+      return;
+    }
+
+    setSaving(true);
+    setErr('');
+
+    try {
+      const payload = {
+        donor_name: form.is_anonymous ? 'Anonymous' : form.donor_name.trim(),
+        donor_email: form.donor_email.trim() || null,
+        donor_phone: form.donor_phone.trim() || null,
+        amount: Number(form.amount),
+        currency: 'INR',
+        purpose: form.purpose.trim() || 'General Donation',
+        status: 'paid',
+        is_anonymous: form.is_anonymous,
+        campaign_id: form.campaign_id || null,
+        event_id: form.event_id || null,
+        fund_id: form.fund_id || null,
+        bank_account_id: form.bank_account_id || null,
+        member_id: me?.id || null,
+      };
+
+      const { error } = await supabase.from('cswo_donations').insert(payload);
+      if (error) {
+        setErr(error.message);
+      } else {
+        setShowAddModal(false);
+        setForm({
+          donor_name: '',
+          donor_email: '',
+          donor_phone: '',
+          amount: '',
+          purpose: tr('Donation', 'দান'),
+          is_anonymous: false,
+          campaign_id: '',
+          event_id: '',
+          fund_id: '',
+          bank_account_id: '',
+        });
+        loadDonations();
+      }
+    } catch (err: any) {
+      setErr(err.message || 'Error saving');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const setRecurring = async (id: string, val: boolean) => {
     await supabase.from('cswo_donations').update({ is_recurring: val }).eq('id', id);
@@ -99,7 +188,7 @@ export default function AdminDonations() {
         name: d.is_anonymous ? tr('Anonymous', 'নাম প্রকাশ অনিচ্ছুক') : (d.donor_name ?? '—'),
         email: d.donor_email,
         amount: Number(d.amount),
-        date: fmt.date(d.created_at),
+        date: formatDate(d.created_at, 'en'),
         purpose: d.purpose,
         paymentMethod: d.razorpay_payment_id ? 'Razorpay' : tr('Offline', 'অফলাইন'),
         paymentId: d.razorpay_payment_id,
@@ -145,9 +234,14 @@ export default function AdminDonations() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-gray-900">{t('a.donations')}</h1>
-        <button onClick={exportCSV} className="btn-secondary text-sm">
-          {tr('Export CSV', 'CSV ডাউনলোড')}
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowAddModal(true)} className="btn-primary text-sm">
+            + {tr('Manual Donation', 'ম্যানুয়াল দান যোগ')}
+          </button>
+          <button onClick={exportCSV} className="btn-secondary text-sm">
+            {tr('Export CSV', 'CSV ডাউনলোড')}
+          </button>
+        </div>
       </div>
 
       {/* stats */}
@@ -309,6 +403,76 @@ export default function AdminDonations() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowAddModal(false)}>
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[10px] p-6 shadow-xl bg-white text-gray-900" onClick={(e) => e.stopPropagation()}>
+            <h2 className="mb-4 text-[18px] font-bold" style={{ fontFamily: '"Noto Serif Bengali", serif' }}>
+              {tr('Add Manual Donation', 'ম্যানুয়াল দান যোগ করুন')}
+            </h2>
+            {err && <p className="mb-3 rounded bg-red-50 px-3 py-2 text-[13px] text-red-600">{err}</p>}
+            <form onSubmit={saveManual} className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-700">{tr('Donor Name', 'দাতার নাম')}</label>
+                  <input className="input" required={!form.is_anonymous} disabled={form.is_anonymous} placeholder={tr('Full name', 'পুরো নাম')} value={form.is_anonymous ? 'Anonymous' : form.donor_name} onChange={(e) => setForm((f) => ({ ...f, donor_name: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-700">{tr('Amount (₹) *', 'পরিমাণ (₹) *')}</label>
+                  <input className="input" type="number" min={1} required placeholder={tr('Amount', 'পরিমাণ')} value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-700">{tr('Donor Email', 'দাতার ইমেল')}</label>
+                  <input className="input" type="email" placeholder={tr('Email', 'ইমেল')} value={form.donor_email} onChange={(e) => setForm((f) => ({ ...f, donor_email: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-700">{tr('Donor Phone', 'দাতার ফোন')}</label>
+                  <input className="input" placeholder={tr('Phone number', 'ফোন নম্বর')} value={form.donor_phone} onChange={(e) => setForm((f) => ({ ...f, donor_phone: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-700">{tr('Purpose / Project', 'উদ্দেশ্য / প্রকল্প')}</label>
+                  <input className="input" placeholder={tr('e.g., Blood Camp, Relief', 'যেমন: রক্তদান শিবির, ত্রাণ')} value={form.purpose} onChange={(e) => setForm((f) => ({ ...f, purpose: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-700">{tr('Select Fund', 'ফান্ড সিলেক্ট করুন')}</label>
+                  <select className="input" value={form.fund_id} onChange={(e) => setForm((f) => ({ ...f, fund_id: e.target.value }))}>
+                    <option value="">—</option>
+                    {funds.map((f) => <option key={f.id} value={f.id}>{lang === 'bn' ? f.name_bn : f.name_en}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-700">{tr('Select Bank Account', 'ব্যাংক অ্যাকাউন্ট')}</label>
+                  <select className="input" value={form.bank_account_id} onChange={(e) => setForm((f) => ({ ...f, bank_account_id: e.target.value }))}>
+                    <option value="">—</option>
+                    {bankAccounts.map((b) => <option key={b.id} value={b.id}>{b.account_name} ({b.account_number.slice(-4)})</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-700">{tr('Select Campaign', 'ক্যাম্পেইন')}</label>
+                  <select className="input" value={form.campaign_id} onChange={(e) => setForm((f) => ({ ...f, campaign_id: e.target.value }))}>
+                    <option value="">—</option>
+                    {campaigns.map((c) => <option key={c.id} value={c.id}>{lang === 'bn' ? c.name_bn : c.name_en}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-gray-700">{tr('Select Event', 'অনুষ্ঠান')}</label>
+                  <select className="input" value={form.event_id} onChange={(e) => setForm((f) => ({ ...f, event_id: e.target.value }))}>
+                    <option value="">—</option>
+                    {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 pt-5">
+                  <input type="checkbox" id="is_anon_man" checked={form.is_anonymous} onChange={(e) => setForm((f) => ({ ...f, is_anonymous: e.target.checked, donor_name: e.target.checked ? 'Anonymous' : '' }))} className="h-4 w-4 rounded border-gray-300 text-orange-600" />
+                  <label htmlFor="is_anon_man" className="text-xs font-semibold text-gray-700 cursor-pointer">{tr('Make Anonymous', 'অজ্ঞাতনামা রাখুন')}</label>
+                </div>
+              </div>
+              <div className="mt-5 flex justify-end gap-3 border-t pt-4" style={{ borderColor: 'var(--c-rule)' }}>
+                <button type="button" onClick={() => setShowAddModal(false)} className="rounded-full border border-gray-300 px-4 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-50">{tr('Cancel', 'বাতিল')}</button>
+                <button type="submit" disabled={saving} className="rounded-full px-5 py-2 text-[13px] font-semibold text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-60">{saving ? tr('Saving…', 'সংরক্ষণ…') : tr('Save Donation', 'সংরক্ষণ করুন')}</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

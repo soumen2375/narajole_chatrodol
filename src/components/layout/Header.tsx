@@ -52,7 +52,7 @@ export default function Header() {
               {orgName}
             </span>
             <span className="hidden text-[10.5px] font-medium uppercase tracking-[0.18em] sm:block" style={{ color: 'rgba(250,246,239,0.75)' }}>
-              Public Charitable Trust
+              Social Welfare Organization
             </span>
           </span>
         </Link>

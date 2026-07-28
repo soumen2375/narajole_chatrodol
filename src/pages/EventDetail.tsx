@@ -5,7 +5,7 @@ import { usePosts } from '@/hooks/usePosts';
 import { useT } from '@/i18n';
 import { PageShell, SERIF_BN, SERIF_EN, Icon } from './_field-journal';
 
-const FALLBACK = '/assets/images/chatrodol.jpg';
+const FALLBACK = '/assets/images/Chhatradol.jpg';
 const onImgErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
   if (e.currentTarget.src !== window.location.origin + FALLBACK) e.currentTarget.src = FALLBACK;
 };
@@ -423,6 +423,21 @@ export default function EventDetail() {
                 <ShareBar title={post.title} url={pageUrl} />
               </div>
 
+              {/* Feedback Option */}
+              <div className="mt-8 rounded-[4px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ background: 'rgba(194,65,12,0.04)', border: '1px solid rgba(194,65,12,0.15)' }}>
+                <div>
+                  <h4 className="font-bengali text-[15px] font-bold" style={{ color: 'var(--c-ink)' }}>
+                    {bn ? 'অনুষ্ঠানে অংশ নিয়েছিলেন?' : 'Attended this Event?'}
+                  </h4>
+                  <p className="mt-1 font-bengali text-[13px]" style={{ color: 'var(--c-ink-2)' }}>
+                    {bn ? 'অনুষ্ঠানটি কেমন লাগলো জানাতে আপনার মূল্যবান মতামত ও পরামর্শ দিন।' : 'Let us know how it went. Share your valuable suggestions and review.'}
+                  </p>
+                </div>
+                <Link to={`/events/${post.id}/feedback`} className="shrink-0 rounded-full px-5 py-2 font-bengali text-[12.5px] font-semibold text-white transition-opacity hover:opacity-90" style={{ background: 'var(--c-brand)' }}>
+                  {bn ? 'মতামত দিন' : 'Give Feedback'}
+                </Link>
+              </div>
+
               {/* Back */}
               <div className="mt-10">
                 <Link to="/events" className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] transition-opacity hover:opacity-60" style={{ color: 'var(--c-muted)' }}>
@@ -453,7 +468,7 @@ export default function EventDetail() {
                 {/* About org */}
                 <div className="rounded-[3px] border p-6" style={{ borderColor: 'var(--c-rule)', background: 'var(--c-bg)' }}>
                   <p className="font-bengali text-[15px] font-semibold" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>
-                    {bn ? 'নাড়াজোল ছাত্রদল' : 'Narajole Chhatradol'}
+                    {bn ? 'ছাত্রদল' : 'Chhatradol'}
                   </p>
                   <p className="mt-2 font-bengali text-[13px] leading-relaxed" style={{ color: 'var(--c-ink-2)' }}>
                     {bn

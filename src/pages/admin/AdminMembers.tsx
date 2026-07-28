@@ -62,8 +62,8 @@ function avatarColor(name: string) {
   return AVATAR_COLORS[s % AVATAR_COLORS.length];
 }
 
-function exportCsv(members: Member[], lang: string) {
-  const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
+function exportCsv(members: Member[]) {
+  const tr = (en: string, _bn: string) => en;
   const headers = [tr('ID', 'আইডি'), tr('Name', 'নাম'), tr('Email', 'ইমেল'), tr('Phone', 'ফোন'), tr('Designation', 'পদবি'), tr('Role', 'ভূমিকা'), tr('Status', 'অবস্থা'), tr('Joined', 'যোগদান')];
   const rows = members.map((m) =>
     [memberDisplayId(m), m.full_name, m.email, m.phone ?? '', m.designation ?? '', m.role, m.status, m.joined_at?.slice(0, 10) ?? '']
@@ -100,6 +100,10 @@ export default function AdminMembers() {
   const [pwdMemberId, setPwdMemberId] = useState<string | null>(null);
   const [newPwd, setNewPwd] = useState('');
   const [pwdStatus, setPwdStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
+  const [deleteModalMember, setDeleteModalMember] = useState<{ id: string; name: string } | null>(null);
+  const [adminDeletePwd, setAdminDeletePwd] = useState('');
+  const [deleteVerifying, setDeleteVerifying] = useState(false);
+  const [deleteErr, setDeleteErr] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -157,9 +161,29 @@ export default function AdminMembers() {
     if (!error) { setTimeout(() => { setPwdMemberId(null); setNewPwd(''); setPwdStatus('idle'); }, 2000); }
   };
 
-  const deleteMember = async (memberId: string, memberName: string) => {
-    if (!window.confirm(tr(`Delete member "${memberName}"? This cannot be undone.`, `সদস্য "${memberName}" মুছবেন? এটি পূরবাস যায় না।`))) return;
-    await supabase.from('cswo_members').delete().eq('id', memberId);
+  const deleteMember = (memberId: string, memberName: string) => {
+    setDeleteModalMember({ id: memberId, name: memberName });
+    setAdminDeletePwd('');
+    setDeleteErr('');
+  };
+
+  const confirmDeleteMember = async () => {
+    if (!deleteModalMember || !me?.email) return;
+    if (adminDeletePwd.length < 6) { setDeleteErr(tr('Password must be at least 6 characters.', 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে।')); return; }
+    setDeleteVerifying(true);
+    setDeleteErr('');
+    // Verify admin password
+    const { error: authErr } = await supabase.auth.signInWithPassword({ email: me.email, password: adminDeletePwd });
+    if (authErr) {
+      setDeleteErr(tr('Incorrect password. Please enter your own admin password.', 'ভুল পাসওয়ার্ড। আপনার অ্যাডমিন পাসওয়ার্ড লিখুন।'));
+      setDeleteVerifying(false);
+      return;
+    }
+    // Delete only the member record — NOT their transactions/activities
+    await supabase.from('cswo_members').delete().eq('id', deleteModalMember.id);
+    setDeleteModalMember(null);
+    setAdminDeletePwd('');
+    setDeleteVerifying(false);
     await load();
   };
 
@@ -239,7 +263,7 @@ export default function AdminMembers() {
           </p>
         </div>
         <div className="flex items-center gap-2.5">
-          <button onClick={() => exportCsv(filtered, lang)} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12.5px] font-semibold transition-colors hover:bg-black/[0.03]" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
+          <button onClick={() => exportCsv(filtered)} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12.5px] font-semibold transition-colors hover:bg-black/[0.03]" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
             <FaDownload className="h-3 w-3" /> {tr('Export CSV', 'CSV এক্সপোর্ট')}
           </button>
           <button onClick={() => setShowForm((v) => !v)} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90" style={{ background: BRAND }}>
@@ -413,6 +437,51 @@ export default function AdminMembers() {
                 className="flex-1 rounded-full py-2 text-[12.5px] font-semibold text-white disabled:opacity-50"
                 style={{ background: '#6366f1' }}>
                 {pwdStatus === 'saving' ? tr('Saving…', 'সংরক্ষণ…') : tr('Update', 'আপডেট')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteModalMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.55)' }}>
+          <div className="w-full max-w-sm rounded-[10px] p-6 shadow-2xl" style={{ background: '#fff', border: '1px solid #e7e5e4' }}>
+            <h3 className="mb-1 text-[17px] font-bold" style={{ color: '#1c1917' }}>
+              {tr('Delete Member Account', 'সদস্য অ্যাকাউন্ট মুছুন')}
+            </h3>
+            <p className="mb-3 text-[13px]" style={{ color: '#78716c' }}>
+              {tr(`You are about to delete "${deleteModalMember.name}".`, `আপনি "${deleteModalMember.name}" মুছতে যাচ্ছেন।`)}
+            </p>
+            <div className="mb-4 rounded-[6px] px-3 py-2.5 text-[12px]" style={{ background: 'rgba(253,200,70,0.12)', border: '1px solid rgba(253,200,70,0.4)', color: '#92400e' }}>
+              ⚠️ {tr('This only deletes the member login account. All their transactions, contributions, donations, and activity records will be preserved.', 'এটি শুধুমাত্র সদস্যের লগইন অ্যাকাউন্ট মুছে দেবে। তাদের সমস্ত লেনদেন, চাঁদা, অনুদান এবং কার্যক্রম সংরক্ষিত থাকবে।')}
+            </div>
+            <label className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: '#78716c' }}>
+              {tr('Confirm with YOUR admin password', 'আপনার অ্যাডমিন পাসওয়ার্ড দিয়ে নিশ্চিত করুন')}
+            </label>
+            <input
+              type="password"
+              value={adminDeletePwd}
+              onChange={(e) => setAdminDeletePwd(e.target.value)}
+              placeholder={tr('Your password…', 'আপনার পাসওয়ার্ড…')}
+              className="mb-3 w-full rounded-[6px] border px-3 py-2 text-[13px] outline-none focus:border-red-500"
+              style={{ borderColor: '#e7e5e4' }}
+              onKeyDown={(e) => e.key === 'Enter' && confirmDeleteMember()}
+            />
+            {deleteErr && <p className="mb-3 text-[12px] font-medium" style={{ color: '#dc2626' }}>{deleteErr}</p>}
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setDeleteModalMember(null); setAdminDeletePwd(''); setDeleteErr(''); }}
+                className="flex-1 rounded-full border py-2 text-[12.5px]" style={{ borderColor: '#e7e5e4', color: '#78716c' }}
+              >
+                {tr('Cancel', 'বাতিল')}
+              </button>
+              <button
+                onClick={confirmDeleteMember}
+                disabled={deleteVerifying || adminDeletePwd.length < 6}
+                className="flex-1 rounded-full py-2 text-[12.5px] font-semibold text-white disabled:opacity-50"
+                style={{ background: '#dc2626' }}
+              >
+                {deleteVerifying ? tr('Verifying…', 'যাচাই হচ্ছে…') : tr('Delete Account', 'অ্যাকাউন্ট মুছুন')}
               </button>
             </div>
           </div>

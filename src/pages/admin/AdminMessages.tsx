@@ -237,6 +237,7 @@ export default function AdminMessages() {
     const { error } = await supabase.from('cswo_admin_messages').insert({ member_id: selectedMemberId, sender_name: senderName.trim(), message: msgText.trim() });
     setSending(false);
     if (error) { setSendError(error.message); return; }
+
     setSendSuccess(tr('Message sent!', 'বার্তা পাঠানো হয়েছে!'));
     setMsgText(''); setSelectedMemberId('');
     load();
@@ -453,7 +454,8 @@ export default function AdminMessages() {
                             onClick={async () => {
                               if (!me || !dmReply.trim()) return;
                               setSendingDmReply(true);
-                              await supabase.from('cswo_member_messages').insert({ from_id: me.id, to_id: dm.from_id, subject: `Re: ${dm.subject}`, body: dmReply.trim(), parent_id: dm.id });
+                              const replySubject = `Re: ${dm.subject}`;
+                              await supabase.from('cswo_member_messages').insert({ from_id: me.id, to_id: dm.from_id, subject: replySubject, body: dmReply.trim(), parent_id: dm.id });
                               setSendingDmReply(false);
                               setDmReply('');
                               setSelectedDM(null);

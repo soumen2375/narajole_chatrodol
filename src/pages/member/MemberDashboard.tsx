@@ -173,8 +173,48 @@ export default function MemberDashboard() {
 
   if (loading || !data) {
     return (
-      <div style={{ color: MUTED, padding: '40px 0', textAlign: 'center' }}>
-        {tr('Loading…', 'লোড হচ্ছে…')}
+      <div className="space-y-5">
+        {/* Header skeleton */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between animate-pulse">
+          <div className="space-y-2">
+            <div className="h-3 w-32 rounded bg-gray-200" />
+            <div className="h-8 w-56 rounded bg-gray-200" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-9 w-28 rounded-full bg-gray-200" />
+            <div className="h-9 w-28 rounded-full bg-gray-200" />
+          </div>
+        </div>
+        {/* Profile card skeleton */}
+        <div className="rounded-2xl border p-5 animate-pulse" style={{ borderColor: RULE }}>
+          <div className="flex gap-4">
+            <div className="h-[72px] w-[72px] rounded-full bg-gray-200 shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-24 rounded bg-gray-200" />
+              <div className="h-5 w-48 rounded bg-gray-200" />
+              <div className="h-3 w-64 rounded bg-gray-200" />
+            </div>
+          </div>
+        </div>
+        {/* Dues + attendance skeleton */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          <div className="lg:col-span-2 rounded-2xl border p-5 animate-pulse" style={{ borderColor: RULE }}>
+            <div className="h-4 w-32 rounded bg-gray-200 mb-4" />
+            <div className="h-12 w-24 rounded bg-gray-200 mb-3" />
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {Array.from({ length: 12 }).map((_, i) => <div key={i} className="h-7 w-[42px] rounded-lg bg-gray-200" />)}
+            </div>
+            <div className="h-9 w-36 rounded-full bg-gray-200" />
+          </div>
+          <div className="rounded-2xl border p-5 animate-pulse" style={{ borderColor: RULE }}>
+            <div className="h-4 w-32 rounded bg-gray-200 mb-4" />
+            <div className="mx-auto h-24 w-24 rounded-full bg-gray-200 mb-4" />
+            <div className="space-y-2">
+              <div className="h-3 w-full rounded bg-gray-200" />
+              <div className="h-3 w-3/4 rounded bg-gray-200" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -196,6 +236,16 @@ export default function MemberDashboard() {
   const unreadCount = data.adminMsgs.filter((m) => !m.is_read).length;
   const currentMonthContrib = data.contributions[currentMonth];
   const currentMonthDue = !currentMonthContrib || currentMonthContrib.status !== 'paid';
+
+  // Compute total due across ALL unpaid months up to today
+  // IMPORTANT: always use DEFAULT_DUES_AMOUNT per month — NEVER use stale stored
+  // amounts from unpaid DB rows (those can be from old toggles with wrong values).
+  const unpaidDueMonths = Array.from({ length: currentMonth }, (_, i) => i + 1).filter(
+    (mo) => data.contributions[mo]?.status !== 'paid',
+  );
+  const DEFAULT_DUES_AMOUNT = 100;
+  const totalDueAmount = unpaidDueMonths.length * DEFAULT_DUES_AMOUNT;
+  const hasTotalDue = unpaidDueMonths.length > 0;
 
   // Ledger: combine contributions + donations into a unified recent feed
   const ledgerItems: { type: 'dues' | 'attendance'; label: string; sub: string; date: string; amount?: number }[] = [
@@ -278,10 +328,10 @@ export default function MemberDashboard() {
             <span className="text-xl">🔔</span>
             <div>
               <p className="text-sm font-bold" style={{ color: INK }}>
-                {tr('Enable Phone Notifications', 'ফোনে নোটিফিকেশন চালু করুন')}
+                {tr('Enable Club Notifications (This Device Only)', 'ক্লাবের নোটিফিকেশন চালু করুন (শুধু এই ডিভাইসে)')}
               </p>
               <p className="text-xs" style={{ color: MUTED }}>
-                {tr('Never miss monthly dues alerts or event announcements.', 'মাসিক চাঁদা বা কোনো গুরুত্বপূর্ণ নোটিশ মিস করবেন না।')}
+                {tr('Get alerts for monthly dues, events & announcements — only for you, only on this device. You can dismiss to skip.', 'মাসিক চাঁদা, অনুষ্ঠান ও ঘোষণার নোটিফিকেশন পান — শুধুমাত্র আপনার জন্য, শুধু এই ডিভাইসে। বাতিল করে এড়িয়ে যেতে পারেন।')}
               </p>
             </div>
           </div>
@@ -298,11 +348,12 @@ export default function MemberDashboard() {
               className="rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider hover:bg-gray-100"
               style={{ color: MUTED }}
             >
-              {tr('Dismiss', 'বাতিল')}
+              {tr('Not now', 'এখন না')}
             </button>
           </div>
         </div>
       )}
+
 
       {/* ── Profile Card ───────────────────────────────────────────────────── */}
       <div
@@ -403,9 +454,9 @@ export default function MemberDashboard() {
                 {tr('Dues Payment', 'চাঁদা পরিশোধ')}
               </h3>
             </div>
-            {currentMonthDue && (
-              <span className="rounded-full px-3 py-1 text-[11px] font-bold bg-amber-50 border border-amber-200 text-amber-800">
-                {months[currentMonth - 1]} {tr('due: ₹100', 'বাকি: ₹১০০')}
+            {hasTotalDue && (
+              <span className="rounded-full px-3 py-1 text-[11px] font-bold bg-red-50 border border-red-200 text-red-700">
+                {fmt.num(unpaidDueMonths.length)} {tr('month(s) due:', 'মাস বাকি:')} {fmt.money(totalDueAmount)}
               </span>
             )}
           </div>
@@ -443,22 +494,29 @@ export default function MemberDashboard() {
           </div>
 
           <div className="flex items-center justify-between border-t pt-4" style={{ borderColor: RULE }}>
-            {currentMonthDue ? (
-              <p className="text-[12px] font-semibold" style={{ color: '#dc2626' }}>
-                {months[currentMonth - 1]} {tr('dues ₹100 still pending.', 'মাসের চাঁদা ₹১০০ এখনো বাকি।')}
-              </p>
+            {hasTotalDue ? (
+              <div>
+                <p className="text-[12px] font-semibold" style={{ color: '#dc2626' }}>
+                  {fmt.num(unpaidDueMonths.length)} {tr('month(s) pending — total due:', 'মাস বাকি — মোট:')} {fmt.money(totalDueAmount)}
+                </p>
+                <p className="text-[10px] mt-0.5" style={{ color: MUTED }}>
+                  {unpaidDueMonths.map((mo) => months[mo - 1].slice(0, 3)).join(', ')}
+                </p>
+              </div>
             ) : (
               <p className="text-[12px] font-semibold" style={{ color: '#16a34a' }}>
-                {tr('All dues paid this month!', 'এই মাসের চাঁদা পরিশোধিত!')}
+                ✓ {tr('All dues paid up to date!', 'সব চাঁদা পরিশোধিত!')}
               </p>
             )}
             <Link
               to="/member/contributions"
               className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] transition-all hover:-translate-y-[1px] shadow-sm text-brand-dark"
-              style={{ background: ACCENT }}
+              style={{ background: hasTotalDue ? '#dc2626' : ACCENT, color: hasTotalDue ? '#fff' : undefined }}
             >
               <IndianRupee className="h-3.5 w-3.5" />
-              {tr('Pay Dues', 'পরিশোধ করুন')}
+              {hasTotalDue
+                ? tr(`Pay ${fmt.money(totalDueAmount)}`, `${fmt.money(totalDueAmount)} পরিশোধ করুন`)
+                : tr('View Dues', 'চাঁদা দেখুন')}
             </Link>
           </div>
         </div>
@@ -731,12 +789,12 @@ export default function MemberDashboard() {
           <div className="rounded-xl p-3 border" style={{ background: '#faf9f6', borderColor: RULE }}>
             <p className="text-[11.5px] italic leading-relaxed" style={{ color: MUTED }}>
               &ldquo;{tr(
-                'Your every contribution strengthens the foundation of Chatrodol. Every step, every moment carries weight.',
+                'Your every contribution strengthens the foundation of Chhatradol. Every step, every moment carries weight.',
                 'তোমার মেধা সমাজরক্ষায় ছাত্রদলের প্রতিটি পদক্ষেপ। প্রতিটি মুহূর্ত, প্রতিটি কাজ গণ্য হয়।'
               )}&rdquo;
             </p>
             <p className="mt-2 text-[9px] font-bold uppercase tracking-[0.1em]" style={{ color: BRAND }}>
-              — {tr('Governing Board, Chatrodol Trust', 'পরিচালনা পর্ষদ, ছাত্রদল ট্রাস্ট')}
+              — {tr('Governing Board, Chhatradol Trust', 'পরিচালনা পর্ষদ, ছাত্রদল ট্রাস্ট')}
             </p>
           </div>
         </div>

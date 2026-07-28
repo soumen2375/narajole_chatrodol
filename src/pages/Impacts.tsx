@@ -137,7 +137,7 @@ export default function Impacts() {
                     src={s.img}
                     alt={s.title[lang]}
                     className="aspect-[16/9] w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.03]"
-                    onError={(e) => { if (e.currentTarget.src.indexOf('chatrodol') < 0) e.currentTarget.src = '/assets/images/chatrodol.jpg'; }}
+                    onError={(e) => { if (e.currentTarget.src.indexOf('Chhatradol') < 0) e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }}
                   />
                 </div>
                 <div className="flex flex-1 flex-col gap-4 p-8">

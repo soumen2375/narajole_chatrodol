@@ -84,6 +84,7 @@ interface StartPaymentArgs {
   isAnonymous?: boolean;
   year?: number;
   month?: number;
+  months?: number[];
   description: string;
 }
 
@@ -103,6 +104,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<void
     is_anonymous: args.isAnonymous,
     year: args.year,
     month: args.month,
+    months: args.months,
   });
 
   const verifyAction =
@@ -113,7 +115,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<void
       key: order.key_id || ENV_KEY_ID || '',
       amount: order.amount,
       currency: order.currency,
-      name: 'Chhatradol Social Welfare Organisation',
+      name: 'Chhatradol Social Welfare Organization',
       description: args.description,
       order_id: order.order_id,
       prefill: {
@@ -132,6 +134,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<void
             razorpay_signature: response.razorpay_signature,
             year: args.year,
             month: args.month,
+            months: args.months,
             amount: args.amount,
           });
           resolve();

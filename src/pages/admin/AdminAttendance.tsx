@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { Attendance, CswoEvent, Member, QrSession } from '@/types';
-import { useFmt } from '@/lib/format';
+import { formatDate } from '@/lib/format';
 import { useT } from '@/i18n';
 import { QRCodeCanvas } from 'qrcode.react';
 import {
@@ -54,7 +54,6 @@ function StatCard({
 export default function AdminAttendance() {
   const { member: me } = useAuth();
   const { t, lang } = useT();
-  const fmt = useFmt();
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
 
   const [events, setEvents] = useState<CswoEvent[]>([]);
@@ -265,7 +264,7 @@ export default function AdminAttendance() {
         m.full_name,
         m.member_serial ? `CSWO-${String(m.member_serial).padStart(4, '0')}` : '',
         a ? a.status : 'absent',
-        a?.check_in_time ? fmt.date(a.check_in_time) : '',
+        a?.check_in_time ? formatDate(a.check_in_time, 'en') : '',
         a?.marked_type ?? '',
         a?.latitude ? `${a.latitude.toFixed(4)},${a.longitude?.toFixed(4)}` : '',
       ];

@@ -16,7 +16,7 @@ export const ORG = {
   taglineBn: 'একতা, শিক্ষা, উন্নতি',
   taglineEn: 'Unity · Education · Progress',
   established: '2019',
-  email: 'info@chhatrodol.org',
+  email: 'info@chhatradol.org',
   phones: ['7074074110', '7430029114'],
   address: {
     bn: ['ছাত্রদল অফিস', 'গ্রাম ও পোস্ট: নিজ নাড়াজোল', 'থানা: দাসপুর, জেলা: পশ্চিম মেদিনীপুর', 'পিন: ৭২১২১১, পশ্চিমবঙ্গ, ভারত'],
@@ -29,7 +29,7 @@ export const ORG = {
   },
 };
 
-export const FALLBACK_IMAGE = '/assets/images/chatrodol.jpg';
+export const FALLBACK_IMAGE = '/assets/images/Chhatradol.jpg';
 
 export function name(lang: Lang) {
   return lang === 'en' ? ORG.shortEn : ORG.shortBn;
@@ -62,13 +62,13 @@ export interface TeamMember {
 
 export const TEAM_MEMBERS: TeamMember[] = [
   { name: { bn: 'স্বরূপ সামন্ত', en: 'Swarup Samanta' }, role: { bn: 'সভাপতি', en: 'President' }, img: '/assets/images/members/swarup.jpg' },
-  { name: { bn: 'শুভদীপ ঘোড়াই', en: 'Subhadip Ghorai' }, role: { bn: 'সহ-সভাপতি', en: 'Vice President' }, img: '/assets/images/members/subhadip.jpg' },
+  { name: { bn: 'প্রবাল ভুঁইয়া', en: 'Prabal Bhunia' }, role: { bn: 'সহ-সভাপতি', en: 'Vice President' }, img: '/assets/images/members/prabal.jpg' },
   { name: { bn: 'সায়ন সামন্ত', en: 'Sayan Samanta' }, role: { bn: 'সাধারণ সম্পাদক', en: 'General Secretary' }, img: '/assets/images/members/sayan.jpg' },
   { name: { bn: 'সুরজিৎ বেরা', en: 'Surajit Bera' }, role: { bn: 'যুগ্ম সম্পাদক', en: 'Joint Secretary' }, img: '/assets/images/members/surajit.jpg' },
   { name: { bn: 'শুভজিৎ কুন্ডু', en: 'Subhajit Kundu' }, role: { bn: 'কোষাধ্যক্ষ', en: 'Treasurer' }, img: '/assets/images/members/subhajit.jpg' },
-  { name: { bn: 'পবিত্র সাঁতরা', en: 'Pabitra Santra' }, role: { bn: 'সহ-কোষাধ্যক্ষ', en: 'Assistant Treasurer' }, img: '/assets/images/members/pabitra.jpg' },
-  { name: { bn: 'সৌমেন মাইতি', en: 'Soumen Maity' }, role: { bn: 'ডিজিটাল অপারেশনস ও কমপ্লায়েন্স সম্পাদক', en: 'Digital Operations & Compliance Secretary' }, img: '/assets/images/members/soumen.jpg' },
-  { name: { bn: 'প্রবাল ভুঁইয়া', en: 'Prabal Bhunia' }, role: { bn: 'এক্সেকিউশন ও রিসোর্স ম্যানেজার', en: 'Execution & Resource Manager' }, img: '/assets/images/members/prabal.jpg' },
+  { name: { bn: 'সৌমেন মাইতি', en: 'Soumen Maity' }, role: { bn: 'সহ-কোষাধ্যক্ষ', en: 'Assistant Treasurer' }, img: '/assets/images/members/soumen.jpg' },
+  { name: { bn: 'শুভদীপ ঘোড়াই', en: 'Subhadip Ghorai' }, role: { bn: 'সদস্য', en: 'Member' }, img: '/assets/images/members/subhadip.jpg' },
+  { name: { bn: 'পবিত্র সাঁতরা', en: 'Pabitra Santra' }, role: { bn: 'সদস্য', en: 'Member' }, img: '/assets/images/members/pabitra.jpg' },
 ];
 
 export const CORE_VALUES: { label: Bi; text: Bi }[] = [
@@ -194,7 +194,7 @@ export interface Testimonial {
 export const TESTIMONIALS: Testimonial[] = [
   {
     quote: {
-      bn: 'নাড়াজোল ছাত্রদল আমার সন্তানকে বিনামূল্যে শিক্ষার সুযোগ দিয়েছে। আমি চিরকৃতজ্ঞ।',
+      bn: 'ছাত্রদল আমার সন্তানকে বিনামূল্যে শিক্ষার সুযোগ দিয়েছে। আমি চিরকৃতজ্ঞ।',
       en: 'Chhatradol gave my child the opportunity of free education. I am forever grateful.',
     },
     author: { bn: 'অজয় বিশ্বাস', en: 'Ajay Biswas' },
@@ -203,7 +203,7 @@ export const TESTIMONIALS: Testimonial[] = [
   {
     quote: {
       bn: 'এই সংগঠনের স্বাস্থ্য শিবিরগুলি আমাদের গ্রামের মানুষের জন্য অত্যন্ত উপকারী।',
-      en: "This organisation's health camps have been extremely helpful for our village.",
+      en: "This Organization's health camps have been extremely helpful for our village.",
     },
     author: { bn: 'সুজয় দাশ', en: 'Sujay Das' },
     role: { bn: 'গ্রামবাসী', en: 'Villager' },
@@ -234,7 +234,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
     img: '/assets/images/impacts/education.jpg',
   },
   {
-    title: { bn: 'সবুজ নাড়াজোল: একটি পরিবেশগত বিপ্লব', en: 'Green Narajole: an environmental revolution' },
+    title: { bn: 'সবুজাভ বাংলা: একটি পরিবেশগত বিপ্লব', en: 'Green Bengal: an environmental revolution' },
     summary: {
       bn: 'গত পাঁচ বছরে স্থানীয় সম্প্রদায়ের সহায়তায় ১০০০-এর বেশি গাছ রোপণ করা হয়েছে, যা পরিবেশের পাশাপাশি মানুষের সচেতনতাও বৃদ্ধি করেছে।',
       en: 'Over five years, more than 1,000 trees have been planted with community help, improving both the environment and public awareness.',

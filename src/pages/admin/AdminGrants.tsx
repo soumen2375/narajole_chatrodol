@@ -21,9 +21,9 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 type GForm = {
   grantor: string; title: string; reference: string; fund_id: string;
-  sanctioned_amount: string; start_date: string; end_date: string; status: GrantStatus; contact_person: string; note: string;
+  sanctioned_amount: string; start_date: string; end_date: string; status: GrantStatus; contact_person: string; contact_phone: string; note: string;
 };
-const EMPTY_G: GForm = { grantor: '', title: '', reference: '', fund_id: '', sanctioned_amount: '', start_date: '', end_date: '', status: 'active', contact_person: '', note: '' };
+const EMPTY_G: GForm = { grantor: '', title: '', reference: '', fund_id: '', sanctioned_amount: '', start_date: '', end_date: '', status: 'active', contact_person: '', contact_phone: '', note: '' };
 
 type TForm = { amount: string; received_on: string; reference: string; note: string };
 const emptyT = (): TForm => ({ amount: '', received_on: today(), reference: '', note: '' });
@@ -85,7 +85,7 @@ export default function AdminGrants() {
   const openAddG = () => { setEditingG(null); setGForm(EMPTY_G); setGErr(''); setShowG(true); };
   const openEditG = (g: CswoGrant) => {
     setEditingG(g);
-    setGForm({ grantor: g.grantor, title: g.title, reference: g.reference, fund_id: g.fund_id ?? '', sanctioned_amount: String(Number(g.sanctioned_amount)), start_date: g.start_date ?? '', end_date: g.end_date ?? '', status: g.status, contact_person: g.contact_person, note: g.note });
+    setGForm({ grantor: g.grantor, title: g.title, reference: g.reference, fund_id: g.fund_id ?? '', sanctioned_amount: String(Number(g.sanctioned_amount)), start_date: g.start_date ?? '', end_date: g.end_date ?? '', status: g.status, contact_person: g.contact_person, contact_phone: g.contact_phone ?? '', note: g.note });
     setGErr(''); setShowG(true);
   };
 
@@ -95,7 +95,7 @@ export default function AdminGrants() {
     const payload = {
       grantor: gForm.grantor.trim(), title: gForm.title.trim(), reference: gForm.reference.trim(), fund_id: gForm.fund_id || null,
       sanctioned_amount: Number(gForm.sanctioned_amount || 0), start_date: gForm.start_date || null, end_date: gForm.end_date || null,
-      status: gForm.status, contact_person: gForm.contact_person.trim(), note: gForm.note.trim(),
+      status: gForm.status, contact_person: gForm.contact_person.trim(), contact_phone: gForm.contact_phone.trim(), note: gForm.note.trim(),
     };
     const { error } = editingG
       ? await supabase.from('cswo_grants').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', editingG.id)
@@ -198,7 +198,11 @@ export default function AdminGrants() {
                     {selected.reference && <span>{tr('Ref', 'রেফ')} {selected.reference} · </span>}{tr('Fund', 'তহবিল')}: {fundName(selected.fund_id)}
                     {selected.start_date && <span> · {fmt.date(selected.start_date)}{selected.end_date ? ` — ${fmt.date(selected.end_date)}` : ''}</span>}
                   </div>
-                  {selected.contact_person && <div className="mt-0.5 text-[12px]" style={{ color: MUTED }}>{tr('Contact', 'যোগাযোগ')}: {selected.contact_person}</div>}
+                  {(selected.contact_person || selected.contact_phone) && (
+                    <div className="mt-0.5 text-[12px]" style={{ color: MUTED }}>
+                      {tr('Contact', 'যোগাযোগ')}: {selected.contact_person}{selected.contact_phone ? ` · 📞 ${selected.contact_phone}` : ''}
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2 text-[12px] font-medium">
                   <button onClick={() => openEditG(selected)} style={{ color: BRAND }} className="hover:underline">{tr('Edit', 'সম্পাদনা')}</button>
@@ -268,8 +272,19 @@ export default function AdminGrants() {
               {/* Key identification fields */}
               <input className="input" placeholder={tr('Grantor / agency', 'অনুদানদাতা / সংস্থা')} value={gForm.grantor} onChange={(e) => setGForm((f) => ({ ...f, grantor: e.target.value }))} />
               <input className="input" placeholder={tr('Grant / project title', 'অনুদান / প্রকল্পের শিরোনাম')} value={gForm.title} onChange={(e) => setGForm((f) => ({ ...f, title: e.target.value }))} />
-              {/* Contact person - moved to top */}
-              <input className="input sm:col-span-2" placeholder={tr('Contact person name & phone', 'যোগাযোগের ব্যক্তির নাম ও ফোন')} value={gForm.contact_person} onChange={(e) => setGForm((f) => ({ ...f, contact_person: e.target.value }))} />
+              {/* Contact person - separate name and phone fields */}
+              <div>
+                <label className="mb-1 block font-mono text-[9.5px] uppercase tracking-[0.18em]" style={{ color: '#78716c' }}>
+                  {tr('Contact Person Name', 'যোগাযোগের ব্যক্তির নাম')}
+                </label>
+                <input className="input" placeholder={tr('Contact person name', 'যোগাযোগের ব্যক্তির নাম')} value={gForm.contact_person} onChange={(e) => setGForm((f) => ({ ...f, contact_person: e.target.value }))} />
+              </div>
+              <div>
+                <label className="mb-1 block font-mono text-[9.5px] uppercase tracking-[0.18em]" style={{ color: '#78716c' }}>
+                  {tr('Contact Phone Number', 'যোগাযোগের ফোন নম্বর')}
+                </label>
+                <input className="input" type="tel" placeholder={tr('Phone number', 'ফোন নম্বর')} value={gForm.contact_phone} onChange={(e) => setGForm((f) => ({ ...f, contact_phone: e.target.value }))} />
+              </div>
               {/* Date fields - moved up */}
               <div className="sm:col-span-2">
                 <div className="mb-1.5 font-mono text-[9.5px] uppercase tracking-[0.18em]" style={{ color: '#78716c' }}>

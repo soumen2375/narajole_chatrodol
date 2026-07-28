@@ -126,7 +126,7 @@ export default function AdminBloodCamp() {
       to: b.name, subject: `Request to conduct a voluntary blood donation camp — ${event?.title ?? ''}`,
       organizer: '', secretary: '',
       expected: event?.expected_participants ? String(event.expected_participants) : '',
-      body: `We, Chhatradol Social Welfare Organisation, are organising a voluntary blood donation camp and request your blood bank's kind cooperation in collecting blood at the venue and date detailed below. We request the necessary team, beds and equipment for a smooth camp.`,
+      body: `We, Chhatradol Social Welfare Organization, are organising a voluntary blood donation camp and request your blood bank's kind cooperation in collecting blood at the venue and date detailed below. We request the necessary team, beds and equipment for a smooth camp.`,
     });
   };
   const printLetter = () => {
@@ -155,8 +155,7 @@ export default function AdminBloodCamp() {
   @media print{body{padding:16px}}
 </style></head><body>
   <div class="head">
-    <div class="org">Chhatradol Social Welfare Organisation</div>
-    <div class="sub">নাড়াজোল ছাত্রদল · Public Charitable Trust</div>
+    <div class="org">Chhatradol Social Welfare Organization</div>
     <div class="addr">Nij Narajole, P.S. Daspur, Paschim Medinipur, West Bengal — 721211</div>
   </div>
   <div class="meta">Date: ${new Date().toLocaleDateString('en-IN')}</div>

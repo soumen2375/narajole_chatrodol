@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+# Disallow admin and member panels from search indexing
+Disallow: /admin/
+Disallow: /member/
+
+# Allow important public pages
+Allow: /about
+Allow: /events
+Allow: /gallery
+Allow: /contact
+Allow: /volunteer
+Allow: /donate
+Allow: /programs
+Allow: /impacts
+Allow: /blood-request
+Allow: /organise-blood-camp
+
+# Sitemap
+Sitemap: https://narajolechatrodol.org/sitemap.xml
