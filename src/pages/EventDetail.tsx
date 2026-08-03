@@ -41,7 +41,7 @@ function ShareBar({ title, url }: { title: string; url: string }) {
         <FaFacebook className="h-[17px] w-[17px]" />
       </a>
       <a
-        href={`https://wa.me/?text=${e(title + ' ' + url)}`}
+        href={`https://api.whatsapp.com/send?text=${e(url)}`}
         target="_blank" rel="noopener noreferrer"
         title="Share on WhatsApp"
         className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-opacity hover:opacity-80"
@@ -71,11 +71,12 @@ function ShareBar({ title, url }: { title: string; url: string }) {
 }
 
 // ─── Related story card ──────────────────────────────────────────────
-function RelatedCard({ id, title, featuredImage, category, publishedDate }: {
-  id: string; title: string; featuredImage: string; category: string; publishedDate: string;
+function RelatedCard({ id, slug, title, featuredImage, category, publishedDate }: {
+  id: string; slug?: string; title: string; featuredImage: string; category: string; publishedDate: string;
 }) {
+  const linkTarget = slug || id.replace(/^db-/, '');
   return (
-    <Link to={`/events/${id}`} className="group flex gap-3">
+    <Link to={`/events/${linkTarget}`} className="group flex gap-3">
       <div className="w-20 flex-shrink-0 overflow-hidden rounded-[3px]">
         <img
           src={featuredImage || FALLBACK} alt={title}
@@ -186,7 +187,57 @@ export default function EventDetail() {
   const navigate = useNavigate();
   const bn = lang === 'bn';
 
-  const post = useMemo(() => posts.find((p) => p.id === id), [posts, id]);
+  const post = useMemo(() => {
+    if (!id) return undefined;
+    const cleanId = id.replace(/^db-/, '');
+    return posts.find((p) =>
+      p.slug === id ||
+      p.slug === cleanId ||
+      p.id === id ||
+      p.id === cleanId
+    );
+  }, [posts, id]);
+
+  const pageUrl = useMemo(() => {
+    const slugOrId = post?.slug || id?.replace(/^db-/, '') || id || '';
+    return `https://narajolechatradol.vercel.app/events/${slugOrId}`;
+  }, [post, id]);
+
+  // Dynamic DOM Meta Tags & Title sync
+  useEffect(() => {
+    if (!post) return;
+
+    const pageTitle = `${post.meta_title || post.title} | Narajole Chhatrodol NGO`;
+    document.title = pageTitle;
+
+    const metaDesc = post.meta_description || post.share_snippet || post.content.replace(/<[^>]*>/g, '').slice(0, 160);
+    const metaImg = post.og_image || post.featuredImage;
+
+    const setMeta = (attrName: string, attrVal: string, contentVal: string) => {
+      let el = document.querySelector(`meta[${attrName}="${attrVal}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attrName, attrVal);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', contentVal);
+    };
+
+    setMeta('name', 'description', metaDesc);
+    setMeta('property', 'og:title', post.meta_title || post.title);
+    setMeta('property', 'og:description', metaDesc);
+    setMeta('property', 'og:image', metaImg);
+    setMeta('property', 'og:url', pageUrl);
+    setMeta('name', 'twitter:card', 'summary_large_image');
+    setMeta('name', 'twitter:title', post.meta_title || post.title);
+    setMeta('name', 'twitter:description', metaDesc);
+    setMeta('name', 'twitter:image', metaImg);
+
+    const targetSlug = post.slug ? post.slug.replace(/^-+|-+$/g, '') : post.id;
+    if (targetSlug && id !== targetSlug) {
+      navigate(`/events/${targetSlug}`, { replace: true });
+    }
+  }, [post, id, pageUrl, navigate]);
 
   const [translated, setTranslated] = useState(false);
   const [translating, setTranslating] = useState(false);
@@ -298,7 +349,6 @@ export default function EventDetail() {
     );
   }
 
-  const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
   const mins = readingMinutes(post.content);
 
   return (

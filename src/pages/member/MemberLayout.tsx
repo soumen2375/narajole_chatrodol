@@ -25,7 +25,11 @@ import {
   Landmark,
   BarChart3,
   FileCheck,
-  Droplet
+  Droplet,
+  Layers,
+  CheckCircle2,
+  Tag,
+  HardDrive
 } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -63,10 +67,14 @@ export default function MemberLayout() {
 
     // ── Digital Media Capability (Dynamic) ─────────────────────────────
     ...(canManagePosts ? [
-      { to: '/member/posts-manage',      label: t('a.posts'),      icon: FileText,
+      { to: '/member/cms',           label: tr('All Content', 'সকল কনটেন্ট'),     icon: Layers,
         sectionLabel: tr('Digital Media', 'ডিজিটাল মিডিয়া') } as NavItem,
-      { to: '/member/categories', label: t('a.categories'), icon: FolderOpen } as NavItem,
-      { to: '/member/gallery-manage',    label: t('a.gallery'),    icon: Images } as NavItem,
+      { to: '/member/cms/approvals', label: tr('Review Queue', 'অনুমোদন কিউ'),   icon: CheckCircle2 } as NavItem,
+      { to: '/member/cms/analytics', label: tr('Analytics', 'অ্যানালিটিক্স'),       icon: BarChart3 } as NavItem,
+      { to: '/member/cms/tags',      label: tr('Tags Manager', 'ট্যাগ ম্যানেজার'),  icon: Tag } as NavItem,
+      { to: '/member/media',         label: tr('Media Library', 'মিডিয়া লাইব্রেরি'), icon: HardDrive } as NavItem,
+      { to: '/member/categories',    label: t('a.categories'),                  icon: FolderOpen } as NavItem,
+      { to: '/member/gallery-manage',label: t('a.gallery'),                     icon: Images } as NavItem,
     ] : []),
 
     // ── Secretary / Events Capability (Dynamic) ────────────────────────

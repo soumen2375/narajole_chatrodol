@@ -33,7 +33,7 @@ export function usePosts() {
           setError(error.message);
         } else {
           const dbPosts: MergedPost[] = (data ?? []).map((p) => ({
-            id: `db-${p.id}`,
+            id: p.id,
             title: p.title,
             content: p.content,
             category: p.category,

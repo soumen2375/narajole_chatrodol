@@ -94,7 +94,7 @@ export default function Events() {
       {featured && safePage === 1 && (
         <section style={{ background: FJ.paper }}>
           <div className="mx-auto max-w-[1320px] px-6 pt-12 md:px-10">
-            <Link to={`/events/${featured.id}`} className="card-lift group relative block overflow-hidden rounded-[18px]" style={{ border: `1px solid ${FJ.rule}` }}>
+            <Link to={`/events/${featured.slug || featured.id}`} className="card-lift group relative block overflow-hidden rounded-[18px]" style={{ border: `1px solid ${FJ.rule}` }}>
               <div className="img-zoom">
                 <img src={featured.featuredImage || FALLBACK_IMG} onError={onImgError} alt={featured.title} className="h-[300px] w-full object-cover md:h-[380px]" />
               </div>
@@ -198,7 +198,7 @@ export default function Events() {
                     </span>
                     <h3 className="mt-2 font-bengali text-[19px] leading-snug" style={{ ...SERIF_BN, color: FJ.ink }}>{p.title}</h3>
                     <p className="mt-2 line-clamp-2 font-bengali text-[13.5px] leading-relaxed" style={{ color: FJ.ink2 }}>{excerpt(p.content)}…</p>
-                    <Link to={`/events/${p.id}`}
+                    <Link to={`/events/${p.slug || p.id}`}
                       className="mt-4 inline-flex items-center gap-1.5 self-start rounded-full px-4 py-2 font-bengali text-[12.5px] font-semibold transition-all duration-200 group-hover:gap-2.5"
                       style={{ background: 'rgba(194,65,12,0.08)', color: FJ.brand }}>
                       {t('events.readMore')} <Icon.Arrow className="h-3 w-3" />
