@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
 
 export type Lang = 'bn' | 'en';
 
@@ -337,37 +337,39 @@ interface I18nValue {
 const I18nContext = createContext<I18nValue | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() => {
-    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('cswo_lang') : null;
-    return saved === 'en' || saved === 'bn' ? saved : 'en';
-  });
-
   useEffect(() => {
-    localStorage.setItem('cswo_lang', lang);
-    document.documentElement.lang = lang;
-  }, [lang]);
+    document.documentElement.lang = 'en';
+  }, []);
 
   const t = (key: string) => {
     const entry = D[key];
     if (!entry) return key;
-    return entry[lang];
+    return entry.en;
   };
 
   return (
-    <I18nContext.Provider value={{ lang, setLang: setLangState, t }}>{children}</I18nContext.Provider>
+    <I18nContext.Provider value={{ lang: 'en', setLang: () => {}, t }}>{children}</I18nContext.Provider>
   );
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useT(): I18nValue {
   const ctx = useContext(I18nContext);
-  if (!ctx) throw new Error('useT must be used within I18nProvider');
+  if (!ctx) {
+    return {
+      lang: 'en',
+      setLang: () => {},
+      t: (key: string) => D[key]?.en || key,
+    };
+  }
   return ctx;
 }
 
-// Pick a bilingual value from a {bn,en} object.
-export function pick<T>(obj: { bn: T; en: T }, lang: Lang): T {
-  return obj[lang];
+// Pick a value from an object (defaults to English).
+export function pick<T>(obj: { bn?: T; en: T } | any, _lang?: Lang): T {
+  if (!obj) return '' as any;
+  if (typeof obj === 'string') return obj as any;
+  return (obj.en || obj.bn || obj) as T;
 }
 
 export function EnglishI18nProvider({ children }: { children: ReactNode }) {

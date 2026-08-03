@@ -38,7 +38,7 @@ export const fjVars: React.CSSProperties = {
   '--c-accent':   FJ.accent,
 } as React.CSSProperties;
 
-export const SERIF_BN: React.CSSProperties = { fontFamily: '"Noto Serif Bengali", "Noto Sans Bengali", serif' };
+export const SERIF_BN: React.CSSProperties = { fontFamily: '"Noto Serif", "Noto Serif Bengali", Georgia, serif' };
 export const SERIF_EN: React.CSSProperties = { fontFamily: '"Noto Serif", Georgia, serif' };
 
 // ─────────────────── Icons (Font Awesome 6 via react-icons) ───────────────────

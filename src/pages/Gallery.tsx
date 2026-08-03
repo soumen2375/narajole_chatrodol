@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  FaPlay, FaImage, FaCalendarDays, FaPeopleGroup,
+  FaPlay,
   FaChevronLeft, FaChevronRight, FaMagnifyingGlass,
 } from 'react-icons/fa6';
 import { useGallery } from '@/hooks/useGallery';
@@ -177,47 +177,7 @@ export default function Gallery() {
         </div>
       </section>
 
-      {/* ════ STATS BAR ════ */}
-      <section style={{ background: FJ.paper, borderTop: `1px solid ${FJ.rule}`, borderBottom: `1px solid ${FJ.rule}` }}>
-        <div className="mx-auto max-w-[1320px] px-6 py-7 md:px-10">
-          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-            <StatBar n="1,250+" label={tr('Photos', 'ছবি')}              color="#22c55e" icon={<FaImage />} />
-            <StatBar n="85+"    label={tr('Videos', 'ভিডিও')}             color={FJ.brand} icon={<FaPlay />} />
-            <StatBar n="200+"   label={tr('Events Covered', 'অনুষ্ঠান')}  color="#f59e0b" icon={<FaCalendarDays />} />
-            <StatBar n="10,000+" label={tr('Lives Impacted', 'জীবন')}     color="#3b82f6" icon={<FaPeopleGroup />} />
-          </div>
-        </div>
-      </section>
 
-      {/* ════ HERO + STATS CARD ════ */}
-      <section style={{ background: FJ.bg }}>
-        <div className="mx-auto grid max-w-[1320px] grid-cols-12 items-center gap-8 px-6 pb-10 pt-12 md:px-10 md:pt-16">
-          <div className="col-span-12 lg:col-span-7">
-            <div className="font-mono text-[11px] uppercase tracking-[0.22em]" style={{ color: FJ.brand }}>
-              {tr('Our journey in pictures', 'ছবিতে আমাদের যাত্রা')}
-            </div>
-            <h1 className="mt-3 font-bengali text-[38px] leading-[1.05] md:text-[52px]" style={{ ...SERIF_BN, color: FJ.ink }}>
-              {tr('Seven Years of Moments — Our Journey Captured Through the Lens.', 'সাত বছরের মুহূর্ত — ক্যামেরায় ধরা পড়া আমাদের যাত্রা।')}
-            </h1>
-            <p className="mt-5 max-w-xl font-bengali text-[15.5px] leading-[1.7]" style={{ color: FJ.ink2 }}>
-              {tr('From blood donation camps to student support, environmental drives to community celebrations — these moments define our purpose and progress.', 'রক্তদান শিবির থেকে শিক্ষার্থী সহায়তা, পরিবেশ অভিযান থেকে সম্প্রদায়িক উদযাপন — প্রতিটি মুহূর্ত আমাদের উদ্দেশ্য ও অগ্রগতির গল্প বলে।')}
-            </p>
-          </div>
-          <div className="col-span-12 lg:col-span-5">
-            <div className="grid grid-cols-2 gap-4 rounded-[16px] p-6" style={{ background: FJ.paper, border: `1px solid ${FJ.rule}`, boxShadow: '0 12px 32px -16px rgba(28,25,23,0.15)' }}>
-              <HeroStat n={`${Math.max(all.length, 50)}+`} label={tr('Featured Moments', 'বিশেষ মুহূর্ত')} icon={Icon.Quote} />
-              <HeroStat n="100+" label={tr('Blood Camps', 'রক্তদান শিবির')} icon={Icon.Droplet} />
-              <HeroStat n="300+" label={tr('Student Initiatives', 'শিক্ষার্থী উদ্যোগ')} icon={Icon.Grad} />
-              <HeroStat n="7" label={tr('Years of Service', 'বছরের সেবা')} icon={Icon.Users} />
-            </div>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="mx-auto max-w-[1320px] px-6 md:px-10">
-          <div className="h-px w-full" style={{ background: FJ.rule }} />
-        </div>
-      </section>
 
       {/* ════ FILTER + SEARCH ════ */}
       <section id="gallery-grid" style={{ background: FJ.bg }}>
@@ -371,32 +331,4 @@ export default function Gallery() {
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────
 
-function HeroStat({ n, label, icon: I }: { n: string; label: string; icon: typeof Icon.Heart }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: 'rgba(194,65,12,0.08)' }}>
-        <I className="h-4 w-4" style={{ color: FJ.brand }} />
-      </span>
-      <span>
-        <span className="block font-bengali text-[19px] font-extrabold leading-none" style={{ ...SERIF_BN, color: FJ.ink }}>{n}</span>
-        <span className="block font-bengali text-[11px] leading-tight" style={{ color: FJ.ink2 }}>{label}</span>
-      </span>
-    </div>
-  );
-}
-
-function StatBar({ n, label, color, icon }: { n: string; label: string; color: string; icon: ReactNode }) {
-  return (
-    <div className="flex items-center gap-4">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[20px]" style={{ background: `${color}18`, color }}>
-        {icon}
-      </span>
-      <span>
-        <span className="block font-bengali text-[22px] font-extrabold leading-none" style={{ ...SERIF_BN, color: FJ.ink }}>{n}</span>
-        <span className="block font-bengali text-[12px] leading-tight" style={{ color: FJ.ink2 }}>{label}</span>
-      </span>
-    </div>
-  );
-}

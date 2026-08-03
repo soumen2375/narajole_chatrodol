@@ -1,518 +1,917 @@
 import { Link } from 'react-router-dom';
-import {
-  IMPACT_STATS, ORG, CORE_VALUES, PROGRAMS, TESTIMONIALS, SUCCESS_STORIES,
-} from '@/data/content';
-import { usePosts } from '@/hooks/usePosts';
 import { useT } from '@/i18n';
 import { useInView, useCountUp } from '@/hooks/useInView';
 import {
-  PageShell, FJ, SectionHeader, GetInvolvedSection,
-  SERIF_BN, SERIF_EN, Icon,
-} from './_field-journal';
+  FaHeart, FaArrowRight, FaShieldHalved, FaUsers, FaLeaf, FaHandshake,
+  FaGraduationCap, FaDroplet, FaStethoscope, FaHandsHoldingChild,
+  FaUserGroup, FaHandHoldingHeart, FaMusic, FaQuoteLeft, FaPlay,
+  FaRegCalendarDays
+} from 'react-icons/fa6';
 
-// ════════════════════════════════════════════════════════════════════
-//  Home — premium animated redesign
-// ════════════════════════════════════════════════════════════════════
+// ─── Original Brand Color Tokens ───
+const BRAND = '#c2410c';       // Terracotta Brand Red-Orange
+const BRAND_LIGHT = '#ea580c'; // Light Terracotta
+const INK = '#1c1917';         // Rich Dark Ink
+const BG_CREAM = '#faf6ef';    // Warm Linen Paper Background
+const ACCENT_LIGHT = '#fdcf6f';// Light Gold
+const RULE = '#e7e5e4';        // Subtle Rule / Border
 
-const STAT_ICONS = [Icon.Grad, Icon.Heart, Icon.Tree, Icon.Award];
-const VALUE_ICONS: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> = {
-  GraduationCap: Icon.Grad, Heart: Icon.Heart, Shield: Icon.Shield,
-  Handshake: Icon.Hands, CheckCircle: Icon.Check,
-};
-const PROGRAM_ICONS = [Icon.Droplet, Icon.Shirt, Icon.Tree, Icon.Snow, Icon.Book, Icon.Package, Icon.Stetho, Icon.Users];
-const PROGRAM_FOCUS = {
-  bn: ['স্বাস্থ্য','মানবিক','পরিবেশ','মানবিক','শিক্ষা','ত্রাণ','স্বাস্থ্য','সমাজ'],
-  en: ['Health','Humanitarian','Environment','Humanitarian','Education','Relief','Health','Society'],
-};
+const FALLBACK_IMG = '/assets/images/Chhatradol.jpg';
 
-const FALLBACK = '/assets/images/Chhatradol.jpg';
 const onImgErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
-  if (e.currentTarget.src !== window.location.origin + FALLBACK) e.currentTarget.src = FALLBACK;
+  if (e.currentTarget.src !== window.location.origin + FALLBACK_IMG) {
+    e.currentTarget.src = FALLBACK_IMG;
+  }
 };
 
-// ─── Reveal wrapper ───
-function Reveal({ children, className = '', delay = 0, direction = 'up', style }: {
+// ─── Scroll Animation Wrapper ───
+function Reveal({
+  children,
+  className = '',
+  delay = 0,
+  direction = 'up',
+}: {
   children: React.ReactNode;
   className?: string;
   delay?: number;
   direction?: 'up' | 'left' | 'right' | 'scale';
-  style?: React.CSSProperties;
 }) {
   const { ref, inView } = useInView(0.12);
-  const cls = direction === 'left' ? 'reveal-left' : direction === 'right' ? 'reveal-right' : direction === 'scale' ? 'reveal-scale' : 'reveal';
-  const combinedStyle: React.CSSProperties = { ...(delay ? { transitionDelay: `${delay}ms` } : {}), ...style };
+  const cls =
+    direction === 'left'
+      ? 'reveal-left'
+      : direction === 'right'
+      ? 'reveal-right'
+      : direction === 'scale'
+      ? 'reveal-scale'
+      : 'reveal';
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
       className={`${cls}${inView ? ' revealed' : ''} ${className}`}
-      style={Object.keys(combinedStyle).length ? combinedStyle : undefined}
+      style={delay ? { transitionDelay: `${delay}ms` } : undefined}
     >
       {children}
     </div>
   );
 }
 
-function RevealStagger({ children, className = '', style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
-  const { ref, inView } = useInView(0.1);
+// ─── Section Header Component ───
+function SectionHeader({
+  title,
+  subtitle,
+  linkTo,
+  linkText,
+}: {
+  title: string;
+  subtitle: string;
+  linkTo?: string;
+  linkText?: string;
+}) {
   return (
-    <div ref={ref as React.RefObject<HTMLDivElement>} className={`reveal-stagger${inView ? ' revealed' : ''} ${className}`} style={style}>
-      {children}
+    <div className="mb-10 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
+      <div>
+        <h2 className="font-bengali text-3xl font-bold tracking-tight md:text-4xl" style={{ color: INK }}>
+          {title}
+        </h2>
+        <p className="mt-2 font-bengali text-sm md:text-base" style={{ color: '#57534e' }}>
+          {subtitle}
+        </p>
+      </div>
+      {linkTo && (
+        <Link
+          to={linkTo}
+          className="group inline-flex items-center gap-1.5 font-bengali text-sm font-semibold transition-colors"
+          style={{ color: BRAND }}
+        >
+          {linkText}
+          <FaArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+        </Link>
+      )}
     </div>
   );
 }
 
-// ─────────────────── 1. HERO ───────────────────
+// ─────────────────── 1. HERO SECTION ───────────────────
 function Hero() {
-  const { lang, t } = useT();
+  const { lang } = useT();
   const bn = lang === 'bn';
-  return (
-    <section className="relative flex min-h-[94vh] items-center overflow-hidden" style={{ background: FJ.ink }}>
-      <img src="/assets/images/Chhatradol.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" onError={onImgErr} />
-      {/* Multi-layer gradient for depth */}
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(110deg, rgba(28,25,23,0.92) 0%, rgba(28,25,23,0.65) 55%, rgba(28,25,23,0.20) 100%)' }} />
-      {/* Subtle grain */}
-      <div className="paper-grain absolute inset-0" />
 
-      <div className="relative mx-auto w-full max-w-[1320px] px-6 pb-16 pt-24 md:px-10 md:py-28">
-        <div className="animate-fade-in-up max-w-[680px]">
-          <h1 className="font-bengali text-[56px] leading-[1.02] text-white md:text-[82px] lg:text-[100px]" style={SERIF_BN}>
-            {bn ? ORG.shortBn : ORG.shortEn}
-          </h1>
-          <div className="mt-4 text-[22px] italic text-white/80 md:text-[28px]" style={SERIF_EN}>
-            — {bn ? ORG.taglineBn : ORG.taglineEn}
+  return (
+    <section className="relative flex min-h-[90vh] items-center overflow-hidden" style={{ background: INK }}>
+      {/* Background Image with Original Dark Gradient Overlay */}
+      <img
+        src="/assets/images/Chhatradol.jpg"
+        alt="Chhatradol SWO Team"
+        className="absolute inset-0 h-full w-full object-cover"
+        onError={onImgErr}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(110deg, rgba(28, 25, 23, 0.95) 0%, rgba(28, 25, 23, 0.82) 50%, rgba(28, 25, 23, 0.45) 100%)',
+        }}
+      />
+
+      <div className="relative mx-auto w-full max-w-[1340px] px-6 py-20 md:px-10 md:py-28">
+        <div className="max-w-2xl">
+          {/* Eyebrow Tagline */}
+          <div
+            className="inline-flex items-center gap-2 text-lg sm:text-xl font-medium italic tracking-wide text-amber-200"
+            style={{ fontFamily: '"Noto Serif", Georgia, serif' }}
+          >
+            <span>— Unity • Education • Progress</span>
           </div>
 
-          <p className="mt-7 max-w-lg font-bengali text-[16px] leading-[1.75] text-white/75 md:text-[18px]">
+          {/* Main Headline */}
+          <h1 className="mt-4 font-bengali text-4xl font-extrabold leading-[1.1] text-white sm:text-5xl md:text-6xl lg:text-7xl">
+            {bn ? 'একসাথে, আমরা গড়ি এক সুন্দর আগামী।' : 'Together, we build a better tomorrow.'}
+          </h1>
+
+          {/* Subtitle */}
+          <p className="mt-6 max-w-xl font-bengali text-base leading-relaxed text-white/80 md:text-lg">
             {bn
-              ? 'শিক্ষা, স্বাস্থ্য, পরিবেশ ও দরিদ্রসেবা — সাত বছর ধরে প্রতিটি মানুষের পাশে।'
-              : 'Education, health, environment and service to the poor — seven years of standing beside every person'}
+              ? 'শিক্ষা, স্বাস্থ্যসেবা, পরিবেশ এবং সামাজিক উন্নয়নের মাধ্যমে সমাজকে আরও শক্তিশালী ও আলোকিত করে তোলাই ছাত্রদলের মূল লক্ষ্য।'
+              : 'Chhatradol SWO is dedicated to social welfare, education, healthcare, and community development for a stronger and brighter society.'}
           </p>
 
-          <div className="mt-9 flex flex-wrap gap-3">
+          {/* CTA Buttons */}
+          <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
               to="/donate"
-              className="group inline-flex items-center gap-2 rounded-full px-8 py-4 font-bengali text-[15px] font-semibold text-white transition-all hover:-translate-y-[2px]"
-              style={{ background: 'var(--c-brand)', boxShadow: '0 14px 32px -10px rgba(194,65,12,0.7)' }}
+              className="inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 font-bengali text-base font-bold text-white shadow-xl transition-all duration-200 hover:-translate-y-0.5"
+              style={{ background: BRAND, boxShadow: '0 12px 30px -8px rgba(194, 65, 12, 0.6)' }}
             >
-              {t('nav.donate')}
-              <Icon.Arrow className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+              {bn ? 'দান করুন 💛' : 'Donate Now 💛'}
             </Link>
             <Link
               to="/about"
-              className="inline-flex items-center gap-2 rounded-full border border-white/30 px-8 py-4 font-bengali text-[15px] font-semibold text-white transition-all hover:bg-white/10 hover:-translate-y-[1px]"
+              className="inline-flex items-center gap-2 rounded-full border border-white/30 px-7 py-3.5 font-bengali text-base font-semibold text-white transition-all duration-200 hover:bg-white/10 hover:border-white/60"
             >
-              {bn ? 'আমাদের সম্পর্কে' : 'Learn more'}
+              {bn ? 'আমাদের কার্যক্রম ➔' : 'Explore Our Work ➔'}
             </Link>
           </div>
-
-          {/* Mini stats bar */}
-          <div className="mt-14 grid grid-cols-3 gap-6 border-t border-white/15 pt-6">
-            {[
-              { k: bn ? 'প্রতিষ্ঠিত' : 'Established', v: ORG.established },
-              { k: bn ? 'কর্মসূচি' : 'Programmes',   v: '8+' },
-              { k: bn ? 'অবস্থান' : 'Location',       v: 'Narajole, WB' },
-            ].map((row) => (
-              <div key={row.k}>
-                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">{row.k}</div>
-                <div className="mt-1.5 font-bengali text-[14px] font-medium text-white/85">{row.v}</div>
-              </div>
-            ))}
-          </div>
         </div>
-      </div>
-
-      {/* Est. stamp — floating */}
-      <div
-        className="absolute right-8 top-10 hidden rotate-[6deg] rounded-md px-3 py-2 text-center shadow-xl float-badge md:block"
-        style={{ background: 'rgba(250,246,239,0.95)', border: '1px dashed var(--c-brand)' }}
-      >
-        <div className="text-[22px] leading-none" style={{ ...SERIF_EN, color: FJ.ink }}>Est. {ORG.established}</div>
-        <div className="mt-1 font-mono text-[8.5px] uppercase tracking-[0.18em]" style={{ color: FJ.brand }}>Public Charitable Trust</div>
-      </div>
-
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-        <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-white/30">{bn ? 'স্ক্রোল করুন' : 'Scroll'}</div>
-        <div className="h-8 w-px" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.4), transparent)' }} />
       </div>
     </section>
   );
 }
 
-// ─────────────────── MARQUEE ticker ───────────────────
-function Ticker() {
+// ─────────────────── 2. CORE VALUES FLOATING BAR ───────────────────
+function CoreValuesBar() {
   const { lang } = useT();
   const bn = lang === 'bn';
-  const items = bn
-    ? ['শিক্ষা', 'স্বাস্থ্য', 'পরিবেশ', 'ত্রাণ', 'স্বেচ্ছাসেবা', 'সামাজিক উন্নয়ন', 'ছাত্রদল']
-    : ['Education', 'Healthcare', 'Environment', 'Relief', 'Volunteering', 'Social Development', 'Chhatradol'];
-  const repeated = [...items, ...items];
+
+  const values = [
+    {
+      icon: FaShieldHalved,
+      title: bn ? 'স্বচ্ছতা' : 'Transparency',
+      desc: bn ? '১০০% স্বচ্ছ কার্যক্রম' : '100% transparent operations',
+    },
+    {
+      icon: FaUsers,
+      title: bn ? 'জনকল্যাণমূলক' : 'Community Driven',
+      desc: bn ? 'মানুষের পাশে, মানুষের জন্য' : 'By the people, for the people',
+    },
+    {
+      icon: FaLeaf,
+      title: bn ? 'অলাভজনক' : 'Non-Profit',
+      desc: bn ? 'প্রতিটি দান সরাসরি সেবায়' : 'Every contribution creates impact',
+    },
+    {
+      icon: FaHandshake,
+      title: bn ? 'বিশ্বাস ও সততা' : 'Trust & Integrity',
+      desc: bn ? 'সততা ও দায়বদ্ধতায় প্রতিশ্রুত' : 'Committed to honesty and accountability',
+    },
+  ];
+
   return (
-    <div className="overflow-hidden border-y py-3" style={{ background: 'var(--c-brand)', borderColor: 'rgba(255,255,255,0.12)' }}>
-      <div className="marquee-track flex gap-8 whitespace-nowrap">
-        {repeated.map((item, i) => (
-          <span key={i} className="inline-flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.22em] text-white/80">
-            <span className="h-1.5 w-1.5 rounded-full bg-white/60" />
-            {item}
-          </span>
-        ))}
+    <div className="relative z-20 mx-auto -mt-10 max-w-[1340px] px-6 md:px-10">
+      <div
+        className="grid grid-cols-1 divide-y rounded-2xl border border-white/15 p-6 shadow-2xl backdrop-blur-md sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4"
+        style={{ background: INK }}
+      >
+        {values.map((v, i) => {
+          const VIcon = v.icon;
+          return (
+            <div key={i} className="flex items-center gap-4 py-4 sm:px-6 sm:py-2">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/10" style={{ color: ACCENT_LIGHT }}>
+                <VIcon className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-bengali text-base font-bold text-white">{v.title}</h3>
+                <p className="font-bengali text-xs text-white/70">{v.desc}</p>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// ─────────────────── 2. MISSION ───────────────────
-function Mission() {
+// ─────────────────── 3. OUR IMPACT IN NUMBERS ───────────────────
+function ImpactSection() {
   const { lang } = useT();
   const bn = lang === 'bn';
-  return (
-    <section style={{ background: 'var(--c-paper)' }}>
-      <div className="mx-auto max-w-[1320px] px-6 py-28 md:px-10">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-20">
-          <Reveal direction="left" className="flex flex-col justify-center">
-            <h2 className="font-bengali text-[40px] leading-[1.06] md:text-[56px]" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>
-              {bn
-                ? <>একসাথে গড়ছি <br /><span style={{ ...SERIF_EN, fontStyle: 'italic', color: 'var(--c-brand)' }}>উজ্জ্বল</span> ভবিষ্যৎ।</>
-                : <>Building a <span style={{ ...SERIF_EN, fontStyle: 'italic', color: 'var(--c-brand)' }}>brighter</span> future, together.</>}
-            </h2>
-            <p className="mt-7 font-bengali text-[16px] leading-[1.75]" style={{ color: 'var(--c-ink-2)' }}>
-              {bn
-                ? '২০১৯ সালে মেদিনীপুরের একদল তরুণ ছাত্রছাত্রীর হাত ধরে শুরু হয়েছিল আমাদের পথচলা। আজ আমরা একটি রেজিস্টার্ড পাবলিক চ্যারিটেবল ট্রাস্ট, যা বাংলার প্রান্তিক মানুষের পাশে নিরলসভাবে কাজ করে।'
-                : 'Our journey began in 2019, led by a group of young students from Medinipur. Today we are a registered public charitable trust, tirelessly working beside the marginalised people of Bengal.'}
-            </p>
-            <p className="mt-4 font-bengali text-[16px] leading-[1.75]" style={{ color: 'var(--c-ink-2)' }}>
-              {bn
-                ? <>আমাদের বিশ্বাস — <em>প্রতিটি জীবন গুরুত্বপূর্ণ, প্রতিটি প্রচেষ্টা মূল্যবান</em>।</>
-                : <>We believe — <em>every life matters, every effort is valuable</em>.</>}
-            </p>
-            <div className="mt-8">
-              <Link to="/about" className="inline-flex items-center gap-2 rounded-full px-6 py-3 font-bengali text-[14px] font-semibold text-white transition-all hover:-translate-y-[1px]" style={{ background: 'var(--c-ink)' }}>
-                {bn ? 'আমাদের সম্পূর্ণ গল্প' : 'Our full story'} <Icon.Arrow className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          </Reveal>
 
-          <Reveal direction="right">
-            <ul className="divide-y" style={{ borderColor: 'var(--c-rule)' }}>
-              {CORE_VALUES.map((v) => {
-                const VIcon = VALUE_ICONS[(v as unknown as { icon: string }).icon] || Icon.Check;
-                return (
-                  <li key={v.label.bn} className="group flex items-start gap-4 py-5 transition-colors" style={{ borderColor: 'var(--c-rule)' }}>
-                    <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-colors group-hover:bg-[color:var(--c-brand)]" style={{ background: 'rgba(194,65,12,0.08)' }}>
-                      <VIcon className="h-4 w-4 transition-colors group-hover:text-white" style={{ color: 'var(--c-brand)' }} />
-                    </div>
-                    <div>
-                      <div className="font-bengali text-[19px] leading-tight" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>{v.label[lang]}</div>
-                      <p className="mt-1 font-bengali text-[13.5px] leading-relaxed" style={{ color: 'var(--c-ink-2)' }}>{v.text[lang]}</p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </Reveal>
+  const stats = [
+    {
+      icon: FaUserGroup,
+      number: 500,
+      suffix: '+',
+      label: bn ? 'জীবনের উন্নয়ন' : 'Lives Impacted',
+      color: 'bg-orange-100 text-orange-700',
+    },
+    {
+      icon: FaGraduationCap,
+      number: 25,
+      suffix: '+',
+      label: bn ? 'শিক্ষা কর্মসূচি' : 'Education Programs',
+      color: 'bg-amber-100 text-amber-700',
+    },
+    {
+      icon: FaHeart,
+      number: 2000,
+      suffix: '+',
+      label: bn ? 'স্বেচ্ছাসেবকের ঘণ্টা' : 'Volunteer Hours',
+      color: 'bg-rose-100 text-rose-700',
+    },
+    {
+      icon: FaDroplet,
+      number: 7,
+      suffix: '+',
+      label: bn ? 'রক্তদান শিবির' : 'Blood Donation Camps',
+      color: 'bg-teal-100 text-teal-700',
+    },
+  ];
+
+  return (
+    <section className="py-20" style={{ background: BG_CREAM }}>
+      <div className="mx-auto max-w-[1340px] px-6 md:px-10">
+        <Reveal>
+          <SectionHeader
+            title={bn ? 'আমাদের কাজের প্রভাব' : 'Our Impact in Numbers'}
+            subtitle={bn ? 'মানুষের জীবন পরিবর্তনই আমাদের প্রকৃত সাফল্য।' : 'Real people. Real change. Real impact.'}
+            linkTo="/impacts"
+            linkText={bn ? 'সকল প্রভাব দেখুন' : 'View all impact'}
+          />
+        </Reveal>
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((item, idx) => (
+            <StatCard key={idx} item={item} lang={lang} />
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-// ─────────────────── 3. IMPACT — animated counters ───────────────────
-function ImpactStat({ stat, icon: SIcon }: { stat: (typeof IMPACT_STATS)[0]; icon: React.FC<React.SVGProps<SVGSVGElement>> }) {
-  const { lang } = useT();
+function StatCard({ item, lang }: { item: any; lang: string }) {
   const { ref, inView } = useInView(0.2);
-  const raw = stat.value.en.replace(/[^0-9]/g, '');
-  const numeric = parseInt(raw, 10) || 0;
-  const suffix = stat.value.en.replace(/[0-9]/g, '');
-  const count = useCountUp(numeric, inView, 1600);
+  const count = useCountUp(item.number, inView, 1600);
+  const IconComp = item.icon;
 
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
-      className={`reveal-scale${inView ? ' revealed' : ''} group p-8`}
-      style={{ background: 'var(--c-bg)' }}
+      className="group rounded-2xl border bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl"
+      style={{ borderColor: RULE }}
     >
-      <SIcon className="h-5 w-5" style={{ color: 'var(--c-brand)', opacity: 0.8 }} />
-      <div className="mt-5 font-bengali text-[60px] leading-[0.92] md:text-[76px]" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>
-        {lang === 'bn' ? stat.value.bn : `${count}${suffix}`}
+      <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${item.color}`}>
+        <IconComp className="h-6 w-6" />
       </div>
-      <p className="mt-3 font-bengali text-[14px] leading-snug" style={{ color: 'var(--c-ink-2)' }}>{stat.label[lang]}</p>
-      <span className="mt-5 block h-[2px] w-10 origin-left transition-transform duration-700 group-hover:scale-x-[3.5]" style={{ background: 'var(--c-brand)' }} />
+      <div className="mt-5 font-bengali text-4xl font-extrabold md:text-5xl" style={{ color: INK }}>
+        {lang === 'bn' ? `${count}${item.suffix}` : `${count}${item.suffix}`}
+      </div>
+      <p className="mt-2 font-bengali text-sm font-medium" style={{ color: '#57534e' }}>
+        {item.label}
+      </p>
+      <div className="mt-4 h-1 w-8 rounded-full transition-all duration-300 group-hover:w-16" style={{ background: BRAND }} />
     </div>
   );
 }
 
-function Impact() {
+// ─────────────────── 4. OUR KEY PROGRAMS ───────────────────
+function KeyProgramsSection() {
   const { lang } = useT();
   const bn = lang === 'bn';
-  return (
-    <section style={{ background: 'var(--c-bg)' }}>
-      <div className="mx-auto max-w-[1320px] px-6 py-28 md:px-10">
-        <Reveal>
-          <SectionHeader
-            eyebrow="Impact · 2019–2026"
-            title={bn ? 'আমাদের কার্যক্রমের প্রভাব' : 'The impact of our work'}
-            kicker={bn ? 'সাত বছর ধরে শিক্ষা, স্বাস্থ্য ও পরিবেশের জন্য নিরলস কাজের ফলাফল।' : 'Results of seven years of tireless work in education, health and the environment.'}
-          />
-        </Reveal>
-        <div className="grid grid-cols-2 gap-px lg:grid-cols-4" style={{ background: 'var(--c-rule)' }}>
-          {IMPACT_STATS.map((stat, i) => (
-            <ImpactStat key={stat.label.bn} stat={stat} icon={STAT_ICONS[i % STAT_ICONS.length]} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
-// ─────────────────── 4. PROGRAMS ───────────────────
-function ProgramsGrid() {
-  const { lang, t } = useT();
-  const bn = lang === 'bn';
+  const programs = [
+    {
+      title: bn ? 'রক্তদান শিবির' : 'Blood Donation Camps',
+      desc: bn
+        ? 'জরুরি প্রয়োজনে মুমূর্ষু রোগীদের জীবন বাঁচাতে নিয়মিত রক্তদান শিবিরের আয়োজন করা হয়।'
+        : 'Organising regular blood donation camps to save lives and promote health awareness.',
+      icon: FaDroplet,
+      iconBg: 'bg-rose-100 text-rose-700',
+      img: '/assets/images/service/post-33-raktokotha-camp.jpg',
+    },
+    {
+      title: bn ? 'শিক্ষা ও শিক্ষা সহায়তা' : 'Education & Learning',
+      desc: bn
+        ? 'দরিদ্র ও মেধাবী শিক্ষার্থীদের জন্য বিনামূল্যে শিক্ষা, পাঠ্যসামগ্রী ও দিকনির্দেশনা।'
+        : 'Supporting students with study materials, guidance, and educational support programs.',
+      icon: FaGraduationCap,
+      iconBg: 'bg-amber-100 text-amber-700',
+      img: '/assets/images/service/post-34-students-book-support.jpg',
+    },
+    {
+      title: bn ? 'স্বাস্থ্য সেবা সহায়তা' : 'Healthcare Support',
+      desc: bn
+        ? 'বিনামূল্যে স্বাস্থ্য পরীক্ষা, বিশেষজ্ঞ ডাক্তারের পরামর্শ ও ঔষধ বিতরণ কর্মসূচি।'
+        : 'Health check-ups, medical camps, and support for underprivileged communities.',
+      icon: FaStethoscope,
+      iconBg: 'bg-teal-100 text-teal-700',
+      img: '/assets/images/service/post-15-mental-care-home.jpg',
+    },
+    {
+      title: bn ? 'পরিবেশ সুরক্ষা উদ্যোগ' : 'Environment Initiative',
+      desc: bn
+        ? 'সবুজ বসুন্ধরা গড়তে বৃক্ষরোপণ, পরিচ্ছন্নতা অভিযান ও পরিবেশ সচেতনতা।'
+        : 'Tree plantation, clean drives, and environment awareness for a greener future.',
+      icon: FaLeaf,
+      iconBg: 'bg-green-100 text-green-700',
+      img: '/assets/images/impacts/tree_plantations.jpg',
+    },
+    {
+      title: bn ? 'নারী ক্ষমতায়ন' : 'Women Empowerment',
+      desc: bn
+        ? 'স্বাবলম্বী হতে নারীদের আত্মনির্ভরশীলতা ও বৃত্তিমূলক প্রশিক্ষণ প্রদান।'
+        : 'Skills training and empowerment programs for women to become self-reliant.',
+      icon: FaHandsHoldingChild,
+      iconBg: 'bg-orange-100 text-orange-700',
+      img: '/assets/images/service/post-35-stop-child-marriage.jpg',
+    },
+    {
+      title: bn ? 'যুব সমাজ উন্নয়ন' : 'Youth Development',
+      desc: bn
+        ? 'যুবসমাজের সামাজিক দায়িত্ববোধ বৃদ্ধি ও সুনাগরিক হিসেবে গড়ে তোলার প্রয়াস।'
+        : 'Building leadership, confidence, and skills among the youth for a better tomorrow.',
+      icon: FaUserGroup,
+      iconBg: 'bg-blue-100 text-blue-700',
+      img: '/assets/images/service/post-31-freedom-fighters-program.jpg',
+    },
+    {
+      title: bn ? 'জরুরি ত্রাণ ও সহায়তা' : 'Relief & Support',
+      desc: bn
+        ? 'প্রাকৃতিক দুর্যোগ ও দুঃসময়ে অসহায় মানুষদের খাদ্য ও বাসস্থান সহায়তা।'
+        : 'Providing help during natural disasters and supporting needy families.',
+      icon: FaHandHoldingHeart,
+      iconBg: 'bg-emerald-100 text-emerald-700',
+      img: '/assets/images/service/post-30-tarpaulin-distribution.jpg',
+    },
+    {
+      title: bn ? 'সাংস্কৃতিক ও খেলাধুলা' : 'Cultural Activities',
+      desc: bn
+        ? 'ঐতিহ্য ও সাংস্কৃতিক বিকাশ রক্ষায় প্রতিযোগিতা ও মেধা বিকাশ অনুষ্ঠান।'
+        : 'Promoting culture, sports, and social harmony through various events.',
+      icon: FaMusic,
+      iconBg: 'bg-purple-100 text-purple-700',
+      img: '/assets/images/service/drawing_14_01_26.png',
+    },
+  ];
+
   return (
-    <section style={{ background: 'var(--c-paper)' }}>
-      <div className="mx-auto max-w-[1320px] px-6 py-28 md:px-10">
+    <section className="bg-white py-20">
+      <div className="mx-auto max-w-[1340px] px-6 md:px-10">
         <Reveal>
           <SectionHeader
-            eyebrow="What We Do · 08 Programs"
-            title={t('programs.title')}
-            kicker={bn ? 'শিক্ষা, স্বাস্থ্য, পরিবেশ ও মানবিক সহায়তা — আট ধরনের কর্মসূচির মাধ্যমে আমরা সমাজের পাশে।' : 'Education, health, environment and humanitarian support — eight programmes standing with society.'}
+            title={bn ? 'আমাদের মূল কর্মসূচিসমূহ' : 'Our Key Programs'}
+            subtitle={bn ? 'যে ক্ষেত্রগুলোতে আমরা সমাজ পরিবর্তনের কাজ করি।' : 'We work in areas that create the biggest impact.'}
+            linkTo="/programs"
+            linkText={bn ? 'সকল কর্মসূচি দেখুন' : 'View all programs'}
           />
         </Reveal>
-        <RevealStagger className="grid grid-cols-1 gap-px sm:grid-cols-2 lg:grid-cols-4" style={{ background: 'var(--c-rule)' } as React.CSSProperties}>
-          {PROGRAMS.map((p, i) => {
-            const PIcon = PROGRAM_ICONS[i % PROGRAM_ICONS.length];
-            const focus = PROGRAM_FOCUS[lang][i % PROGRAM_FOCUS[lang].length];
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {programs.map((prog, idx) => {
+            const PIcon = prog.icon;
             return (
-              <article key={p.title.bn} className="card-lift group flex flex-col gap-4 p-7" style={{ background: 'var(--c-paper)' }}>
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-full border transition-all duration-300 group-hover:bg-[color:var(--c-brand)] group-hover:border-[color:var(--c-brand)] group-hover:scale-110" style={{ borderColor: 'var(--c-rule)', color: 'var(--c-brand)' }}>
-                  <PIcon className="h-5 w-5 transition-colors duration-300 group-hover:text-white" />
+              <div
+                key={idx}
+                className="group flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl"
+                style={{ borderColor: RULE }}
+              >
+                {/* Thumbnail Image */}
+                <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                  <img
+                    src={prog.img}
+                    alt={prog.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onError={onImgErr}
+                  />
+                  <div className="absolute left-4 top-4">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl shadow-md ${prog.iconBg}`}>
+                      <PIcon className="h-5 w-5" />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.18em]" style={{ background: 'rgba(194,65,12,0.08)', color: 'var(--c-brand)' }}>
-                    {focus}
-                  </span>
-                  <h3 className="mt-3 font-bengali text-[19px] leading-snug" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>{p.title[lang]}</h3>
+
+                {/* Content */}
+                <div className="flex flex-1 flex-col justify-between p-6">
+                  <div>
+                    <h3 className="font-bengali text-lg font-bold transition-colors group-hover:text-[#c2410c]" style={{ color: INK }}>
+                      {prog.title}
+                    </h3>
+                    <p className="mt-2 font-bengali text-xs leading-relaxed" style={{ color: '#57534e' }}>
+                      {prog.desc}
+                    </p>
+                  </div>
+
+                  <Link
+                    to="/programs"
+                    className="mt-4 inline-flex items-center gap-1 font-bengali text-xs font-bold transition-colors"
+                    style={{ color: BRAND }}
+                  >
+                    {bn ? 'বিস্তারিত ➔' : 'Learn more ➔'}
+                  </Link>
                 </div>
-                <p className="flex-1 font-bengali text-[13.5px] leading-relaxed" style={{ color: 'var(--c-ink-2)' }}>{p.description[lang]}</p>
-                <Link to="/programs" className="mt-1 inline-flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em]" style={{ color: 'var(--c-brand)' }}>
-                  {bn ? 'বিস্তারিত' : 'Details'} <Icon.Arrow className="h-3 w-3 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </article>
+              </div>
             );
           })}
-        </RevealStagger>
-        <Reveal>
-          <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t pt-6 md:flex-row md:items-center" style={{ borderColor: 'var(--c-rule)' }}>
-            <p className="font-bengali text-[15px] leading-relaxed" style={{ color: 'var(--c-ink-2)' }}>
-              {bn ? 'প্রতিটি কর্মসূচি স্থানীয় সম্প্রদায়ের সক্রিয় অংশগ্রহণে পরিচালিত হয়।' : 'Every programme is run with the active participation of local communities.'}
-            </p>
-            <Link to="/programs" className="inline-flex items-center gap-2 rounded-full px-6 py-3 font-bengali text-[14px] font-semibold text-white transition-all hover:-translate-y-[1px]" style={{ background: 'var(--c-brand)' }}>
-              {bn ? 'সকল কর্মসূচি দেখুন' : 'See all programmes'} <Icon.Arrow className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────── 5. FEATURED STORY ───────────────────
-function FeaturedStory() {
-  const { lang } = useT();
-  const bn = lang === 'bn';
-  const story = SUCCESS_STORIES[0];
-  return (
-    <section style={{ background: 'var(--c-ink)' }}>
-      <div className="mx-auto max-w-[1320px] px-6 py-28 md:px-10">
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">
-          <Reveal direction="left" className="relative aspect-[4/5] overflow-hidden rounded-[4px]">
-            <img src={story.img || FALLBACK} alt={story.title[lang]} className="h-full w-full object-cover" onError={onImgErr} loading="lazy" />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, transparent 50%, rgba(28,25,23,0.55))' }} />
-          </Reveal>
-          <Reveal direction="right">
-            <h2 className="font-bengali text-[36px] leading-[1.1] text-white md:text-[52px]" style={SERIF_BN}>
-              {story.title[lang]}
-            </h2>
-            <div className="mt-8 flex items-start gap-4">
-              <Icon.Quote className="h-9 w-9 flex-shrink-0" style={{ color: 'var(--c-brand-l)' }} />
-              <p className="font-bengali text-[17px] italic leading-[1.75] text-white/85">
-                {story.summary[lang]}
-              </p>
-            </div>
-            <div className="mt-10 flex flex-wrap gap-3">
-              <Link to="/impacts" className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-bengali text-[14px] font-semibold text-white transition-all hover:-translate-y-[1px]" style={{ background: 'var(--c-brand)' }}>
-                {bn ? 'সকল গল্প পড়ুন' : 'Read all stories'} <Icon.Arrow className="h-3.5 w-3.5" />
-              </Link>
-              <Link to="/volunteer" className="inline-flex items-center rounded-full border border-white/25 px-7 py-3.5 font-bengali text-[14px] font-semibold text-white transition-all hover:bg-white/8 hover:-translate-y-[1px]">
-                {bn ? 'স্বেচ্ছাসেবক হোন' : 'Volunteer'}
-              </Link>
-            </div>
-          </Reveal>
         </div>
       </div>
     </section>
   );
 }
 
-// ─────────────────── 6. LATEST NEWS ───────────────────
-function Latest() {
+// ─────────────────── 5. SPOTLIGHT / OUR MISSION ───────────────────
+function MissionSpotlight() {
   const { lang } = useT();
   const bn = lang === 'bn';
-  const { posts } = usePosts();
-  const [featured, ...rest] = posts.slice(0, 3);
-  if (!featured) return null;
+
+  const missionPoints = [
+    {
+      icon: FaGraduationCap,
+      title: bn ? 'মানসম্পন্ন শিক্ষা' : 'Quality Education',
+      desc: bn ? 'সকলের জন্য শিক্ষার সুযোগ নিশ্চিত করা।' : 'We support learning for all.',
+    },
+    {
+      icon: FaLeaf,
+      title: bn ? 'উজ্জ্বল ভবিষ্যৎ' : 'Bright Future',
+      desc: bn ? 'আগামী প্রজন্মকে সমৃদ্ধ করা।' : 'Empowering the next generation.',
+    },
+    {
+      icon: FaShieldHalved,
+      title: bn ? 'সমান সুযোগ' : 'Equal Opportunity',
+      desc: bn ? 'প্রান্তিক জনগোষ্ঠীর অধিকার প্রতিষ্ঠা।' : 'Everyone deserves a chance.',
+    },
+    {
+      icon: FaUserGroup,
+      title: bn ? 'মজবুত সম্প্রদায়' : 'Stronger Community',
+      desc: bn ? 'একত্র হয়ে উন্নতির দিকে এগিয়ে চলা।' : 'Together we grow stronger.',
+    },
+  ];
 
   return (
-    <section style={{ background: 'var(--c-bg)' }}>
-      <div className="mx-auto max-w-[1320px] px-6 py-28 md:px-10">
+    <section className="py-20 text-white" style={{ background: INK }}>
+      <div className="mx-auto max-w-[1340px] px-6 md:px-10">
+        <div className="grid grid-cols-1 items-center gap-10 rounded-3xl border border-white/10 p-8 shadow-2xl lg:grid-cols-12 lg:p-12" style={{ background: 'rgba(255,255,255,0.03)' }}>
+          {/* Left Column: Image */}
+          <div className="lg:col-span-5">
+            <div className="relative overflow-hidden rounded-2xl shadow-xl">
+              <img
+                src="/assets/images/impacts/education.jpg"
+                alt="Education Mission"
+                className="aspect-[4/3] w-full object-cover transition-transform duration-500 hover:scale-105"
+                onError={onImgErr}
+              />
+            </div>
+          </div>
+
+          {/* Middle Column: Text & Quote */}
+          <div className="lg:col-span-4">
+            <div className="font-mono text-xs font-bold uppercase tracking-wider" style={{ color: ACCENT_LIGHT }}>
+              • {bn ? 'আমাদের ভিশন' : 'OUR MISSION'}
+            </div>
+            <h2 className="mt-3 font-bengali text-3xl font-extrabold leading-tight text-white md:text-4xl">
+              {bn ? 'শিক্ষা: অন্ধকার থেকে আলোর দিকে' : 'Education: from darkness to light'}
+            </h2>
+
+            <div className="mt-4 flex items-start gap-3 rounded-xl bg-white/5 p-4 border border-white/10">
+              <FaQuoteLeft className="h-6 w-6 flex-shrink-0 opacity-80" style={{ color: ACCENT_LIGHT }} />
+              <p className="font-bengali text-sm italic leading-relaxed text-white/90">
+                {bn
+                  ? 'আমরা বিশ্বাস করি প্রতিটি শিশুই মানসম্পন্ন শিক্ষার অধিকারী এবং প্রতিটি মানুষ সুযোগ পাওয়ার যোগ্য।'
+                  : 'We believe every child deserves quality education and every individual deserves an opportunity to build a better future.'}
+              </p>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to="/about"
+                className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 font-bengali text-sm font-bold text-white shadow-md transition-all hover:bg-orange-700"
+                style={{ background: BRAND }}
+              >
+                {bn ? 'আমাদের ভিশন ➔' : 'Our Mission ➔'}
+              </Link>
+              <Link
+                to="/gallery"
+                className="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-2.5 font-bengali text-sm font-semibold text-white transition-all hover:bg-white/10"
+              >
+                <FaPlay className="h-3 w-3" style={{ color: ACCENT_LIGHT }} />
+                {bn ? 'ভিডিও দেখুন' : 'Watch Video'}
+              </Link>
+            </div>
+          </div>
+
+          {/* Right Column: 4 Feature Items */}
+          <div className="space-y-4 lg:col-span-3">
+            {missionPoints.map((pt, i) => {
+              const IconComp = pt.icon;
+              return (
+                <div key={i} className="flex items-center gap-3.5 rounded-xl border border-white/10 bg-white/5 p-3.5 transition-colors hover:bg-white/10">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/10" style={{ color: ACCENT_LIGHT }}>
+                    <IconComp className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bengali text-sm font-bold text-white">{pt.title}</h4>
+                    <p className="font-bengali text-xs text-white/70">{pt.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────── 6. LATEST NEWS & EVENTS ───────────────────
+function LatestNewsSection() {
+  const newsItems = [
+    {
+      title: 'Blood Donation Camp – Thank You Volunteers',
+      date: 'May 18, 2026',
+      cat: 'Blood Camp',
+      desc: 'Another successful blood donation camp with overwhelming support from community donors.',
+      img: '/assets/images/service/post-33-raktokotha-camp.jpg',
+    },
+    {
+      title: 'Study Materials Distributed to Students',
+      date: 'May 15, 2026',
+      cat: 'Education',
+      desc: 'Distributed study materials, books, and stationery to 100+ underprivileged students.',
+      img: '/assets/images/service/post-34-students-book-support.jpg',
+    },
+    {
+      title: 'Tree Plantation Drive Completed',
+      date: 'May 10, 2026',
+      cat: 'Environment',
+      desc: 'Planted 150+ trees and committed to a cleaner, greener tomorrow in Paschim Medinipur.',
+      img: '/assets/images/impacts/tree_plantations.jpg',
+    },
+    {
+      title: 'Winter Warmth & Clothing Distribution',
+      date: 'May 04, 2026',
+      cat: 'Relief',
+      desc: 'Distributed warm clothes and blankets to senior citizens and needy families.',
+      img: '/assets/images/service/post-20-winter-clothes.jpg',
+    },
+    {
+      title: 'Community Awareness & Youth Guidance',
+      date: 'Apr 28, 2026',
+      cat: 'Social Welfare',
+      desc: 'Organized community workshops promoting social awareness, health, and education.',
+      img: '/assets/images/service/post-35-stop-child-marriage.jpg',
+    },
+  ];
+
+  return (
+    <section className="py-20" style={{ background: BG_CREAM }}>
+      <div className="mx-auto max-w-[1340px] px-6 md:px-10">
         <Reveal>
           <SectionHeader
-            eyebrow="Latest from the Field"
-            title={bn ? 'সর্বশেষ খবর ও অনুষ্ঠান' : 'Latest news & events'}
-            kicker={bn ? 'মাঠ-পর্যায় থেকে সরাসরি — আমাদের সাম্প্রতিক কর্মসূচি ও অনুষ্ঠান।' : 'Straight from the ground — our latest programmes and events.'}
+            title="Latest News & Events"
+            subtitle="Stay updated with our latest activities and community initiatives."
+            linkTo="/events"
+            linkText="View all news"
           />
         </Reveal>
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          <Reveal direction="left" className="lg:col-span-7">
-            <article className="group">
-              <div className="img-zoom overflow-hidden rounded-[4px]">
-                <img src={featured.featuredImage || FALLBACK} alt={featured.title} className="aspect-[16/10] w-full object-cover" onError={onImgErr} loading="lazy" />
-              </div>
-              <div className="mt-6 flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-[0.18em]" style={{ color: 'var(--c-muted)' }}>
-                <span style={{ color: 'var(--c-brand)' }}>Featured</span>
-                <span style={{ color: 'var(--c-rule)' }}>·</span>
-                <span>{featured.category}</span>
-                <span style={{ color: 'var(--c-rule)' }}>·</span>
-                <span>{featured.publishedDate}</span>
-              </div>
-              <h3 className="mt-3 font-bengali text-[26px] leading-[1.15] md:text-[34px]" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>
-                {featured.title}
-              </h3>
-              <p className="mt-3 font-bengali text-[15px] leading-[1.75]" style={{ color: 'var(--c-ink-2)' }}>
-                {featured.content.replace(/<[^>]+>/g, '').trim().slice(0, 180)}…
-              </p>
-              <Link to={`/events/${featured.id}`} className="mt-5 inline-flex items-center gap-2 font-bengali text-[14px] font-semibold" style={{ color: 'var(--c-brand)' }}>
-                {bn ? 'পুরো গল্প পড়ুন' : 'Read full story'} <Icon.Arrow className="h-3.5 w-3.5" />
-              </Link>
-            </article>
-          </Reveal>
 
-          <Reveal direction="right" className="flex flex-col divide-y lg:col-span-5" style={{ borderColor: 'var(--c-rule)' }}>
-            {rest.map((post, i) => (
-              <article key={post.id} className={`group flex gap-5 ${i === 0 ? 'pb-7' : 'py-7'}`}>
-                <div className="w-28 flex-shrink-0 overflow-hidden rounded-[3px] sm:w-36">
-                  <img src={post.featuredImage || FALLBACK} alt={post.title} className="aspect-square h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]" onError={onImgErr} loading="lazy" />
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12 items-stretch">
+          {/* Featured Large News Card */}
+          <div className="lg:col-span-7 flex flex-col">
+            <Link
+              to="/events"
+              className="group flex flex-col h-full overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:border-amber-400"
+              style={{ borderColor: RULE }}
+            >
+              <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100 flex-shrink-0">
+                <img
+                  src="/assets/images/service/post-15-mental-care-home.jpg"
+                  alt="Free Health Camp"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  onError={onImgErr}
+                />
+                <div className="absolute left-4 top-4 flex items-center gap-2">
+                  <span className="rounded-full px-3 py-1 text-xs font-bold text-white shadow-md" style={{ background: BRAND }}>
+                    Featured Event
+                  </span>
+                  <span className="rounded-full bg-black/60 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white">
+                    May 20, 2026
+                  </span>
                 </div>
-                <div className="flex flex-1 flex-col">
-                  <div className="font-mono text-[10.5px] uppercase tracking-[0.18em]" style={{ color: 'var(--c-brand)' }}>{post.category}</div>
-                  <h4 className="mt-2 font-bengali text-[17px] leading-snug" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>{post.title}</h4>
-                  <p className="mt-2 line-clamp-2 font-bengali text-[13px] leading-relaxed" style={{ color: 'var(--c-ink-2)' }}>
-                    {post.content.replace(/<[^>]+>/g, '').trim().slice(0, 110)}…
+              </div>
+
+              <div className="flex flex-1 flex-col justify-between p-6 sm:p-7">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-bold tracking-wide uppercase text-amber-700">
+                    <FaRegCalendarDays className="h-3.5 w-3.5 text-[#c2410c]" />
+                    <span>Healthcare Initiative • Narajole</span>
+                  </div>
+                  <h3 className="mt-2.5 font-sans text-xl sm:text-2xl font-bold leading-tight text-slate-900 transition-colors group-hover:text-[#c2410c]">
+                    Free Health Check-up Camp Held in Narajole
+                  </h3>
+                  <p className="mt-2.5 font-sans text-sm sm:text-base leading-relaxed text-slate-600">
+                    Our free health check-up camp benefitted over 120 villagers with doctor consultations, diagnostic checkups, and free medicines. Thank you to all healthcare volunteers and community donors.
                   </p>
                 </div>
-              </article>
-            ))}
-            <Link to="/events" className="group flex items-center justify-between pt-6">
-              <div className="font-bengali text-[18px]" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>
-                {bn ? 'সকল খবর ও ইভেন্ট →' : 'All news & events →'}
+
+                <div className="mt-5 flex items-center gap-2 font-sans text-sm font-bold text-[#c2410c] group-hover:translate-x-1 transition-transform">
+                  <span>Read full story</span>
+                  <FaArrowRight className="h-3.5 w-3.5" />
+                </div>
               </div>
-              <Icon.Arrow className="h-5 w-5 transition-transform group-hover:translate-x-1" style={{ color: 'var(--c-brand)' }} />
             </Link>
-          </Reveal>
+          </div>
+
+          {/* Right Column: 5 Compact News Items filling full height perfectly aligned with left card */}
+          <div className="lg:col-span-5 flex flex-col justify-between space-y-3 lg:space-y-0 h-full">
+            {newsItems.map((item, idx) => (
+              <Link
+                key={idx}
+                to="/events"
+                className="group flex gap-3.5 rounded-xl border bg-white p-3 sm:p-3.5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 hover:-translate-y-0.5"
+                style={{ borderColor: RULE }}
+              >
+                <div className="relative h-18 w-22 sm:h-20 sm:w-26 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                  <img
+                    src={item.img}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    onError={onImgErr}
+                  />
+                </div>
+
+                <div className="flex flex-1 flex-col justify-center min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 border border-amber-200/60 truncate">
+                      {item.cat}
+                    </span>
+                    <span className="text-[11px] font-medium text-slate-400 shrink-0">
+                      {item.date}
+                    </span>
+                  </div>
+
+                  <h4 className="mt-1 font-sans text-xs sm:text-sm font-bold leading-snug text-slate-900 line-clamp-1 transition-colors group-hover:text-[#c2410c]">
+                    {item.title}
+                  </h4>
+
+                  <p className="mt-0.5 font-sans text-[11px] sm:text-xs text-slate-500 line-clamp-1 leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-// ─────────────────── 7. TESTIMONIALS ───────────────────
-function Testimonials() {
+// ─────────────────── 7. VOICES OF OUR COMMUNITY ───────────────────
+function TestimonialsSection() {
   const { lang } = useT();
   const bn = lang === 'bn';
+
+  const testimonials = [
+    {
+      quote: bn
+        ? 'ছাত্রদল সংস্থাটি কঠিন সময়ে সর্বদা আমাদের পাশে দাঁড়িয়েছে। তাদের সামাজিক প্রচেষ্টা সত্যিই প্রশংসনীয়।'
+        : 'Chhatradol SWO has always supported us in difficult times. Their efforts are truly inspiring.',
+      author: 'Ajit Halder',
+      role: bn ? 'উপকারভোগী' : 'Beneficiary',
+      avatar: '/assets/images/testimonials/ajit_halder.jpg',
+    },
+    {
+      quote: bn
+        ? 'শিক্ষা সহায়তা কর্মসূচির ফলে আমার সন্তান পড়াশোনা চালিয়ে যেতে পেরেছে। ধন্যবাদ ছাত্রদল।'
+        : 'The education support program helped my child continue studies. Thank you Chhatradol SWO!',
+      author: 'Mili Samanta',
+      role: bn ? 'অভিভাবক' : 'Parent',
+      avatar: '/assets/images/testimonials/mili_samanta.jpg',
+    },
+    {
+      quote: bn
+        ? 'এখানে স্বেচ্ছাসেবক হিসেবে কাজ করে আমি মানবসেবার প্রকৃত অর্থ বুঝতে পেরেছি।'
+        : 'Being a volunteer here taught me the true meaning of service and humanity.',
+      author: 'Ratan Maity',
+      role: bn ? 'স্বেচ্ছাসেবক' : 'Volunteer',
+      avatar: '/assets/images/testimonials/ratan_maity.jpg',
+    },
+  ];
+
   return (
-    <section style={{ background: 'var(--c-paper)' }}>
-      <div className="mx-auto max-w-[1320px] px-6 py-28 md:px-10">
+    <section className="bg-white py-20">
+      <div className="mx-auto max-w-[1340px] px-6 md:px-10">
         <Reveal>
           <SectionHeader
-            eyebrow="Voices from the Community"
-            title={bn ? 'তাঁদের কথায়' : 'In their words'}
-            kicker={bn ? 'যাঁদের জীবনে পরিবর্তন এসেছে — তাঁদের অভিজ্ঞতা।' : 'Experiences of those whose lives have changed.'}
+            title={bn ? 'আমাদের মানুষের অভিজ্ঞতা' : 'Voices of Our Community'}
+            subtitle={bn ? 'যাঁদের জীবন ছুঁয়েছে আমাদের ভালোবাসা।' : "Hear from the people whose lives we've touched."}
+            linkTo="/about"
+            linkText={bn ? 'সকল অভিজ্ঞতা দেখুন' : 'View all testimonials'}
           />
         </Reveal>
-        <RevealStagger className="grid grid-cols-1 gap-px md:grid-cols-3" style={{ background: 'var(--c-rule)' } as React.CSSProperties}>
-          {TESTIMONIALS.map((t) => (
-            <article key={t.author.bn} className="card-lift group flex flex-col gap-6 p-8" style={{ background: 'var(--c-paper)' }}>
-              <Icon.Quote className="h-9 w-9" style={{ color: 'var(--c-brand)' }} />
-              <blockquote className="flex-1 font-bengali text-[16px] italic leading-[1.8]" style={{ color: 'var(--c-ink)' }}>
-                {t.quote[lang]}
-              </blockquote>
-              <div className="flex items-center gap-3 border-t pt-5" style={{ borderColor: 'var(--c-rule)' }}>
-                <div className="flex h-11 w-11 items-center justify-center rounded-full font-bengali text-[14px] font-semibold transition-transform duration-300 group-hover:scale-110" style={{ background: 'var(--c-brand)', color: '#fff' }}>
-                  {t.author[lang].charAt(0)}
-                </div>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {testimonials.map((t, idx) => (
+            <div
+              key={idx}
+              className="flex flex-col justify-between rounded-2xl border p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              style={{ background: BG_CREAM, borderColor: RULE }}
+            >
+              <div>
+                <FaQuoteLeft className="h-8 w-8 opacity-80" style={{ color: BRAND }} />
+                <p className="mt-4 font-bengali text-sm leading-relaxed italic" style={{ color: INK }}>
+                  "{t.quote}"
+                </p>
+              </div>
+
+              <div className="mt-6 flex items-center gap-3.5 border-t pt-5" style={{ borderColor: RULE }}>
+                <img
+                  src={t.avatar}
+                  alt={t.author}
+                  className="h-11 w-11 rounded-full object-cover border-2"
+                  style={{ borderColor: BRAND }}
+                  onError={onImgErr}
+                />
                 <div>
-                  <div className="font-bengali text-[16px]" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>{t.author[lang]}</div>
-                  <div className="font-bengali text-[12.5px]" style={{ color: 'var(--c-muted)' }}>{t.role[lang]}</div>
+                  <h4 className="font-bengali text-base font-bold" style={{ color: INK }}>{t.author}</h4>
+                  <span className="font-bengali text-xs text-slate-500">{t.role}</span>
                 </div>
               </div>
-            </article>
+            </div>
           ))}
-        </RevealStagger>
+        </div>
       </div>
     </section>
   );
 }
 
 // ─────────────────── 8. CTA BANNER ───────────────────
-function CtaBanner() {
+function CtaBannerSection() {
   const { lang } = useT();
   const bn = lang === 'bn';
+
   return (
-    <Reveal>
-      <section className="relative overflow-hidden" style={{ background: 'var(--c-brand)' }}>
-        {/* Radial glow */}
-        <div className="absolute right-0 top-0 h-[400px] w-[400px] rounded-full opacity-20" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)', transform: 'translate(30%, -30%)' }} />
-        <div className="mx-auto max-w-[1320px] px-6 py-20 md:px-10">
-          <div className="flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between">
+    <div className="mx-auto max-w-[1340px] px-6 py-10 md:px-10">
+      <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 shadow-xl" style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_LIGHT} 50%, ${BRAND} 100%)` }}>
+        <div className="flex flex-col items-center justify-between gap-8 md:flex-row text-white">
+          <div className="flex items-center gap-6">
+            <div className="hidden h-16 w-16 items-center justify-center rounded-2xl bg-white/20 sm:flex">
+              <FaUserGroup className="h-8 w-8 text-white" />
+            </div>
             <div>
-              <h2 className="font-bengali text-[34px] leading-tight text-white md:text-[48px]" style={SERIF_BN}>
-                {bn ? 'পরিবর্তনের অংশ হোন।' : 'Be part of the change.'}
+              <h2 className="font-bengali text-3xl font-extrabold md:text-4xl">
+                {bn ? 'পরিবর্তনের অংশ হোন' : 'Be Part of the Change'}
               </h2>
-              <p className="mt-3 font-bengali text-[16px] leading-relaxed text-white/80">
+              <p className="mt-2 font-bengali text-sm md:text-base opacity-90">
                 {bn
-                  ? 'আপনার সময়, দক্ষতা বা অনুদান — যেকোনো উপায়ে আপনিও পারেন পরিবর্তন আনতে।'
-                  : 'Your time, skills or donation — in any way, you can bring change too.'}
+                  ? 'আপনার একটি ছোট সাহায্য কারো জীবনে বড় পরিবর্তন আনতে পারে।'
+                  : 'Your small help can bring a big change in someone\'s life.'}
               </p>
             </div>
-            <div className="flex flex-shrink-0 flex-wrap gap-3">
-              <Link to="/donate" className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-bengali text-[14px] font-semibold transition-all hover:-translate-y-[1px]" style={{ background: '#fff', color: 'var(--c-brand)' }}>
-                {bn ? 'অনুদান দিন' : 'Donate'} <Icon.Arrow className="h-3.5 w-3.5" />
-              </Link>
-              <Link to="/volunteer" className="inline-flex items-center rounded-full border-2 border-white/40 px-7 py-3.5 font-bengali text-[14px] font-semibold text-white transition-all hover:border-white/70 hover:-translate-y-[1px]">
-                {bn ? 'স্বেচ্ছাসেবক' : 'Volunteer'}
-              </Link>
-            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-4">
+            <Link
+              to="/donate"
+              className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-bengali text-sm font-bold text-white shadow-md transition-all hover:bg-black"
+              style={{ background: INK }}
+            >
+              {bn ? 'দান করুন ❤' : 'Donate Now ❤'}
+            </Link>
+            <Link
+              to="/volunteer"
+              className="inline-flex items-center gap-2 rounded-full border-2 border-white px-7 py-3.5 font-bengali text-sm font-bold text-white transition-all hover:bg-white hover:text-[#c2410c]"
+            >
+              {bn ? 'আমাদের সাথে যুক্ত হোন 💛' : 'Volunteer with Us 💛'}
+            </Link>
           </div>
         </div>
-      </section>
-    </Reveal>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────── 9. GET INVOLVED SECTION ───────────────────
+function GetInvolvedCardsSection() {
+  const { lang } = useT();
+  const bn = lang === 'bn';
+
+  const cards = [
+    {
+      icon: FaHeart,
+      iconBg: 'bg-orange-100 text-orange-700',
+      title: bn ? 'অনলাইনে দান করুন' : 'Donate',
+      desc: bn
+        ? 'আপনার আর্থিক সহায়তা আমাদের মিশন পরিচালনা ও অসহায় মানুষের পাশে দাঁড়াতে সাহায্য করে।'
+        : 'Your donation helps us continue our mission and support more people in need.',
+      linkText: bn ? 'দান করুন ➔' : 'Donate Now ➔',
+      to: '/donate',
+    },
+    {
+      icon: FaUserGroup,
+      iconBg: 'bg-amber-100 text-amber-700',
+      title: bn ? 'স্বেচ্ছাসেবক হোন' : 'Volunteer',
+      desc: bn
+        ? 'আমাদের মেধা ও সময় দিয়ে সমাজে প্রত্যক্ষ প্রভাব ফেলতে দলে যোগ দিন।'
+        : 'Join our team of volunteers and make a direct impact in your community.',
+      linkText: bn ? 'যুক্ত হোন ➔' : 'Join Us ➔',
+      to: '/volunteer',
+    },
+    {
+      icon: FaHandshake,
+      iconBg: 'bg-teal-100 text-teal-700',
+      title: bn ? 'অংশীদার হোন' : 'Partner With Us',
+      desc: bn
+        ? 'প্রতিষ্ঠান ও সংস্থার সাথে যৌথভাবে সমাজে দীর্ঘমেয়াদী কাজ গড়ে তুলুন।'
+        : 'Partner with organizations and help us reach more communities.',
+      linkText: bn ? 'যোগাযোগ করুন ➔' : 'Partner With Us ➔',
+      to: '/contact',
+    },
+  ];
+
+  return (
+    <section className="py-20" style={{ background: BG_CREAM }}>
+      <div className="mx-auto max-w-[1340px] px-6 md:px-10">
+        <Reveal>
+          <div className="mb-10 text-left">
+            <h2 className="font-bengali text-3xl font-bold md:text-4xl" style={{ color: INK }}>
+              {bn ? 'অংশগ্রহণ করুন' : 'Get Involved'}
+            </h2>
+            <p className="mt-2 font-bengali text-sm md:text-base" style={{ color: '#57534e' }}>
+              {bn ? 'আমাদের কাজে সহযাত্রী হওয়ার বিভিন্ন উপায় রয়েছে।' : 'There are many ways you can contribute.'}
+            </p>
+          </div>
+        </Reveal>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {cards.map((c, idx) => {
+            const CIcon = c.icon;
+            return (
+              <div
+                key={idx}
+                className="group flex flex-col justify-between rounded-2xl border bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl"
+                style={{ borderColor: RULE }}
+              >
+                <div>
+                  <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${c.iconBg}`}>
+                    <CIcon className="h-6 w-6" />
+                  </div>
+                  <h3 className="mt-5 font-bengali text-xl font-bold transition-colors group-hover:text-[#c2410c]" style={{ color: INK }}>
+                    {c.title}
+                  </h3>
+                  <p className="mt-2 font-bengali text-sm leading-relaxed" style={{ color: '#57534e' }}>
+                    {c.desc}
+                  </p>
+                </div>
+
+                <Link
+                  to={c.to}
+                  className="mt-6 inline-flex items-center gap-1.5 font-bengali text-sm font-bold transition-colors"
+                  style={{ color: BRAND }}
+                >
+                  {c.linkText}
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 
 // ════════════════════════════════════════════════════════════════════
 export default function Home() {
   return (
-    <PageShell>
+    <div className="min-h-screen font-sans" style={{ background: BG_CREAM }}>
       <Hero />
-      <Ticker />
-      <Mission />
-      <Impact />
-      <ProgramsGrid />
-      <FeaturedStory />
-      <Latest />
-      <Testimonials />
-      <CtaBanner />
-      <GetInvolvedSection />
-    </PageShell>
+      <CoreValuesBar />
+      <ImpactSection />
+      <KeyProgramsSection />
+      <MissionSpotlight />
+      <LatestNewsSection />
+      <TestimonialsSection />
+      <CtaBannerSection />
+      <GetInvolvedCardsSection />
+    </div>
   );
 }

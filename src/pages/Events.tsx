@@ -86,31 +86,7 @@ export default function Events() {
 
   return (
     <PageShell>
-      {/* ════ HERO + STATS ════ */}
-      <section style={{ background: FJ.bg }}>
-        <div className="mx-auto grid max-w-[1320px] grid-cols-12 items-center gap-8 px-6 pb-10 pt-14 md:px-10 md:pt-20">
-          <div className="col-span-12 lg:col-span-7">
-            <div className="font-mono text-[11px] uppercase tracking-[0.22em]" style={{ color: FJ.brand }}>
-              {tr('Our Programmes & Events', 'আমাদের কর্মসূচি ও অনুষ্ঠান')}
-            </div>
-            <h1 className="mt-3 font-bengali text-[40px] leading-[1.05] md:text-[56px]" style={{ ...SERIF_BN, color: FJ.ink }}>
-              {t('events.heroTitle')}
-            </h1>
-            <p className="mt-5 max-w-xl font-bengali text-[16px] leading-[1.7]" style={{ color: FJ.ink2 }}>
-              {t('events.heroLede')}
-            </p>
-          </div>
 
-          <div className="col-span-12 lg:col-span-5">
-            <div className="grid grid-cols-2 gap-4 rounded-[16px] p-6 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4" style={{ background: FJ.paper, border: `1px solid ${FJ.rule}`, boxShadow: '0 12px 32px -16px rgba(28,25,23,0.18)' }}>
-              <HeroStat icon={Icon.Award}   n={`${Math.max(posts.length, 40)}+`} label={tr('Programmes', 'কর্মসূচি')} />
-              <HeroStat icon={Icon.Droplet} n="25+"  label={tr('Blood Camps', 'রক্তদান শিবির')} />
-              <HeroStat icon={Icon.Users}   n="7"    label={tr('Years of Service', 'বছরের সেবা')} />
-              <HeroStat icon={Icon.Grad}    n="500+" label={tr('Beneficiaries', 'উপকারভোগী')} />
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ════ FEATURED ════ */}
       {featured && safePage === 1 && (
@@ -334,14 +310,4 @@ export default function Events() {
   );
 }
 
-function HeroStat({ icon: I, n, label }: { icon: typeof Icon.Heart; n: string; label: string }) {
-  return (
-    <div className="flex flex-col items-center text-center">
-      <span className="flex h-11 w-11 items-center justify-center rounded-full" style={{ background: 'rgba(194,65,12,0.08)' }}>
-        <I className="h-4 w-4" style={{ color: FJ.brand }} />
-      </span>
-      <span className="mt-2 font-bengali text-[22px] font-extrabold leading-none" style={{ ...SERIF_BN, color: FJ.ink }}>{n}</span>
-      <span className="mt-1 font-bengali text-[11.5px] leading-tight" style={{ color: FJ.ink2 }}>{label}</span>
-    </div>
-  );
-}
+
