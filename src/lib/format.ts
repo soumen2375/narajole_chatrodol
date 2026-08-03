@@ -19,10 +19,25 @@ export function monthNames(lang: Lang): string[] {
   return MONTHS[lang];
 }
 
-export function formatDate(dateStr: string, lang: Lang): string {
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return dateStr;
-  return `${digits(d.getDate(), lang)} ${MONTHS[lang][d.getMonth()]}, ${digits(d.getFullYear(), lang)}`;
+export function formatDate(dateStr: string | null | undefined, lang: Lang): string {
+  if (!dateStr) return '';
+  const str = String(dateStr).trim();
+
+  // If date-only format YYYY-MM-DD, parse directly to avoid UTC timezone shifts
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [year, month, day] = str.split('-').map(Number);
+    return `${digits(day, lang)} ${MONTHS[lang][month - 1]}, ${digits(year, lang)}`;
+  }
+
+  const d = new Date(str);
+  if (Number.isNaN(d.getTime())) return str;
+
+  // Use local date methods
+  const day = d.getDate();
+  const month = d.getMonth();
+  const year = d.getFullYear();
+
+  return `${digits(day, lang)} ${MONTHS[lang][month]}, ${digits(year, lang)}`;
 }
 
 export function formatCurrency(amount: number, lang: Lang): string {

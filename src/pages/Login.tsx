@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/i18n';
-import { ORG } from '@/data/content';
 import { supabase } from '@/lib/supabase';
 
 import Breadcrumb from '@/components/ui/Breadcrumb';
@@ -17,7 +16,7 @@ const MUTED  = '#78716c';
 
 export default function Login() {
   const { signIn } = useAuth();
-  const { t } = useT();
+  const { t, lang } = useT();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -212,39 +211,6 @@ export default function Login() {
               </div>
             </div>
           )}
-
-          {/* Nav links - showing full header menu */}
-          <div className="mt-8 border-t pt-6" style={{ borderColor: RULE }}>
-            <p className="mb-3 text-center font-mono text-[9.5px] uppercase tracking-[0.22em]" style={{ color: MUTED }}>
-              {lang === 'bn' ? 'পেজগুলি' : 'Navigation'}
-            </p>
-            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-              {[
-                { to: '/', label: lang === 'bn' ? 'হোম' : 'Home' },
-                { to: '/about', label: lang === 'bn' ? 'আমাদের সম্পর্কে' : 'About' },
-                { to: '/events', label: lang === 'bn' ? 'অনুষ্ঠান' : 'Events' },
-                { to: '/gallery', label: lang === 'bn' ? 'গ্যালারি' : 'Gallery' },
-                { to: '/contact', label: lang === 'bn' ? 'যোগাযোগ' : 'Contact' },
-                { to: '/volunteer', label: lang === 'bn' ? 'স্বেচ্ছাসেবক' : 'Volunteer' },
-                { to: '/donate', label: lang === 'bn' ? 'অনুদান' : 'Donate' },
-              ].map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="font-mono text-[10.5px] uppercase tracking-[0.14em] transition-opacity hover:opacity-70"
-                  style={{ color: MUTED }}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <p className="mt-4 text-center font-mono text-[11px] uppercase tracking-[0.18em]">
-            <Link to="/" style={{ color: MUTED }} className="transition-colors hover:opacity-70">
-              ← {t('common.backToHome')}
-            </Link>
-          </p>
         </div>
       </div>
     </div>

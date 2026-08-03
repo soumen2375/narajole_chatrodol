@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/i18n';
-import { ORG } from '@/data/content';
 
 import Breadcrumb from '@/components/ui/Breadcrumb';
 
@@ -17,7 +16,7 @@ const ADMIN_DARK = '#0f172a'; // dark navy for admin accent
 
 export default function AdminLogin() {
   const { signIn, signOut } = useAuth();
-  const { t } = useT();
+  const { t, lang } = useT();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -119,12 +118,6 @@ export default function AdminLogin() {
               {lang === 'bn' ? 'সদস্য লগইন পেজে যান' : 'Go to Member Login'}
             </Link>
           </div>
-
-          <p className="mt-6 text-center font-mono text-[11px] uppercase tracking-[0.18em]">
-            <Link to="/" style={{ color: MUTED }} className="transition-colors hover:opacity-70">
-              ← {t('common.backToHome')}
-            </Link>
-          </p>
         </div>
       </div>
     </div>

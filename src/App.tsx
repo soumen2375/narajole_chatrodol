@@ -72,6 +72,14 @@ const AdminReports = lazy(() => import('@/pages/admin/AdminReports'));
 const AdminGrants = lazy(() => import('@/pages/admin/AdminGrants'));
 const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'));
 const AdminBloodDonors = lazy(() => import('@/pages/admin/AdminBloodDonors'));
+const AdminMediaLibrary = lazy(() => import('@/pages/admin/AdminMediaLibrary'));
+
+// CMS
+const AdminCMSDashboard = lazy(() => import('@/pages/admin/cms/AdminCMSDashboard'));
+const AdminCMSEditor = lazy(() => import('@/pages/admin/cms/AdminCMSEditor'));
+const AdminCMSApprovals = lazy(() => import('@/pages/admin/cms/AdminCMSApprovals'));
+const AdminCMSAnalytics = lazy(() => import('@/pages/admin/cms/AdminCMSAnalytics'));
+const AdminCMSTags = lazy(() => import('@/pages/admin/cms/AdminCMSTags'));
 
 import { EnglishI18nProvider } from '@/i18n';
 
@@ -127,6 +135,13 @@ export default function App() {
 
             {/* Dynamic Capability-Guarded Sub-Routes inside Member Panel */}
             <Route path="posts-manage" element={<ProtectedRoute require="canManagePosts"><AdminPosts /></ProtectedRoute>} />
+            <Route path="cms" element={<ProtectedRoute require="canManagePosts"><AdminCMSDashboard /></ProtectedRoute>} />
+            <Route path="cms/new" element={<ProtectedRoute require="canManagePosts"><AdminCMSEditor /></ProtectedRoute>} />
+            <Route path="cms/:id/edit" element={<ProtectedRoute require="canManagePosts"><AdminCMSEditor /></ProtectedRoute>} />
+            <Route path="cms/approvals" element={<ProtectedRoute require="canManagePosts"><AdminCMSApprovals /></ProtectedRoute>} />
+            <Route path="cms/analytics" element={<ProtectedRoute require="canManagePosts"><AdminCMSAnalytics /></ProtectedRoute>} />
+            <Route path="cms/tags" element={<ProtectedRoute require="canManagePosts"><AdminCMSTags /></ProtectedRoute>} />
+            <Route path="media" element={<ProtectedRoute require="canManagePosts"><AdminMediaLibrary /></ProtectedRoute>} />
             <Route path="categories" element={<ProtectedRoute require="canManagePosts"><AdminCategories /></ProtectedRoute>} />
             <Route path="gallery-manage" element={<ProtectedRoute require="canManagePosts"><AdminGallery /></ProtectedRoute>} />
             
@@ -171,6 +186,13 @@ export default function App() {
             <Route path="members" element={<AdminMembers />} />
             <Route path="members/:id" element={<AdminMemberDetail />} />
             <Route path="posts" element={<AdminPosts />} />
+            <Route path="cms" element={<AdminCMSDashboard />} />
+            <Route path="cms/new" element={<AdminCMSEditor />} />
+            <Route path="cms/:id/edit" element={<AdminCMSEditor />} />
+            <Route path="cms/approvals" element={<AdminCMSApprovals />} />
+            <Route path="cms/analytics" element={<AdminCMSAnalytics />} />
+            <Route path="cms/tags" element={<AdminCMSTags />} />
+            <Route path="media" element={<AdminMediaLibrary />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="gallery" element={<AdminGallery />} />
             <Route path="event-dashboard" element={<AdminEventsDashboard />} />

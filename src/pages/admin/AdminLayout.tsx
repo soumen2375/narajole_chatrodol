@@ -1,7 +1,6 @@
 import {
   LayoutDashboard,
   Users,
-  FileText,
   FolderOpen,
   Images,
   CalendarDays,
@@ -22,7 +21,11 @@ import {
   FileCheck,
   Mail,
   ShieldCheck,
-  Droplet
+  Droplet,
+  HardDrive,
+  Layers,
+  CheckCircle2,
+  Tag,
 } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -45,10 +48,14 @@ export default function AdminLayout() {
 
     // ── Digital Media ─────────────────────────────────────────────────
     ...(isAdmin || canManagePosts ? [
-      { to: '/admin/posts',      label: t('a.posts'),      icon: FileText,
+      { to: '/admin/cms',           label: 'All Content',    icon: Layers,
         sectionLabel: isAdmin ? tr('Content', 'কন্টেন্ট') : tr('Digital Media', 'ডিজিটাল মিডিয়া') } as NavItem,
-      { to: '/admin/categories', label: t('a.categories'), icon: FolderOpen } as NavItem,
-      { to: '/admin/gallery',    label: t('a.gallery'),    icon: Images } as NavItem,
+      { to: '/admin/cms/approvals', label: 'Review Queue',   icon: CheckCircle2 } as NavItem,
+      { to: '/admin/cms/analytics', label: 'Analytics',      icon: BarChart3 } as NavItem,
+      { to: '/admin/cms/tags',      label: 'Tags Manager',   icon: Tag } as NavItem,
+      { to: '/admin/media',         label: 'Media Library',  icon: HardDrive } as NavItem,
+      { to: '/admin/categories',    label: t('a.categories'), icon: FolderOpen } as NavItem,
+      { to: '/admin/gallery',       label: t('a.gallery'),    icon: Images } as NavItem,
     ] : []),
 
     // ── Secretary / Events ────────────────────────────────────────────

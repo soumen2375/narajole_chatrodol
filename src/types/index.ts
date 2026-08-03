@@ -6,6 +6,28 @@ export type AttendanceStatus = 'present' | 'absent' | 'volunteered';
 export type PaymentStatus = 'created' | 'paid' | 'failed' | 'refunded';
 export type ContributionStatus = 'paid' | 'unpaid' | 'pending';
 
+// ── CMS Content Types ──────────────────────────────────────────────────────────
+export type PostType =
+  | 'general' | 'news' | 'blog' | 'story' | 'notice'
+  | 'press_release' | 'program' | 'project' | 'campaign'
+  | 'volunteer_story' | 'document' | 'report' | 'event';
+
+export const POST_TYPE_LABELS: Record<PostType, string> = {
+  general: 'General', news: 'News', blog: 'Blog', story: 'Story',
+  notice: 'Notice', press_release: 'Press Release', program: 'Program',
+  project: 'Project', campaign: 'Campaign', volunteer_story: 'Volunteer Story',
+  document: 'Document', report: 'Report', event: 'Event',
+};
+
+export const POST_TYPE_ICONS: Record<PostType, string> = {
+  general: '', news: '', blog: '', story: '', notice: '',
+  press_release: '', program: '', project: '', campaign: '',
+  volunteer_story: '', document: '', report: '', event: '',
+};
+
+export type PostVisibility = 'public' | 'members' | 'private';
+export type ComputedEventStatus = 'upcoming' | 'ongoing' | 'past';
+
 export interface Member {
   id: string;
   full_name: string;
@@ -57,6 +79,80 @@ export interface CswoPost {
   share_snippet: string | null;
   created_at: string;
   updated_at: string;
+  // CMS Phase 1 extensions
+  post_type: PostType;
+  visibility: PostVisibility;
+  excerpt: string | null;
+  reading_time: number;
+  view_count: number;
+  language: string;
+  deleted_at: string | null;
+  canonical_url: string | null;
+}
+
+export interface CswoPostRevision {
+  id: string;
+  post_id: string;
+  version: number;
+  snapshot: Partial<CswoPost>;
+  saved_by: string | null;
+  saved_at: string;
+  // joined
+  saved_by_name?: string | null;
+}
+
+export interface CswoTag {
+  id: string;
+  name: string;
+  slug: string;
+  usage_count: number;
+  created_at: string;
+}
+
+export interface CswoMedia {
+  id: string;
+  folder_id: string | null;
+  filename: string;
+  file_url: string;
+  storage_path: string | null;
+  mime_type: string | null;
+  size_bytes: number | null;
+  width: number | null;
+  height: number | null;
+  alt_text: string;
+  caption: string;
+  uploaded_by: string | null;
+  created_at: string;
+}
+
+export interface CswoMediaFolder {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  sort_order: number;
+  created_at: string;
+  created_by: string | null;
+}
+
+export type ApprovalAction = 'submitted' | 'approved' | 'rejected' | 'changes_requested';
+
+export interface CswoPostApproval {
+  id: string;
+  post_id: string;
+  reviewer_id: string | null;
+  action: ApprovalAction;
+  notes: string;
+  created_at: string;
+  // joined
+  reviewer_name?: string | null;
+  post_title?: string | null;
+}
+
+export interface CswoPostAnalytics {
+  id: string;
+  post_id: string;
+  view_date: string;
+  view_count: number;
 }
 
 export interface CswoCategory {
@@ -70,6 +166,17 @@ export interface CswoCategory {
 
 export type EventStatus = 'draft' | 'planned' | 'approved' | 'live' | 'completed' | 'cancelled';
 export interface CswoEvent {
+  // CMS Phase 1 event extensions (injected before end of interface)
+  post_id?: string | null;
+  registration_link?: string | null;
+  capacity?: number | null;
+  registration_deadline?: string | null;
+  is_free?: boolean;
+  price?: number | null;
+  banner_image?: string | null;
+  timezone?: string;
+  organizer?: string | null;
+  computed_status?: ComputedEventStatus;
   id: string;
   title: string;
   description: string | null;
