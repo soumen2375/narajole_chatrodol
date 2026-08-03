@@ -33,6 +33,8 @@ const FOCUS_AREAS = {
   ],
 };
 
+import Breadcrumb from '@/components/ui/Breadcrumb';
+
 export default function Programs() {
   const { lang, t } = useT();
   const bn = lang === 'bn';
@@ -40,6 +42,7 @@ export default function Programs() {
 
   return (
     <PageShell>
+      <Breadcrumb title="Our Programs" />
       <PageHero
         eyebrow={bn ? 'Programs · কর্মসূচি' : 'Programs · What We Do'}
         title={bn

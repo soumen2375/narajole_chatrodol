@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { PageShell, SERIF_BN, Icon, FJ } from './_field-journal';
 import { startRazorpayPayment } from '@/lib/razorpay';
 import { useT } from '@/i18n';
+import Breadcrumb from '@/components/ui/Breadcrumb';
 
 // ════════════════════════════════════════════════════════════════════
 //  Donate — অনুদান দিন  (conversion-focused donation page)
@@ -112,6 +113,7 @@ export default function Donate() {
 
   return (
     <PageShell>
+      <Breadcrumb title="Donate & Support" />
       {/* ════ HERO ════ */}
       <section style={{ background: FJ.bg }}>
         <div className="mx-auto grid max-w-[1320px] grid-cols-12 items-center gap-8 px-6 pb-10 pt-12 md:px-10 md:pt-16">

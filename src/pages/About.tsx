@@ -14,12 +14,15 @@ const VALUE_ICONS: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> = {
   Handshake: Icon.Hands, CheckCircle: Icon.Check,
 };
 
+import Breadcrumb from '@/components/ui/Breadcrumb';
+
 export default function About() {
   const { lang } = useT();
   const bn = lang === 'bn';
 
   return (
     <PageShell>
+      <Breadcrumb title="About Us" />
       <PageHero
         eyebrow={bn ? 'About · আমাদের কথা' : 'About · Our Story'}
         title={bn

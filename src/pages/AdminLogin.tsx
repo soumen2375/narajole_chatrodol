@@ -4,7 +4,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/i18n';
 import { ORG } from '@/data/content';
 
-const SERIF_BN = { fontFamily: '"Noto Serif Bengali", "Noto Sans Bengali", serif' };
+import Breadcrumb from '@/components/ui/Breadcrumb';
+
+const SERIF_BN = { fontFamily: '"Noto Serif", Georgia, serif' };
 const INK    = '#1c1917';
 const CREAM  = '#faf6ef';
 const BRAND  = '#c2410c';
@@ -15,7 +17,7 @@ const ADMIN_DARK = '#0f172a'; // dark navy for admin accent
 
 export default function AdminLogin() {
   const { signIn, signOut } = useAuth();
-  const { t, lang } = useT();
+  const { t } = useT();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,9 +31,7 @@ export default function AdminLogin() {
     try {
       const m = await signIn(email, password);
       if (m.role !== 'admin') {
-        setError(lang === 'bn'
-          ? 'এই পেজটি শুধুমাত্র অ্যাডমিনদের জন্য। সদস্য লগইনের জন্য সদস্য লগইন পেজ ব্যবহার করুন।'
-          : 'This page is for administrators only. Please use the Member Login page instead.');
+        setError('This page is for administrators only. Please use the Member Login page instead.');
         await signOut();
         return;
       }
@@ -44,23 +44,11 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col" style={{ background: CREAM }}>
-      {/* Top strip — dark admin style */}
-      <div
-        className="flex items-center justify-between px-6 py-3"
-        style={{ background: ADMIN_DARK, borderBottom: `1px solid rgba(255,255,255,0.08)` }}
-      >
-        <Link to="/" className="flex items-center gap-2.5">
-          <img src="/assets/images/logo.png" alt="logo" className="h-9 w-9 rounded-full object-contain bg-white p-0.5" />
-          <div>
-            <span className="block text-[15px] font-bold" style={{ ...SERIF_BN, color: CREAM }}>{lang === 'en' ? ORG.shortEn : ORG.shortBn}</span>
-            <span className="block font-mono text-[9px] uppercase tracking-[0.22em]" style={{ color: 'rgba(255,255,255,0.45)' }}>Admin Portal</span>
-          </div>
-        </Link>
-      </div>
+    <div className="flex flex-col min-h-screen" style={{ background: CREAM }}>
+      <Breadcrumb title="Admin Login" />
 
       {/* Center card */}
-      <div className="flex flex-1 items-center justify-center px-4 py-12">
+      <div className="flex flex-1 items-center justify-center px-4 py-12 md:py-16">
         <div className="w-full max-w-md">
           <h1 className="font-bengali text-[36px] leading-tight" style={{ ...SERIF_BN, color: INK }}>
             {lang === 'bn' ? 'অ্যাডমিন লগইন' : 'Admin Login'}

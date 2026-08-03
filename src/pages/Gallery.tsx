@@ -6,6 +6,7 @@ import {
 import { useGallery } from '@/hooks/useGallery';
 import { useT } from '@/i18n';
 import { PageShell, SERIF_BN, Icon, FJ } from './_field-journal';
+import Breadcrumb from '@/components/ui/Breadcrumb';
 
 // ════════════════════════════════════════════════════════════════════
 //  Gallery — চিত্রশালা
@@ -87,6 +88,7 @@ export default function Gallery() {
 
   return (
     <PageShell>
+      <Breadcrumb title="Photo Gallery" />
 
       {/* ════ CINEMA SHOWCASE (top of page) ════ */}
       <section style={{ background: '#0d0c0a' }}>

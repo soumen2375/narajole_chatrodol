@@ -5,7 +5,9 @@ import { useT } from '@/i18n';
 import { ORG } from '@/data/content';
 import { supabase } from '@/lib/supabase';
 
-const SERIF_BN = { fontFamily: '"Noto Serif Bengali", "Noto Sans Bengali", serif' };
+import Breadcrumb from '@/components/ui/Breadcrumb';
+
+const SERIF_BN = { fontFamily: '"Noto Serif", Georgia, serif' };
 const INK    = '#1c1917';
 const CREAM  = '#faf6ef';
 const BRAND  = '#c2410c';
@@ -15,7 +17,7 @@ const MUTED  = '#78716c';
 
 export default function Login() {
   const { signIn } = useAuth();
-  const { t, lang } = useT();
+  const { t } = useT();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,13 +40,7 @@ export default function Login() {
       }
     } catch (err) {
       const m = err instanceof Error ? err.message : 'PAYMENT_FAILED';
-      // Translate internal error codes to user-friendly messages
-      const displayMsg = m === 'PAYMENT_FAILED'
-        ? (lang === 'bn'
-          ? 'পেমেন্ট গেটওয়ে লোড হয়নি। ইন্টারনেট সংযোগ চেক করুন।'
-          : 'Payment gateway could not load. Please check your internet connection.')
-        : m;
-      setError(displayMsg);
+      setError(m);
     } finally {
       setLoading(false);
     }
@@ -60,23 +56,11 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col" style={{ background: CREAM }}>
-      {/* Top strip */}
-      <div
-        className="flex items-center justify-between px-6 py-3"
-        style={{ background: BRAND, borderBottom: `1px solid rgba(255,255,255,0.12)` }}
-      >
-        <Link to="/" className="flex items-center gap-2.5">
-          <img src="/assets/images/logo.png" alt="logo" className="h-9 w-9 rounded-full object-contain bg-white p-0.5" />
-          <div>
-            <span className="block text-[15px] font-bold" style={{ ...SERIF_BN, color: CREAM }}>{lang === 'en' ? ORG.shortEn : ORG.shortBn}</span>
-            <span className="block font-mono text-[9px] uppercase tracking-[0.22em]" style={{ color: 'rgba(255,255,255,0.55)' }}>Member Portal</span>
-          </div>
-        </Link>
-      </div>
+    <div className="flex flex-col min-h-screen" style={{ background: CREAM }}>
+      <Breadcrumb title="Member Login" />
 
       {/* Center card */}
-      <div className="flex flex-1 items-center justify-center px-4 py-12">
+      <div className="flex flex-1 items-center justify-center px-4 py-12 md:py-16">
         <div className="w-full max-w-md">
           <h1 className="font-bengali text-[36px] leading-tight" style={{ ...SERIF_BN, color: INK }}>
             {lang === 'bn' ? 'সদস্য লগইন' : 'Member Login'}

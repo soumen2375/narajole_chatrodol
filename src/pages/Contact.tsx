@@ -4,6 +4,7 @@ import { ORG } from '@/data/content';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
 import { PageShell, PageHero, SERIF_BN, Icon } from './_field-journal';
+import Breadcrumb from '@/components/ui/Breadcrumb';
 
 type Status = 'idle' | 'sending' | 'sent' | 'error';
 
@@ -41,6 +42,7 @@ export default function Contact() {
 
   return (
     <PageShell>
+      <Breadcrumb title="Contact Us" />
       <PageHero
         eyebrow={bn ? 'যোগাযোগ' : 'Contact'}
         title={t('contact.heroTitle')}

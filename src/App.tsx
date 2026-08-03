@@ -96,14 +96,13 @@ export default function App() {
             <Route path="/donate" element={<Donate />} />
             <Route path="/blood-request" element={<BloodRequest />} />
             <Route path="/organise-blood-camp" element={<BloodCampApplication />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/refunds" element={<Refunds />} />
             <Route path="/shipping" element={<Shipping />} />
           </Route>
-
-          <Route path="/login" element={<Login />} />
-          <Route path="/admin-login" element={<AdminLogin />} />
 
           <Route
             path="/member"

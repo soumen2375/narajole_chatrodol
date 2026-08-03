@@ -4,6 +4,7 @@ import { usePosts } from '@/hooks/usePosts';
 import { useCategories } from '@/hooks/useCategories';
 import { useT } from '@/i18n';
 import { PageShell, SERIF_BN, Icon, FJ } from './_field-journal';
+import Breadcrumb from '@/components/ui/Breadcrumb';
 
 // ════════════════════════════════════════════════════════════════════
 //  Events — অনুষ্ঠান ও খবর  (editorial programmes & events listing)
@@ -86,6 +87,7 @@ export default function Events() {
 
   return (
     <PageShell>
+      <Breadcrumb title="Events & News" />
 
 
       {/* ════ FEATURED ════ */}

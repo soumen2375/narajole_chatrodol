@@ -3,6 +3,7 @@ import { VOLUNTEER_PROGRAM_OPTIONS } from '@/data/content';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
 import { PageShell, PageHero, SERIF_BN, Icon } from './_field-journal';
+import Breadcrumb from '@/components/ui/Breadcrumb';
 
 export default function Volunteer() {
   const { t, lang } = useT();
@@ -57,6 +58,7 @@ export default function Volunteer() {
 
   return (
     <PageShell>
+      <Breadcrumb title="Become a Volunteer" />
       <PageHero
         eyebrow={bn ? 'স্বেচ্ছাসেবক' : 'Volunteer'}
         title={t('volunteer.title')}
