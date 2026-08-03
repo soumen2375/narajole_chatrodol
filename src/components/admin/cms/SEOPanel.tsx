@@ -118,16 +118,16 @@ export default function SEOPanel({
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="flex w-full items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+        className="flex w-full items-center justify-between px-4 py-3.5 hover:bg-orange-50/40 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <TrendingUp className="h-3.5 w-3.5 text-gray-400" />
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">SEO</span>
-          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+          <TrendingUp className="h-4 w-4 text-orange-600" />
+          <span className="text-xs font-bold text-orange-600">SEO Settings</span>
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
             score >= 70 ? 'bg-green-100 text-green-700' : score >= 40 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
-          }`}>{score}</span>
+          }`}>{score}/100</span>
         </div>
-        {open ? <ChevronDown className="h-4 w-4 text-gray-300" /> : <ChevronRight className="h-4 w-4 text-gray-300" />}
+        {open ? <ChevronDown className="h-4 w-4 text-orange-500" /> : <ChevronRight className="h-4 w-4 text-gray-400" />}
       </button>
 
       {open && (
