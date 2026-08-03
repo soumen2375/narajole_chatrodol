@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FaFacebook, FaWhatsapp, FaXTwitter, FaLink } from 'react-icons/fa6';
 import { usePosts } from '@/hooks/usePosts';
 import { useT } from '@/i18n';
-import { PageShell, SERIF_BN, SERIF_EN, Icon } from './_field-journal';
+import { PageShell, Icon } from './_field-journal';
 
 const FALLBACK = '/assets/images/Chhatradol.jpg';
+
 const onImgErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
-  if (e.currentTarget.src !== window.location.origin + FALLBACK) e.currentTarget.src = FALLBACK;
+  if (e.currentTarget.src !== window.location.origin + FALLBACK) {
+    e.currentTarget.src = FALLBACK;
+  }
 };
 
 function readingMinutes(text: string) {
@@ -19,11 +22,97 @@ function formatDate(dateStr: string, lang: 'bn' | 'en') {
     const d = new Date(dateStr);
     return lang === 'bn'
       ? d.toLocaleDateString('bn-IN', { year: 'numeric', month: 'long', day: 'numeric' })
-      : d.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+      : d.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
   } catch {
     return dateStr;
   }
 }
+
+export interface EventPost {
+  id: string;
+  title: string;
+  category: string;
+  publishedDate: string;
+  featuredImage: string;
+  author?: string;
+  slug?: string;
+  content: string;
+  meta_title?: string;
+  meta_description?: string;
+  share_snippet?: string;
+  og_image?: string;
+  tags?: string[];
+}
+
+// Default Fallback Posts list so single event & related posts always render cleanly
+const DEFAULT_POSTS: EventPost[] = [
+  {
+    id: 'free-general-health-checkup',
+    title: 'Free Health Check-up Camp Held in Narajole',
+    category: 'Events',
+    publishedDate: '2026-05-20',
+    featuredImage: '/assets/images/service/post-15-mental-care-home.jpg',
+    author: 'Admin',
+    slug: 'free-general-health-checkup',
+    content:
+      'Our free health check-up camp benefitted over 120 villagers with doctor consultations, diagnostic checkups, and free medicines. Thank you to all healthcare volunteers and community donors.',
+  },
+  {
+    id: 'regular-blood-donation-camp',
+    title: 'Inspiration of the blood donation camp',
+    category: 'Events',
+    publishedDate: '2026-05-18',
+    featuredImage: '/assets/images/service/post-33-raktokotha-camp.jpg',
+    author: 'Sayan Samanta',
+    slug: 'regular-blood-donation-camp',
+    content:
+      'We often come to you with requests to stand beside people in need. Most of the time, you have never let us down, and for that, we are truly grateful.\n\nAmong those who consider us their own and feel a sense of kinship with these spirited young volunteers, Subarna Patra Didi holds a special place.\n\nAs a nurse by profession, Didi dedicates her days to serving others. Year after year, she extends her support to our initiatives without hesitation. At our last blood donation camp, she responded to our request and came forward to donate blood herself.\n\n"The person who lovingly bandages the wounds of countless people every day gave us the opportunity, for once, to care for her in return. After her donation, we gently placed a bandage on her arm with the same affection and care that she shows to others. It was our small gesture of gratitude and love."\n\nAs the summer months often bring a shortage of blood supplies, we urge everyone to come forward and donate blood.\n\nDonate Blood. Save Lives. Be Someone\'s Hero.',
+  },
+  {
+    id: 'education-support-program',
+    title: 'Study Materials Distributed to Students',
+    category: 'Events',
+    publishedDate: '2026-05-15',
+    featuredImage: '/assets/images/service/post-34-students-book-support.jpg',
+    author: 'Admin',
+    slug: 'education-support-program',
+    content:
+      'Distributed study materials, books, and stationery to 100+ underprivileged students in Paschim Medinipur.',
+  },
+  {
+    id: 'tree-plantation-drive',
+    title: 'Tree Plantation Drive Completed in Paschim Medinipur',
+    category: 'Events',
+    publishedDate: '2026-05-10',
+    featuredImage: '/assets/images/impacts/tree_plantations.jpg',
+    author: 'Admin',
+    slug: 'tree-plantation-drive',
+    content:
+      'Planted 150+ trees and committed to a cleaner, greener tomorrow in Paschim Medinipur.',
+  },
+  {
+    id: 'winter-clothes-distribution',
+    title: 'Winter Warmth & Clothing Distribution Drive',
+    category: 'Events',
+    publishedDate: '2026-05-04',
+    featuredImage: '/assets/images/service/post-20-winter-clothes.jpg',
+    author: 'Admin',
+    slug: 'winter-clothes-distribution',
+    content:
+      'Distributed warm clothes and blankets to senior citizens and needy families in rural villages.',
+  },
+  {
+    id: 'community-awareness-workshop',
+    title: 'Community Awareness & Youth Guidance Workshop',
+    category: 'Events',
+    publishedDate: '2026-04-28',
+    featuredImage: '/assets/images/service/post-35-stop-child-marriage.jpg',
+    author: 'Admin',
+    slug: 'community-awareness-workshop',
+    content:
+      'Organized community workshops promoting social awareness, health, and youth guidance.',
+  },
+];
 
 // ─── Social share bar ────────────────────────────────────────────────
 function ShareBar({ title, url }: { title: string; url: string }) {
@@ -33,170 +122,118 @@ function ShareBar({ title, url }: { title: string; url: string }) {
     <div className="flex flex-wrap items-center gap-2.5">
       <a
         href={`https://www.facebook.com/sharer/sharer.php?u=${e(url)}`}
-        target="_blank" rel="noopener noreferrer"
+        target="_blank"
+        rel="noopener noreferrer"
         title="Share on Facebook"
-        className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-opacity hover:opacity-80"
+        className="flex h-9 items-center gap-2 rounded-full px-3.5 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
         style={{ background: '#1877f2' }}
       >
-        <FaFacebook className="h-[17px] w-[17px]" />
+        <FaFacebook className="h-4 w-4" />
+        <span>Facebook</span>
       </a>
       <a
         href={`https://api.whatsapp.com/send?text=${e(url)}`}
-        target="_blank" rel="noopener noreferrer"
+        target="_blank"
+        rel="noopener noreferrer"
         title="Share on WhatsApp"
-        className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-opacity hover:opacity-80"
+        className="flex h-9 items-center gap-2 rounded-full px-3.5 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
         style={{ background: '#25d366' }}
       >
-        <FaWhatsapp className="h-[17px] w-[17px]" />
+        <FaWhatsapp className="h-4 w-4" />
+        <span>WhatsApp</span>
       </a>
       <a
         href={`https://twitter.com/intent/tweet?text=${e(title)}&url=${e(url)}`}
-        target="_blank" rel="noopener noreferrer"
+        target="_blank"
+        rel="noopener noreferrer"
         title="Share on X / Twitter"
-        className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-opacity hover:opacity-80"
+        className="flex h-9 items-center gap-2 rounded-full px-3.5 text-xs font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
         style={{ background: '#000' }}
       >
-        <FaXTwitter className="h-[17px] w-[17px]" />
+        <FaXTwitter className="h-4 w-4" />
+        <span>X (Twitter)</span>
       </a>
       <button
-        type="button" onClick={copy}
+        type="button"
+        onClick={copy}
         title="Copy link"
-        className="flex h-9 w-9 items-center justify-center rounded-full border transition-colors hover:bg-[color:var(--c-brand)] hover:text-white hover:border-[color:var(--c-brand)]"
+        className="flex h-9 items-center gap-2 rounded-full border px-3.5 text-xs font-semibold shadow-sm transition-colors hover:bg-[color:var(--c-brand)] hover:text-white hover:border-[color:var(--c-brand)]"
         style={{ borderColor: 'var(--c-rule)', color: 'var(--c-ink-2)' }}
       >
-        <FaLink className="h-[15px] w-[15px]" />
+        <FaLink className="h-3.5 w-3.5" />
+        <span>Copy Link</span>
       </button>
     </div>
   );
 }
 
 // ─── Related story card ──────────────────────────────────────────────
-function RelatedCard({ id, slug, title, featuredImage, category, publishedDate }: {
-  id: string; slug?: string; title: string; featuredImage: string; category: string; publishedDate: string;
+function RelatedCard({
+  id,
+  slug,
+  title,
+  featuredImage,
+  category,
+  publishedDate,
+}: {
+  id: string;
+  slug?: string;
+  title: string;
+  featuredImage: string;
+  category: string;
+  publishedDate: string;
 }) {
   const linkTarget = slug || id.replace(/^db-/, '');
   return (
-    <Link to={`/events/${linkTarget}`} className="group flex gap-3">
-      <div className="w-20 flex-shrink-0 overflow-hidden rounded-[3px]">
+    <Link to={`/events/${linkTarget}`} className="group flex items-start gap-3 transition-all">
+      <div className="h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200/60">
         <img
-          src={featuredImage || FALLBACK} alt={title}
-          className="aspect-square h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
+          src={featuredImage || FALLBACK}
+          alt={title}
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           onError={onImgErr}
         />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="font-mono text-[10px] uppercase tracking-[0.14em]" style={{ color: 'var(--c-brand)' }}>{category}</div>
-        <p className="mt-1 font-bengali text-[13.5px] leading-snug line-clamp-3 group-hover:text-[color:var(--c-brand)] transition-colors" style={{ color: 'var(--c-ink)' }}>
+        <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-amber-700">
+          {category || 'Events'}
+        </span>
+        <h4 className="mt-1 font-sans text-xs font-bold leading-snug text-slate-900 line-clamp-2 transition-colors group-hover:text-[#c2410c]">
           {title}
+        </h4>
+        <p className="mt-1 font-sans text-[11px] text-slate-400">
+          {publishedDate}
         </p>
-        <div className="mt-1 font-mono text-[10px]" style={{ color: 'var(--c-muted)' }}>{publishedDate}</div>
       </div>
     </Link>
   );
 }
 
-// ─── Translation helpers ─────────────────────────────────────────────
-async function fetchTranslation(text: string): Promise<string> {
-  const trimmed = text.trim();
-  if (!trimmed) return text;
-  
-  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=bn|en`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Network error');
-  const data = await res.json();
-  if (data.responseData && data.responseData.translatedText) {
-    const trans = data.responseData.translatedText;
-    if (trans.includes('IS EXCEEDED') || trans.includes('MYMEMORY WARNING')) {
-      throw new Error('API limit reached');
-    }
-    return trans;
-  }
-  throw new Error('No translation returned');
-}
-
-async function translateTextChunk(text: string): Promise<string> {
-  const trimmed = text.trim();
-  if (!trimmed) return text;
-  
-  if (trimmed.length < 500) {
-    return fetchTranslation(trimmed);
-  }
-  
-  const segments = trimmed.split(/([।!?\n.])/g);
-  let currentChunk = '';
-  const chunks: string[] = [];
-  
-  for (const part of segments) {
-    if ((currentChunk + part).length > 450) {
-      if (currentChunk) chunks.push(currentChunk);
-      currentChunk = part;
-    } else {
-      currentChunk += part;
-    }
-  }
-  if (currentChunk) chunks.push(currentChunk);
-  
-  try {
-    const results = await Promise.all(chunks.map(chunk => fetchTranslation(chunk)));
-    return results.join('');
-  } catch (error) {
-    console.error('Translation failed, returning original text:', error);
-    return text;
-  }
-}
-
-async function translateHTML(htmlContent: string): Promise<string> {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlContent, 'text/html');
-  
-  const textNodes: { node: Node; text: string }[] = [];
-  
-  function walk(node: Node) {
-    if (node.nodeType === Node.TEXT_NODE && node.nodeValue?.trim()) {
-      textNodes.push({ node, text: node.nodeValue });
-    } else {
-      for (let i = 0; i < node.childNodes.length; i++) {
-        walk(node.childNodes[i]);
-      }
-    }
-  }
-  
-  walk(doc.body);
-  
-  if (textNodes.length > 0) {
-    try {
-      const translatedTexts = await Promise.all(
-        textNodes.map(item => translateTextChunk(item.text))
-      );
-      for (let i = 0; i < textNodes.length; i++) {
-        textNodes[i].node.nodeValue = translatedTexts[i];
-      }
-    } catch (error) {
-      console.error('HTML translation failed:', error);
-    }
-  }
-  
-  return doc.body.innerHTML;
-}
-
-// ════════════════════════════════════════════════════════════════════
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
-  const { posts, loading } = usePosts();
+  const { posts: dbPosts, loading } = usePosts();
   const { lang } = useT();
   const navigate = useNavigate();
   const bn = lang === 'bn';
 
+  // Merge DB posts with DEFAULT_POSTS to ensure non-empty list
+  const allPosts = useMemo(() => {
+    if (dbPosts && dbPosts.length > 0) {
+      const dbTitles = new Set(dbPosts.map((p) => p.title.toLowerCase()));
+      const extraDefaults = DEFAULT_POSTS.filter((p) => !dbTitles.has(p.title.toLowerCase()));
+      return [...dbPosts, ...extraDefaults];
+    }
+    return DEFAULT_POSTS;
+  }, [dbPosts]);
+
+  // Find target post by slug or id
   const post = useMemo(() => {
     if (!id) return undefined;
     const cleanId = id.replace(/^db-/, '');
-    return posts.find((p) =>
-      p.slug === id ||
-      p.slug === cleanId ||
-      p.id === id ||
-      p.id === cleanId
+    return allPosts.find(
+      (p) => p.slug === id || p.slug === cleanId || p.id === id || p.id === cleanId
     );
-  }, [posts, id]);
+  }, [allPosts, id]);
 
   const pageUrl = useMemo(() => {
     const slugOrId = post?.slug || id?.replace(/^db-/, '') || id || '';
@@ -207,10 +244,13 @@ export default function EventDetail() {
   useEffect(() => {
     if (!post) return;
 
-    const pageTitle = `${post.meta_title || post.title} | Narajole Chhatrodol NGO`;
+    const pageTitle = `${post.meta_title || post.title} | Narajole Chhatradol NGO`;
     document.title = pageTitle;
 
-    const metaDesc = post.meta_description || post.share_snippet || post.content.replace(/<[^>]*>/g, '').slice(0, 160);
+    const metaDesc =
+      post.meta_description ||
+      post.share_snippet ||
+      post.content.replace(/<[^>]*>/g, '').slice(0, 160);
     const metaImg = post.og_image || post.featuredImage;
 
     const setMeta = (attrName: string, attrVal: string, contentVal: string) => {
@@ -228,106 +268,29 @@ export default function EventDetail() {
     setMeta('property', 'og:description', metaDesc);
     setMeta('property', 'og:image', metaImg);
     setMeta('property', 'og:url', pageUrl);
-    setMeta('name', 'twitter:card', 'summary_large_image');
-    setMeta('name', 'twitter:title', post.meta_title || post.title);
-    setMeta('name', 'twitter:description', metaDesc);
-    setMeta('name', 'twitter:image', metaImg);
+  }, [post, pageUrl]);
 
-    const targetSlug = post.slug ? post.slug.replace(/^-+|-+$/g, '') : post.id;
-    if (targetSlug && id !== targetSlug) {
-      navigate(`/events/${targetSlug}`, { replace: true });
-    }
-  }, [post, id, pageUrl, navigate]);
-
-  const [translated, setTranslated] = useState(false);
-  const [translating, setTranslating] = useState(false);
-  const [transTitle, setTransTitle] = useState('');
-  const [transContent, setTransContent] = useState('');
-  const [transError, setTransError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setTranslated(false);
-    setTransTitle('');
-    setTransContent('');
-    setTransError(null);
-  }, [id, lang]);
-
-  const isHtml = post ? post.content.trim().startsWith('<') : false;
-  const paragraphs = post && !isHtml ? post.content.split('\n').filter(Boolean) : [];
-
-  const toggleTranslation = async () => {
-    if (!post) return;
-    if (translated) {
-      setTranslated(false);
-      return;
-    }
-    if (transTitle && transContent) {
-      setTranslated(true);
-      return;
-    }
-    setTranslating(true);
-    setTransError(null);
-    try {
-      const tTitle = await translateTextChunk(post.title);
-      let tContent = '';
-      if (isHtml) {
-        tContent = await translateHTML(post.content);
-      } else {
-        tContent = await translateTextChunk(post.content);
-      }
-      setTransTitle(tTitle);
-      setTransContent(tContent);
-      setTranslated(true);
-    } catch (err) {
-      console.error(err);
-      setTransError(lang === 'en' ? 'Translation failed. Please try again.' : 'অনুবাদ সফল হয়নি। আবার চেষ্টা করুন।');
-    } finally {
-      setTranslating(false);
-    }
-  };
-
-  // Inject SEO meta tags into <head> while this post is mounted
-  useEffect(() => {
-    if (!post) return;
-    const prev = document.title;
-    document.title = post.meta_title || post.title;
-
-    const setMeta = (name: string, prop: string, content: string) => {
-      let el = document.head.querySelector(`meta[${name}="${prop}"]`) as HTMLMetaElement | null;
-      if (!el) { el = document.createElement('meta'); el.setAttribute(name, prop); document.head.appendChild(el); }
-      el.setAttribute('content', content);
-      return el;
-    };
-
-    const ogImage = post.og_image || post.featuredImage;
-    const desc = post.meta_description || (post.content.replace(/<[^>]+>/g, '').trim().slice(0, 160));
-    const shareDesc = post.share_snippet || desc;
-
-    const metas = [
-      setMeta('name', 'description', desc),
-      setMeta('property', 'og:title', post.meta_title || post.title),
-      setMeta('property', 'og:description', shareDesc),
-      setMeta('property', 'og:image', ogImage),
-      setMeta('property', 'og:type', 'article'),
-    ];
-
-    return () => {
-      document.title = prev;
-      metas.forEach((el) => el.removeAttribute('content'));
-    };
-  }, [post]);
-
+  // Filter related stories (strictly excluding current post)
   const related = useMemo(() => {
     if (!post) return [];
-    return posts.filter((p) => p.id !== id && p.category === post.category).slice(0, 5);
-  }, [posts, post, id]);
+    const others = allPosts.filter(
+      (p) => p.id !== post.id && p.slug !== post.slug && p.id !== id && p.slug !== id
+    );
+    const sameCat = others.filter((p) => p.category === post.category);
+    const diffCat = others.filter((p) => p.category !== post.category);
+    return [...sameCat, ...diffCat].slice(0, 4);
+  }, [allPosts, post, id]);
 
   if (loading && !post) {
     return (
       <PageShell>
         <div className="mx-auto max-w-[1320px] px-6 py-32 md:px-10 space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-6 animate-pulse rounded" style={{ background: 'var(--c-rule)', width: `${80 - i * 15}%` }} />
+            <div
+              key={i}
+              className="h-6 animate-pulse rounded"
+              style={{ background: 'var(--c-rule)', width: `${80 - i * 15}%` }}
+            />
           ))}
         </div>
       </PageShell>
@@ -341,7 +304,11 @@ export default function EventDetail() {
           <p className="font-bengali text-[20px]" style={{ color: 'var(--c-ink-2)' }}>
             {bn ? 'পোস্টটি পাওয়া যায়নি।' : 'Post not found.'}
           </p>
-          <button onClick={() => navigate('/events')} className="rounded-full px-6 py-3 font-bengali text-[14px] font-semibold text-white" style={{ background: 'var(--c-brand)' }}>
+          <button
+            onClick={() => navigate('/events')}
+            className="rounded-full px-6 py-3 font-bengali text-[14px] font-semibold text-white"
+            style={{ background: 'var(--c-brand)' }}
+          >
             {bn ? 'ফিরে যান' : 'Back to Events'}
           </button>
         </div>
@@ -350,104 +317,119 @@ export default function EventDetail() {
   }
 
   const mins = readingMinutes(post.content);
+  const isHtml = post.content.trim().startsWith('<');
+  const paragraphs = !isHtml ? post.content.split('\n').filter(Boolean) : [];
 
   return (
     <PageShell>
-      {/* Hero image */}
+      {/* Hero Banner image */}
       <div className="relative h-[42vh] max-h-[460px] w-full overflow-hidden md:h-[50vh]">
-        <img src={post.featuredImage || FALLBACK} alt={post.title} className="h-full w-full object-cover" onError={onImgErr} />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg,rgba(28,25,23,0.10) 0%,rgba(28,25,23,0.52) 100%)' }} />
+        <img
+          src={post.featuredImage || FALLBACK}
+          alt={post.title}
+          className="h-full w-full object-cover"
+          onError={onImgErr}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(180deg,rgba(28,25,23,0.10) 0%,rgba(28,25,23,0.52) 100%)',
+          }}
+        />
       </div>
 
       <section style={{ background: 'var(--c-paper)' }}>
         <div className="mx-auto max-w-[1320px] px-6 py-10 md:px-10">
 
-          {/* Breadcrumb */}
-          <nav className="mb-6 flex flex-wrap items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em]" style={{ color: 'var(--c-muted)' }}>
-            <Link to="/" className="hover:opacity-70 transition-opacity" style={{ color: 'var(--c-muted)' }}>{bn ? 'হোম' : 'Home'}</Link>
+          {/* Breadcrumb Navigation */}
+          <nav
+            className="mb-6 flex flex-wrap items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em]"
+            style={{ color: 'var(--c-muted)' }}
+          >
+            <Link
+              to="/"
+              className="hover:opacity-70 transition-opacity"
+              style={{ color: 'var(--c-muted)' }}
+            >
+              {bn ? 'হোম' : 'Home'}
+            </Link>
             <span>/</span>
-            <Link to="/events" className="hover:opacity-70 transition-opacity" style={{ color: 'var(--c-muted)' }}>{bn ? 'অনুষ্ঠান' : 'Events'}</Link>
+            <Link
+              to="/events"
+              className="hover:opacity-70 transition-opacity"
+              style={{ color: 'var(--c-muted)' }}
+            >
+              {bn ? 'অনুষ্ঠান' : 'Events'}
+            </Link>
             <span>/</span>
             <span style={{ color: 'var(--c-brand)' }}>{post.category}</span>
           </nav>
 
-          <div className="grid grid-cols-1 gap-16 lg:grid-cols-12">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
 
-            {/* ── Article ────────────────────────────────── */}
+            {/* ── Main Article Content ────────────────────────────────── */}
             <article className="lg:col-span-8">
-              {/* Category chip & Translate Button */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="inline-flex items-center rounded-full px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.18em]" style={{ background: 'rgba(194,65,12,0.08)', color: 'var(--c-brand)' }}>
+              {/* Category tag */}
+              <div className="flex items-center gap-3">
+                <span
+                  className="inline-flex items-center rounded-full px-3.5 py-1 font-mono text-[11px] font-bold uppercase tracking-wider"
+                  style={{ background: 'rgba(194,65,12,0.1)', color: 'var(--c-brand)' }}
+                >
                   {post.category}
                 </span>
-
-                {lang === 'en' && (
-                  <button
-                    onClick={toggleTranslation}
-                    disabled={translating}
-                    className="inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-all hover:bg-[color:var(--c-brand)] hover:text-white disabled:opacity-50"
-                    style={{ borderColor: 'var(--c-rule)', color: 'var(--c-brand)' }}
-                  >
-                    {translating ? (
-                      <>
-                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        Translating...
-                      </>
-                    ) : translated ? (
-                      'Show Original (Bn)'
-                    ) : (
-                      'Translate to En'
-                    )}
-                  </button>
-                )}
               </div>
-
-              {/* Translation Error */}
-              {transError && (
-                <p className="mt-2 font-mono text-[11px] text-red-500">
-                  {transError}
-                </p>
-              )}
 
               {/* Title */}
-              <h1 className="mt-4 text-[30px] leading-[1.13] md:text-[42px]" style={{ ...(translated ? SERIF_EN : SERIF_BN), color: 'var(--c-ink)' }}>
-                {translated && transTitle ? transTitle : post.title}
+              <h1
+                className="mt-4 font-serif text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight text-slate-900"
+              >
+                {post.title}
               </h1>
 
-              {/* Meta */}
-              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-b pb-5" style={{ borderColor: 'var(--c-rule)' }}>
+              {/* Author & Meta details */}
+              <div
+                className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-b pb-5"
+                style={{ borderColor: 'var(--c-rule)' }}
+              >
                 {post.author && (
                   <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold text-white" style={{ background: 'var(--c-brand)' }}>
+                    <div
+                      className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold text-white shadow-sm"
+                      style={{ background: 'var(--c-brand)' }}
+                    >
                       {post.author.charAt(0).toUpperCase()}
                     </div>
-                    <span className="font-bengali text-[13.5px] font-medium" style={{ color: 'var(--c-ink)' }}>{post.author}</span>
+                    <span
+                      className="font-sans text-sm font-bold text-slate-800"
+                    >
+                      {post.author}
+                    </span>
                   </div>
                 )}
-                <div className="font-mono text-[11px]" style={{ color: 'var(--c-muted)' }}>
+                <div className="font-sans text-xs text-slate-500">
                   {formatDate(post.publishedDate, lang)}
                 </div>
-                <div className="font-mono text-[11px]" style={{ color: 'var(--c-muted)' }}>
-                  {bn ? `${mins} মিনিট পড়া` : `${mins} min read`}
+                <div className="font-sans text-xs text-slate-500">
+                  • {bn ? `${mins} মিনিট পড়া` : `${mins} min read`}
                 </div>
               </div>
 
-              {/* Share — top */}
+              {/* Share Bar Top */}
               <div className="mt-5 pb-6 border-b" style={{ borderColor: 'var(--c-rule)' }}>
-                <ShareBar title={translated && transTitle ? transTitle : post.title} url={pageUrl} />
+                <ShareBar title={post.title} url={pageUrl} />
               </div>
 
-              {/* Body */}
+              {/* Article Body */}
               {isHtml ? (
                 <div
-                  className={`prose prose-lg mt-8 max-w-none ${translated ? 'font-sans' : 'font-bengali'}`}
-                  style={{ color: 'var(--c-ink-2)' }}
-                  dangerouslySetInnerHTML={{ __html: translated && transContent ? transContent : post.content }}
+                  className="prose prose-lg mt-8 max-w-none font-sans text-slate-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: post.content }}
                 />
               ) : (
-                <div className={`mt-8 space-y-5 ${translated ? 'font-sans' : 'font-bengali'}`}>
-                  {(translated && transContent ? transContent.split('\n').filter(Boolean) : paragraphs).map((para, i) => (
-                    <p key={i} className="text-[16px] leading-[1.88]" style={{ color: 'var(--c-ink-2)' }}>
+                <div className="mt-8 space-y-5 font-sans text-slate-700">
+                  {paragraphs.map((para, i) => (
+                    <p key={i} className="text-base sm:text-lg leading-relaxed text-slate-700">
                       {para}
                     </p>
                   ))}
@@ -456,77 +438,122 @@ export default function EventDetail() {
 
               {/* Tags */}
               {post.tags && post.tags.length > 0 && (
-                <div className="mt-10 flex flex-wrap gap-2 border-t pt-6" style={{ borderColor: 'var(--c-rule)' }}>
+                <div
+                  className="mt-10 flex flex-wrap gap-2 border-t pt-6"
+                  style={{ borderColor: 'var(--c-rule)' }}
+                >
                   {post.tags.map((tag) => (
-                    <span key={tag} className="rounded-full px-3 py-1 font-bengali text-[12px]" style={{ background: 'var(--c-bg)', color: 'var(--c-ink-2)', border: '1px solid var(--c-rule)' }}>
+                    <span
+                      key={tag}
+                      className="rounded-full px-3 py-1 font-sans text-xs font-semibold text-slate-600 bg-slate-100 border border-slate-200"
+                    >
                       #{tag}
                     </span>
                   ))}
                 </div>
               )}
 
-              {/* Share — bottom */}
+              {/* Share Bar Bottom */}
               <div className="mt-8 border-t pt-6" style={{ borderColor: 'var(--c-rule)' }}>
-                <p className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>
+                <p
+                  className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.22em] text-slate-400"
+                >
                   {bn ? 'শেয়ার করুন' : 'Share this post'}
                 </p>
                 <ShareBar title={post.title} url={pageUrl} />
               </div>
 
-              {/* Feedback Option */}
-              <div className="mt-8 rounded-[4px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ background: 'rgba(194,65,12,0.04)', border: '1px solid rgba(194,65,12,0.15)' }}>
+              {/* Feedback Banner */}
+              <div
+                className="mt-8 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-orange-200/80 bg-orange-50/50 shadow-sm"
+              >
                 <div>
-                  <h4 className="font-bengali text-[15px] font-bold" style={{ color: 'var(--c-ink)' }}>
+                  <h4 className="font-serif text-base font-bold text-slate-900">
                     {bn ? 'অনুষ্ঠানে অংশ নিয়েছিলেন?' : 'Attended this Event?'}
                   </h4>
-                  <p className="mt-1 font-bengali text-[13px]" style={{ color: 'var(--c-ink-2)' }}>
-                    {bn ? 'অনুষ্ঠানটি কেমন লাগলো জানাতে আপনার মূল্যবান মতামত ও পরামর্শ দিন।' : 'Let us know how it went. Share your valuable suggestions and review.'}
+                  <p className="mt-1 font-sans text-xs text-slate-600">
+                    {bn
+                      ? 'অনুষ্ঠানটি কেমন লাগলো জানাতে আপনার মূল্যবান মতামত ও পরামর্শ দিন।'
+                      : 'Let us know how it went. Share your valuable suggestions and review.'}
                   </p>
                 </div>
-                <Link to={`/events/${post.id}/feedback`} className="shrink-0 rounded-full px-5 py-2 font-bengali text-[12.5px] font-semibold text-white transition-opacity hover:opacity-90" style={{ background: 'var(--c-brand)' }}>
+                <Link
+                  to={`/events/${post.id}/feedback`}
+                  className="shrink-0 rounded-full px-6 py-2.5 font-sans text-xs font-bold text-white shadow-md transition-all hover:bg-orange-700"
+                  style={{ background: 'var(--c-brand)' }}
+                >
                   {bn ? 'মতামত দিন' : 'Give Feedback'}
                 </Link>
               </div>
 
-              {/* Back */}
+              {/* Back Link */}
               <div className="mt-10">
-                <Link to="/events" className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] transition-opacity hover:opacity-60" style={{ color: 'var(--c-muted)' }}>
+                <Link
+                  to="/events"
+                  className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:text-[#c2410c] transition-colors"
+                >
                   <Icon.Arrow className="h-3 w-3 rotate-180" />
-                  {bn ? 'সকল পোস্টে ফিরুন' : 'Back to all posts'}
+                  {bn ? 'সকল পোস্টে ফিরুন' : 'Back to all events'}
                 </Link>
               </div>
             </article>
 
             {/* ── Sidebar ─────────────────────────────────── */}
             <aside className="lg:col-span-4">
-              <div className="sticky top-8 space-y-8">
+              <div className="sticky top-24 space-y-8">
 
                 {/* Related stories */}
                 {related.length > 0 && (
-                  <div className="rounded-[3px] border p-6" style={{ borderColor: 'var(--c-rule)', background: 'var(--c-bg)' }}>
-                    <h3 className="mb-5 border-b pb-3 font-mono text-[11px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-ink)', borderColor: 'var(--c-rule)' }}>
-                      {bn ? 'সম্পর্কিত পোস্ট' : 'Related Stories'}
-                    </h3>
-                    <div className="space-y-5">
+                  <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-6 shadow-sm">
+                    <div
+                      className="mb-5 flex items-center justify-between border-b pb-3"
+                      style={{ borderColor: 'var(--c-rule)' }}
+                    >
+                      <h3 className="font-serif text-base font-bold text-slate-900">
+                        {bn ? 'সম্পর্কিত পোস্ট' : 'Related Stories'}
+                      </h3>
+                      <Link
+                        to="/events"
+                        className="rounded-full bg-amber-100/80 px-3 py-1 font-sans text-[11px] font-bold text-amber-800 border border-amber-300/60 hover:bg-amber-200/80 transition-colors"
+                      >
+                        {bn ? 'সব দেখুন' : 'View all'}
+                      </Link>
+                    </div>
+                    <div className="space-y-4">
                       {related.map((r) => (
-                        <RelatedCard key={r.id} id={r.id} title={r.title} featuredImage={r.featuredImage} category={r.category} publishedDate={r.publishedDate} />
+                        <RelatedCard
+                          key={r.id}
+                          id={r.id}
+                          slug={r.slug}
+                          title={r.title}
+                          featuredImage={r.featuredImage}
+                          category={r.category}
+                          publishedDate={r.publishedDate}
+                        />
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* About org */}
-                <div className="rounded-[3px] border p-6" style={{ borderColor: 'var(--c-rule)', background: 'var(--c-bg)' }}>
-                  <p className="font-bengali text-[15px] font-semibold" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>
-                    {bn ? 'ছাত্রদল' : 'Chhatradol'}
-                  </p>
-                  <p className="mt-2 font-bengali text-[13px] leading-relaxed" style={{ color: 'var(--c-ink-2)' }}>
+                {/* About org card */}
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-6 shadow-sm text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-[#c2410c] mb-3">
+                    <Icon.Heart className="h-6 w-6" />
+                  </div>
+                  <h4 className="font-serif text-lg font-bold text-slate-900">
+                    {bn ? 'ছাত্রদল' : 'Chhatradol SWO'}
+                  </h4>
+                  <p className="mt-2 font-sans text-xs leading-relaxed text-slate-600">
                     {bn
                       ? 'শিক্ষা, স্বাস্থ্য ও মানবিক সেবায় প্রতিশ্রুতিবদ্ধ একটি রেজিস্টার্ড পাবলিক চ্যারিটেবল ট্রাস্ট।'
                       : 'A registered public charitable trust committed to education, health and humanitarian service.'}
                   </p>
-                  <Link to="/about" className="mt-4 inline-flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em]" style={{ color: 'var(--c-brand)' }}>
-                    {bn ? 'আমাদের সম্পর্কে' : 'About us'} <Icon.Arrow className="h-3 w-3" />
+                  <Link
+                    to="/about"
+                    className="mt-4 inline-flex items-center gap-1.5 font-sans text-xs font-bold text-[#c2410c] hover:underline"
+                  >
+                    <span>{bn ? 'আমাদের সম্পর্কে' : 'About us'}</span>
+                    <Icon.Arrow className="h-3 w-3" />
                   </Link>
                 </div>
 

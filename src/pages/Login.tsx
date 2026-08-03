@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 
 import Breadcrumb from '@/components/ui/Breadcrumb';
 
-const SERIF_BN = { fontFamily: '"Noto Serif", Georgia, serif' };
+const SERIF_BN = { fontFamily: '"Noto Serif", "Noto Serif Bengali", Georgia, serif' };
 const INK    = '#1c1917';
 const CREAM  = '#faf6ef';
 const BRAND  = '#c2410c';

@@ -49,14 +49,14 @@ export default function Header() {
               onError={(e) => { e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }}
             />
           </div>
-          <div className="flex flex-col leading-tight">
+          <div className="flex flex-col leading-tight min-w-0">
             <span
-              className="text-lg sm:text-xl md:text-[24px] font-bold text-white tracking-tight"
+              className="text-base sm:text-xl md:text-[24px] font-bold text-white tracking-tight truncate"
               style={{ fontFamily: '"Noto Serif", Georgia, serif' }}
             >
               Chhatradol
             </span>
-            <span className="block text-[7.5px] sm:text-[8.5px] md:text-[9.5px] font-bold tracking-[0.18em] uppercase text-white/90">
+            <span className="block text-[7px] xs:text-[8px] sm:text-[8.5px] md:text-[9.5px] font-bold tracking-[0.12em] sm:tracking-[0.18em] uppercase text-white/90 truncate">
               SOCIAL WELFARE ORGANIZATION
             </span>
           </div>
@@ -161,71 +161,77 @@ export default function Header() {
 
       {/* 5. MOBILE & TABLET DRAWER */}
       {open && (
-        <div className="mt-2 mx-auto max-w-[1380px] rounded-[18px] border border-white/15 bg-[#c2410c] p-4 shadow-2xl xl:hidden animate-fade-in text-white">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {navLinks.map((item) => {
-              const IconComp = item.icon;
-              return (
-                <NavLink
-                  key={item.to + item.label}
-                  to={item.to}
-                  end={item.exact}
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm xl:hidden"
+            onClick={() => setOpen(false)}
+          />
+          <div className="relative z-50 mt-2 mx-auto max-w-[1380px] max-h-[82vh] overflow-y-auto rounded-[18px] border border-white/15 bg-[#c2410c] p-4 shadow-2xl xl:hidden animate-fade-in text-white">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {navLinks.map((item) => {
+                const IconComp = item.icon;
+                return (
+                  <NavLink
+                    key={item.to + item.label}
+                    to={item.to}
+                    end={item.exact}
+                    onClick={() => setOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition-all ${
+                        isActive ? 'bg-white text-[#c2410c] shadow-md font-bold' : 'text-white/90 hover:bg-white/15'
+                      }`
+                    }
+                  >
+                    <IconComp className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                  </NavLink>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2.5 border-t border-white/20 pt-3.5">
+              {member ? (
+                <Link
+                  to={dashboardPath}
                   onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition-all ${
-                      isActive ? 'bg-white text-[#c2410c] shadow-md font-bold' : 'text-white/90 hover:bg-white/15'
-                    }`
-                  }
+                  className="flex items-center justify-between rounded-xl border border-amber-300/40 bg-black/20 px-4 py-3 transition-colors hover:bg-black/30"
                 >
-                  <IconComp className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </NavLink>
-              );
-            })}
-          </div>
-
-          <div className="mt-4 flex flex-col gap-2.5 border-t border-white/20 pt-3.5">
-            {member ? (
-              <Link
-                to={dashboardPath}
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-between rounded-xl border border-amber-300/40 bg-black/20 px-4 py-3 transition-colors hover:bg-black/30"
-              >
-                <div className="flex items-center gap-3">
-                  <img
-                    src={userAvatar}
-                    alt={userName}
-                    className="h-8 w-8 rounded-full border border-amber-300 object-cover"
-                    onError={(e) => { e.currentTarget.src = '/assets/images/members/soumen.jpg'; }}
-                  />
-                  <div className="flex flex-col text-left leading-tight">
-                    <span className="font-bold text-sm text-white">{userName}</span>
-                    <span className="text-[10px] text-amber-300 font-semibold">View Dashboard</span>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={userAvatar}
+                      alt={userName}
+                      className="h-8 w-8 rounded-full border border-amber-300 object-cover"
+                      onError={(e) => { e.currentTarget.src = '/assets/images/members/soumen.jpg'; }}
+                    />
+                    <div className="flex flex-col text-left leading-tight">
+                      <span className="font-bold text-sm text-white">{userName}</span>
+                      <span className="text-[10px] text-amber-300 font-semibold">View Dashboard</span>
+                    </div>
                   </div>
-                </div>
-                <span className="text-xs text-amber-300 font-bold">Dashboard ➔</span>
-              </Link>
-            ) : (
-              <Link
-                to="/login"
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-xl border border-white/40 bg-white/10 py-3 text-sm font-bold text-white shadow-sm hover:bg-white/20 transition-all"
-              >
-                <FaUser className="h-4 w-4" />
-                <span>Login / Register</span>
-              </Link>
-            )}
+                  <span className="text-xs text-amber-300 font-bold">Dashboard ➔</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-white/40 bg-white/10 py-3 text-sm font-bold text-white shadow-sm hover:bg-white/20 transition-all"
+                >
+                  <FaUser className="h-4 w-4" />
+                  <span>Login / Register</span>
+                </Link>
+              )}
 
-            <Link
-              to="/donate"
-              onClick={() => setOpen(false)}
-              className="flex items-center justify-center gap-2 rounded-full bg-white py-3 text-center text-sm font-extrabold text-[#c2410c] shadow-md hover:bg-amber-50 transition-all"
-            >
-              <FaHeart className="h-4 w-4 text-rose-600" />
-              <span>Donate Now</span>
-            </Link>
+              <Link
+                to="/donate"
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-full bg-white py-3 text-center text-sm font-extrabold text-[#c2410c] shadow-md hover:bg-amber-50 transition-all"
+              >
+                <FaHeart className="h-4 w-4 text-rose-600" />
+                <span>Donate Now</span>
+              </Link>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </header>
   );

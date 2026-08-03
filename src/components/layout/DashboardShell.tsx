@@ -160,9 +160,17 @@ export default function DashboardShell({
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: CREAM }}>
+      {/* Mobile Sidebar Overlay Backdrop */}
+      {open && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`fixed top-3 bottom-3 left-3 z-40 flex w-[280px] flex-col transform transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed top-3 bottom-3 left-3 z-40 flex w-[270px] sm:w-[280px] flex-col transform transition-transform duration-200 lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full -ml-3'
         }`}
         style={{ 

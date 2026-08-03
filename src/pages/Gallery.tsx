@@ -258,7 +258,7 @@ export default function Gallery() {
               </p>
             </div>
           ) : (
-            <div className="columns-2 gap-3 lg:columns-4">
+            <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-3">
               {shown.map((g) => (
                 <button
                   key={g.id}
@@ -267,7 +267,7 @@ export default function Gallery() {
                   style={{ border: `1px solid ${FJ.rule}` }}
                 >
                   <div className="img-zoom relative">
-                    <img src={g.src} onError={onErr} loading="lazy" alt={g.alt[lang]} className="block h-auto w-full" />
+                    <img src={g.src} onError={onErr} loading="lazy" alt={g.alt[lang]} className="block h-auto max-h-[420px] w-full object-cover" />
                     <div
                       className="pointer-events-none absolute inset-0 flex flex-col justify-end p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                       style={{ background: 'linear-gradient(180deg, transparent 40%, rgba(20,15,10,0.78))' }}
@@ -303,22 +303,22 @@ export default function Gallery() {
       {/* ════ LIGHTBOX ════ */}
       {current && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          style={{ background: 'rgba(15,12,10,0.93)' }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
+          style={{ background: 'rgba(15,12,10,0.95)' }}
           onClick={() => setLightbox(null)}
         >
-          <button onClick={() => setLightbox(null)} className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-white" style={{ background: 'rgba(255,255,255,0.12)' }} aria-label="Close">✕</button>
-          <button onClick={(e) => { e.stopPropagation(); step(-1); }} className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-white md:left-6" style={{ background: 'rgba(255,255,255,0.12)' }} aria-label="Previous">
+          <button onClick={() => setLightbox(null)} className="absolute right-3 top-3 sm:right-6 sm:top-6 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full text-white z-10 transition-transform active:scale-95" style={{ background: 'rgba(255,255,255,0.2)' }} aria-label="Close">✕</button>
+          <button onClick={(e) => { e.stopPropagation(); step(-1); }} className="absolute left-2 top-1/2 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full text-white z-10 md:left-6 transition-transform active:scale-95" style={{ background: 'rgba(255,255,255,0.2)' }} aria-label="Previous">
             <FaChevronLeft className="h-4 w-4" />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); step(1); }} className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-white md:right-6" style={{ background: 'rgba(255,255,255,0.12)' }} aria-label="Next">
+          <button onClick={(e) => { e.stopPropagation(); step(1); }} className="absolute right-2 top-1/2 flex h-9 w-9 sm:h-11 sm:w-11 -translate-y-1/2 items-center justify-center rounded-full text-white z-10 md:right-6 transition-transform active:scale-95" style={{ background: 'rgba(255,255,255,0.2)' }} aria-label="Next">
             <FaChevronRight className="h-4 w-4" />
           </button>
-          <figure className="max-h-[88vh] max-w-[1000px]" onClick={(e) => e.stopPropagation()}>
-            <img src={current.src} onError={onErr} alt={current.alt[lang]} className="mx-auto max-h-[78vh] w-auto rounded-[8px] object-contain" />
-            <figcaption className="mt-3 text-center">
+          <figure className="max-h-[85vh] max-w-[92vw] sm:max-w-[1000px] overflow-y-auto px-1" onClick={(e) => e.stopPropagation()}>
+            <img src={current.src} onError={onErr} alt={current.alt[lang]} className="mx-auto max-h-[62vh] sm:max-h-[74vh] w-auto max-w-full rounded-[8px] object-contain" />
+            <figcaption className="mt-3 text-center px-2">
               <div className="font-mono text-[10px] uppercase tracking-[0.22em]" style={{ color: '#fca47e' }}>{current.category[lang]}</div>
-              <div className="mt-1 font-bengali text-[15px] text-white">{current.alt[lang]}</div>
+              <div className="mt-1 font-bengali text-[13.5px] sm:text-[15px] text-white leading-snug">{current.alt[lang]}</div>
               <div className="mt-1 font-mono text-[11px] text-white/50">{(lightbox ?? 0) + 1} / {filtered.length}</div>
               {current.more && (
                 <a href={current.more} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 font-bengali text-[12.5px] font-semibold" style={{ color: '#fca47e' }}>

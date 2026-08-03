@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useT } from '@/i18n';
+import { usePosts } from '@/hooks/usePosts';
 import { useInView, useCountUp } from '@/hooks/useInView';
 import {
   FaHeart, FaArrowRight, FaShieldHalved, FaUsers, FaLeaf, FaHandshake,
@@ -137,17 +139,17 @@ function Hero() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="mt-8 flex flex-wrap items-center gap-4">
+          <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 sm:gap-4">
             <Link
               to="/donate"
-              className="inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 font-bengali text-base font-bold text-white shadow-xl transition-all duration-200 hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center gap-2.5 rounded-full px-7 py-3.5 font-bengali text-base font-bold text-white shadow-xl transition-all duration-200 hover:-translate-y-0.5"
               style={{ background: BRAND, boxShadow: '0 12px 30px -8px rgba(194, 65, 12, 0.6)' }}
             >
               {bn ? 'দান করুন 💛' : 'Donate Now 💛'}
             </Link>
             <Link
               to="/about"
-              className="inline-flex items-center gap-2 rounded-full border border-white/30 px-7 py-3.5 font-bengali text-base font-semibold text-white transition-all duration-200 hover:bg-white/10 hover:border-white/60"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 px-7 py-3.5 font-bengali text-base font-semibold text-white transition-all duration-200 hover:bg-white/10 hover:border-white/60"
             >
               {bn ? 'আমাদের কার্যক্রম ➔' : 'Explore Our Work ➔'}
             </Link>
@@ -187,21 +189,21 @@ function CoreValuesBar() {
   ];
 
   return (
-    <div className="relative z-20 mx-auto -mt-10 max-w-[1340px] px-6 md:px-10">
+    <div className="relative z-20 mx-auto -mt-6 sm:-mt-10 max-w-[1340px] px-4 md:px-10">
       <div
-        className="grid grid-cols-1 divide-y rounded-2xl border border-white/15 p-6 shadow-2xl backdrop-blur-md sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4"
+        className="grid grid-cols-1 divide-y divide-white/10 rounded-2xl border border-white/15 p-4 sm:p-6 shadow-2xl backdrop-blur-md sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4"
         style={{ background: INK }}
       >
         {values.map((v, i) => {
           const VIcon = v.icon;
           return (
-            <div key={i} className="flex items-center gap-4 py-4 sm:px-6 sm:py-2">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/10" style={{ color: ACCENT_LIGHT }}>
-                <VIcon className="h-6 w-6" />
+            <div key={i} className="flex items-center gap-3.5 py-3 sm:px-6 sm:py-2">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10" style={{ color: ACCENT_LIGHT }}>
+                <VIcon className="h-5 w-5" />
               </div>
-              <div>
-                <h3 className="font-bengali text-base font-bold text-white">{v.title}</h3>
-                <p className="font-bengali text-xs text-white/70">{v.desc}</p>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-bengali text-sm sm:text-base font-bold text-white truncate">{v.title}</h3>
+                <p className="font-bengali text-xs text-white/70 truncate">{v.desc}</p>
               </div>
             </div>
           );
@@ -219,7 +221,7 @@ function ImpactSection() {
   const stats = [
     {
       icon: FaUserGroup,
-      number: 500,
+      number: 5000,
       suffix: '+',
       label: bn ? 'জীবনের উন্নয়ন' : 'Lives Impacted',
       color: 'bg-orange-100 text-orange-700',
@@ -240,7 +242,7 @@ function ImpactSection() {
     },
     {
       icon: FaDroplet,
-      number: 7,
+      number: 47,
       suffix: '+',
       label: bn ? 'রক্তদান শিবির' : 'Blood Donation Camps',
       color: 'bg-teal-100 text-teal-700',
@@ -334,7 +336,7 @@ function KeyProgramsSection() {
         : 'Tree plantation, clean drives, and environment awareness for a greener future.',
       icon: FaLeaf,
       iconBg: 'bg-green-100 text-green-700',
-      img: '/assets/images/impacts/tree_plantations.jpg',
+      img: '/assets/images/service/tree_plantations.jpg',
     },
     {
       title: bn ? 'নারী ক্ষমতায়ন' : 'Women Empowerment',
@@ -370,7 +372,7 @@ function KeyProgramsSection() {
         : 'Promoting culture, sports, and social harmony through various events.',
       icon: FaMusic,
       iconBg: 'bg-purple-100 text-purple-700',
-      img: '/assets/images/service/drawing_14_01_26.png',
+      img: '/assets/images/service/drawing.jpg',
     },
   ];
 
@@ -396,7 +398,7 @@ function KeyProgramsSection() {
                 style={{ borderColor: RULE }}
               >
                 {/* Thumbnail Image */}
-                <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                <div className="relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden bg-slate-100">
                   <img
                     src={prog.img}
                     alt={prog.title}
@@ -420,14 +422,6 @@ function KeyProgramsSection() {
                       {prog.desc}
                     </p>
                   </div>
-
-                  <Link
-                    to="/programs"
-                    className="mt-4 inline-flex items-center gap-1 font-bengali text-xs font-bold transition-colors"
-                    style={{ color: BRAND }}
-                  >
-                    {bn ? 'বিস্তারিত ➔' : 'Learn more ➔'}
-                  </Link>
                 </div>
               </div>
             );
@@ -543,43 +537,101 @@ function MissionSpotlight() {
 
 // ─────────────────── 6. LATEST NEWS & EVENTS ───────────────────
 function LatestNewsSection() {
-  const newsItems = [
-    {
-      title: 'Blood Donation Camp – Thank You Volunteers',
-      date: 'May 18, 2026',
-      cat: 'Blood Camp',
-      desc: 'Another successful blood donation camp with overwhelming support from community donors.',
-      img: '/assets/images/service/post-33-raktokotha-camp.jpg',
-    },
-    {
-      title: 'Study Materials Distributed to Students',
-      date: 'May 15, 2026',
-      cat: 'Education',
-      desc: 'Distributed study materials, books, and stationery to 100+ underprivileged students.',
-      img: '/assets/images/service/post-34-students-book-support.jpg',
-    },
-    {
-      title: 'Tree Plantation Drive Completed',
-      date: 'May 10, 2026',
-      cat: 'Environment',
-      desc: 'Planted 150+ trees and committed to a cleaner, greener tomorrow in Paschim Medinipur.',
-      img: '/assets/images/impacts/tree_plantations.jpg',
-    },
-    {
-      title: 'Winter Warmth & Clothing Distribution',
-      date: 'May 04, 2026',
-      cat: 'Relief',
-      desc: 'Distributed warm clothes and blankets to senior citizens and needy families.',
-      img: '/assets/images/service/post-20-winter-clothes.jpg',
-    },
-    {
-      title: 'Community Awareness & Youth Guidance',
-      date: 'Apr 28, 2026',
-      cat: 'Social Welfare',
-      desc: 'Organized community workshops promoting social awareness, health, and education.',
-      img: '/assets/images/service/post-35-stop-child-marriage.jpg',
-    },
-  ];
+  const { posts: dbPosts } = usePosts();
+
+  const allPosts = useMemo(() => {
+    const DEFAULT_NEWS = [
+      {
+        id: '1',
+        title: 'Free Health Check-up Camp Held in Narajole',
+        date: 'May 20, 2026',
+        cat: 'Healthcare Initiative',
+        desc: 'Our free health check-up camp benefitted over 120 villagers with doctor consultations, diagnostic checkups, and free medicines. Thank you to all healthcare volunteers and community donors.',
+        img: '/assets/images/service/post-15-mental-care-home.jpg',
+        slug: 'free-general-health-checkup',
+      },
+      {
+        id: '2',
+        title: 'Blood Donation Camp – Thank You Volunteers',
+        date: 'May 18, 2026',
+        cat: 'Blood Camp',
+        desc: 'Another successful blood donation camp with overwhelming support from community donors.',
+        img: '/assets/images/service/post-33-raktokotha-camp.jpg',
+        slug: 'regular-blood-donation-camp',
+      },
+      {
+        id: '3',
+        title: 'Study Materials Distributed to Students',
+        date: 'May 15, 2026',
+        cat: 'Education',
+        desc: 'Distributed study materials, books, and stationery to 100+ underprivileged students.',
+        img: '/assets/images/service/post-34-students-book-support.jpg',
+        slug: 'education-support-program',
+      },
+      {
+        id: '4',
+        title: 'Tree Plantation Drive Completed',
+        date: 'May 10, 2026',
+        cat: 'Environment',
+        desc: 'Planted 150+ trees and committed to a cleaner, greener tomorrow in Paschim Medinipur.',
+        img: '/assets/images/impacts/tree_plantations.jpg',
+        slug: 'tree-plantation-drive',
+      },
+      {
+        id: '5',
+        title: 'Winter Warmth & Clothing Distribution',
+        date: 'May 04, 2026',
+        cat: 'Relief',
+        desc: 'Distributed warm clothes and blankets to senior citizens and needy families.',
+        img: '/assets/images/service/post-20-winter-clothes.jpg',
+        slug: 'winter-clothes-distribution',
+      },
+      {
+        id: '6',
+        title: 'Community Awareness & Youth Guidance',
+        date: 'Apr 28, 2026',
+        cat: 'Social Welfare',
+        desc: 'Organized community workshops promoting social awareness, health, and education.',
+        img: '/assets/images/service/post-35-stop-child-marriage.jpg',
+        slug: 'community-awareness-workshop',
+      },
+    ];
+
+    if (dbPosts && dbPosts.length > 0) {
+      const formattedDb = dbPosts.map((p) => {
+        const plainDesc = p.content
+          ? p.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+          : '';
+        let formattedDate = p.publishedDate;
+        try {
+          if (p.publishedDate) {
+            const d = new Date(p.publishedDate);
+            formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+          }
+        } catch {
+          // fallback
+        }
+        return {
+          id: p.id,
+          title: p.title,
+          date: formattedDate || p.publishedDate,
+          cat: p.category || 'Event',
+          desc: p.share_snippet || plainDesc || p.title,
+          img: p.featuredImage || '/assets/images/Chhatradol.jpg',
+          slug: p.slug || p.id,
+        };
+      });
+
+      const dbTitles = new Set(formattedDb.map((p) => p.title.toLowerCase()));
+      const extraDefaults = DEFAULT_NEWS.filter((p) => !dbTitles.has(p.title.toLowerCase()));
+      return [...formattedDb, ...extraDefaults].slice(0, 6);
+    }
+
+    return DEFAULT_NEWS;
+  }, [dbPosts]);
+
+  const currentPost = allPosts[0];
+  const last5Posts = allPosts.slice(1, 6);
 
   return (
     <section className="py-20" style={{ background: BG_CREAM }}>
@@ -594,66 +646,68 @@ function LatestNewsSection() {
         </Reveal>
 
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12 items-stretch">
-          {/* Featured Large News Card */}
-          <div className="lg:col-span-7 flex flex-col">
-            <Link
-              to="/events"
-              className="group flex flex-col h-full overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:border-amber-400"
-              style={{ borderColor: RULE }}
-            >
-              <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100 flex-shrink-0">
-                <img
-                  src="/assets/images/service/post-15-mental-care-home.jpg"
-                  alt="Free Health Camp"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  onError={onImgErr}
-                />
-                <div className="absolute left-4 top-4 flex items-center gap-2">
-                  <span className="rounded-full px-3 py-1 text-xs font-bold text-white shadow-md" style={{ background: BRAND }}>
-                    Featured Event
-                  </span>
-                  <span className="rounded-full bg-black/60 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white">
-                    May 20, 2026
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-1 flex-col justify-between p-6 sm:p-7">
-                <div>
-                  <div className="flex items-center gap-2 text-xs font-bold tracking-wide uppercase text-amber-700">
-                    <FaRegCalendarDays className="h-3.5 w-3.5 text-[#c2410c]" />
-                    <span>Healthcare Initiative • Narajole</span>
-                  </div>
-                  <h3 className="mt-2.5 font-sans text-xl sm:text-2xl font-bold leading-tight text-slate-900 transition-colors group-hover:text-[#c2410c]">
-                    Free Health Check-up Camp Held in Narajole
-                  </h3>
-                  <p className="mt-2.5 font-sans text-sm sm:text-base leading-relaxed text-slate-600">
-                    Our free health check-up camp benefitted over 120 villagers with doctor consultations, diagnostic checkups, and free medicines. Thank you to all healthcare volunteers and community donors.
-                  </p>
-                </div>
-
-                <div className="mt-5 flex items-center gap-2 font-sans text-sm font-bold text-[#c2410c] group-hover:translate-x-1 transition-transform">
-                  <span>Read full story</span>
-                  <FaArrowRight className="h-3.5 w-3.5" />
-                </div>
-              </div>
-            </Link>
-          </div>
-
-          {/* Right Column: 5 Compact News Items filling full height perfectly aligned with left card */}
-          <div className="lg:col-span-5 flex flex-col justify-between space-y-3 lg:space-y-0 h-full">
-            {newsItems.map((item, idx) => (
+          {/* First Big Position: Current Post */}
+          {currentPost && (
+            <div className="lg:col-span-7 flex flex-col">
               <Link
-                key={idx}
-                to="/events"
+                to={`/events/${currentPost.slug || currentPost.id}`}
+                className="group flex flex-col h-full overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:border-amber-400"
+                style={{ borderColor: RULE }}
+              >
+                <div className="relative aspect-[4/3] sm:aspect-[16/9] w-full overflow-hidden bg-slate-100 flex-shrink-0">
+                  <img
+                    src={currentPost.img}
+                    alt={currentPost.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onError={onImgErr}
+                  />
+                  <div className="absolute left-4 top-4 flex items-center gap-2">
+                    <span className="rounded-full px-3 py-1 text-xs font-bold text-white shadow-md" style={{ background: BRAND }}>
+                      Featured Event
+                    </span>
+                    <span className="rounded-full bg-black/60 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white">
+                      {currentPost.date}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-1 flex-col justify-between p-6 sm:p-7">
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-bold tracking-wide uppercase text-amber-700">
+                      <FaRegCalendarDays className="h-3.5 w-3.5 text-[#c2410c]" />
+                      <span>{currentPost.cat} • Narajole</span>
+                    </div>
+                    <h3 className="mt-2.5 font-sans text-xl sm:text-2xl font-bold leading-tight text-slate-900 transition-colors group-hover:text-[#c2410c]">
+                      {currentPost.title}
+                    </h3>
+                    <p className="mt-2.5 font-sans text-sm sm:text-base leading-relaxed text-slate-600 line-clamp-3">
+                      {currentPost.desc}
+                    </p>
+                  </div>
+
+                  <div className="mt-5 flex items-center gap-2 font-sans text-sm font-bold text-[#c2410c] group-hover:translate-x-1 transition-transform">
+                    <span>Read full story</span>
+                    <FaArrowRight className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+              </Link>
+            </div>
+          )}
+
+          {/* Right Column: Next 5 Posts */}
+          <div className="lg:col-span-5 flex flex-col justify-between space-y-3 lg:space-y-0 h-full">
+            {last5Posts.map((item, idx) => (
+              <Link
+                key={item.id || idx}
+                to={`/events/${item.slug || item.id}`}
                 className="group flex gap-3.5 rounded-xl border bg-white p-3 sm:p-3.5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 hover:-translate-y-0.5"
                 style={{ borderColor: RULE }}
               >
-                <div className="relative h-18 w-22 sm:h-20 sm:w-26 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                <div className="relative h-20 w-24 sm:h-24 sm:w-32 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
                   <img
                     src={item.img}
                     alt={item.title}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     onError={onImgErr}
                   />
                 </div>
@@ -695,25 +749,25 @@ function TestimonialsSection() {
       quote: bn
         ? 'ছাত্রদল সংস্থাটি কঠিন সময়ে সর্বদা আমাদের পাশে দাঁড়িয়েছে। তাদের সামাজিক প্রচেষ্টা সত্যিই প্রশংসনীয়।'
         : 'Chhatradol SWO has always supported us in difficult times. Their efforts are truly inspiring.',
-      author: 'Ajit Halder',
+      author: 'Swati Maity',
       role: bn ? 'উপকারভোগী' : 'Beneficiary',
-      avatar: '/assets/images/testimonials/ajit_halder.jpg',
+      avatar: '/assets/images/testimonials/swati_maity.jpg',
     },
     {
       quote: bn
         ? 'শিক্ষা সহায়তা কর্মসূচির ফলে আমার সন্তান পড়াশোনা চালিয়ে যেতে পেরেছে। ধন্যবাদ ছাত্রদল।'
-        : 'The education support program helped my child continue studies. Thank you Chhatradol SWO!',
-      author: 'Mili Samanta',
-      role: bn ? 'অভিভাবক' : 'Parent',
-      avatar: '/assets/images/testimonials/mili_samanta.jpg',
+        : 'The education support program helped me to continue studies. Thank you Chhatradol SWO!',
+      author: 'Amit Mallick',
+      role: bn ? 'অভিভাবক' : 'Student',
+      avatar: '/assets/images/testimonials/amit_mallick.jpg',
     },
     {
       quote: bn
         ? 'এখানে স্বেচ্ছাসেবক হিসেবে কাজ করে আমি মানবসেবার প্রকৃত অর্থ বুঝতে পেরেছি।'
         : 'Being a volunteer here taught me the true meaning of service and humanity.',
-      author: 'Ratan Maity',
+      author: 'Tarasankar Patra',
       role: bn ? 'স্বেচ্ছাসেবক' : 'Volunteer',
-      avatar: '/assets/images/testimonials/ratan_maity.jpg',
+      avatar: '/assets/images/testimonials/tarasankar_patra.jpg',
     },
   ];
 
