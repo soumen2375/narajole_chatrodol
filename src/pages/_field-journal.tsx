@@ -109,7 +109,7 @@ export function RevealStagger({ children, className = '', style }: { children: R
 // ─────────────────── PageShell ───────────────────
 export function PageShell({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ ...fjVars, background: FJ.bg, color: FJ.ink, fontFamily: 'Roboto, "Noto Sans Bengali", sans-serif' }}>
+    <div style={{ ...fjVars, background: FJ.bg, color: FJ.ink, fontFamily: 'Inter, "Noto Sans Bengali", sans-serif' }}>
       {children}
     </div>
   );

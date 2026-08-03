@@ -158,12 +158,12 @@ export default function Donate() {
             <div className="overflow-hidden rounded-[14px]" style={{ aspectRatio: '3/2' }}>
               <img src={HERO_IMG} alt={tr('শিক্ষার্থী', 'Student')} className="h-full w-full object-cover" />
             </div>
-            <div className="absolute -bottom-5 left-0 max-w-[240px] rounded-[12px] p-4 shadow-lg sm:-left-6" style={{ background: FJ.paper }}>
+            <div className="absolute -bottom-5 left-2 max-w-[220px] sm:max-w-[240px] rounded-[12px] p-3.5 sm:p-4 shadow-lg sm:-left-6" style={{ background: FJ.paper }}>
               <Icon.Quote className="h-4 w-4" style={{ color: FJ.ink }} />
-              <p className="mt-2 font-bengali text-[14px] font-semibold leading-snug" style={{ color: FJ.ink }}>
+              <p className="mt-1.5 font-bengali text-[13px] sm:text-[14px] font-semibold leading-snug" style={{ color: FJ.ink }}>
                 {tr('আজকের প্রতিটি অবদান গড়ে তোলে এক উন্নত আগামী।', 'Every contribution today builds a better tomorrow.')}
               </p>
-              <Icon.Heart className="mt-2 h-4 w-4" style={{ color: FJ.brand }} />
+              <Icon.Heart className="mt-1.5 h-3.5 w-3.5" style={{ color: FJ.brand }} />
             </div>
           </div>
         </div>
