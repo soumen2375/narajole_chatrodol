@@ -88,7 +88,7 @@ export default function Gallery() {
 
   return (
     <PageShell>
-      <Breadcrumb title="Photo Gallery" />
+      <Breadcrumb title="Gallery" />
 
       {/* ════ CINEMA SHOWCASE (top of page) ════ */}
       <section style={{ background: '#0d0c0a' }}>

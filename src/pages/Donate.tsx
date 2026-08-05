@@ -113,7 +113,7 @@ export default function Donate() {
 
   return (
     <PageShell>
-      <Breadcrumb title="Donate & Support" />
+      <Breadcrumb title="Donate" />
       {/* ════ HERO ════ */}
       <section style={{ background: FJ.bg }}>
         <div className="mx-auto grid max-w-[1320px] grid-cols-12 items-center gap-8 px-6 pb-10 pt-12 md:px-10 md:pt-16">

@@ -87,29 +87,29 @@ export default function Events() {
 
   return (
     <PageShell>
-      <Breadcrumb title="Events & News" />
+      <Breadcrumb title="Events" />
 
 
       {/* ════ FEATURED ════ */}
       {featured && safePage === 1 && (
         <section style={{ background: FJ.paper }}>
-          <div className="mx-auto max-w-[1320px] px-6 pt-12 md:px-10">
-            <Link to={`/events/${featured.slug || featured.id}`} className="card-lift group relative block overflow-hidden rounded-[18px]" style={{ border: `1px solid ${FJ.rule}` }}>
+          <div className="mx-auto max-w-[1320px] px-4 pt-6 sm:px-6 sm:pt-8 md:px-10 md:pt-10">
+            <Link to={`/events/${featured.slug || featured.id}`} className="card-lift group relative block overflow-hidden rounded-[14px] sm:rounded-[18px]" style={{ border: `1px solid ${FJ.rule}` }}>
               <div className="img-zoom">
-                <img src={featured.featuredImage || FALLBACK_IMG} onError={onImgError} alt={featured.title} className="h-[300px] w-full object-cover md:h-[380px]" />
+                <img src={featured.featuredImage || FALLBACK_IMG} onError={onImgError} alt={featured.title} className="h-[180px] w-full object-cover sm:h-[220px] md:h-[260px]" />
               </div>
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(20,15,10,0.05) 0%, rgba(20,15,10,0.45) 55%, rgba(20,15,10,0.88) 100%)' }} />
-              <div className="absolute bottom-0 left-0 right-0 p-6 md:p-9">
-                <span className="inline-flex items-center rounded-full px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-white" style={{ background: FJ.brand }}>
-                  {tr('Featured', 'বিশেষ')} · {featured.category}
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(20,15,10,0.02) 0%, rgba(20,15,10,0.40) 45%, rgba(20,15,10,0.90) 100%)' }} />
+              <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
+                <span className="inline-flex items-center rounded-full px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-white sm:px-3 sm:py-1 sm:text-[10px]" style={{ background: FJ.brand }}>
+                  {featured.category}
                 </span>
-                <h2 className="mt-3 max-w-3xl font-bengali text-[26px] leading-tight text-white md:text-[34px]" style={SERIF_BN}>{featured.title}</h2>
-                <p className="mt-2 hidden max-w-2xl font-bengali text-[14px] leading-relaxed text-white/80 sm:line-clamp-2">{excerpt(featured.content, 180)}…</p>
-                <div className="mt-4 flex flex-wrap items-center gap-4">
-                  <span className="inline-flex items-center gap-2 rounded-full px-4 py-2 font-bengali text-[13px] font-semibold" style={{ background: '#fff', color: FJ.ink }}>
-                    {t('events.readMore')} <Icon.Arrow className="h-3 w-3" style={{ color: FJ.brand }} />
+                <h2 className="mt-2 max-w-3xl font-bengali text-[16px] leading-tight text-white sm:text-[20px] md:text-[26px]" style={SERIF_BN}>{featured.title}</h2>
+                <p className="mt-1 hidden max-w-2xl font-bengali text-[12px] leading-relaxed text-white/80 sm:line-clamp-1 md:line-clamp-2">{excerpt(featured.content, 160)}…</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2 sm:mt-3 sm:gap-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-bengali text-[11px] font-semibold sm:px-4 sm:py-2 sm:text-[13px]" style={{ background: '#fff', color: FJ.ink }}>
+                    {t('events.readMore')} <Icon.Arrow className="h-2.5 w-2.5 sm:h-3 sm:w-3" style={{ color: FJ.brand }} />
                   </span>
-                  <span className="inline-flex items-center gap-1.5 font-bengali text-[12.5px] text-white/80"><CalIcon className="h-3.5 w-3.5" /> {featured.publishedDate}</span>
+                  <span className="inline-flex items-center gap-1 font-bengali text-[10.5px] text-white/80 sm:text-[12.5px]"><CalIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> {featured.publishedDate}</span>
                 </div>
               </div>
             </Link>
@@ -119,14 +119,15 @@ export default function Events() {
 
       {/* ════ FILTERS ════ */}
       <section style={{ background: FJ.paper }}>
-        <div className="mx-auto max-w-[1320px] px-6 pt-10 md:px-10">
-          <div className="flex flex-col gap-3 rounded-[14px] p-4 lg:flex-row lg:items-center" style={{ background: FJ.bg, border: `1px solid ${FJ.rule}` }}>
-            <div className="flex flex-1 flex-wrap items-center gap-2">
+        <div className="mx-auto max-w-[1320px] px-4 pt-6 sm:px-6 sm:pt-8 md:px-10 md:pt-10">
+          <div className="flex flex-col gap-3 rounded-[14px] p-3 sm:p-4 lg:flex-row lg:items-center" style={{ background: FJ.bg, border: `1px solid ${FJ.rule}` }}>
+            {/* Category pills — scroll horizontally on mobile */}
+            <div className="flex flex-1 flex-wrap items-center gap-1.5 sm:gap-2">
               {[{ id: 'all', name: t('events.catAll') }, ...topLevelCats.map((c) => ({ id: c.name, name: c.name }))].map((c) => {
                 const active = filter === c.id;
                 return (
                   <button key={c.id} type="button" onClick={() => reset(() => setFilter(c.id))}
-                    className="rounded-full px-3.5 py-1.5 font-bengali text-[12.5px] font-medium transition-all"
+                    className="rounded-full px-3 py-1 font-bengali text-[11.5px] font-medium transition-all sm:px-3.5 sm:py-1.5 sm:text-[12.5px]"
                     style={{ background: active ? FJ.brand : FJ.paper, color: active ? '#fff' : FJ.ink2, border: `1px solid ${active ? FJ.brand : FJ.rule}`, boxShadow: active ? `0 6px 16px -8px ${FJ.brand}` : 'none' }}>
                     {c.name}
                   </button>
@@ -134,25 +135,26 @@ export default function Events() {
               })}
             </div>
 
-            <div className="flex items-center gap-2.5">
+            {/* Sort / Year / Search — stack on mobile, inline on desktop */}
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5">
               <select value={sortOrder} onChange={(e) => reset(() => setSortOrder(e.target.value as 'newest' | 'oldest'))}
-                className="rounded-[8px] px-3 py-2 font-bengali text-[13px] outline-none" style={{ background: FJ.paper, color: FJ.ink2, border: `1px solid ${FJ.rule}` }}>
+                className="rounded-[8px] px-2.5 py-2 font-bengali text-[12px] outline-none sm:px-3 sm:text-[13px]" style={{ background: FJ.paper, color: FJ.ink2, border: `1px solid ${FJ.rule}` }}>
                 <option value="newest">{tr('Newest First', '\u09a8\u09a4\u09c1\u09a8 \u09aa\u09cd\u09b0\u09a5\u09ae\u09c7')}</option>
                 <option value="oldest">{tr('Oldest First', '\u09aa\u09c1\u09b0\u09be\u09a8\u09cb \u09aa\u09cd\u09b0\u09a5\u09ae\u09c7')}</option>
               </select>
               <select value={year} onChange={(e) => reset(() => setYear(e.target.value))}
-                className="rounded-[8px] px-3 py-2 font-bengali text-[13px] outline-none" style={{ background: FJ.paper, color: FJ.ink2, border: `1px solid ${FJ.rule}` }}>
+                className="rounded-[8px] px-2.5 py-2 font-bengali text-[12px] outline-none sm:px-3 sm:text-[13px]" style={{ background: FJ.paper, color: FJ.ink2, border: `1px solid ${FJ.rule}` }}>
                 <option value="all">{tr('All Years', 'সব বছর')}</option>
                 {years.map((y) => <option key={y} value={y}>{y}</option>)}
               </select>
-              <div className="relative">
+              <div className="relative col-span-2 sm:col-span-1">
                 <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2" style={{ color: FJ.muted }} />
                 <input value={query} onChange={(e) => reset(() => setQuery(e.target.value))} placeholder={tr('Search events…', 'অনুষ্ঠান খুঁজুন…')}
-                  className="w-full rounded-[8px] py-2 pl-9 pr-3 font-bengali text-[13px] outline-none lg:w-52" style={{ background: FJ.paper, color: FJ.ink, border: `1px solid ${FJ.rule}` }} />
+                  className="w-full rounded-[8px] py-2 pl-9 pr-3 font-bengali text-[12px] outline-none sm:text-[13px] lg:w-52" style={{ background: FJ.paper, color: FJ.ink, border: `1px solid ${FJ.rule}` }} />
               </div>
             </div>
           </div>
-          <div className="mt-3 px-1 font-mono text-[10.5px] uppercase tracking-[0.22em]" style={{ color: FJ.muted }}>
+          <div className="mt-2 px-1 font-mono text-[10.5px] uppercase tracking-[0.22em]" style={{ color: FJ.muted }}>
             {filtered.length} {t('events.entries')}
           </div>
         </div>

@@ -18,6 +18,7 @@ const Volunteer = lazy(() => import('@/pages/Volunteer'));
 const Donate = lazy(() => import('@/pages/Donate'));
 const BloodRequest = lazy(() => import('@/pages/BloodRequest'));
 const BloodCampApplication = lazy(() => import('@/pages/BloodCampApplication'));
+const InteractiveForms = lazy(() => import('@/pages/InteractiveForms'));
 const Login = lazy(() => import('@/pages/Login'));
 const AdminLogin = lazy(() => import('@/pages/AdminLogin'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
@@ -104,6 +105,7 @@ export default function App() {
             <Route path="/donate" element={<Donate />} />
             <Route path="/blood-request" element={<BloodRequest />} />
             <Route path="/organise-blood-camp" element={<BloodCampApplication />} />
+            <Route path="/interactive-forms" element={<InteractiveForms />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/terms" element={<Terms />} />

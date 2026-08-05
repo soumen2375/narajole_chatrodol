@@ -560,7 +560,7 @@ export default function AdminCMSDashboard() {
                           checked={selected.size === visible.length && visible.length > 0}
                           onChange={e => setSelected(e.target.checked ? new Set(visible.map(p => p.id)) : new Set())} />
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Thumbnail</th>
+                      <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500" style={{ width: '72px', minWidth: '72px' }}>Thumbnail</th>
                       <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Title</th>
                       <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
                       <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -581,7 +581,7 @@ export default function AdminCMSDashboard() {
                         </td>
                       </tr>
                     ) : visible.map(p => (
-                      <tr key={p.id} className="group hover:bg-orange-50/40 transition-colors">
+                      <tr key={p.id} className="group hover:bg-orange-50/40 transition-colors" style={{ height: '60px', maxHeight: '60px' }}>
                         <td className="px-4 py-3">
                           <input type="checkbox" className="rounded border-gray-300"
                             checked={selected.has(p.id)}
@@ -591,13 +591,19 @@ export default function AdminCMSDashboard() {
                               setSelected(n);
                             }} />
                         </td>
-                        <td className="px-3 py-3">
+                        <td className="px-3 py-2.5">
                           {p.featured_image ? (
-                            <img src={p.featured_image} alt="" className="h-10 w-14 rounded-lg object-cover"
-                              onError={e => { e.currentTarget.style.display = 'none'; }} />
+                            <div className="overflow-hidden rounded-md flex-shrink-0"
+                              style={{ width: '56px', height: '44px', minWidth: '56px' }}>
+                              <img src={p.featured_image} alt=""
+                                className="h-full w-full object-cover"
+                                style={{ width: '56px', height: '44px', maxWidth: '56px', maxHeight: '44px' }}
+                                onError={e => { e.currentTarget.style.display = 'none'; }} />
+                            </div>
                           ) : (
-                            <div className="flex h-10 w-14 items-center justify-center rounded-lg bg-gray-100">
-                              <FileText className="h-5 w-5 text-gray-400" />
+                            <div className="flex items-center justify-center rounded-md bg-gray-100"
+                              style={{ width: '56px', height: '44px' }}>
+                              <FileText className="h-4 w-4 text-gray-400" />
                             </div>
                           )}
                         </td>

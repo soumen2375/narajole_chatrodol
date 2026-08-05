@@ -26,42 +26,42 @@ export default function About() {
     {
       name: bn ? 'স্বরূপ সামন্ত' : 'Swarup Samanta',
       role: bn ? 'সভাপতি' : 'President',
-      img: '/assets/images/members/swarup.jpg',
+      img: '/assets/images/about/members/swarup.jpg',
     },
     {
       name: bn ? 'প্রবাল ভুঁইয়া' : 'Prabal Bhunia',
       role: bn ? 'সহ-সভাপতি' : 'Vice President',
-      img: '/assets/images/members/prabal.jpg',
+      img: '/assets/images/about/members/prabal.jpg',
     },
     {
       name: bn ? 'সায়ন সামন্ত' : 'Sayan Samanta',
       role: bn ? 'সাধারণ সম্পাদক' : 'General Secretary',
-      img: '/assets/images/members/sayan.jpg',
+      img: '/assets/images/about/members/sayan.jpg',
     },
     {
       name: bn ? 'সুরজিৎ বেরা' : 'Surajit Bera',
       role: bn ? 'যুগ্ম সম্পাদক' : 'Joint Secretary',
-      img: '/assets/images/members/surajit.jpg',
+      img: '/assets/images/about/members/surajit.jpg',
     },
     {
       name: bn ? 'শুভজিৎ কুন্ডু' : 'Subhajit Kundu',
       role: bn ? 'কোষাধ্যক্ষ' : 'Treasurer',
-      img: '/assets/images/members/subhajit.jpg',
+      img: '/assets/images/about/members/subhajit.jpg',
     },
     {
       name: bn ? 'সৌমেন মাইতি' : 'Soumen Maity',
       role: bn ? 'সহ-কোষাধ্যক্ষ' : 'Assistant Treasurer',
-      img: '/assets/images/members/soumen.jpg',
+      img: '/assets/images/about/members/soumen.jpg',
     },
     {
       name: bn ? 'শুভদীপ ঘোড়াই' : 'Subhadip Ghorai',
       role: bn ? 'সদস্য' : 'Member',
-      img: '/assets/images/members/subhadip.jpg',
+      img: '/assets/images/about/members/subhadip.jpg',
     },
     {
       name: bn ? 'পবিত্র সাঁতরা' : 'Pabitra Santra',
       role: bn ? 'সদস্য' : 'Member',
-      img: '/assets/images/members/pabitra.jpg',
+      img: '/assets/images/about/members/pabitra.jpg',
     },
   ];
 
@@ -126,7 +126,7 @@ export default function About() {
             <div className="lg:col-span-6">
               <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xl">
                 <img
-                  src="/assets/images/556741692_759296043610512_7656177070237080303_n.jpg"
+                  src="/assets/images/about/about.jpg"
                   alt="Chhatradol Students and Volunteers"
                   className="h-full w-full object-cover max-h-[460px]"
                   onError={onImgErr}
