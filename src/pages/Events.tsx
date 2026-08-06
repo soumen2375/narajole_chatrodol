@@ -154,9 +154,6 @@ export default function Events() {
               </div>
             </div>
           </div>
-          <div className="mt-2 px-1 font-mono text-[10.5px] uppercase tracking-[0.22em]" style={{ color: FJ.muted }}>
-            {filtered.length} {t('events.entries')}
-          </div>
         </div>
       </section>
 

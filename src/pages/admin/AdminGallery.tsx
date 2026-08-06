@@ -16,8 +16,6 @@ export default function AdminGallery() {
   const [showForm, setShowForm] = useState(false);
   const [seeding, setSeeding] = useState(false);
 
-  const nextSortOrder = items.length > 0 ? Math.max(...items.map((i) => i.sort_order)) + 1 : 1;
-
   const startNew = () => { setEditingId(null); setShowForm(true); };
   const startEdit = (g: (typeof items)[0]) => { setEditingId(g.id); setShowForm(true); };
   const cancelForm = () => { setShowForm(false); setEditingId(null); };
@@ -32,7 +30,7 @@ export default function AdminGallery() {
       category_bn: g.category.bn, category_en: g.category.en,
       sub_category_bn: g.sub_category.bn, sub_category_en: g.sub_category.en,
       more_url: g.more ?? '',
-      sort_order: g.sort_order,
+      created_at: g.created_at,
     };
   };
 
@@ -44,15 +42,8 @@ export default function AdminGallery() {
       category_bn: data.category_bn, category_en: data.category_en,
       sub_category_bn: data.sub_category_bn, sub_category_en: data.sub_category_en,
       more_url: data.more_url || null,
-      sort_order: data.sort_order,
+      created_at: data.created_at || new Date().toISOString(),
     };
-
-    // When adding a new photo, shift existing photos with >= sort_order up by 1
-    if (!editingId && items.some((i) => i.sort_order >= data.sort_order)) {
-      for (const item of items.filter((i) => i.sort_order >= data.sort_order)) {
-        await supabase.from('cswo_gallery').update({ sort_order: item.sort_order + 1 }).eq('id', item.id);
-      }
-    }
 
     if (editingId) {
       await supabase.from('cswo_gallery').update(payload).eq('id', editingId);
@@ -131,7 +122,6 @@ export default function AdminGallery() {
         <GalleryPhotoForm
           title={editingId ? tr('Edit photo', 'ছবি সম্পাদনা') : tr('Add new photo', 'নতুন ছবি যোগ করুন')}
           initial={getInitial()}
-          nextSortOrder={nextSortOrder}
           isAdmin
           onSave={save}
           onCancel={cancelForm}

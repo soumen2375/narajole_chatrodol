@@ -46,15 +46,18 @@ export default function Gallery() {
   const [lightbox, setLightbox] = useState<number | null>(null);
 
   const categories = useMemo(
-    () => [ALL, ...Array.from(new Set(all.map((g) => g.category[lang]).filter(Boolean)))],
+    () => [ALL, ...Array.from(new Set(all.map((g) => g.category[lang] || g.category.en || g.category.bn).filter(Boolean)))],
     [all, lang, ALL],
   );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const base = all.filter((g) => {
-      if (filter !== ALL && g.category[lang] !== filter) return false;
-      if (q && !`${g.alt[lang]} ${g.category[lang]} ${g.sub_category[lang]}`.toLowerCase().includes(q)) return false;
+      const cat = g.category[lang] || g.category.en || g.category.bn;
+      const alt = g.alt[lang] || g.alt.en || g.alt.bn;
+      const sub = g.sub_category[lang] || g.sub_category.en || g.sub_category.bn;
+      if (filter !== ALL && cat !== filter) return false;
+      if (q && !`${alt} ${cat} ${sub}`.toLowerCase().includes(q)) return false;
       return true;
     });
     return sort === 'oldest' ? [...base].reverse() : base;
@@ -145,10 +148,10 @@ export default function Gallery() {
                     {/* Caption */}
                     <div className="absolute bottom-0 left-0 right-0 p-5">
                       <div className="font-bengali text-[15px] font-semibold text-white drop-shadow">
-                        {currentSlide.alt[lang]}
+                        {currentSlide.alt[lang] || currentSlide.alt.en || currentSlide.alt.bn}
                       </div>
                       <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[10.5px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                        <span>{currentSlide.category[lang]}</span>
+                        <span>{currentSlide.category[lang] || currentSlide.category.en || currentSlide.category.bn}</span>
                         <span>·</span>
                         <span>{tr('Narajole, West Bengal', 'নারাজোল, পশ্চিমবঙ্গ')}</span>
                       </div>
@@ -219,11 +222,8 @@ export default function Gallery() {
             </div>
           </div>
 
-          {/* Count + Sort */}
-          <div className="mt-3 flex items-center justify-between">
-            <span className="font-mono text-[10.5px] uppercase tracking-[0.22em]" style={{ color: FJ.muted }}>
-              {filtered.length} {tr('PHOTOS', 'ছবি')}
-            </span>
+          {/* Sort */}
+          <div className="mt-3 flex items-center justify-end">
             <div className="flex items-center gap-2">
               <span className="font-mono text-[10.5px]" style={{ color: FJ.muted }}>{tr('Sort by:', 'সাজান:')}</span>
               <select
@@ -259,30 +259,40 @@ export default function Gallery() {
             </div>
           ) : (
             <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-3">
-              {shown.map((g) => (
-                <button
-                  key={g.id}
-                  onClick={() => openAt(g.id)}
-                  className="card-lift group mb-3 block w-full break-inside-avoid overflow-hidden rounded-[10px] text-left"
-                  style={{ border: `1px solid ${FJ.rule}` }}
-                >
-                  <div className="img-zoom relative">
-                    <img src={g.src} onError={onErr} loading="lazy" alt={g.alt[lang]} className="block h-auto max-h-[420px] w-full object-cover" />
-                    <div
-                      className="pointer-events-none absolute inset-0 flex flex-col justify-end p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                      style={{ background: 'linear-gradient(180deg, transparent 40%, rgba(20,15,10,0.78))' }}
-                    >
-                      <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/70">{g.category[lang]}</div>
+              {shown.map((g) => {
+                const categoryText = g.category[lang] || g.category.en || g.category.bn;
+                const altText = g.alt[lang] || g.alt.en || g.alt.bn;
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => openAt(g.id)}
+                    className="card-lift group mb-3 block w-full break-inside-avoid overflow-hidden rounded-[10px] text-left"
+                    style={{ border: `1px solid ${FJ.rule}` }}
+                  >
+                    <div className="img-zoom relative">
+                      <img src={g.src} onError={onErr} loading="lazy" alt={altText} className="block h-auto max-h-[420px] w-full object-cover" />
                       <div
-                        className="mt-0.5 font-bengali text-[12.5px] leading-snug text-white"
-                        style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}
+                        className="pointer-events-none absolute inset-0 flex flex-col justify-end p-3"
+                        style={{ background: 'linear-gradient(180deg, transparent 35%, rgba(20,15,10,0.85))' }}
                       >
-                        {g.alt[lang]}
+                        {categoryText && (
+                          <div className="font-mono text-[9px] uppercase tracking-[0.2em] font-semibold text-white/80">
+                            {categoryText}
+                          </div>
+                        )}
+                        {altText && (
+                          <div
+                            className="mt-0.5 font-bengali text-[13px] font-semibold leading-snug text-white"
+                            style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}
+                          >
+                            {altText}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -317,8 +327,12 @@ export default function Gallery() {
           <figure className="max-h-[85vh] max-w-[92vw] sm:max-w-[1000px] overflow-y-auto px-1" onClick={(e) => e.stopPropagation()}>
             <img src={current.src} onError={onErr} alt={current.alt[lang]} className="mx-auto max-h-[62vh] sm:max-h-[74vh] w-auto max-w-full rounded-[8px] object-contain" />
             <figcaption className="mt-3 text-center px-2">
-              <div className="font-mono text-[10px] uppercase tracking-[0.22em]" style={{ color: '#fca47e' }}>{current.category[lang]}</div>
-              <div className="mt-1 font-bengali text-[13.5px] sm:text-[15px] text-white leading-snug">{current.alt[lang]}</div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em]" style={{ color: '#fca47e' }}>
+                {current.category[lang] || current.category.en || current.category.bn}
+              </div>
+              <div className="mt-1 font-bengali text-[13.5px] sm:text-[15px] text-white leading-snug">
+                {current.alt[lang] || current.alt.en || current.alt.bn}
+              </div>
               <div className="mt-1 font-mono text-[11px] text-white/50">{(lightbox ?? 0) + 1} / {filtered.length}</div>
               {current.more && (
                 <a href={current.more} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 font-bengali text-[12.5px] font-semibold" style={{ color: '#fca47e' }}>
