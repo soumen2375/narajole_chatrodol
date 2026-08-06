@@ -9,6 +9,7 @@ export interface GalleryItem {
   sub_category: { bn: string; en: string };
   more?: string;
   sort_order: number;
+  created_at: string;
   is_active: boolean;
   deleted_at: string | null;
   uploaded_by?: string | null;
@@ -28,7 +29,8 @@ function mapRow(g: Record<string, unknown>): GalleryItem {
     category: { bn: (g.category_bn as string) || '', en: (g.category_en as string) || '' },
     sub_category: { bn: (g.sub_category_bn as string) || '', en: (g.sub_category_en as string) || '' },
     more: (g.more_url as string) ?? undefined,
-    sort_order: g.sort_order as number,
+    sort_order: (g.sort_order as number) || 0,
+    created_at: (g.created_at as string) || new Date().toISOString(),
     is_active: g.is_active as boolean,
     deleted_at: (g.deleted_at as string) ?? null,
     uploaded_by: (g.uploaded_by as string) ?? null,
@@ -48,7 +50,7 @@ export function useGallery() {
       .select('*')
       .eq('is_active', true)
       .is('deleted_at', null)
-      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
       .then(({ data, error }) => {
         if (!active) return;
         if (error) {
@@ -77,7 +79,7 @@ export function useGalleryAdmin() {
         .from('cswo_gallery')
         .select('*')
         .is('deleted_at', null)
-        .order('sort_order', { ascending: true });
+        .order('created_at', { ascending: false });
       if (error) {
         setError(error.message);
       } else {

@@ -69,9 +69,9 @@ export default function MemberGallery() {
       category_en: data.category_en || data.category_bn,
       sub_category_bn: data.sub_category_bn,
       sub_category_en: data.sub_category_en,
+      created_at: data.created_at || new Date().toISOString(),
       is_active: false,
       uploaded_by: member.id,
-      sort_order: 0,
     });
     setShowForm(false);
     setSuccess(tr('Photo submitted for review!', 'ছবি পর্যালোচনার জন্য জমা দেওয়া হয়েছে!'));
@@ -121,7 +121,6 @@ export default function MemberGallery() {
       {showForm && (
         <GalleryPhotoForm
           title={tr('Submit a photo', 'ছবি জমা দিন')}
-          nextSortOrder={0}
           isAdmin={false}
           onSave={handleSave}
           onCancel={() => setShowForm(false)}

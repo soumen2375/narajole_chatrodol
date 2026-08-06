@@ -120,7 +120,7 @@ const D: Dict = {
   },
 
   // ---- events ----
-  'events.title': { bn: 'অনুষ্ঠান ও খবর', en: 'Events & News' },
+  'events.title': { bn: 'অনুষ্ঠান ও খবর', en: 'Events' },
   'events.subtitle': { bn: 'আমাদের সাম্প্রতিক ও পূর্ববর্তী কার্যক্রমসমূহ', en: 'Our recent and past activities' },
   'events.upcoming': { bn: 'আসন্ন অনুষ্ঠান', en: 'Upcoming events' },
   'events.past': { bn: 'অতীতের অনুষ্ঠান', en: 'Past events' },

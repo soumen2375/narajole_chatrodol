@@ -13,13 +13,14 @@ export interface GalleryFormData {
   sub_category_bn: string;
   sub_category_en: string;
   more_url: string;
-  sort_order: number;
+  sort_order?: number;
+  created_at?: string;
 }
 
 interface Props {
   title: string;
   initial?: GalleryFormData;
-  nextSortOrder: number;
+  nextSortOrder?: number;
   isAdmin?: boolean;
   onSave: (data: GalleryFormData) => Promise<void>;
   onCancel: () => void;
@@ -29,15 +30,38 @@ const EMPTY: GalleryFormData = {
   src: '', alt_bn: '', alt_en: '',
   category_bn: '', category_en: '',
   sub_category_bn: '', sub_category_en: '',
-  more_url: '', sort_order: 0,
+  more_url: '',
 };
 
-export default function GalleryPhotoForm({ title, initial, nextSortOrder, isAdmin = false, onSave, onCancel }: Props) {
+function getInitialDateStr(createdAt?: string): string {
+  if (!createdAt) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  const d = new Date(createdAt);
+  if (isNaN(d.getTime())) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+export default function GalleryPhotoForm({ title, initial, isAdmin = false, onSave, onCancel }: Props) {
   const { lang } = useT();
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
 
-  const defaults = initial ?? { ...EMPTY, sort_order: nextSortOrder };
+  const defaults = initial ?? EMPTY;
   const [form, setForm] = useState<GalleryFormData>(defaults);
+  const [photoDate, setPhotoDate] = useState<string>(getInitialDateStr(initial?.created_at));
   const [uploadMode, setUploadMode] = useState(!initial?.src || initial.src.startsWith('http') ? 'url' : 'upload');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState(initial?.src ?? '');
@@ -67,7 +91,6 @@ export default function GalleryPhotoForm({ title, initial, nextSortOrder, isAdmi
     setError('');
 
     let src = form.src;
-    const effectiveSortOrder = form.sort_order < 1 ? nextSortOrder : form.sort_order;
 
     if (uploadMode === 'upload') {
       if (!selectedFile && !initial?.src) {
@@ -94,7 +117,25 @@ export default function GalleryPhotoForm({ title, initial, nextSortOrder, isAdmi
       if (!src.trim()) { setError(tr('Image URL is required.', 'ছবির URL দিন।')); return; }
     }
 
-    await onSave({ ...form, src, sort_order: effectiveSortOrder });
+    const valAlt = form.alt_en || form.alt_bn;
+    const valCat = form.category_en || form.category_bn;
+    const valSub = form.sub_category_en || form.sub_category_bn;
+
+    const createdAtIso = photoDate
+      ? new Date(`${photoDate}T12:00:00`).toISOString()
+      : new Date().toISOString();
+
+    await onSave({
+      ...form,
+      alt_en: valAlt,
+      alt_bn: valAlt,
+      category_en: valCat,
+      category_bn: valCat,
+      sub_category_en: valSub,
+      sub_category_bn: valSub,
+      src,
+      created_at: createdAtIso,
+    });
   };
 
   const inp = 'w-full rounded-[3px] border border-gray-200 bg-white px-3 py-2 text-[13.5px] outline-none focus:border-orange-500';
@@ -164,110 +205,81 @@ export default function GalleryPhotoForm({ title, initial, nextSortOrder, isAdmi
           onError={(e) => { e.currentTarget.style.display = 'none'; }} />
       )}
 
-      {/* Alt text */}
+      {/* Description */}
+      <div>
+        <label className={label}>{tr('Description', 'বিবরণ')}</label>
+        <input
+          className={inp}
+          placeholder={tr('e.g. Blood donation camp', 'যেমন: রক্তদান শিবির')}
+          value={form.alt_en || form.alt_bn}
+          onChange={(e) => {
+            const val = e.target.value;
+            setForm((f) => ({ ...f, alt_en: val, alt_bn: val }));
+          }}
+        />
+      </div>
+
+      {/* Category & Sub-category */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <label className={label}>{tr('Description (Bengali)', 'বিবরণ (বাংলা)')}</label>
-          <input className={inp} placeholder={tr('e.g. রক্তদান শিবির', 'যেমন: রক্তদান শিবির')}
-            value={form.alt_bn} onChange={(e) => set('alt_bn', e.target.value)} />
+          <label className={label}>{tr('Category', 'বিভাগ')}</label>
+          <input
+            className={inp}
+            list="cat-list"
+            placeholder={tr('e.g. Health', 'যেমন: স্বাস্থ্য')}
+            value={form.category_en || form.category_bn}
+            onChange={(e) => {
+              const val = e.target.value;
+              setForm((f) => ({ ...f, category_en: val, category_bn: val }));
+            }}
+          />
+          <datalist id="cat-list">
+            {Array.from(new Set(categories.map((c) => c.en || c.bn).filter(Boolean))).map((c, i) => (
+              <option key={i} value={c} />
+            ))}
+          </datalist>
         </div>
+
         <div>
-          <label className={label}>{tr('Description (English)', 'বিবরণ (ইংরেজি)')}</label>
-          <input className={inp} placeholder="e.g. Blood donation camp"
-            value={form.alt_en} onChange={(e) => set('alt_en', e.target.value)} />
+          <label className={label}>{tr('Sub-category (optional)', 'উপ-বিভাগ (ঐচ্ছিক)')}</label>
+          <input
+            className={inp}
+            list="subcat-list"
+            placeholder={tr('e.g. Camp', 'যেমন: শিবির')}
+            value={form.sub_category_en || form.sub_category_bn}
+            onChange={(e) => {
+              const val = e.target.value;
+              setForm((f) => ({ ...f, sub_category_en: val, sub_category_bn: val }));
+            }}
+          />
+          <datalist id="subcat-list">
+            {Array.from(new Set(subCategories.map((c) => c.en || c.bn).filter(Boolean))).map((c, i) => (
+              <option key={i} value={c} />
+            ))}
+          </datalist>
         </div>
       </div>
 
-      {/* Category (parent) */}
-      <div>
-        <p className="mb-1 text-xs font-semibold text-gray-600 uppercase tracking-wide">{tr('Category', 'বিভাগ (মূল)')}</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <label className={label}>{tr('Bengali', 'বাংলা')}</label>
-            <input
-              className={inp}
-              list="cat-bn-list"
-              placeholder={tr('e.g. স্বাস্থ্য', 'যেমন: স্বাস্থ্য')}
-              value={form.category_bn}
-              onChange={(e) => set('category_bn', e.target.value)}
-            />
-            <datalist id="cat-bn-list">
-              {categories.map((c) => <option key={c.bn} value={c.bn} />)}
-            </datalist>
-          </div>
-          <div>
-            <label className={label}>{tr('English', 'ইংরেজি')}</label>
-            <input
-              className={inp}
-              list="cat-en-list"
-              placeholder="e.g. Health"
-              value={form.category_en}
-              onChange={(e) => set('category_en', e.target.value)}
-            />
-            <datalist id="cat-en-list">
-              {categories.map((c) => <option key={c.en} value={c.en} />)}
-            </datalist>
-          </div>
+      {/* Date & More link */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label className={label}>{tr('Photo Date', 'ছবির তারিখ')}</label>
+          <input
+            type="date"
+            required
+            className={inp}
+            value={photoDate}
+            onChange={(e) => setPhotoDate(e.target.value)}
+          />
         </div>
-      </div>
-
-      {/* Sub-category (child) */}
-      <div>
-        <p className="mb-1 text-xs font-semibold text-gray-600 uppercase tracking-wide">{tr('Sub-category (optional)', 'উপ-বিভাগ (ঐচ্ছিক)')}</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <label className={label}>{tr('Bengali', 'বাংলা')}</label>
-            <input
-              className={inp}
-              list="subcat-bn-list"
-              placeholder={tr('e.g. শিবির', 'যেমন: শিবির')}
-              value={form.sub_category_bn}
-              onChange={(e) => set('sub_category_bn', e.target.value)}
-            />
-            <datalist id="subcat-bn-list">
-              {subCategories.map((c) => <option key={c.bn} value={c.bn} />)}
-            </datalist>
-          </div>
-          <div>
-            <label className={label}>{tr('English', 'ইংরেজি')}</label>
-            <input
-              className={inp}
-              list="subcat-en-list"
-              placeholder="e.g. Camp"
-              value={form.sub_category_en}
-              onChange={(e) => set('sub_category_en', e.target.value)}
-            />
-            <datalist id="subcat-en-list">
-              {subCategories.map((c) => <option key={c.en} value={c.en} />)}
-            </datalist>
-          </div>
-        </div>
-      </div>
-
-      {/* Admin-only fields */}
-      {isAdmin && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {isAdmin && (
           <div>
             <label className={label}>{tr('More link URL (optional)', 'আরো লিংক (ঐচ্ছিক)')}</label>
             <input className={inp} placeholder="https://…" value={form.more_url}
               onChange={(e) => set('more_url', e.target.value)} />
           </div>
-          <div>
-            <label className={label}>{tr('Display order', 'প্রদর্শন ক্রম')}</label>
-            <input
-              type="number"
-              min={1}
-              className={inp}
-              placeholder={`${nextSortOrder}`}
-              value={form.sort_order < 1 ? '' : form.sort_order}
-              onChange={(e) => set('sort_order', Number(e.target.value) || nextSortOrder)}
-            />
-            <p className="mt-0.5 text-[11px] text-gray-400">
-              {tr(`Auto-assigned: ${nextSortOrder}`, `স্বয়ংক্রিয়: ${nextSortOrder}`)}
-            </p>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {error && <p className="text-sm font-medium text-red-600">✕ {error}</p>}
 

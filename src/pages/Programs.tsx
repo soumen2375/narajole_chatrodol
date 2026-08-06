@@ -138,11 +138,7 @@ export default function Programs() {
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 items-center">
             {/* Left Content */}
             <div className="lg:col-span-6">
-              <span className="inline-block rounded-md bg-orange-100/80 px-3.5 py-1 text-xs font-bold tracking-wider text-[#c2410c] uppercase">
-                {bn ? 'আমাদের কর্মসূচিসমূহ' : 'OUR PROGRAMS'}
-              </span>
-
-              <h1 className="mt-4 font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-[1.18] text-slate-900">
+              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-[1.18] text-slate-900">
                 {bn ? (
                   <>
                     আট ধরনের কর্মসূচি, <br />

@@ -12,7 +12,7 @@ export default function Footer() {
       <div className="mx-auto max-w-[1340px] px-6 pb-12 pt-16 md:px-8">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
           {/* Col 1: Brand Info & Socials */}
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-3">
             <Link to="/" className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white p-0.5 shadow-md">
                 <img
@@ -88,31 +88,41 @@ export default function Footer() {
             <ul className="mt-4 space-y-2.5 font-sans text-sm text-white/70">
               <li><Link to="/" className="transition-colors hover:text-amber-400">Home</Link></li>
               <li><Link to="/about" className="transition-colors hover:text-amber-400">About Us</Link></li>
-              <li><Link to="/programs" className="transition-colors hover:text-amber-400">Our Programs</Link></li>
               <li><Link to="/events" className="transition-colors hover:text-amber-400">Events</Link></li>
-              <li><Link to="/impacts" className="transition-colors hover:text-amber-400">Impact</Link></li>
               <li><Link to="/gallery" className="transition-colors hover:text-amber-400">Gallery</Link></li>
-              <li><Link to="/events" className="transition-colors hover:text-amber-400">News</Link></li>
-              <li><Link to="/contact" className="transition-colors hover:text-amber-400">Contact</Link></li>
+              <li><Link to="/programs" className="transition-colors hover:text-amber-400">Our Programs</Link></li>
+              <li><Link to="/impacts" className="transition-colors hover:text-amber-400">Impacts</Link></li>
             </ul>
           </div>
 
           {/* Col 3: Important Links */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-2">
             <h4 className="font-sans text-sm font-bold uppercase tracking-wider text-white">
               Important Links
             </h4>
             <ul className="mt-4 space-y-2.5 font-sans text-sm text-white/70">
-              <li><Link to="/donate" className="transition-colors hover:text-amber-400">Donate</Link></li>
+              <li><Link to="/contact" className="transition-colors hover:text-amber-400">Contact</Link></li>
               <li><Link to="/volunteer" className="transition-colors hover:text-amber-400">Volunteer</Link></li>
-              <li><Link to="/events" className="transition-colors hover:text-amber-400">News & Updates</Link></li>
-              <li><Link to="/privacy" className="transition-colors hover:text-amber-400">Privacy Policy</Link></li>
-              <li><Link to="/terms" className="transition-colors hover:text-amber-400">Terms & Conditions</Link></li>
-              <li><Link to="/refunds" className="transition-colors hover:text-amber-400">Refund Policy</Link></li>
+              <li><Link to="/blood-request" className="transition-colors hover:text-amber-400">Blood Request</Link></li>
+              <li><Link to="/donate" className="transition-colors hover:text-amber-400">Donate</Link></li>
+              <li><Link to="/organise-blood-camp" className="transition-colors hover:text-amber-400">Blood Camp</Link></li>
             </ul>
           </div>
 
-          {/* Col 4: Contact Us */}
+          {/* Col 4: Legal Policy */}
+          <div className="lg:col-span-2">
+            <h4 className="font-sans text-sm font-bold uppercase tracking-wider text-white">
+              Legal
+            </h4>
+            <ul className="mt-4 space-y-2.5 font-sans text-sm text-white/70">
+              <li><Link to="/terms" className="transition-colors hover:text-amber-400">Terms & Conditions</Link></li>
+              <li><Link to="/privacy" className="transition-colors hover:text-amber-400">Privacy Policy</Link></li>
+              <li><Link to="/refunds" className="transition-colors hover:text-amber-400">Refund Policy</Link></li>
+              <li><Link to="/shipping" className="transition-colors hover:text-amber-400">Shipping Policy</Link></li>
+            </ul>
+          </div>
+
+          {/* Col 5: Contact Us */}
           <div className="lg:col-span-3">
             <h4 className="font-sans text-sm font-bold uppercase tracking-wider text-white">
               Contact Us

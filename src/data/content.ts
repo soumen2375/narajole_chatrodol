@@ -61,14 +61,14 @@ export interface TeamMember {
 }
 
 export const TEAM_MEMBERS: TeamMember[] = [
-  { name: { bn: 'স্বরূপ সামন্ত', en: 'Swarup Samanta' }, role: { bn: 'সভাপতি', en: 'President' }, img: '/assets/images/members/swarup.jpg' },
-  { name: { bn: 'প্রবাল ভুঁইয়া', en: 'Prabal Bhunia' }, role: { bn: 'সহ-সভাপতি', en: 'Vice President' }, img: '/assets/images/members/prabal.jpg' },
-  { name: { bn: 'সায়ন সামন্ত', en: 'Sayan Samanta' }, role: { bn: 'সাধারণ সম্পাদক', en: 'General Secretary' }, img: '/assets/images/members/sayan.jpg' },
-  { name: { bn: 'সুরজিৎ বেরা', en: 'Surajit Bera' }, role: { bn: 'যুগ্ম সম্পাদক', en: 'Joint Secretary' }, img: '/assets/images/members/surajit.jpg' },
-  { name: { bn: 'শুভজিৎ কুন্ডু', en: 'Subhajit Kundu' }, role: { bn: 'কোষাধ্যক্ষ', en: 'Treasurer' }, img: '/assets/images/members/subhajit.jpg' },
-  { name: { bn: 'সৌমেন মাইতি', en: 'Soumen Maity' }, role: { bn: 'সহ-কোষাধ্যক্ষ', en: 'Assistant Treasurer' }, img: '/assets/images/members/soumen.jpg' },
-  { name: { bn: 'শুভদীপ ঘোড়াই', en: 'Subhadip Ghorai' }, role: { bn: 'সদস্য', en: 'Member' }, img: '/assets/images/members/subhadip.jpg' },
-  { name: { bn: 'পবিত্র সাঁতরা', en: 'Pabitra Santra' }, role: { bn: 'সদস্য', en: 'Member' }, img: '/assets/images/members/pabitra.jpg' },
+  { name: { bn: 'স্বরূপ সামন্ত', en: 'Swarup Samanta' }, role: { bn: 'সভাপতি', en: 'President' }, img: '/assets/images/about/members/swarup.jpg' },
+  { name: { bn: 'প্রবাল ভুঁইয়া', en: 'Prabal Bhunia' }, role: { bn: 'সহ-সভাপতি', en: 'Vice President' }, img: '/assets/images/about/members/prabal.jpg' },
+  { name: { bn: 'সায়ন সামন্ত', en: 'Sayan Samanta' }, role: { bn: 'সাধারণ সম্পাদক', en: 'General Secretary' }, img: '/assets/images/about/members/sayan.jpg' },
+  { name: { bn: 'সুরজিৎ বেরা', en: 'Surajit Bera' }, role: { bn: 'যুগ্ম সম্পাদক', en: 'Joint Secretary' }, img: '/assets/images/about/members/surajit.jpg' },
+  { name: { bn: 'শুভজিৎ কুন্ডু', en: 'Subhajit Kundu' }, role: { bn: 'কোষাধ্যক্ষ', en: 'Treasurer' }, img: '/assets/images/about/members/subhajit.jpg' },
+  { name: { bn: 'সৌমেন মাইতি', en: 'Soumen Maity' }, role: { bn: 'সহ-কোষাধ্যক্ষ', en: 'Assistant Treasurer' }, img: '/assets/images/about/members/soumen.jpg' },
+  { name: { bn: 'শুভদীপ ঘোড়াই', en: 'Subhadip Ghorai' }, role: { bn: 'সদস্য', en: 'Member' }, img: '/assets/images/about/members/subhadip.jpg' },
+  { name: { bn: 'পবিত্র সাঁতরা', en: 'Pabitra Santra' }, role: { bn: 'সদস্য', en: 'Member' }, img: '/assets/images/about/members/pabitra.jpg' },
 ];
 
 export const CORE_VALUES: { label: Bi; text: Bi }[] = [
