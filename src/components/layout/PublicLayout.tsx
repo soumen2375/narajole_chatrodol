@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 import ScrollToTopBtn from '@/components/ui/ScrollToTopBtn';
+import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 
 export default function PublicLayout() {
@@ -16,6 +17,7 @@ export default function PublicLayout() {
       </main>
       <Footer />
       <ScrollToTopBtn />
+      <FloatingWhatsApp />
     </div>
   );
 }

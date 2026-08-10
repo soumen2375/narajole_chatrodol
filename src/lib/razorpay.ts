@@ -88,7 +88,7 @@ interface StartPaymentArgs {
   description: string;
 }
 
-export async function startRazorpayPayment(args: StartPaymentArgs): Promise<void> {
+export async function startRazorpayPayment(args: StartPaymentArgs): Promise<RazorpayResponse> {
   const loaded = await loadRazorpayScript();
   if (!loaded || !window.Razorpay) {
     throw new Error('PAYMENT_FAILED');
@@ -110,7 +110,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<void
   const verifyAction =
     args.action === 'create_donation_order' ? 'verify_donation' : 'verify_contribution';
 
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<RazorpayResponse>((resolve, reject) => {
     const rzp = new window.Razorpay!({
       key: order.key_id || ENV_KEY_ID || '',
       amount: order.amount,
@@ -137,7 +137,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<void
             months: args.months,
             amount: args.amount,
           });
-          resolve();
+          resolve(response);
         } catch (err) {
           reject(err);
         }

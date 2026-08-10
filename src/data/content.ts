@@ -16,16 +16,22 @@ export const ORG = {
   taglineBn: 'একতা, শিক্ষা, উন্নতি',
   taglineEn: 'Unity · Education · Progress',
   established: '2019',
+  website: 'https://chhatradol.org',
   email: 'info@chhatradol.org',
-  phones: ['7074074110', '7430029114'],
+  phones: ['7811073412'],
+  whatsapp: 'https://wa.me/917811073412',
+  whatsappNumber: '7811073412',
   address: {
     bn: ['ছাত্রদল অফিস', 'গ্রাম ও পোস্ট: নিজ নাড়াজোল', 'থানা: দাসপুর, জেলা: পশ্চিম মেদিনীপুর', 'পিন: ৭২১২১১, পশ্চিমবঙ্গ, ভারত'],
     en: ['Chhatradol Office', 'Vill. & P.O.: Nij Narajole', 'P.S.: Daspur, Dist.: Paschim Medinipur', 'PIN: 721211, West Bengal, India'],
   },
   social: {
-    facebook: 'https://www.facebook.com/profile.php?id=100085903702733',
-    instagram: 'https://www.instagram.com/',
-    youtube: 'https://www.youtube.com/',
+    website: 'https://chhatradol.org',
+    facebook: 'https://facebook.com/chhatradolswo',
+    instagram: 'https://instagram.com/chhatradolswo',
+    twitter: 'https://x.com/Chhatradolswo',
+    youtube: 'https://youtube.com/@Chhatradolswo',
+    whatsapp: 'https://wa.me/917811073412',
   },
 };
 

@@ -207,6 +207,21 @@ export default function Contact() {
                   </div>
                 </div>
 
+                {/* Direct WhatsApp Contact */}
+                <div className="rounded-[3px] border p-7 border-emerald-500/30 bg-emerald-50/50">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-emerald-800 font-bold">
+                    {bn ? 'হোয়াটসঅ্যাপ সহায়তা' : 'WhatsApp Support'}
+                  </div>
+                  <a
+                    href={ORG.social.whatsapp}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-4 inline-flex items-center gap-3 rounded-full bg-emerald-600 px-5 py-2.5 font-mono text-[13px] font-bold text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md"
+                  >
+                    <span>Chat +91 {ORG.whatsappNumber}</span>
+                  </a>
+                </div>
+
                 {/* Phone */}
                 <div className="rounded-[3px] border p-7" style={{ borderColor: 'var(--c-rule)', background: 'var(--c-bg)' }}>
                   <div className="font-mono text-[10px] uppercase tracking-[0.22em]" style={{ color: 'var(--c-muted)' }}>

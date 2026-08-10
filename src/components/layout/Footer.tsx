@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ORG } from '@/data/content';
-import { FaFacebookF, FaInstagram, FaYoutube, FaWhatsapp, FaLocationDot, FaPhone, FaEnvelope, FaClock, FaHeart } from 'react-icons/fa6';
+import { FaFacebookF, FaInstagram, FaYoutube, FaXTwitter, FaLocationDot, FaPhone, FaEnvelope, FaClock, FaHeart } from 'react-icons/fa6';
 
 const FOOTER_BG = '#1c1917';
 
@@ -40,12 +40,13 @@ export default function Footer() {
             </p>
 
             {/* Social Icons */}
-            <div className="mt-6 flex items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-2.5">
               <a
                 href={ORG.social.facebook}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Facebook"
+                title="Facebook: @chhatradolswo"
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition-all hover:border-amber-400 hover:bg-amber-500 hover:text-white"
               >
                 <FaFacebookF className="h-4 w-4" />
@@ -55,27 +56,30 @@ export default function Footer() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Instagram"
+                title="Instagram: @chhatradolswo"
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition-all hover:border-amber-400 hover:bg-amber-500 hover:text-white"
               >
                 <FaInstagram className="h-4 w-4" />
+              </a>
+              <a
+                href={ORG.social.twitter}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="X (Twitter)"
+                title="X: @Chhatradolswo"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition-all hover:border-amber-400 hover:bg-amber-500 hover:text-white"
+              >
+                <FaXTwitter className="h-4 w-4" />
               </a>
               <a
                 href={ORG.social.youtube}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="YouTube"
+                title="YouTube: @Chhatradolswo"
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition-all hover:border-amber-400 hover:bg-amber-500 hover:text-white"
               >
                 <FaYoutube className="h-4 w-4" />
-              </a>
-              <a
-                href="https://wa.me/917074074110"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="WhatsApp"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition-all hover:border-amber-400 hover:bg-amber-500 hover:text-white"
-              >
-                <FaWhatsapp className="h-4 w-4" />
               </a>
             </div>
           </div>
@@ -136,7 +140,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <FaPhone className="h-4 w-4 flex-shrink-0 text-amber-400" />
-                <span>+91 74300 29114</span>
+                <a href="tel:+917811073412" className="hover:text-amber-400 transition-colors">+91 78110 73412</a>
               </li>
               <li className="flex items-center gap-3">
                 <FaEnvelope className="h-4 w-4 flex-shrink-0 text-amber-400" />

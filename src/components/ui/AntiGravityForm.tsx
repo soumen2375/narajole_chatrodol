@@ -620,7 +620,7 @@ export default function AntiGravityForm({ initialMode = 'contact', onSuccessSubm
                     <input
                       required
                       type="tel"
-                      placeholder="+91 70740 74110"
+                      placeholder="+91 78110 73412"
                       value={campData.phone}
                       onChange={(e) => setCampData({ ...campData, phone: e.target.value })}
                       className="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/30 focus:border-sky-400 focus:outline-none"
