@@ -1,11 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Inbox, Send, Megaphone, PenSquare, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Inbox, Send, Megaphone, PenSquare, X, Droplet, Users, Mail, AlertCircle, Phone, Building2, Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { ListSkeleton } from '@/components/ui/Skeleton';
 import type { Member } from '@/types';
+
+// ─── Extra types for form inbox ────────────────────────────────────────────
+interface FormContact { id: string; name: string; email: string | null; phone: string | null; subject: string | null; message: string; category: string; is_read: boolean; is_starred: boolean; admin_reply: string; replied_at: string | null; created_at: string; }
+interface FormVolunteer { id: string; name: string; email: string | null; phone: string | null; area_of_interest: string | null; message: string | null; status: string; created_at: string; }
+interface FormBloodReq { id: string; patient_name: string; blood_group: string; hospital: string; contact_phone: string; units_needed: number; required_by: string | null; requester_name: string | null; message: string | null; status: string; created_at: string; }
+interface FormBloodCamp { id: string; org_name: string | null; contact_name: string; contact_phone: string; contact_email: string | null; proposed_date: string | null; proposed_venue: string; expected_donors: number | null; message: string | null; status: string; created_at: string; }
 
 // ════════════════════════════════════════════════════════════════
 //  MemberMessages — bidirectional messaging
@@ -36,25 +42,48 @@ const ROLES = [
 
 function avatar(name: string, url: string | null, size = 38) {
   const ini = name.split(' ').filter(Boolean).map((w) => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-  if (url) return <img src={url} alt={name} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />;
-  return (
+  const fallbackDiv = (
     <div style={{ width: size, height: size, borderRadius: '50%', background: BRAND, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: size * 0.34, flexShrink: 0, ...SERIF }}>
       {ini}
     </div>
   );
+  if (url) {
+    return (
+      <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+        {fallbackDiv}
+        <img
+          src={url}
+          alt={name}
+          style={{ position: 'absolute', inset: 0, width: size, height: size, borderRadius: '50%', objectFit: 'cover' }}
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        />
+      </div>
+    );
+  }
+  return fallbackDiv;
 }
 
-type Tab = 'inbox' | 'sent' | 'bulletins';
+type Tab = 'inbox' | 'sent' | 'bulletins' | 'form_inbox';
+type FormTab = 'contact' | 'volunteer' | 'blood_req' | 'blood_camp';
 
 export default function MemberMessages() {
-  const { member }  = useAuth();
+  const { member, canManageEvents }  = useAuth();
   const { lang }    = useT();
   const fmt         = useFmt();
   const tr          = (en: string, bn: string) => (lang === 'en' ? en : bn);
 
   const [tab, setTab]           = useState<Tab>('inbox');
+  const [formTab, setFormTab]   = useState<FormTab>('contact');
   const [inbox, setInbox]       = useState<MemberMsg[]>([]);
   const [sent, setSent]         = useState<MemberMsg[]>([]);
+
+  // Form inbox state (only loaded when canManageEvents)
+  const [formContacts, setFormContacts]     = useState<FormContact[]>([]);
+  const [formVols, setFormVols]             = useState<FormVolunteer[]>([]);
+  const [formBRs, setFormBRs]               = useState<FormBloodReq[]>([]);
+  const [formBCs, setFormBCs]               = useState<FormBloodCamp[]>([]);
+  const [selectedFormItem, setSelectedFormItem] = useState<string | null>(null);
+  const [formLoading, setFormLoading]       = useState(false);
   const [bulletins, setBulletins] = useState<AdminBulletin[]>([]);
   const [loading, setLoading]   = useState(true);
 
@@ -78,7 +107,7 @@ export default function MemberMessages() {
   const unreadBulletins = bulletins.filter((b) => !b.is_read).length;
 
   /* load data */
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!member) return;
     setLoading(true);
     const [inR, snR, blR] = await Promise.all([
@@ -103,10 +132,28 @@ export default function MemberMessages() {
     /* mark bulletins read */
     const unreadIds = ((blR.data ?? []) as AdminBulletin[]).filter((b) => !b.is_read).map((b) => b.id);
     if (unreadIds.length) await supabase.from('cswo_admin_messages').update({ is_read: true }).in('id', unreadIds);
-  };
+  }, [member]);
+
+  /* load form inbox (for members with canManageEvents) */
+  const loadFormInbox = useCallback(async () => {
+    if (!canManageEvents) return;
+    setFormLoading(true);
+    const [c, v, br, bc] = await Promise.all([
+      supabase.from('cswo_contact_messages').select('*').order('created_at', { ascending: false }).limit(100),
+      supabase.from('cswo_volunteer_applications').select('*').order('created_at', { ascending: false }).limit(100),
+      supabase.from('cswo_blood_requests').select('*').order('created_at', { ascending: false }).limit(100),
+      supabase.from('cswo_blood_camp_applications').select('*').order('created_at', { ascending: false }).limit(100),
+    ]);
+    setFormContacts((c.data ?? []) as FormContact[]);
+    setFormVols((v.data ?? []) as FormVolunteer[]);
+    setFormBRs((br.data ?? []) as FormBloodReq[]);
+    setFormBCs((bc.data ?? []) as FormBloodCamp[]);
+    setFormLoading(false);
+  }, [canManageEvents]);
 
   useEffect(() => {
     load();
+    if (canManageEvents) loadFormInbox();
     if (!member) return;
 
     const channel = supabase
@@ -126,7 +173,7 @@ export default function MemberMessages() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [member]); // eslint-disable-line
+  }, [member, canManageEvents]); // eslint-disable-line
 
   /* load member list for search */
   useEffect(() => {
@@ -319,12 +366,13 @@ export default function MemberMessages() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-xl border p-1" style={{ borderColor: RULE, background: '#fafaf9' }}>
+      <div className="flex flex-wrap gap-1 rounded-xl border p-1" style={{ borderColor: RULE, background: '#fafaf9' }}>
         {([
-          ['inbox',    tr('Inbox', 'ইনবক্স'),     Inbox,     unreadInbox],
-          ['sent',     tr('Sent', 'পাঠানো'),       Send,      0],
-          ['bulletins',tr('Bulletins', 'বুলেটিন'), Megaphone, unreadBulletins],
-        ] as const).map(([key, label, Icon, badge]) => (
+          ['inbox',    tr('Inbox', 'ইনবক্স'),          Inbox,    unreadInbox],
+          ['sent',     tr('Sent', 'পাঠানো'),            Send,     0],
+          ['bulletins',tr('Bulletins', 'বুলেটিন'),     Megaphone,unreadBulletins],
+          ...(canManageEvents ? [['form_inbox', tr('Form Inbox', 'ফর্ম ইনবক্স'), AlertCircle, formContacts.filter((c) => !c.is_read).length + formBRs.filter((r) => r.status === 'open').length + formBCs.filter((b) => b.status === 'pending').length]] as [string, string, typeof Inbox, number][] : []),
+        ] as [string, string, typeof Inbox, number][]).map(([key, label, Icon, badge]) => (
           <button key={key} onClick={() => setTab(key as Tab)} className="relative flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[12.5px] font-semibold transition-all"
             style={{ background: tab === key ? BRAND : 'transparent', color: tab === key ? '#fff' : MUTED }}>
             <Icon className="h-3.5 w-3.5" />
@@ -430,11 +478,162 @@ export default function MemberMessages() {
                   ))}
                 </div>
           )}
+
+          {/* FORM INBOX — only for canManageEvents members */}
+          {tab === 'form_inbox' && canManageEvents && (
+            <div className="space-y-4">
+              <div className="rounded-xl border overflow-hidden" style={{ borderColor: RULE }}>
+                {/* Form sub-tabs */}
+                <div className="flex border-b" style={{ borderColor: RULE, background: '#fafaf9' }}>
+                  {([
+                    { k: 'contact' as FormTab,    label: tr('Contact', 'যোগাযোগ'),        icon: Mail,        count: formContacts.filter((c) => !c.is_read).length },
+                    { k: 'volunteer' as FormTab,  label: tr('Volunteer', 'স্বেচ্ছাসেবক'), icon: Users,       count: formVols.filter((v) => v.status === 'pending').length },
+                    { k: 'blood_req' as FormTab,  label: tr('Blood Req', 'রক্ত অনুরোধ'),  icon: Droplet,     count: formBRs.filter((r) => r.status === 'open').length },
+                    { k: 'blood_camp' as FormTab, label: tr('Blood Camp', 'রক্ত শিবির'),   icon: AlertCircle, count: formBCs.filter((c) => c.status === 'pending').length },
+                  ]).map(({ k, label, icon: Icon, count }) => (
+                    <button key={k} onClick={() => { setFormTab(k); setSelectedFormItem(null); }}
+                      className="flex flex-1 items-center justify-center gap-1 px-3 py-2.5 text-[11.5px] font-semibold transition-all border-b-2"
+                      style={{ borderBottomColor: formTab === k ? BRAND : 'transparent', color: formTab === k ? BRAND : MUTED, background: 'transparent' }}>
+                      <Icon className="h-3 w-3" />
+                      {label}
+                      {count > 0 && <span className="ml-0.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] font-bold text-white">{count}</span>}
+                    </button>
+                  ))}
+                </div>
+
+                {formLoading ? <div className="py-8 text-center text-xs" style={{ color: MUTED }}>Loading…</div> : (
+                  <div className="max-h-[500px] overflow-y-auto">
+                    {/* Contact */}
+                    {formTab === 'contact' && (formContacts.length === 0
+                      ? <Empty label={tr('No contact messages.', 'কোনো যোগাযোগ বার্তা নেই।')} />
+                      : formContacts.map((c, i) => (
+                        <div key={c.id} onClick={() => setSelectedFormItem(selectedFormItem === c.id ? null : c.id)}
+                          className="cursor-pointer border-t p-4 transition-all hover:bg-gray-50/50" style={{ borderColor: i === 0 ? 'transparent' : RULE }}>
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: BRAND }}>
+                              {c.name.split(' ').filter(Boolean).map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[12px] font-semibold" style={{ color: INK }}>{c.name}</span>
+                                <span className="font-mono text-[10px]" style={{ color: MUTED }}>{fmt.date(c.created_at)}</span>
+                              </div>
+                              {c.email && <div className="text-[11px]" style={{ color: MUTED }}>{c.email}{c.phone ? ` · ${c.phone}` : ''}</div>}
+                              {c.subject && <p className="text-[12px] font-medium" style={{ color: INK }}>{c.subject}</p>}
+                              <p className="mt-0.5 line-clamp-2 text-[11.5px] leading-relaxed" style={{ color: MUTED }}>{c.message}</p>
+                              {c.replied_at && <span className="mt-1 inline-block text-[10px] font-semibold" style={{ color: '#4d7c0f' }}>✓ Replied</span>}
+                            </div>
+                            {!c.is_read && <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: BRAND }} />}
+                          </div>
+                          {selectedFormItem === c.id && (
+                            <div className="mt-3 border-t pt-3 text-[12.5px] leading-relaxed whitespace-pre-line" style={{ borderColor: RULE, color: INK }}>
+                              {c.message}
+                              {c.admin_reply && <div className="mt-2 rounded-lg p-3 text-[12px]" style={{ background: 'rgba(77,124,15,0.08)', color: '#4d7c0f' }}>Admin reply: {c.admin_reply}</div>}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+
+                    {/* Volunteer */}
+                    {formTab === 'volunteer' && (formVols.length === 0
+                      ? <Empty label={tr('No volunteer applications.', 'কোনো আবেদন নেই।')} />
+                      : formVols.map((v, i) => (
+                        <div key={v.id} onClick={() => setSelectedFormItem(selectedFormItem === v.id ? null : v.id)}
+                          className="cursor-pointer border-t p-4 transition-all hover:bg-gray-50/50" style={{ borderColor: i === 0 ? 'transparent' : RULE }}>
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: '#0f766e' }}>
+                              {v.name.split(' ').filter(Boolean).map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[12px] font-semibold" style={{ color: INK }}>{v.name}</span>
+                                <span className="font-mono text-[10px]" style={{ color: MUTED }}>{fmt.date(v.created_at)}</span>
+                              </div>
+                              <div className="text-[11px]" style={{ color: MUTED }}>{[v.email, v.phone].filter(Boolean).join(' · ')}</div>
+                              {v.area_of_interest && <p className="text-[11.5px]" style={{ color: INK }}>{v.area_of_interest}</p>}
+                              <span className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize" style={{ background: v.status === 'accepted' ? 'rgba(77,124,15,0.12)' : v.status === 'pending' ? 'rgba(184,134,11,0.12)' : 'rgba(120,113,108,0.12)', color: v.status === 'accepted' ? '#4d7c0f' : v.status === 'pending' ? '#b8860b' : MUTED }}>{v.status}</span>
+                            </div>
+                          </div>
+                          {selectedFormItem === v.id && v.message && (
+                            <div className="mt-3 border-t pt-3 text-[12.5px] leading-relaxed whitespace-pre-line" style={{ borderColor: RULE, color: INK }}>{v.message}</div>
+                          )}
+                        </div>
+                      ))
+                    )}
+
+                    {/* Blood Request */}
+                    {formTab === 'blood_req' && (formBRs.length === 0
+                      ? <Empty label={tr('No blood requests.', 'কোনো রক্তের অনুরোধ নেই।')} />
+                      : formBRs.map((r, i) => (
+                        <div key={r.id} onClick={() => setSelectedFormItem(selectedFormItem === r.id ? null : r.id)}
+                          className="cursor-pointer border-t p-4 transition-all hover:bg-gray-50/50" style={{ borderColor: i === 0 ? 'transparent' : RULE }}>
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ background: '#b91c1c' }}>{r.blood_group}</div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[12px] font-semibold" style={{ color: INK }}>{r.patient_name}</span>
+                                <span className="font-mono text-[10px]" style={{ color: MUTED }}>{fmt.date(r.created_at)}</span>
+                              </div>
+                              <div className="flex items-center gap-3 text-[11px]" style={{ color: MUTED }}>
+                                <span className="inline-flex items-center gap-0.5"><Building2 className="h-3 w-3" />{r.hospital}</span>
+                                <span className="inline-flex items-center gap-0.5"><Phone className="h-3 w-3" />{r.contact_phone}</span>
+                                <span>{r.units_needed} unit{r.units_needed !== 1 ? 's' : ''}</span>
+                              </div>
+                              {r.required_by && <div className="mt-0.5 inline-flex items-center gap-0.5 text-[11px]" style={{ color: MUTED }}><Calendar className="h-3 w-3" />By: {fmt.date(r.required_by)}</div>}
+                              <span className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize" style={{ background: r.status === 'open' ? 'rgba(185,28,28,0.1)' : 'rgba(77,124,15,0.1)', color: r.status === 'open' ? '#b91c1c' : '#4d7c0f' }}>{r.status.replace('_', ' ')}</span>
+                            </div>
+                          </div>
+                          {selectedFormItem === r.id && r.message && (
+                            <div className="mt-3 border-t pt-3 text-[12.5px] leading-relaxed whitespace-pre-line" style={{ borderColor: RULE, color: INK }}>{r.message}</div>
+                          )}
+                        </div>
+                      ))
+                    )}
+
+                    {/* Blood Camp */}
+                    {formTab === 'blood_camp' && (formBCs.length === 0
+                      ? <Empty label={tr('No blood camp applications.', 'কোনো শিবির আবেদন নেই।')} />
+                      : formBCs.map((c, i) => (
+                        <div key={c.id} onClick={() => setSelectedFormItem(selectedFormItem === c.id ? null : c.id)}
+                          className="cursor-pointer border-t p-4 transition-all hover:bg-gray-50/50" style={{ borderColor: i === 0 ? 'transparent' : RULE }}>
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: 'rgba(124,58,237,0.1)' }}>
+                              <AlertCircle className="h-4 w-4" style={{ color: '#7c3aed' }} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[12px] font-semibold" style={{ color: INK }}>{c.org_name || c.contact_name}</span>
+                                <span className="font-mono text-[10px]" style={{ color: MUTED }}>{fmt.date(c.created_at)}</span>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-3 text-[11px]" style={{ color: MUTED }}>
+                                <span className="inline-flex items-center gap-0.5"><Building2 className="h-3 w-3" />{c.proposed_venue}</span>
+                                {c.proposed_date && <span className="inline-flex items-center gap-0.5"><Calendar className="h-3 w-3" />{fmt.date(c.proposed_date)}</span>}
+                                <span className="inline-flex items-center gap-0.5"><Phone className="h-3 w-3" />{c.contact_phone}</span>
+                              </div>
+                              <span className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize" style={{ background: c.status === 'pending' ? 'rgba(184,134,11,0.12)' : c.status === 'approved' ? 'rgba(77,124,15,0.1)' : 'rgba(120,113,108,0.1)', color: c.status === 'pending' ? '#b8860b' : c.status === 'approved' ? '#4d7c0f' : MUTED }}>{c.status}</span>
+                            </div>
+                          </div>
+                          {selectedFormItem === c.id && c.message && (
+                            <div className="mt-3 border-t pt-3 text-[12.5px] leading-relaxed whitespace-pre-line" style={{ borderColor: RULE, color: INK }}>{c.message}</div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+              <p className="text-center text-[11px]" style={{ color: MUTED }}>
+                {tr('Showing form responses from public site. Go to admin panel for full management.', 'পাবলিক সাইট থেকে ফর্ম রেসপন্স দেখানো হচ্ছে। পূর্ণ ম্যানেজমেন্টের জন্য অ্যাডমিন প্যানেলে যান।')}
+              </p>
+            </div>
+          )}
         </>
       )}
     </div>
   );
 }
+
 
 function Empty({ label }: { label: string }) {
   return (

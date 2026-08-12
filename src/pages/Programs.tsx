@@ -13,7 +13,7 @@ const BG_CREAM = '#faf6ef';
 const FALLBACK_IMG = '/assets/images/Chhatradol.jpg';
 
 const onImgErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
-  if (e.currentTarget.src !== window.location.origin + FALLBACK_IMG) {
+  if (!e.currentTarget.src.includes('Chhatradol')) {
     e.currentTarget.src = FALLBACK_IMG;
   }
 };

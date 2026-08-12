@@ -8,7 +8,7 @@ import { PageShell, Icon } from './_field-journal';
 const FALLBACK = '/assets/images/Chhatradol.jpg';
 
 const onImgErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
-  if (e.currentTarget.src !== window.location.origin + FALLBACK) {
+  if (!e.currentTarget.src.includes('Chhatradol')) {
     e.currentTarget.src = FALLBACK;
   }
 };

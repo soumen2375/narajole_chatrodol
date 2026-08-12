@@ -9,6 +9,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import RichEditor from '@/components/admin/RichEditor';
 import CategorySelector from '@/components/admin/CategorySelector';
 import { compressImage } from '@/lib/imageCompression';
+import { mirrorExternalImage, isBlockedCdnUrl, type MirrorProgress } from '@/lib/mirrorImage';
 
 function stripHtml(h: string) { return h.replace(/<[^>]+>/g, ''); }
 function slugify(t: string) {
@@ -82,6 +83,7 @@ export default function MemberPosts() {
   const [seoTitleManual, setSeoTitleManual] = useState(false);
   const [seoDescManual, setSeoDescManual] = useState(false);
   const [attemptedSave, setAttemptedSave] = useState(false);
+  const [mirrorStatus, setMirrorStatus] = useState<MirrorProgress | null>(null);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // load member's own posts
@@ -190,6 +192,16 @@ export default function MemberPosts() {
     return supabase.storage.from('post-images').getPublicUrl(path).data.publicUrl;
   };
 
+  // Auto-mirror Facebook / Instagram / expiring CDN URLs on blur
+  const handleImageUrlBlur = async (raw: string) => {
+    if (!isBlockedCdnUrl(raw)) return;
+    setMirrorStatus({ stage: 'fetching' });
+    const permanent = await mirrorExternalImage(raw, setMirrorStatus);
+    if (permanent !== raw) setForm(f => ({ ...f, featured_image: permanent }));
+    // Clear status after 4 s
+    setTimeout(() => setMirrorStatus(null), 4000);
+  };
+
   const openEditor = (p?: CswoPost) => {
     if (p) {
       setForm(fromPost(p)); setEditingId(p.id);
@@ -292,8 +304,34 @@ export default function MemberPosts() {
 
             {/* FEATURED IMAGE */}
             <SidePanel label={tr('Featured Image', 'প্রধান ছবি')}>
-              <input className="input w-full text-sm" placeholder="https://…" value={form.featured_image}
-                onChange={e => setForm(f => ({ ...f, featured_image: e.target.value }))} />
+              <input
+                className="input w-full text-sm"
+                placeholder="https://…"
+                value={form.featured_image}
+                onChange={e => setForm(f => ({ ...f, featured_image: e.target.value }))}
+                onBlur={e => handleImageUrlBlur(e.target.value)}
+              />
+              {/* Mirror status banner */}
+              {mirrorStatus && (
+                <div className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ${
+                  mirrorStatus.stage === 'error'
+                    ? 'bg-red-50 text-red-700'
+                    : mirrorStatus.stage === 'done'
+                    ? 'bg-green-50 text-green-700'
+                    : 'bg-blue-50 text-blue-700'
+                }`}>
+                  {mirrorStatus.stage === 'fetching' && '⏳ ' + tr('Saving a copy of image…', 'ছবির কপি সংরক্ষণ হচ্ছে…')}
+                  {mirrorStatus.stage === 'uploading' && '⬆ ' + tr('Uploading to server…', 'সার্ভারে আপলোড হচ্ছে…')}
+                  {mirrorStatus.stage === 'done' && '✓ ' + tr('Image saved permanently', 'ছবি স্থায়ীভাবে সংরক্ষিত')}
+                  {mirrorStatus.stage === 'error' && '⚠ ' + tr('Could not copy image. Paste works but may expire.', 'ছবি কপি হয়নি। URL কাজ করবে কিন্তু মেয়াদ শেষ হতে পারে।')}
+                </div>
+              )}
+              {/* Warn if current URL is still a blocked CDN */}
+              {!mirrorStatus && form.featured_image && isBlockedCdnUrl(form.featured_image) && (
+                <p className="text-[10px] text-amber-600">
+                  ⚠ {tr('This URL (Facebook/Instagram) may expire. Click away to auto-save a copy.', 'এই URL (Facebook/Instagram) মেয়াদ শেষ হতে পারে। বাইরে ক্লিক করলে কপি সংরক্ষণ হবে।')}
+                </p>
+              )}
               <label className={`mt-1.5 flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-200 py-2 text-xs font-medium text-gray-500 transition-colors hover:border-orange-400 hover:text-orange-600 ${uploading ? 'pointer-events-none opacity-50' : ''}`}>
                 <input type="file" accept="image/*" className="sr-only"
                   onChange={async e => {
@@ -308,7 +346,7 @@ export default function MemberPosts() {
                 <div className="relative mt-2">
                   <img src={form.featured_image} alt="" className="w-full rounded-lg object-cover" style={{ maxHeight: 120 }}
                     onError={e => { e.currentTarget.style.display = 'none'; }} />
-                  <button type="button" onClick={() => setForm(f => ({ ...f, featured_image: '' }))}
+                  <button type="button" onClick={() => { setForm(f => ({ ...f, featured_image: '' })); setMirrorStatus(null); }}
                     className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-[10px] text-white hover:bg-black/80">✕</button>
                 </div>
               )}

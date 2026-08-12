@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { CswoPost, PostStatus, PostType, PostVisibility } from '@/types';
 import { compressImage } from '@/lib/imageCompression';
+import { mirrorExternalImage, isBlockedCdnUrl, type MirrorProgress } from '@/lib/mirrorImage';
 import BlockEditor from '@/components/admin/cms/BlockEditor';
 import EventSettingsPanel, { EMPTY_EVENT_SETTINGS } from '@/components/admin/cms/EventSettingsPanel';
 import type { EventSettings } from '@/components/admin/cms/EventSettingsPanel';
@@ -334,6 +335,16 @@ export default function AdminCMSEditor() {
     return supabase.storage.from('post-images').getPublicUrl(path).data.publicUrl;
   };
 
+  // Auto-mirror Facebook / Instagram / expiring CDN URLs on blur
+  const [mirrorStatus, setMirrorStatus] = useState<MirrorProgress | null>(null);
+  const handleImageUrlBlur = async (raw: string) => {
+    if (!isBlockedCdnUrl(raw)) return;
+    setMirrorStatus({ stage: 'fetching' });
+    const permanent = await mirrorExternalImage(raw, setMirrorStatus);
+    if (permanent !== raw) setForm(f => ({ ...f, featured_image: permanent }));
+    setTimeout(() => setMirrorStatus(null), 4000);
+  };
+
   const addTag = () => {
     const tag = form.tagInput.trim();
     if (tag && !form.tags.includes(tag)) setForm(f => ({ ...f, tags: [...f.tags, tag], tagInput: '' }));
@@ -621,8 +632,32 @@ export default function AdminCMSEditor() {
 
           {/* FEATURED IMAGE (OPTIONAL) */}
           <SidePanel label="Featured Image (Optional)" icon={<Image className="h-4 w-4" />}>
-            <input className="input w-full text-xs font-mono" placeholder="https://…" value={form.featured_image}
-              onChange={e => setForm(f => ({ ...f, featured_image: e.target.value }))} />
+            <input
+              className="input w-full text-xs font-mono"
+              placeholder="https://…"
+              value={form.featured_image}
+              onChange={e => setForm(f => ({ ...f, featured_image: e.target.value }))}
+              onBlur={e => handleImageUrlBlur(e.target.value)}
+            />
+            {/* Mirror status banner */}
+            {mirrorStatus && (
+              <div className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ${
+                mirrorStatus.stage === 'error' ? 'bg-red-50 text-red-700'
+                  : mirrorStatus.stage === 'done' ? 'bg-green-50 text-green-700'
+                  : 'bg-blue-50 text-blue-700'
+              }`}>
+                {mirrorStatus.stage === 'fetching' && '⏳ Saving a copy of image…'}
+                {mirrorStatus.stage === 'uploading' && '⬆ Uploading to server…'}
+                {mirrorStatus.stage === 'done' && '✓ Image saved permanently'}
+                {mirrorStatus.stage === 'error' && '⚠ Could not copy image — URL saved but may expire.'}
+              </div>
+            )}
+            {/* Warn if still a blocked CDN URL */}
+            {!mirrorStatus && form.featured_image && isBlockedCdnUrl(form.featured_image) && (
+              <p className="text-[10px] text-amber-600">
+                ⚠ Facebook/Instagram URLs expire. Click away to auto-save a permanent copy.
+              </p>
+            )}
             <div className="flex gap-2">
               <button type="button" onClick={() => setShowMedia(true)}
                 className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg border border-gray-200 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
@@ -643,7 +678,7 @@ export default function AdminCMSEditor() {
               <div className="relative mt-2">
                 <img src={form.featured_image} alt="" className="w-full rounded-lg object-cover" style={{ maxHeight: 100 }}
                   onError={e => { e.currentTarget.style.display='none'; }} />
-                <button type="button" onClick={() => setForm(f => ({ ...f, featured_image: '' }))}
+                <button type="button" onClick={() => { setForm(f => ({ ...f, featured_image: '' })); setMirrorStatus(null); }}
                   className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-[10px] text-white hover:bg-black/80">
                   <X className="h-3 w-3" />
                 </button>

@@ -37,7 +37,7 @@ export function usePosts() {
             title: p.title,
             content: p.content,
             category: p.category,
-            featuredImage: p.featured_image || '/assets/images/Chhatradol.jpg',
+            featuredImage: p.featured_image?.trim() || '/assets/images/Chhatradol.jpg',
             publishedDate: p.published_date,
             source: 'db',
             author: p.author_name ?? undefined,

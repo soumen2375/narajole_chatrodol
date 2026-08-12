@@ -225,28 +225,155 @@ export const TESTIMONIALS: Testimonial[] = [
 ];
 
 export interface SuccessStory {
+  id?: string;
   title: Bi;
   summary: Bi;
+  quote?: Bi;
+  author?: Bi;
+  category?: Bi;
+  fullContent?: Bi;
   img: string;
 }
 
 export const SUCCESS_STORIES: SuccessStory[] = [
   {
-    title: { bn: 'শিক্ষাজীবন: অন্ধকার থেকে আলো', en: 'Education: from darkness to light' },
+    id: 'priti-kumari',
+    title: { bn: 'শিক্ষাজীবন: অন্ধকার থেকে আলো', en: 'Education: From Darkness to Light' },
     summary: {
-      bn: 'একজন দরিদ্র পরিবারের সন্তান আমাদের শিক্ষাবৃত্তির মাধ্যমে পড়াশোনা সম্পন্ন করে এখন বিশ্ববিদ্যালয়ে কম্পিউটার সায়েন্স পড়ছে এবং পরিবারের প্রথম স্নাতক হতে চলেছে।',
-      en: 'A child from a poor family completed schooling on our scholarship and now studies computer science at university — set to become the first graduate in the family.',
+      bn: 'একজন দরিদ্র পরিবারের সন্তান আমাদের শিক্ষাবৃত্তির মাধ্যমে পড়াশোনা সম্পন্ন করে এখন স্বপ্ন দেখছে ডাক্তার হওয়ার।',
+      en: 'A child from an underprivileged family received educational support and books, allowing her to stay in school and excel.',
+    },
+    quote: {
+      bn: 'সহায়তার আগে, আমি শুধু পড়ার স্বপ্ন দেখতাম। আজ আমি ডাক্তার হওয়ার স্বপ্ন দেখি।',
+      en: 'Before the support, I dreamed of studying. Today, I dream of becoming a doctor.',
+    },
+    author: {
+      bn: '— প্রীতি কুমারী, অষ্টম শ্রেণী',
+      en: '— Priti Kumari, Class 8',
+    },
+    category: { bn: 'শিক্ষা', en: 'Education' },
+    fullContent: {
+      bn: 'প্রীতি কুমারীর পরিবার আর্থিক সংকটের কারণে তার পড়াশোনা বন্ধ করে দেওয়ার সিদ্ধান্ত নিয়েছিল। নাড়াজোল ছাত্রদল তার সমগ্র বই, খাতা ও বার্ষিক ফি বহনের দায়িত্ব নেয়। আজ সে তার শ্রেণীর সেরা শিক্ষার্থীদের একজন।',
+      en: 'Priti Kumari’s family was about to discontinue her education due to severe financial hardship. NaraJol Chhatradal stepped in with complete textbook support, uniforms, and tuition sponsorship. Today she ranks among the top performers in her grade.',
     },
     img: '/assets/images/impacts/education.jpg',
   },
   {
-    title: { bn: 'সবুজাভ বাংলা: একটি পরিবেশগত বিপ্লব', en: 'Green Bengal: an environmental revolution' },
+    id: 'raju-mondal',
+    title: { bn: 'আত্মনির্ভরতার গল্প: জীবিকা উন্নয়ন', en: 'Self-Reliance: Skill Training' },
     summary: {
-      bn: 'গত পাঁচ বছরে স্থানীয় সম্প্রদায়ের সহায়তায় ১০০০-এর বেশি গাছ রোপণ করা হয়েছে, যা পরিবেশের পাশাপাশি মানুষের সচেতনতাও বৃদ্ধি করেছে।',
-      en: 'Over five years, more than 1,000 trees have been planted with community help, improving both the environment and public awareness.',
+      bn: 'কারিগরি ও সেলাই প্রশিক্ষণের মাধ্যমে হস্তশিল্পে নতুন কেরিয়ার গড়ে পরিবারের দায়িত্ব নিয়েছেন রাজু।',
+      en: 'Through specialized skill development & tailoring training, Raju unlocked stable income opportunities.',
+    },
+    quote: {
+      bn: 'দক্ষতা উন্নয়ন কর্মসূচি আমাকে একটি চাকরি পেতে এবং আমার পরিবারকে সহায়তা করতে সাহায্য করেছে।',
+      en: 'The skill training program helped me get a job and support my family.',
+    },
+    author: {
+      bn: '— রাজু মন্ডল',
+      en: '— Raju Mondal',
+    },
+    category: { bn: 'জীবিকা', en: 'Livelihood' },
+    fullContent: {
+      bn: 'রাজু মন্ডল দীর্ঘদিন কর্মহীন থাকার পর ছাত্রদলের বৃত্তিমূলক প্রশিক্ষণ ও হস্তশিল্প কর্মশালায় অংশগ্রহণ করেন। প্রশিক্ষণ শেষে তিনি কাজ পান এবং নিজের ক্ষুদ্র পারিবারিক ব্যবসায় স্বাবলম্বী হয়ে ওঠেন।',
+      en: 'After months of unemployment, Raju enrolled in our vocational tailoring and craftsmanship drive. Upon course completion, he secured steady manufacturing orders and now supports his parents with dignity.',
     },
     img: '/assets/images/impacts/tree_plantations.jpg',
   },
+];
+
+export const FOCUS_AREAS_DATA = [
+  {
+    id: 'education',
+    title: { bn: 'শিক্ষা', en: 'Education' },
+    percentage: 92,
+    color: '#0c756f',
+    description: {
+      bn: 'দরিদ্র ও মেধাবী শিশুদের জন্য গুণগত শিক্ষার অধিকার সুনিশ্চিতকরণ।',
+      en: 'Improving access to quality education for underprivileged children.',
+    },
+    details: {
+      bn: 'বিনামূল্যে বই বিতরণ, বার্ষিক বৃত্তিপদ্ধতি ও কোচিং সহ ৫০০+ শিক্ষার্থীর সহায়তা।',
+      en: 'Free textbook drives, merit scholarship grants, and after-school tutoring for 500+ pupils.',
+    },
+    iconName: 'Grad',
+  },
+  {
+    id: 'healthcare',
+    title: { bn: 'স্বাস্থ্যসেবা', en: 'Healthcare' },
+    percentage: 78,
+    color: '#c2410c',
+    description: {
+      bn: 'সুস্থ ও সচেতন সম্প্রদায়ের জন্য নিয়মিত বিনামূল্যে চিকিৎসা ও পরীক্ষা।',
+      en: 'Providing healthcare support & awareness for healthier communities.',
+    },
+    details: {
+      bn: '২৫+ বিনামূল্যে রক্তদান ও স্বাস্থ্য পরীক্ষা শিবিরের মাধ্যমে ৮,৯৪৫ জনের স্বাস্থ্য সেবা প্রদান।',
+      en: '25+ free health checkups and blood donation camps impacting 8,945 beneficiaries.',
+    },
+    iconName: 'Stetho',
+  },
+  {
+    id: 'livelihood',
+    title: { bn: 'জীবিকা ও দক্ষতা', en: 'Livelihood' },
+    percentage: 83,
+    color: '#059669',
+    description: {
+      bn: 'কর্মসংস্থানের সুযোগ তৈরি এবং স্বাবলম্বিতার জন্য কারিগরি প্রশিক্ষণ।',
+      en: 'Creating employment opportunities & enhancing skills for self-reliance.',
+    },
+    details: {
+      bn: 'সেলাই, কম্পিউটার ও কুটির শিল্প প্রশিক্ষণে ২০০+ যুব ও নারীর আত্মনির্ভরতা।',
+      en: 'Vocational workshops empowering youth and women with employment skills.',
+    },
+    iconName: 'Package',
+  },
+  {
+    id: 'community',
+    title: { bn: 'সামাজিক উন্নয়ন', en: 'Community Dev.' },
+    percentage: 88,
+    color: '#2563eb',
+    description: {
+      bn: 'স্থানীয় অংশীদারিত্ব ও অংশগ্রহণের মাধ্যমে গ্রামীণ কাঠামোর জোরদারকরণ।',
+      en: 'Strengthening communities through participation & local development.',
+    },
+    details: {
+      bn: '১৮টি গ্রামীণ অঞ্চলে শীতবস্ত্র, ত্রিপল ও দুর্যোগে জরুরি ত্রাণ পৌঁছানো।',
+      en: 'Winter clothing, relief material, and infrastructure aid delivered to 18 rural areas.',
+    },
+    iconName: 'Users',
+  },
+  {
+    id: 'environment',
+    title: { bn: 'পরিবেশ সুরক্ষা', en: 'Environment' },
+    percentage: 80,
+    color: '#16a34a',
+    description: {
+      bn: 'পরিবেশের টেকসই ভারসাম্য রক্ষা এবং প্রাকৃতিক সম্পদের সংরক্ষণ।',
+      en: 'Promoting sustainability and protecting our natural resources.',
+    },
+    details: {
+      bn: '২,০০০+ ফলজ ও বনজ বৃক্ষ রোপণ, প্লাস্টিক মুক্তকরণ ও জল সংরক্ষণ কর্মসূচি।',
+      en: 'Over 2,000 trees planted, anti-plastic awareness drives, and sanitation drives.',
+    },
+    iconName: 'Tree',
+  },
+];
+
+export const YEARLY_IMPACT_DATA = [
+  { year: '2020', lives: 3000, displayLives: '3,000', label: { bn: '৩,০০০ জন', en: '3,000 Lives' } },
+  { year: '2021', lives: 5200, displayLives: '5,200', label: { bn: '৫,২০০ জন', en: '5,200 Lives' } },
+  { year: '2022', lives: 7500, displayLives: '7,500', label: { bn: '৭,৫০০ জন', en: '7,500 Lives' } },
+  { year: '2023', lives: 10000, displayLives: '10,000', label: { bn: '১০,০০০ জন', en: '10,000 Lives' } },
+  { year: '2024', lives: 12450, displayLives: '12,450+', label: { bn: '১২,৪৫০+ জন', en: '12,450+ Lives' } },
+];
+
+export const LOCATION_NODES_DATA = [
+  { id: 'narajole', name: { bn: 'নাড়াজোল', en: 'Nij Narajole' }, district: { bn: 'পশ্চিম মেদিনীপুর', en: 'Paschim Medinipur' }, camps: 12, beneficiaries: '4,200+' },
+  { id: 'daspur', name: { bn: 'দাসপুর', en: 'Daspur' }, district: { bn: 'পশ্চিম মেদিনীপুর', en: 'Paschim Medinipur' }, camps: 8, beneficiaries: '3,100+' },
+  { id: 'ghatal', name: { bn: 'ঘাটাল', en: 'Ghatal' }, district: { bn: 'পশ্চিম মেদিনীপুর', en: 'Paschim Medinipur' }, camps: 6, beneficiaries: '2,500+' },
+  { id: 'midnapore', name: { bn: 'মেদিনীপুর শহর', en: 'Midnapore Town' }, district: { bn: 'পশ্চিম মেদিনীপুর', en: 'Paschim Medinipur' }, camps: 5, beneficiaries: '1,650+' },
+  { id: 'tamluk', name: { bn: 'তমলুক', en: 'Tamluk' }, district: { bn: 'পূর্ব মেদিনীপুর', en: 'Purba Medinipur' }, camps: 4, beneficiaries: '1,000+' },
 ];
 
 export interface GalleryImage {

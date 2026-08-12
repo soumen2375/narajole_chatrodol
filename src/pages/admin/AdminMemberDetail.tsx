@@ -197,12 +197,17 @@ export default function AdminMemberDetail() {
           <div className="flex items-center gap-4">
             {/* Avatar */}
             <div className="relative shrink-0">
-              {m.avatar_url ? (
-                <img src={`${m.avatar_url}?v=${m.updated_at}`} alt={m.full_name} className="h-16 w-16 rounded-full object-cover ring-2 ring-gray-200" />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal-700 text-xl font-bold text-white ring-2 ring-gray-200">
-                  {m.full_name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
-                </div>
+              {/* Initials always rendered as base layer */}
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal-700 text-xl font-bold text-white ring-2 ring-gray-200">
+                {m.full_name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
+              </div>
+              {m.avatar_url && (
+                <img
+                  src={`${m.avatar_url}?v=${m.updated_at}`}
+                  alt={m.full_name}
+                  className="absolute inset-0 h-16 w-16 rounded-full object-cover ring-2 ring-gray-200"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
               )}
               <button
                 type="button"
