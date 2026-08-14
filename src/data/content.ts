@@ -103,7 +103,7 @@ export const PROGRAMS: Program[] = [
       bn: 'বিশেষজ্ঞ চিকিৎসকরা রক্তদাতাদের স্বাস্থ্য পরীক্ষা করেন, নিরাপদ রক্ত সংগ্রহ নিশ্চিত করেন এবং রক্তদাতাদের জন্য সনদপত্র ও পুষ্টিকর খাদ্য প্রদান করা হয়।',
       en: 'Specialist doctors screen donors, ensure safe collection, and every donor receives a certificate and refreshments.',
     },
-    icon: '/assets/images/favicon/favicon192.png',
+    icon: '/assets/images/favicon/android-chrome-192x192.png',
   },
   {
     title: { bn: 'পোশাক বিতরণ', en: 'Clothing distribution' },
@@ -115,7 +115,7 @@ export const PROGRAMS: Program[] = [
       bn: 'শিশু, নারী ও পুরুষ—সকলের জন্য নতুন বা ভাল মানের ব্যবহৃত পোশাক সংগ্রহ করে বাছাই করে উপকারভোগীদের হাতে তুলে দেওয়া হয়।',
       en: 'Volunteers collect new and good-quality used clothes for children, women and men, sort them and hand them to those in need.',
     },
-    icon: '/assets/images/favicon/favicon192.png',
+    icon: '/assets/images/favicon/android-chrome-192x192.png',
   },
   {
     title: { bn: 'পরিবেশ সুরক্ষা ও বৃক্ষরোপণ', en: 'Environment & tree plantation' },
@@ -127,7 +127,7 @@ export const PROGRAMS: Program[] = [
       bn: 'প্রতি বছর বিভিন্ন স্থানে বৃক্ষরোপণ ও চারা বিতরণ করা হয় এবং জনবহুল এলাকায় পরিচ্ছন্নতা অভিযান পরিচালিত হয়।',
       en: 'Each year we plant trees, distribute saplings and run clean-up drives in busy public areas.',
     },
-    icon: '/assets/images/favicon/favicon192.png',
+    icon: '/assets/images/favicon/android-chrome-192x192.png',
   },
   {
     title: { bn: 'শীতবস্ত্র বিতরণ', en: 'Winter clothing drive' },
@@ -139,7 +139,7 @@ export const PROGRAMS: Program[] = [
       bn: 'কম্বল, সোয়েটার, জ্যাকেট, ক্যাপ ও মোজা গ্রামীণ এলাকা, স্টেশন ও বস্তিতে পৌঁছে দেওয়া হয়।',
       en: 'Blankets, sweaters, jackets, caps and socks are delivered to villages, stations and slums.',
     },
-    icon: '/assets/images/favicon/favicon192.png',
+    icon: '/assets/images/favicon/android-chrome-192x192.png',
   },
   {
     title: { bn: 'শিক্ষাদান কর্মসূচি', en: 'Free tutoring' },
@@ -151,7 +151,7 @@ export const PROGRAMS: Program[] = [
       bn: 'অভিজ্ঞ শিক্ষকরা নিয়মিত ক্লাস নেন, পরীক্ষার প্রস্তুতিতে সহায়তা করেন এবং বই-খাতাসহ শিক্ষাসামগ্রী সরবরাহ করা হয়।',
       en: 'Experienced teachers hold regular classes, help with exam preparation, and books and stationery are provided.',
     },
-    icon: '/assets/images/favicon/favicon192.png',
+    icon: '/assets/images/favicon/android-chrome-192x192.png',
   },
   {
     title: { bn: 'জরুরি ত্রাণ বিতরণ', en: 'Emergency relief' },
@@ -163,7 +163,7 @@ export const PROGRAMS: Program[] = [
       bn: 'স্বেচ্ছাসেবকরা ক্ষতিগ্রস্ত এলাকায় পৌঁছে চাল, ডাল, তেল, শুকনো খাবার ও বিশুদ্ধ জলসহ জরুরি সামগ্রী বিতরণ করেন।',
       en: 'Volunteers reach affected areas and distribute rice, pulses, oil, dry food, clean water and other essentials.',
     },
-    icon: '/assets/images/favicon/favicon192.png',
+    icon: '/assets/images/favicon/android-chrome-192x192.png',
   },
   {
     title: { bn: 'স্বাস্থ্য সচেতনতা ও শিবির', en: 'Health awareness & camps' },
@@ -175,7 +175,7 @@ export const PROGRAMS: Program[] = [
       bn: 'বিশেষজ্ঞ ডাক্তাররা প্রাথমিক পরীক্ষা করেন, বিনামূল্যে ঔষধ দেন এবং ডায়াবেটিস ও রক্তচাপ নিয়ে পরামর্শ দেন।',
       en: 'Specialist doctors carry out check-ups, give free medicine and advise on diabetes and blood pressure.',
     },
-    icon: '/assets/images/favicon/favicon192.png',
+    icon: '/assets/images/favicon/android-chrome-192x192.png',
   },
   {
     title: { bn: 'নারী ও শিশু উন্নয়ন', en: 'Women & child development' },
@@ -187,7 +187,7 @@ export const PROGRAMS: Program[] = [
       bn: 'নারী স্বাবলম্বীকরণে সেলাই, হস্তশিল্প ও কম্পিউটার প্রশিক্ষণ এবং শিশুদের জন্য পুষ্টি ও সাংস্কৃতিক কর্মসূচি আয়োজন করা হয়।',
       en: 'Sewing, handicraft and computer training empower women, while nutrition and cultural programmes support children.',
     },
-    icon: '/assets/images/favicon/favicon192.png',
+    icon: '/assets/images/favicon/android-chrome-192x192.png',
   },
 ];
 

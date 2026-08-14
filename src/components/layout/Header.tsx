@@ -41,11 +41,11 @@ export default function Header() {
       >
         {/* 1. BRAND LOGO & NAME */}
         <Link to="/" className="flex items-center gap-3 shrink-0 group" onClick={() => setOpen(false)}>
-          <div className="relative flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/40 bg-white p-0.5 shadow-md transition-transform duration-300 group-hover:scale-105">
+          <div className="relative flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/50 bg-white p-0.5 shadow-md transition-transform duration-300 group-hover:scale-105">
             <img
               src="/assets/images/logo.png"
               alt="Chhatradol Official Logo"
-              className="h-full w-full object-contain rounded-full"
+              className="h-full w-full object-cover scale-110 rounded-full"
               onError={(e) => { e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }}
             />
           </div>

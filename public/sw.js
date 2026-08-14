@@ -37,5 +37,13 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
+self.addEventListener('fetch', (event) => {
+  // Pass-through fetch for full web app support & Chrome PWA installability criteria
+  if (event.request.method !== 'GET') return;
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
+});
+
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(clients.claim()));

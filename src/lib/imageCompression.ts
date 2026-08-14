@@ -7,8 +7,8 @@ export type ImageUploadType = 'avatar' | 'media' | 'post' | 'general';
 const LIMITS: Record<ImageUploadType, number> = {
   avatar:  50 * 1024,   // 50KB
   media:   200 * 1024,  // 200KB
-  post:    350 * 1024,  // 350KB
-  general: 500 * 1024,  // 500KB
+  post:    250 * 1024,  // 250KB (guaranteed under WhatsApp's 300KB social preview limit)
+  general: 250 * 1024,  // 250KB
 };
 
 // Maximum raw file size we'll even attempt to compress (10MB)

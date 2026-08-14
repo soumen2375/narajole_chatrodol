@@ -36,12 +36,12 @@ export default function PostCard({ post, dim = false }: { post: PostCardData; di
           </button>
         )}
       </div>
-      <div className="flex flex-1 flex-col p-5">
-        <p className="mb-2 text-xs font-medium text-blue-600">
+      <div className="flex flex-1 flex-col p-5 font-sans">
+        <p className="mb-2 text-xs font-medium text-amber-700">
           {post.category} · {fmt.date(post.publishedDate)}
         </p>
-        <h3 className="mb-2 text-lg font-semibold leading-snug text-gray-900">{post.title}</h3>
-        <p className="text-sm leading-relaxed text-gray-600">{excerpt(post.content, 150)}</p>
+        <h3 className="mb-2 text-base sm:text-lg font-bold leading-snug text-gray-900 group-hover:text-amber-800 transition-colors">{post.title}</h3>
+        <p className="text-xs sm:text-sm leading-relaxed text-gray-600 line-clamp-3">{excerpt(post.content, 150)}</p>
       </div>
     </article>
   );

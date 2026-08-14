@@ -14,11 +14,11 @@ export default function Footer() {
           {/* Col 1: Brand Info & Socials */}
           <div className="lg:col-span-3">
             <Link to="/" className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white p-0.5 shadow-md">
+              <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white p-0.5 shadow-md">
                 <img
                   src="/assets/images/logo.png"
                   alt="Chhatradol SWO Logo"
-                  className="h-full w-full rounded-full object-contain"
+                  className="h-full w-full rounded-full object-cover scale-110"
                   onError={(e) => { e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }}
                 />
               </div>

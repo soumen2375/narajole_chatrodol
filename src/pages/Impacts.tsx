@@ -149,12 +149,7 @@ export default function Impacts() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             {/* Left Content Column */}
             <div className="lg:col-span-7 pt-4 pb-10 md:pb-16 z-10">
-              <Reveal direction="up" delay={50}>
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100/80 border border-amber-300/60 text-amber-900 font-mono text-[11px] uppercase tracking-[0.2em] font-semibold mb-6">
-                  <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse"></span>
-                  {bn ? 'আমাদের প্রভাব' : 'OUR IMPACT'}
-                </div>
-              </Reveal>
+
 
               <Reveal direction="up" delay={120}>
                 <h1

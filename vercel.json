@@ -10,7 +10,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(facebookexternalhit|WhatsApp|Twitterbot|LinkedInBot|TelegramBot|Discordbot|Slackbot|Googlebot|bingbot).*"
+          "value": ".*(facebook|WhatsApp|whatsapp|Twitter|LinkedIn|Telegram|Discord|Slack|Google|bingbot|applebot|SkypeUriPreview|meta|bot|crawler|spider|facebookexternalhit).*"
         }
       ],
       "destination": "/api/share?slug=:slug"
@@ -21,7 +21,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": ".*(facebookexternalhit|WhatsApp|Twitterbot|LinkedInBot|TelegramBot|Discordbot|Slackbot|Googlebot|bingbot).*"
+          "value": ".*(facebook|WhatsApp|whatsapp|Twitter|LinkedIn|Telegram|Discord|Slack|Google|bingbot|applebot|SkypeUriPreview|meta|bot|crawler|spider|facebookexternalhit).*"
         }
       ],
       "destination": "/api/share?slug=:slug"
