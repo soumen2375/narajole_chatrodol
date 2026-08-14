@@ -233,7 +233,7 @@ export default function EventDetail() {
 
   const pageUrl = useMemo(() => {
     const slugOrId = post?.slug || id?.replace(/^db-/, '') || id || '';
-    return `https://narajolechatradol.vercel.app/events/${slugOrId}`;
+    return `https://www.chhatradol.org/events/${slugOrId}`;
   }, [post, id]);
 
   useEffect(() => {
@@ -355,7 +355,7 @@ export default function EventDetail() {
             <article className="lg:col-span-8 min-w-0">
 
               {/* 1. Title — first element so it aligns with Related Stories header */}
-              <h1 className="font-serif text-[24px] font-extrabold leading-tight text-slate-900 sm:text-[30px] md:text-[36px]">
+              <h1 className="font-sans text-[24px] font-extrabold leading-tight text-slate-900 sm:text-[30px] md:text-[36px]">
                 {post.title}
               </h1>
 

@@ -12,13 +12,13 @@ interface Props {
 type Platform = 'google' | 'facebook' | 'twitter' | 'linkedin';
 
 export default function SocialPreviewSuite({
-  title, description, url = 'https://narajolechatradol.org/...', image, siteName = 'Narajole Chhatrodol NGO',
+  title, description, url = 'https://www.chhatradol.org/...', image, siteName = 'Chhatradol Social Welfare Organisation',
 }: Props) {
   const [platform, setPlatform] = useState<Platform>('google');
 
   const displayTitle = title || 'Untitled Post - ' + siteName;
   const displayDesc = description || 'No meta description provided yet. Add a concise summary to improve search engine rankings.';
-  const displayUrl = url || 'https://narajolechatradol.org';
+  const displayUrl = url || 'https://www.chhatradol.org';
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm w-full">
@@ -86,7 +86,7 @@ export default function SocialPreviewSuite({
               </div>
             )}
             <div className="border-t border-gray-100 bg-gray-50/80 p-2.5">
-              <p className="text-[9px] uppercase tracking-wider text-gray-400 font-mono truncate">NARAJOLECHATRADOL.ORG</p>
+              <p className="text-[9px] uppercase tracking-wider text-gray-400 font-mono truncate">CHHATRADOL.ORG</p>
               <h4 className="mt-0.5 text-xs font-bold text-gray-900 line-clamp-1">{displayTitle}</h4>
               <p className="mt-0.5 text-[10px] text-gray-500 line-clamp-2">{displayDesc}</p>
             </div>
@@ -107,7 +107,7 @@ export default function SocialPreviewSuite({
               <h4 className="text-xs font-bold text-gray-900 line-clamp-1">{displayTitle}</h4>
               <p className="mt-1 text-[10px] text-gray-500 line-clamp-2">{displayDesc}</p>
               <p className="mt-1 flex items-center gap-1 text-[9px] text-gray-400 truncate">
-                <Globe className="h-2.5 w-2.5 flex-shrink-0" /> narajolechatradol.org
+                <Globe className="h-2.5 w-2.5 flex-shrink-0" /> chhatradol.org
               </p>
             </div>
           </div>
@@ -125,7 +125,7 @@ export default function SocialPreviewSuite({
             )}
             <div className="p-2.5 bg-slate-50/50">
               <h4 className="text-xs font-semibold text-gray-900 line-clamp-1">{displayTitle}</h4>
-              <p className="mt-0.5 text-[9px] text-gray-400 truncate">narajolechatradol.org · 2 min read</p>
+              <p className="mt-0.5 text-[9px] text-gray-400 truncate">chhatradol.org · 2 min read</p>
             </div>
           </div>
         )}

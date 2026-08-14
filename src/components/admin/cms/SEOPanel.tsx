@@ -209,7 +209,7 @@ export default function SEOPanel({
               title={metaTitle || title}
               description={metaDescription || content.replace(/<[^>]+>/g, '').slice(0, 150)}
               image={featuredImage}
-              url={`https://narajolechatradol.org/${slug}`}
+              url={`https://www.chhatradol.org/${slug}`}
             />
           </div>
         </div>

@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { CswoMedia, CswoMediaFolder } from '@/types';
 import { compressImage } from '@/lib/imageCompression';
+import { buildSeoFileName, downloadSeoImage } from '@/lib/seoImage';
 import {
   Folder, Upload, Search, FolderPlus, Trash2,
   X, Download, Copy, Check, Grid, List as ListIcon,
@@ -54,8 +55,7 @@ export default function AdminMediaLibrary() {
     if (!files || !member) return;
     setUploading(true);
     for (const file of Array.from(files)) {
-      const ext = file.name.split('.').pop() ?? 'bin';
-      const path = `media/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const path = buildSeoFileName({ originalName: file.name, folder: 'media' });
       const isImage = file.type.startsWith('image/');
       const uploadFile = isImage ? await compressImage(file, 'post') : file;
       const { error } = await supabase.storage.from('post-images').upload(path, uploadFile);
@@ -261,10 +261,11 @@ export default function AdminMediaLibrary() {
                             className="rounded bg-white/20 p-0.5 hover:bg-white/40">
                             {copied === m.id ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3 text-white" />}
                           </button>
-                          <a href={m.file_url} download={m.filename} onClick={e => e.stopPropagation()}
+                          <button onClick={e => { e.stopPropagation(); downloadSeoImage(m.file_url, m.filename); }}
+                            title="Download file"
                             className="rounded bg-white/20 p-0.5 hover:bg-white/40">
                             <Download className="h-3 w-3 text-white" />
-                          </a>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -323,10 +324,11 @@ export default function AdminMediaLibrary() {
                               className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
                               {copied === m.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                             </button>
-                            <a href={m.file_url} download={m.filename}
+                            <button onClick={() => downloadSeoImage(m.file_url, m.filename)}
+                              title="Download file"
                               className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
                               <Download className="h-4 w-4" />
-                            </a>
+                            </button>
                             <button onClick={async () => {
                               if (!confirm('Delete this file?')) return;
                               await supabase.from('cswo_media').delete().eq('id', m.id);

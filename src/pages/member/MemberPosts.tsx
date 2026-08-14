@@ -9,6 +9,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import RichEditor from '@/components/admin/RichEditor';
 import CategorySelector from '@/components/admin/CategorySelector';
 import { compressImage } from '@/lib/imageCompression';
+import { buildSeoFileName } from '@/lib/seoImage';
 import { mirrorExternalImage, isBlockedCdnUrl, type MirrorProgress } from '@/lib/mirrorImage';
 
 function stripHtml(h: string) { return h.replace(/<[^>]+>/g, ''); }
@@ -182,8 +183,7 @@ export default function MemberPosts() {
   };
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    const ext = file.name.split('.').pop() ?? 'jpg';
-    const path = `posts/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const path = buildSeoFileName({ originalName: file.name, contextTitle: form.title, folder: 'posts' });
     setUploading(true);
     const compressed = await compressImage(file, 'post');
     const { error } = await supabase.storage.from('post-images').upload(path, compressed);

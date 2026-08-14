@@ -119,10 +119,7 @@ function Hero() {
       <div className="relative mx-auto w-full max-w-[1340px] px-6 py-20 md:px-10 md:py-28">
         <div className="max-w-2xl">
           {/* Eyebrow Tagline */}
-          <div
-            className="inline-flex items-center gap-2 text-lg sm:text-xl font-medium italic tracking-wide text-amber-200"
-            style={{ fontFamily: '"Noto Serif", Georgia, serif' }}
-          >
+          <div className="inline-flex items-center gap-2 text-lg sm:text-xl font-medium tracking-wide text-amber-200 font-sans">
             <span>— Unity • Education • Progress</span>
           </div>
 

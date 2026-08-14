@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { CswoMedia, CswoMediaFolder } from '@/types';
 import { compressImage } from '@/lib/imageCompression';
+import { buildSeoFileName } from '@/lib/seoImage';
 import { Folder, Image, Upload, X, Search, Check, ChevronRight } from 'lucide-react';
 
 interface Props {
@@ -49,8 +50,7 @@ export default function MediaPickerModal({ open, onClose, onSelect, title = 'Med
   useEffect(() => { loadMedia(); }, [loadMedia]);
 
   const handleUpload = async (file: File) => {
-    const ext = file.name.split('.').pop() ?? 'jpg';
-    const path = `media/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const path = buildSeoFileName({ originalName: file.name, folder: 'media' });
     setUploading(true);
     try {
       const isImage = file.type.startsWith('image/');

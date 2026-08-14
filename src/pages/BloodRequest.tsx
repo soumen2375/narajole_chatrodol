@@ -226,7 +226,7 @@ export default function BloodRequest() {
                           value={form.patient_name}
                           onChange={set('patient_name')}
                           placeholder={bn ? 'রোগীর পুরো নাম' : "Patient's full name"}
-                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10"
+                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c]"
                         />
                       </div>
                     </div>
@@ -245,7 +245,7 @@ export default function BloodRequest() {
                             required
                             value={form.blood_group}
                             onChange={set('blood_group')}
-                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10 appearance-none"
+                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] appearance-none"
                           >
                             <option value="">{bn ? 'রক্তের গ্রুপ বেছে নিন' : 'Select blood group'}</option>
                             {BLOOD_GROUPS.map((g) => (
@@ -271,7 +271,7 @@ export default function BloodRequest() {
                             max="10"
                             value={form.units_needed}
                             onChange={set('units_needed')}
-                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10"
+                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c]"
                           />
                         </div>
                       </div>
@@ -292,7 +292,7 @@ export default function BloodRequest() {
                             value={form.hospital}
                             onChange={set('hospital')}
                             placeholder={bn ? 'হাসপাতালের নাম ও স্থান' : 'Hospital name and location'}
-                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10"
+                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c]"
                           />
                         </div>
                       </div>
@@ -311,7 +311,7 @@ export default function BloodRequest() {
                             value={form.contact_phone}
                             onChange={set('contact_phone')}
                             placeholder={bn ? 'যোগাযোগের ফোন নম্বর' : 'Contact phone number'}
-                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10"
+                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c]"
                           />
                         </div>
                       </div>
@@ -331,7 +331,7 @@ export default function BloodRequest() {
                             type="date"
                             value={form.required_by}
                             onChange={set('required_by')}
-                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10"
+                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c]"
                           />
                         </div>
                       </div>
@@ -348,7 +348,7 @@ export default function BloodRequest() {
                             value={form.requester_name}
                             onChange={set('requester_name')}
                             placeholder={bn ? 'আপনার নাম' : 'Your name'}
-                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10"
+                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c]"
                           />
                         </div>
                       </div>
@@ -368,7 +368,7 @@ export default function BloodRequest() {
                           value={form.message}
                           onChange={set('message')}
                           placeholder={bn ? 'যেকোনো গুরুত্বপূর্ণ বিবরণ বা নির্দেশনা…' : 'Any important details or instructions...'}
-                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10 resize-none"
+                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] resize-none"
                         />
                       </div>
                     </div>

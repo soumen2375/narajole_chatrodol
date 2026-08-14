@@ -265,7 +265,7 @@ export default function Contact() {
                             value={form.name}
                             onChange={set('name')}
                             placeholder={bn ? 'আপনার নাম' : 'Your full name'}
-                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-2.5 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10"
+                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-2.5 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c]"
                           />
                         </div>
                       </div>
@@ -284,7 +284,7 @@ export default function Contact() {
                             value={form.phone}
                             onChange={set('phone')}
                             placeholder={bn ? 'মোবাইল নম্বর' : 'Mobile number'}
-                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-2.5 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10"
+                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-2.5 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c]"
                           />
                         </div>
                       </div>
@@ -305,7 +305,7 @@ export default function Contact() {
                           value={form.email}
                           onChange={set('email')}
                           placeholder={bn ? 'আপনার ইমেল ঠিকানা' : 'Your email address'}
-                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-2.5 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10"
+                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-2.5 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c]"
                         />
                       </div>
                     </div>
@@ -323,7 +323,7 @@ export default function Contact() {
                           required
                           value={form.subject}
                           onChange={set('subject')}
-                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-2.5 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10 appearance-none"
+                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-2.5 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] appearance-none"
                         >
                           {subjectOpts.map((opt, i) => (
                             <option key={i} value={i === 0 ? '' : opt}>
@@ -386,7 +386,7 @@ export default function Contact() {
                           value={form.message}
                           onChange={set('message')}
                           placeholder={bn ? 'আপনার বার্তা এখানে লিখুন…' : 'Write your message here...'}
-                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-2.5 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10 resize-none"
+                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-2.5 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] resize-none"
                         />
                       </div>
                     </div>

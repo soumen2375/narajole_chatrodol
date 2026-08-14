@@ -12,6 +12,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/imageCompression';
+import { buildSeoFileName } from '@/lib/seoImage';
 
 /** CDN hostname patterns known to expire or block cross-origin hotlinking. */
 const BLOCKED_HOSTS = [
@@ -104,7 +105,7 @@ export async function mirrorExternalImage(
     const file = new File([blob], `mirrored.${ext}`, { type: blob.type });
     const compressed = await compressImage(file, 'post');
 
-    const path = `posts/mirror-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const path = buildSeoFileName({ fallbackPrefix: 'mirrored-media', folder: 'posts' });
     const { error: upErr } = await supabase.storage.from('post-images').upload(path, compressed);
 
     if (upErr) {

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FaPlay,
-  FaChevronLeft, FaChevronRight, FaMagnifyingGlass,
+  FaChevronLeft, FaChevronRight, FaMagnifyingGlass, FaDownload,
 } from 'react-icons/fa6';
 import { useGallery } from '@/hooks/useGallery';
+import { downloadSeoImage } from '@/lib/seoImage';
 import { useT } from '@/i18n';
 import { PageShell, SERIF_BN, Icon, FJ } from './_field-journal';
 import Breadcrumb from '@/components/ui/Breadcrumb';
@@ -333,12 +334,25 @@ export default function Gallery() {
               <div className="mt-1 font-bengali text-[13.5px] sm:text-[15px] text-white leading-snug">
                 {current.alt[lang] || current.alt.en || current.alt.bn}
               </div>
-              <div className="mt-1 font-mono text-[11px] text-white/50">{(lightbox ?? 0) + 1} / {filtered.length}</div>
-              {current.more && (
-                <a href={current.more} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 font-bengali text-[12.5px] font-semibold" style={{ color: '#fca47e' }}>
-                  {tr('More', 'আরও')} <Icon.Arrow className="h-3 w-3" />
-                </a>
-              )}
+              <div className="mt-3 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const altText = current.alt[lang] || current.alt.en || current.alt.bn;
+                    downloadSeoImage(current.src, altText);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 font-bengali text-[12px] font-semibold text-white transition-all hover:bg-orange-600"
+                  style={{ background: FJ.brand }}
+                >
+                  <FaDownload className="h-3 w-3" />
+                  {tr('Download Photo', 'ছবি ডাউনলোড করুন')}
+                </button>
+                {current.more && (
+                  <a href={current.more} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-bengali text-[12.5px] font-semibold" style={{ color: '#fca47e' }}>
+                    {tr('More', 'আরও')} <Icon.Arrow className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
             </figcaption>
           </figure>
         </div>

@@ -214,7 +214,7 @@ export default function Volunteer() {
                           value={form.name}
                           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                           placeholder={bn ? 'আপনার পূর্ণ নাম' : 'Your full name'}
-                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10"
+                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c]"
                         />
                       </div>
                     </div>
@@ -234,7 +234,7 @@ export default function Volunteer() {
                             value={form.email}
                             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                             placeholder={bn ? 'আপনার ইমেল' : 'Your email'}
-                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10"
+                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c]"
                           />
                         </div>
                       </div>
@@ -253,7 +253,7 @@ export default function Volunteer() {
                             value={form.phone}
                             onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                             placeholder={bn ? 'মোবাইল নম্বর' : 'Mobile number'}
-                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10"
+                            className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c]"
                           />
                         </div>
                       </div>
@@ -271,7 +271,7 @@ export default function Volunteer() {
                         <select
                           value={form.area}
                           onChange={(e) => setForm((f) => ({ ...f, area: e.target.value }))}
-                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10 appearance-none"
+                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] appearance-none"
                         >
                           {VOLUNTEER_PROGRAM_OPTIONS.map((o) => (
                             <option key={o.en} value={o.en}>{o[lang]}</option>
@@ -294,7 +294,7 @@ export default function Volunteer() {
                           value={form.message}
                           onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                           placeholder={bn ? 'আপনার প্রেরণা ও অভিজ্ঞতা লিখুন…' : 'Share your motivation and experience...'}
-                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] focus:ring-2 focus:ring-[#c2410c]/10 resize-none"
+                          className="w-full rounded-xl border border-stone-200/90 bg-stone-50/40 pl-10 pr-4 py-3 font-bengali text-sm text-stone-900 outline-none transition-all focus:bg-white focus:border-[#c2410c] resize-none"
                         />
                       </div>
                     </div>

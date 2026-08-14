@@ -46,9 +46,27 @@ p, h1, h2, h3, h4, h5, h6, span, a, label {
   word-break: break-word;
 }
 
+/* Prevent browser default double borders and ring outlines on all form fields */
+input,
+select,
+textarea {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 @layer components {
   .input {
-    @apply w-full rounded-md border border-gray-300 px-3 py-2 text-gray-800 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand;
+    @apply w-full rounded-md border border-gray-300 px-3 py-2 text-gray-800 focus:border-brand focus:outline-none;
   }
   .btn-primary {
     @apply rounded-full bg-brand px-6 py-3 font-semibold text-white transition hover:-translate-y-[2px] hover:bg-brand-light hover:shadow-[0_10px_24px_-8px_rgba(12,117,111,0.45)] disabled:opacity-60;
@@ -352,9 +370,9 @@ h1, h2, h3, h4, h5, h6, .font-serif, .font-serif-bn, .font-english-serif, .font-
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* Cormorant Garamond for title displays */
+/* Sans-serif font for title displays */
 .font-display-title {
-  font-family: 'Cormorant Garamond', 'Noto Serif Bengali', Georgia, serif;
+  font-family: 'Inter', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
 }
 
 /* Donate button blink animation (Item 25) */

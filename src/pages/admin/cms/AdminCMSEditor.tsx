@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { CswoPost, PostStatus, PostType, PostVisibility } from '@/types';
 import { compressImage } from '@/lib/imageCompression';
+import { buildSeoFileName } from '@/lib/seoImage';
 import { mirrorExternalImage, isBlockedCdnUrl, type MirrorProgress } from '@/lib/mirrorImage';
 import BlockEditor from '@/components/admin/cms/BlockEditor';
 import EventSettingsPanel, { EMPTY_EVENT_SETTINGS } from '@/components/admin/cms/EventSettingsPanel';
@@ -325,8 +326,7 @@ export default function AdminCMSEditor() {
   };
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    const ext = file.name.split('.').pop() ?? 'jpg';
-    const path = `posts/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const path = buildSeoFileName({ originalName: file.name, contextTitle: form.title, folder: 'posts' });
     setUploading(true);
     const compressed = await compressImage(file, 'post');
     const { error } = await supabase.storage.from('post-images').upload(path, compressed);

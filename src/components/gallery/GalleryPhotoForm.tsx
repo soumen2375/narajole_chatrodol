@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
 import { useGalleryCategoryOptions } from '@/hooks/useGallery';
 import { compressImage } from '@/lib/imageCompression';
+import { buildSeoFileName } from '@/lib/seoImage';
 
 export interface GalleryFormData {
   src: string;
@@ -100,8 +101,11 @@ export default function GalleryPhotoForm({ title, initial, isAdmin = false, onSa
       if (selectedFile) {
         setUploading(true);
         const compressed = await compressImage(selectedFile, 'media');
-        const ext = selectedFile.name.split('.').pop() ?? 'jpg';
-        const path = `gallery/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const path = buildSeoFileName({
+          originalName: selectedFile.name,
+          contextTitle: form.alt_en || form.alt_bn || form.category_en || form.category_bn,
+          folder: 'gallery',
+        });
         const { error: uploadErr } = await supabase.storage.from('post-images').upload(path, compressed);
         if (uploadErr) {
           setUploading(false);
