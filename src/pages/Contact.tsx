@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { ORG } from '@/data/content';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 import { PageShell, SERIF_BN } from './_field-journal';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import {
@@ -31,6 +33,7 @@ type Status = 'idle' | 'sending' | 'sent' | 'error';
 export default function Contact() {
   const { t, lang } = useT();
   const bn = lang === 'bn';
+  useSEO(SEO['/contact']);
   const [form, setForm] = useState({ name: '', phone: '', email: '', subject: '', message: '' });
   const [agreed, setAgreed] = useState(true);
   const [status, setStatus] = useState<Status>('idle');

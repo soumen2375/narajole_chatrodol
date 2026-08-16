@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useT } from '@/i18n';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 import {
   FaBullseye, FaEye, FaGem, FaGraduationCap, FaUsers, FaShieldHalved,
   FaHandHoldingHeart, FaClipboardCheck, FaFlag, FaUserGroup, FaAward,
@@ -21,6 +23,7 @@ const onImgErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
 export default function About() {
   const { lang } = useT();
   const bn = lang === 'bn';
+  useSEO(SEO['/about']);
 
   const trustees = [
     {

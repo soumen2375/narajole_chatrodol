@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useT } from '@/i18n';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 import {
   FaDroplet, FaGraduationCap, FaStethoscope, FaLeaf, FaHandsHoldingChild,
   FaUserGroup, FaHandHoldingHeart, FaMusic, FaHeart, FaPlay, FaArrowRight,
@@ -21,6 +23,7 @@ const onImgErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
 export default function Programs() {
   const { lang } = useT();
   const bn = lang === 'bn';
+  useSEO(SEO['/programs']);
 
   const pillarCards = [
     {

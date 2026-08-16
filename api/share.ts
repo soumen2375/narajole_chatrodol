@@ -158,6 +158,59 @@ export default async function handler(
   const slug = post?.slug || cleanParam;
   const canonical = post ? `${SITE_URL}/events/${slug}` : SITE_URL;
 
+  // ── JSON-LD Structured Data ──────────────────────────────────────────────────
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Event',
+        'name': post?.title || title,
+        'description': description,
+        'url': canonical,
+        'image': imageUrl,
+        'eventAttendanceMode': 'https://schema.org/OfflineEventAttendanceMode',
+        'eventStatus': 'https://schema.org/EventScheduled',
+        'organizer': {
+          '@type': 'Organization',
+          'name': SITE_NAME,
+          'url': SITE_URL
+        },
+        'location': {
+          '@type': 'Place',
+          'name': 'Narajole, Paschim Medinipur',
+          'address': {
+            '@type': 'PostalAddress',
+            'addressRegion': 'West Bengal',
+            'addressCountry': 'IN'
+          }
+        }
+      },
+      {
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+          {
+            '@type': 'ListItem',
+            'position': 1,
+            'name': 'Home',
+            'item': SITE_URL
+          },
+          {
+            '@type': 'ListItem',
+            'position': 2,
+            'name': 'Events',
+            'item': `${SITE_URL}/events`
+          },
+          {
+            '@type': 'ListItem',
+            'position': 3,
+            'name': post?.title || title,
+            'item': canonical
+          }
+        ]
+      }
+    ]
+  };
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -190,6 +243,11 @@ export default async function handler(
   <meta name="twitter:description" content="${description}">
   <meta name="twitter:image" content="${imageUrl}">
   <meta name="twitter:image:alt" content="${title}">
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  ${JSON.stringify(jsonLd, null, 2)}
+  </script>
 </head>
 <body>
   <h1>${title}</h1>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useT } from '@/i18n';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 import {
   PageShell, Reveal, SERIF_BN, SERIF_EN,
 } from './_field-journal';
@@ -112,6 +114,7 @@ const BrushUnderline = ({ className = "w-full text-amber-500/80" }: { className?
 export default function Impacts() {
   const { lang } = useT();
   const bn = lang === 'bn';
+  useSEO(SEO['/impacts']);
 
   // Active Story Modal state
   const [selectedStory, setSelectedStory] = useState<SuccessStory | null>(null);

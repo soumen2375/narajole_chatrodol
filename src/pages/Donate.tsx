@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { PageShell, SERIF_BN, Icon, FJ } from './_field-journal';
 import { startRazorpayPayment } from '@/lib/razorpay';
 import { useT } from '@/i18n';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 
 // ════════════════════════════════════════════════════════════════════
@@ -58,6 +60,7 @@ type Status = 'idle' | 'processing' | 'done' | 'error';
 
 export default function Donate() {
   const { lang } = useT();
+  useSEO(SEO['/donate']);
   const tr = (bn: string, en: string) => (lang === 'en' ? en : bn);
 
   const [causeKey, setCauseKey] = useState('general');

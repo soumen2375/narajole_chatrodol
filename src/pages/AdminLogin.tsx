@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/i18n';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 
 import Breadcrumb from '@/components/ui/Breadcrumb';
 
@@ -15,6 +17,7 @@ const MUTED  = '#78716c';
 const ADMIN_DARK = '#0f172a'; // dark navy for admin accent
 
 export default function AdminLogin() {
+  useSEO(SEO['/admin-login']);
   const { signIn, signOut } = useAuth();
   const { t, lang } = useT();
   const navigate = useNavigate();

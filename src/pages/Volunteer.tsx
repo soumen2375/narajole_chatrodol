@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { VOLUNTEER_PROGRAM_OPTIONS } from '@/data/content';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 import { PageShell, SERIF_BN } from './_field-journal';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import {
@@ -23,6 +25,7 @@ import {
 export default function Volunteer() {
   const { t, lang } = useT();
   const bn = lang === 'bn';
+  useSEO(SEO['/volunteer']);
   const [form, setForm] = useState({
     name: '',
     email: '',

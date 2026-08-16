@@ -1,8 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { FaFacebook, FaWhatsapp, FaXTwitter, FaLink } from 'react-icons/fa6';
+import { FaFacebook, FaWhatsapp, FaXTwitter, FaLink, FaHeart, FaHandHoldingHeart, FaEnvelope } from 'react-icons/fa6';
 import { usePosts } from '@/hooks/usePosts';
 import { useT } from '@/i18n';
+import { useSEO } from '@/hooks/useSEO';
+import { injectEventSchema, removeEventSchema } from '@/lib/structuredData';
 import { PageShell, Icon } from './_field-journal';
 
 const FALLBACK = '/assets/images/Chhatradol.jpg';
@@ -236,30 +238,45 @@ export default function EventDetail() {
     return `https://www.chhatradol.org/events/${slugOrId}`;
   }, [post, id]);
 
-  useEffect(() => {
-    if (!post) return;
-    const pageTitle = `${post.meta_title || post.title} | Narajole Chhatradol NGO`;
-    document.title = pageTitle;
-    const metaDesc =
+  const seoTitle = useMemo(() => {
+    if (!post) return 'Social Welfare Events & Campaigns | Chhatradol Social Welfare Organisation';
+    return `${post.meta_title || post.title} | Chhatradol Social Welfare Organisation`;
+  }, [post]);
+
+  const seoDesc = useMemo(() => {
+    if (!post) return 'Social welfare initiatives and events organised by Chhatradol Social Welfare Organisation.';
+    return (
       post.meta_description ||
       post.share_snippet ||
-      post.content.replace(/<[^>]*>/g, '').slice(0, 160);
-    const metaImg = post.og_image || post.featuredImage;
-    const setMeta = (attrName: string, attrVal: string, contentVal: string) => {
-      let el = document.querySelector(`meta[${attrName}="${attrVal}"]`);
-      if (!el) {
-        el = document.createElement('meta');
-        el.setAttribute(attrName, attrVal);
-        document.head.appendChild(el);
-      }
-      el.setAttribute('content', contentVal);
+      post.content.replace(/<[^>]*>/g, '').trim().slice(0, 160)
+    );
+  }, [post]);
+
+  useSEO({
+    title: seoTitle,
+    description: seoDesc,
+    canonical: pageUrl,
+    ogImage: post?.og_image || post?.featuredImage,
+    ogType: 'article',
+    ogTitle: post?.meta_title || post?.title,
+    ogDescription: seoDesc,
+  });
+
+  useEffect(() => {
+    if (!post) return;
+    injectEventSchema({
+      name: post.title,
+      startDate: post.publishedDate || new Date().toISOString(),
+      description: seoDesc,
+      image: post.featuredImage,
+      url: pageUrl,
+      location: 'Narajole, Paschim Medinipur, West Bengal',
+    });
+
+    return () => {
+      removeEventSchema();
     };
-    setMeta('name', 'description', metaDesc);
-    setMeta('property', 'og:title', post.meta_title || post.title);
-    setMeta('property', 'og:description', metaDesc);
-    setMeta('property', 'og:image', metaImg);
-    setMeta('property', 'og:url', pageUrl);
-  }, [post, pageUrl]);
+  }, [post, pageUrl, seoDesc]);
 
   const related = useMemo(() => {
     if (!post) return [];
@@ -476,7 +493,42 @@ export default function EventDetail() {
                 </Link>
               </div>
 
-              {/* 10. Back link */}
+              {/* 10. NGO Action Conversion CTA */}
+              <div className="mt-8 rounded-2xl border border-stone-200/80 bg-gradient-to-br from-stone-900 to-stone-800 p-6 text-white shadow-lg">
+                <h4 className="font-serif text-lg font-bold text-white">
+                  {bn ? 'আপনি কীভাবে সাহায্য করতে পারেন?' : 'How You Can Support Us'}
+                </h4>
+                <p className="mt-2 text-xs text-stone-300 leading-relaxed">
+                  {bn
+                    ? 'আমাদের রক্তদান শিবির, শিক্ষা কর্মসূচি ও অন্যান্য সমাজসেবামূলক কাজে আপনার সক্রিয় অংশগ্রহণ আমাদের আরও মানুষকে সেবা করতে সাহায্য করে।'
+                    : 'Your support helps us reach more families in need through blood donation camps, education initiatives, and healthcare support.'}
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2.5">
+                  <Link
+                    to="/volunteer"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#c2410c] px-4 py-2 text-xs font-bold text-white transition hover:bg-orange-600 shadow-sm"
+                  >
+                    <FaHandHoldingHeart className="h-3 w-3" />
+                    <span>{bn ? 'স্বেচ্ছাসেবক হিসেবে যোগ দিন' : 'Volunteer With Us'}</span>
+                  </Link>
+                  <Link
+                    to="/donate"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-2 text-xs font-bold text-stone-900 transition hover:bg-amber-400 shadow-sm"
+                  >
+                    <FaHeart className="h-3 w-3" />
+                    <span>{bn ? 'দান করুন' : 'Support Our Work'}</span>
+                  </Link>
+                  <Link
+                    to="/contact"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-stone-600 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/20"
+                  >
+                    <FaEnvelope className="h-3 w-3" />
+                    <span>{bn ? 'যোগাযোগ' : 'Contact Us'}</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* 11. Back link */}
               <div className="mt-8">
                 <Link
                   to="/events"

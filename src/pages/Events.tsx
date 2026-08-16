@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { usePosts } from '@/hooks/usePosts';
 import { useCategories } from '@/hooks/useCategories';
 import { useT } from '@/i18n';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 import { PageShell, SERIF_BN, Icon, FJ } from './_field-journal';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 
@@ -36,6 +38,7 @@ function SearchIcon({ className, style }: { className?: string; style?: React.CS
 }
 
 export default function Events() {
+  useSEO(SEO['/events']);
   const { posts, loading } = usePosts();
   const { flat: categories } = useCategories();
   const { t, lang } = useT();

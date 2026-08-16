@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/i18n';
 import { supabase } from '@/lib/supabase';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 
 import Breadcrumb from '@/components/ui/Breadcrumb';
 
@@ -15,6 +17,7 @@ const RULE   = '#e7e5e4';
 const MUTED  = '#78716c';
 
 export default function Login() {
+  useSEO(SEO['/login']);
   const { signIn } = useAuth();
   const { t, lang } = useT();
   const navigate = useNavigate();

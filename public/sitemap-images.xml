@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://www.chhatradol.org/</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/Chhatradol.jpg</image:loc>
+      <image:title>Chhatradol Social Welfare Organisation Team</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/logo.png</image:loc>
+      <image:title>Chhatradol Official Logo</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/free-blood-group-test-camp</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-01-blood-group-test.jpg</image:loc>
+      <image:title>বিনামূল্যে রক্তের গ্রুপ পরীক্ষা: স্বাস্থ্য জানার প্রথম ধাপ</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/regular-blood-donation-camp</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-02-regular-blood-camp.jpg</image:loc>
+      <image:title>নিয়মিত রক্তদান শিবির: রক্ত দিন, জীবন বাঁচান</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/free-thalassemia-test-events</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-03-thalassemia-camp.jpg</image:loc>
+      <image:title>বিনামূল্যে থ্যালাসেমিয়া পরীক্ষা ও সচেতনতামূলক শিবির</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/free-eye-checkup-camp</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-04-eye-camp.jpg</image:loc>
+      <image:title>বিনামূল্যে চক্ষু পরীক্ষা শিবির: সবার চোখে স্বাস্থ্যকর দৃষ্টি</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/free-general-health-checkup</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-05-events-camp.jpg</image:loc>
+      <image:title>বিনামূল্যে সাধারণ স্বাস্থ্য পরীক্ষা শিবির</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/free-medicine-distribution-program</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-06-medicine-distribution.jpg</image:loc>
+      <image:title>বিনামূল্যে ওষুধ বিতরণ: দরিদ্র রোগীদের পাশে মানবিক হাত</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/abhaya-womens-safety-camp</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-07-abhaya-camp.jpg</image:loc>
+      <image:title>অভয়া শিবির: নারীর নিরাপত্তা ও আত্মরক্ষার পাঠশালা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/covid-relief-activities</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-08-covid-response.jpg</image:loc>
+      <image:title>করোনাকালীন তৎপরতা: সংকটে মানুষের পাশে</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/emergency-oxygen-cylinder-support</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-09-oxygen-service.jpg</image:loc>
+      <image:title>জরুরি মুহূর্তে অক্সিজেন সিলিন্ডার সরবরাহ পরিষেবা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/emergency-blood-donor-support</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-10-emergency-blood.jpg</image:loc>
+      <image:title>বিপদকালীন রক্ত সহায়তা: রক্ত ও রক্তদাতার মিলনমেলা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/dengue-prevention-camp</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-11-dengue-events.jpg</image:loc>
+      <image:title>ডেঙ্গু প্রতিরোধে সচেতনতা শিবির: প্রতিটি পরিবার হোক সজাগ</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/dengue-clean-drive</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-12-cleanliness-drive.jpg</image:loc>
+      <image:title>ডেঙ্গু প্রতিরোধে স্বচ্ছ পরিবেশ অভিযান</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/free-mosquito-net-distribution</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-13-mosquito-net.jpg</image:loc>
+      <image:title>বিনামূল্যে মশারি বিতরণ: নিরাপদ ঘুম, স্বাস্থ্যকর জীবন</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/wheelchair-distribution-program</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-14-wheelchair.jpg</image:loc>
+      <image:title>বিশেষভাবে সক্ষম ব্যক্তিদের হুইলচেয়ার প্রদান</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/mental-care-home-food-winter-support</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-15-mental-care-home.jpg</image:loc>
+      <image:title>মেন্টালি হ্যান্ডিক্যাপড সেবাশ্রমে খাদ্য ও শীতবস্ত্র বিতরণ</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/free-medical-camp-for-flood-victims</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-16-flood-medical-camp.jpg</image:loc>
+      <image:title>বন্যা দুর্গতদের জন্য বিনামূল্যে ডাক্তারি পরিষেবা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/blind-home-birthday-celebration</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-17-blind-home-birthday.jpg</image:loc>
+      <image:title>Blind Home-এ জন্মদিন উদযাপন: আলোহীন চোখে ভালোবাসার আলো</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/world-blood-donor-day-special-camp</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-18-world-blood-donor-day.jpg</image:loc>
+      <image:title>বিশ্ব রক্তদাতা দিবসে বিশেষ রক্তদান শিবির ২০২৪</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/cloth-distribution-program</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-19-cloth-distribution.jpg</image:loc>
+      <image:title>বস্ত্র বিতরণ কর্মসূচি: সবার জন্য সম্মানজনক পোশাক</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/winter-clothes-distribution</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-20-winter-clothes.jpg</image:loc>
+      <image:title>শীতবস্ত্র প্রদান: শীতের রাতে উষ্ণতার ছোঁয়া</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/ichepuron-puja-new-dress</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-21-durga-puja-dress.jpg</image:loc>
+      <image:title>শারদীয়ায় ‘‘ইচ্ছেপূরণ’’: নতুন পোশাকে উৎসবের হাসি</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/saree-distribution-for-needy-mothers</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-22-saree-distribution.jpg</image:loc>
+      <image:title>দুস্থ মায়েদের জন্য শাড়ি বিতরণ কর্মসূচি</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/green-plantation-sapling-distribution</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-23-sapling-distribution.jpg</image:loc>
+      <image:title>সবুজায়নের লক্ষ্যে চারা গাছ বিতরণ অভিযান</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/tree-plantation-to-reduce-heatwave</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-24-tree-plantation.jpg</image:loc>
+      <image:title>দাবদাহ রোধে পরিত্যক্ত স্থানে ব্যাপক বৃক্ষরোপণ</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/kids-sapling-photo-contest</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-25-kids-tree-contest.jpg</image:loc>
+      <image:title>স্কুলশিশুদের চারা গাছ প্রদান ও ‘‘গাছের সঙ্গে ছবি তুলুন’’ প্রতিযোগিতা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/mother-name-tree-plantation</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-26-tree-in-mothers-name.jpg</image:loc>
+      <image:title>‘‘মায়ের নামে গাছ’’: আবেগে ভরা বৃক্ষরোপণ কর্মসূচি</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/standing-with-flood-affected-people</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-27-flood-support.jpg</image:loc>
+      <image:title>বন্যা দুর্গত মানুষের পাশে মানবিক সহায়তার হাত</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/cooked-food-for-flood-areas</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-28-flood-food-distribution.jpg</image:loc>
+      <image:title>বন্যা কবলিত এলাকায় রান্না করা খাবার বিতরণ</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/financial-help-for-flood-damaged-houses</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-29-house-repair-flood.jpg</image:loc>
+      <image:title>বন্যায় ক্ষতিগ্রস্ত বাড়ি মেরামতে আর্থিক সহায়তা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/tarpaulin-distribution-for-flood-victims</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-30-tarpaulin-distribution.jpg</image:loc>
+      <image:title>বন্যা দুর্গতদের জন্য ত্রিপল বিতরণ ও অস্থায়ী আশ্রয়</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/programs-on-freedom-fighters-and-thinkers</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-31-freedom-fighters-program.jpg</image:loc>
+      <image:title>স্বাধীনতা সংগ্রামী ও মনীষীদের জন্মজয়ন্তী ও প্রয়াণ দিবসে বিশেষ কর্মসূচি</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/financial-aid-for-cancer-patients</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-32-cancer-financial-help.jpg</image:loc>
+      <image:title>ক্যান্সারের মতো মারণব্যাধির বিরুদ্ধে লড়াইয়ে আর্থিক সহায়তা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/raktokotha-blood-donation-events</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-33-raktokotha-camp.jpg</image:loc>
+      <image:title>রক্তকথা: রক্তদান বিষয়ক সচেতনতামূলক শিবির</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/educational-support-for-meritorious-needy-students</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-34-students-book-support.jpg</image:loc>
+      <image:title>দুস্থ মেধাবী ছাত্রছাত্রীদের জন্য পুস্তক ও পড়াশোনার সামগ্রী বিতরণ</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/child-marriage-prevention-campaign</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-35-stop-child-marriage.jpg</image:loc>
+      <image:title>বাল্যবিবাহ রোধে বাড়ি-বাড়ি সচেতনতা ও প্রয়োজনে আইনি ব্যবস্থা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/national-youth-day-drawing-competition-2026</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/drawing_14_01_26.png</image:loc>
+      <image:title>রঙে রঙে স্বপ্নের প্রকাশ: জাতীয় যুব দিবস উপলক্ষে অঙ্কন প্রতিযোগিতা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/national-youth-day-celebration-2026</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/posts/post-37-national-youth-day-celebration.jpg</image:loc>
+      <image:title>জাতীয় যুব দিবস উদযাপন: নবযুবকদের পথে আলোর দিশা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/free-eye-camp-and-cataract-surgery-2026</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/posts/post-38-eye-camp-cataract-operation.jpg</image:loc>
+      <image:title>চক্ষু পরীক্ষা শিবির ও বিনামূল্যে ছানি অপারেশন: আলোর পথে নতুন সূচনা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/blood-donation-camp-harinarayanpur-2026</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/posts/post-40-harinarayanpur-blood-camp.jpg</image:loc>
+      <image:title>হরিনারায়নপুরে ব্লাড ডোনেশন ক্যাম্প: রক্ত দিন, জীবন বাঁচান</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/netaji-birth-anniversary-flag-hoisting-2026</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/posts/post-41-netaji-birthday-flag-ceremony.jpg</image:loc>
+      <image:title>দেশনায়ক নেতাজি সুভাষচন্দ্র বসুর জন্মজয়ন্তী ও পতাকা উত্তোলন</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/republic-day-flag-hoisting-2026</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/posts/post-42-republic-day-celebration.jpg</image:loc>
+      <image:title>প্রজাতন্ত্র দিবস উদযাপন ও পতাকা উত্তোলন: সংবিধানের প্রতি শ্রদ্ধা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/raktokotha-blood-donation-seminar-2026</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/posts/post-43-raktokotha-seminar.jpg</image:loc>
+      <image:title>রক্তকথা সেমিনার: রক্তদানের বিজ্ঞান, সচেতনতা ও মানবিক বার্তা</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/winter-cloth-distribution-harinarayanpur-2026</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/posts/post-44-harinarayanpur-winter-clothes.jpg</image:loc>
+      <image:title>হরিনারায়নপুরে শীতবস্ত্র বিতরণ: শীতের রাতে উষ্ণতার ছোঁয়া</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/education-support-program</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-34-students-book-support.jpg</image:loc>
+      <image:title>Study Materials Distributed to Students</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.chhatradol.org/events/world-blood-donor-day-2026</loc>
+    <image:image>
+      <image:loc>https://www.chhatradol.org/assets/images/service/post-33-raktokotha-camp.jpg</image:loc>
+      <image:title>World Blood Donor Day 2026</image:title>
+    </image:image>
+  </url>
+</urlset>

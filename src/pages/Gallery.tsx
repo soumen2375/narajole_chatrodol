@@ -4,6 +4,8 @@ import {
 } from 'react-icons/fa6';
 import { useGallery } from '@/hooks/useGallery';
 import { useT } from '@/i18n';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 import { PageShell, SERIF_BN, SERIF_EN, Icon, FJ } from './_field-journal';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 
@@ -19,6 +21,7 @@ const onErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
 export default function Gallery() {
   const { lang } = useT();
   const bn = lang === 'bn';
+  useSEO(SEO['/gallery']);
   const tr = (en: string, bnT: string) => (bn ? bnT : en);
   const { items: all, loading } = useGallery();
 

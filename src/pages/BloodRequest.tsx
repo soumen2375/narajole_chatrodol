@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 import { PageShell, SERIF_BN } from './_field-journal';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import {
@@ -25,6 +27,7 @@ const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown
 export default function BloodRequest() {
   const { t, lang } = useT();
   const bn = lang === 'bn';
+  useSEO(SEO['/blood-request']);
   const [form, setForm] = useState({
     patient_name: '',
     blood_group: '',

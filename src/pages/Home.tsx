@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useT } from '@/i18n';
 import { usePosts } from '@/hooks/usePosts';
 import { useInView, useCountUp } from '@/hooks/useInView';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 import {
   FaHeart, FaArrowRight, FaShieldHalved, FaUsers, FaLeaf, FaHandshake,
   FaGraduationCap, FaDroplet, FaStethoscope, FaHandsHoldingChild,
@@ -952,6 +954,8 @@ function GetInvolvedCardsSection() {
 
 // ════════════════════════════════════════════════════════════════════
 export default function Home() {
+  useSEO(SEO['/']);
+
   return (
     <div className="min-h-screen font-sans" style={{ background: BG_CREAM }}>
       <Hero />

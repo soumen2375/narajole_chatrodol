@@ -1,5 +1,8 @@
+import { useLocation } from 'react-router-dom';
 import { fjVars, SERIF_BN } from '@/pages/_field-journal';
 import { ORG } from '@/data/content';
+import { useSEO } from '@/hooks/useSEO';
+import { SEO } from '@/data/seoConfig';
 
 export const LAST_UPDATED = '21 May 2026';
 
@@ -12,6 +15,12 @@ const BG     = '#faf6ef';
 const PAPER  = '#ffffff';
 
 export function LegalLayout({ title, children }: { title: string; children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  const pageSEO = SEO[pathname] || {
+    title: `${title} | Chhatradol Social Welfare Organisation`,
+    description: `Read the ${title} of Chhatradol Social Welfare Organisation.`,
+  };
+  useSEO(pageSEO);
   return (
     <div style={{ ...fjVars, background: BG, color: INK, fontFamily: 'Roboto, "Noto Sans Bengali", sans-serif' }}>
       {/* Hero */}

@@ -1,21 +1,14 @@
 User-agent: *
 Allow: /
 
-# Disallow admin and member panels from search indexing
+# Disallow private, auth and utility paths from search indexing
 Disallow: /admin/
+Disallow: /admin-login
 Disallow: /member/
+Disallow: /login
+Disallow: /interactive-forms
+Disallow: /404
 
-# Allow important public pages
-Allow: /about
-Allow: /events
-Allow: /gallery
-Allow: /contact
-Allow: /volunteer
-Allow: /donate
-Allow: /programs
-Allow: /impacts
-Allow: /blood-request
-Allow: /organise-blood-camp
-
-# Sitemap
-Sitemap: https://narajolechatrodol.org/sitemap.xml
+# Sitemap Index
+Sitemap: https://www.chhatradol.org/sitemap.xml
+Sitemap: https://www.chhatradol.org/sitemap-index.xml
