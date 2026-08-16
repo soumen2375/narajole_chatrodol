@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
 import { useSEO } from '@/hooks/useSEO';
 import { SEO } from '@/data/seoConfig';
-import { PageShell, SERIF_BN } from './_field-journal';
+import { PageShell } from './_field-journal';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import {
   FaUser,
@@ -92,14 +92,13 @@ export default function BloodRequest() {
             <div className="md:col-span-7 space-y-4">
               <div className="relative inline-block">
                 <h1
-                  className="font-bengali text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-stone-900 leading-tight"
-                  style={SERIF_BN}
+                  className="font-serif text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-stone-900 leading-tight"
                 >
                   Request <span className="text-[#c2410c]">blood</span>
                 </h1>
               </div>
 
-              <p className="font-bengali text-base sm:text-lg text-stone-600 max-w-lg leading-relaxed">
+              <p className="font-sans text-base sm:text-lg text-stone-600 max-w-lg leading-relaxed">
                 {t('blood.requestSubtitle')}
               </p>
 
@@ -177,7 +176,7 @@ export default function BloodRequest() {
                   <div className="font-mono text-xs font-bold uppercase tracking-wider text-[#c2410c]">
                     {bn ? 'জরুরি রক্তের আবেদন' : 'EMERGENCY BLOOD REQUEST'}
                   </div>
-                  <h2 className="mt-1 font-bengali text-2xl sm:text-3xl font-bold text-stone-900" style={SERIF_BN}>
+                  <h2 className="mt-1 font-serif text-2xl sm:text-3xl font-bold text-stone-900">
                     {bn ? 'রোগীর তথ্য পূরণ করুন।' : 'Fill in patient details.'}
                   </h2>
                 </div>

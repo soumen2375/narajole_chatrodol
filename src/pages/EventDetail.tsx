@@ -200,7 +200,7 @@ function RelatedCard({
         <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-amber-700">
           {category || 'Events'}
         </span>
-        <h4 className="mt-1 font-sans text-xs font-bold leading-snug text-slate-900 line-clamp-2 transition-colors group-hover:text-[#c2410c]">
+        <h4 className="mt-1 font-serif text-xs font-bold leading-snug text-slate-900 line-clamp-2 transition-colors group-hover:text-[#c2410c]">
           {title}
         </h4>
         <p className="mt-1 font-sans text-[11px] text-slate-400">{publishedDate}</p>
@@ -280,13 +280,20 @@ export default function EventDetail() {
 
   const related = useMemo(() => {
     if (!post) return [];
-    const others = allPosts.filter(
-      (p) => p.id !== post.id && p.slug !== post.slug && p.id !== id && p.slug !== id
+    const sameCat = allPosts.filter(
+      (p) => p.category === post.category && p.id !== post.id && p.slug !== post.slug && p.id !== id && p.slug !== id
     );
-    const sameCat = others.filter((p) => p.category === post.category);
-    const diffCat = others.filter((p) => p.category !== post.category);
-    return [...sameCat, ...diffCat].slice(0, 4);
+    return sameCat.slice(0, 4);
   }, [allPosts, post, id]);
+
+  const recentStories = useMemo(() => {
+    if (!post) return [];
+    const relatedIds = new Set(related.map((r) => r.id));
+    const others = allPosts.filter(
+      (p) => p.id !== post.id && p.slug !== post.slug && p.id !== id && p.slug !== id && !relatedIds.has(p.id)
+    );
+    return (others.length > 0 ? others : allPosts.filter((p) => p.id !== post.id)).slice(0, 4);
+  }, [allPosts, post, id, related]);
 
   if (loading && !post) {
     return (
@@ -372,7 +379,7 @@ export default function EventDetail() {
             <article className="lg:col-span-8 min-w-0">
 
               {/* 1. Title — first element so it aligns with Related Stories header */}
-              <h1 className="font-sans text-[24px] font-extrabold leading-tight text-slate-900 sm:text-[30px] md:text-[36px]">
+              <h1 className="font-serif text-[24px] font-extrabold leading-tight text-slate-900 sm:text-[30px] md:text-[36px]">
                 {post.title}
               </h1>
 
@@ -472,55 +479,34 @@ export default function EventDetail() {
                 <ShareBar title={post.title} url={pageUrl} />
               </div>
 
-              {/* 9. Feedback banner */}
-              <div className="mt-7 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-orange-200/80 bg-orange-50/50 shadow-sm">
-                <div>
-                  <h4 className="font-serif text-base font-bold text-slate-900">
-                    {bn ? 'অনুষ্ঠানে অংশ নিয়েছিলেন?' : 'Attended this Event?'}
-                  </h4>
-                  <p className="mt-1 font-sans text-xs text-slate-600">
-                    {bn
-                      ? 'অনুষ্ঠানটি কেমন লাগলো জানাতে আপনার মূল্যবান মতামত ও পরামর্শ দিন।'
-                      : 'Let us know how it went. Share your valuable suggestions and review.'}
-                  </p>
-                </div>
-                <Link
-                  to={`/events/${post.id}/feedback`}
-                  className="shrink-0 rounded-full px-6 py-2.5 font-sans text-xs font-bold text-white shadow-md transition-all hover:opacity-90"
-                  style={{ background: 'var(--c-brand)' }}
-                >
-                  {bn ? 'মতামত দিন' : 'Give Feedback'}
-                </Link>
-              </div>
-
-              {/* 10. NGO Action Conversion CTA */}
-              <div className="mt-8 rounded-2xl border border-stone-200/80 bg-gradient-to-br from-stone-900 to-stone-800 p-6 text-white shadow-lg">
+              {/* 10. NGO Action Conversion CTA (Green Background) */}
+              <div className="mt-8 rounded-2xl border border-emerald-700/50 bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-900 p-6 text-white shadow-lg">
                 <h4 className="font-serif text-lg font-bold text-white">
                   {bn ? 'আপনি কীভাবে সাহায্য করতে পারেন?' : 'How You Can Support Us'}
                 </h4>
-                <p className="mt-2 text-xs text-stone-300 leading-relaxed">
+                <p className="mt-2 font-sans text-xs text-emerald-100/90 leading-relaxed">
                   {bn
                     ? 'আমাদের রক্তদান শিবির, শিক্ষা কর্মসূচি ও অন্যান্য সমাজসেবামূলক কাজে আপনার সক্রিয় অংশগ্রহণ আমাদের আরও মানুষকে সেবা করতে সাহায্য করে।'
                     : 'Your support helps us reach more families in need through blood donation camps, education initiatives, and healthcare support.'}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2.5">
                   <Link
+                    to="/donate"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-4 py-2 font-sans text-xs font-bold text-stone-900 transition hover:bg-amber-300 shadow-sm"
+                  >
+                    <FaHeart className="h-3 w-3" />
+                    <span>{bn ? 'দান করুন' : 'Donate'}</span>
+                  </Link>
+                  <Link
                     to="/volunteer"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#c2410c] px-4 py-2 text-xs font-bold text-white transition hover:bg-orange-600 shadow-sm"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#c2410c] px-4 py-2 font-sans text-xs font-bold text-white transition hover:bg-orange-600 shadow-sm"
                   >
                     <FaHandHoldingHeart className="h-3 w-3" />
                     <span>{bn ? 'স্বেচ্ছাসেবক হিসেবে যোগ দিন' : 'Volunteer With Us'}</span>
                   </Link>
                   <Link
-                    to="/donate"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-2 text-xs font-bold text-stone-900 transition hover:bg-amber-400 shadow-sm"
-                  >
-                    <FaHeart className="h-3 w-3" />
-                    <span>{bn ? 'দান করুন' : 'Support Our Work'}</span>
-                  </Link>
-                  <Link
                     to="/contact"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-stone-600 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/20"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-white/10 px-4 py-2 font-sans text-xs font-bold text-white transition hover:bg-white/20"
                   >
                     <FaEnvelope className="h-3 w-3" />
                     <span>{bn ? 'যোগাযোগ' : 'Contact Us'}</span>
@@ -528,14 +514,14 @@ export default function EventDetail() {
                 </div>
               </div>
 
-              {/* 11. Back link */}
-              <div className="mt-8">
+              {/* 11. Interactive Back Button */}
+              <div className="mt-10 pt-2">
                 <Link
                   to="/events"
-                  className="inline-flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-wider text-slate-500 hover:text-[#c2410c] transition-colors"
+                  className="group inline-flex items-center gap-2.5 rounded-full border border-stone-300 bg-white px-5 py-2.5 font-sans text-xs sm:text-sm font-semibold text-stone-700 shadow-sm transition-all duration-200 hover:border-amber-600 hover:bg-amber-50/50 hover:text-[#c2410c] hover:shadow-md active:scale-95"
                 >
-                  <Icon.Arrow className="h-3 w-3 rotate-180" />
-                  {bn ? 'সকল পোস্টে ফিরুন' : 'Back to all events'}
+                  <Icon.Arrow className="h-3.5 w-3.5 rotate-180 text-stone-400 transition-all duration-200 group-hover:-translate-x-1 group-hover:text-[#c2410c]" />
+                  <span>{bn ? 'সকল ইভেন্টে ফিরুন' : 'Back to all events'}</span>
                 </Link>
               </div>
             </article>
@@ -577,7 +563,7 @@ export default function EventDetail() {
                   </div>
                 )}
 
-                {/* About org */}
+                {/* About org (in between Related Stories and Recent Stories) */}
                 <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-5 shadow-sm text-center">
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-[#c2410c] mb-3">
                     <Icon.Heart className="h-6 w-6" />
@@ -598,6 +584,39 @@ export default function EventDetail() {
                     <Icon.Arrow className="h-3 w-3" />
                   </Link>
                 </div>
+
+                {/* Recent Stories */}
+                {recentStories.length > 0 && (
+                  <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-5 shadow-sm">
+                    <div
+                      className="mb-4 flex items-center justify-between border-b pb-3"
+                      style={{ borderColor: 'var(--c-rule)' }}
+                    >
+                      <h3 className="font-serif text-base font-bold text-slate-900">
+                        {bn ? 'সাম্প্রতিক পোস্ট' : 'Recent Stories'}
+                      </h3>
+                      <Link
+                        to="/events"
+                        className="rounded-full bg-amber-100/80 px-3 py-1 font-sans text-[11px] font-bold text-amber-800 border border-amber-300/60 hover:bg-amber-200/80 transition-colors"
+                      >
+                        {bn ? 'সব দেখুন' : 'View all'}
+                      </Link>
+                    </div>
+                    <div className="space-y-4">
+                      {recentStories.map((r) => (
+                        <RelatedCard
+                          key={r.id}
+                          id={r.id}
+                          slug={r.slug}
+                          title={r.title}
+                          featuredImage={r.featuredImage}
+                          category={r.category}
+                          publishedDate={r.publishedDate}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
               </div>
             </aside>

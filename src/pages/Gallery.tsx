@@ -6,7 +6,7 @@ import { useGallery } from '@/hooks/useGallery';
 import { useT } from '@/i18n';
 import { useSEO } from '@/hooks/useSEO';
 import { SEO } from '@/data/seoConfig';
-import { PageShell, SERIF_BN, SERIF_EN, Icon, FJ } from './_field-journal';
+import { PageShell, Icon, FJ } from './_field-journal';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 
 // ════════════════════════════════════════════════════════════════════
@@ -96,7 +96,7 @@ export default function Gallery() {
       <Breadcrumb title="Gallery" />
 
       {/* ════ PIXABAY-STYLE FULL-PHOTO HERO BANNER ════ */}
-      <section className="relative min-h-[480px] sm:min-h-[520px] md:min-h-[560px] w-full overflow-hidden flex flex-col justify-between py-8 sm:py-12 px-4 sm:px-6 md:px-10 bg-stone-950">
+      <section className="relative min-h-[500px] sm:min-h-[540px] md:min-h-[580px] w-full overflow-hidden flex flex-col justify-between pt-8 sm:pt-12 md:pt-16 pb-4 sm:pb-6 px-4 sm:px-6 md:px-10 bg-stone-950">
         {/* Full-size Featured Photo Background with Smooth Crossfade */}
         <div className="absolute inset-0 z-0">
           {slides.map((slide, idx) => (
@@ -110,25 +110,40 @@ export default function Gallery() {
               }`}
             />
           ))}
-          {/* Lightened Dark Overlay so background photo is visible */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/35 to-black/65" />
+          {/* Dark Overlay with smooth gradient */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/35 to-black/75" />
         </div>
 
-        {/* Top Spacer */}
-        <div className="relative z-10 w-full" />
-
         {/* Center Content */}
-        <div className="relative z-10 mx-auto w-full max-w-4xl text-center py-5 sm:py-8">
-          {/* Title in soft grey */}
+        <div className="relative z-10 mx-auto w-full max-w-4xl text-center pt-2 sm:pt-4">
+          {/* Title: 2 lines on mobile ("Captured Moments of" / "Service & Impact"), 3 lines on desktop */}
           <h1
-            className="font-bengali text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-stone-200 leading-snug drop-shadow-lg px-2"
-            style={bn ? SERIF_BN : SERIF_EN}
+            className="font-serif text-[24px] xs:text-[26px] sm:text-4xl md:text-5xl lg:text-[54px] font-bold tracking-tight text-white leading-[1.22] sm:leading-[1.18] drop-shadow-2xl px-2"
           >
-            {tr('Captured Moments of Service & Impact', 'সেবা, সমাজ কল্যাণ ও প্রভাবের স্থির মুহূর্তসমূহ')}
+            {bn ? (
+              <>
+                সেবা, সমাজ কল্যাণ <br />
+                ও প্রভাবের স্থির মুহূর্তসমূহ
+              </>
+            ) : (
+              <>
+                {/* Desktop (3 lines) */}
+                <span className="hidden sm:inline">
+                  Captured Moments of Service <br />
+                  &amp; <br />
+                  Impact
+                </span>
+                {/* Mobile (2 lines matching screenshot) */}
+                <span className="inline sm:hidden">
+                  Captured Moments of <br />
+                  Service &amp; Impact
+                </span>
+              </>
+            )}
           </h1>
 
-          {/* Category Filter Tabs (Scrollable Row WITHOUT visible scrollbar) */}
-          <div className="mt-6 sm:mt-8 flex items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-1 px-1 snap-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {/* Category Filter Tabs */}
+          <div className="mt-5 sm:mt-7 flex items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-1 px-1 snap-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {categories.map((c) => {
               const active = filter === c;
               return (
@@ -136,7 +151,7 @@ export default function Gallery() {
                   key={c}
                   type="button"
                   onClick={() => reset(() => setFilter(c))}
-                  className={`snap-center shrink-0 rounded-full px-4 sm:px-5 py-1.5 sm:py-2 font-bengali text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                  className={`snap-center shrink-0 rounded-full px-4 sm:px-5 py-1.5 sm:py-2 font-sans text-xs sm:text-sm font-semibold transition-all duration-200 ${
                     active
                       ? 'bg-white text-stone-900 shadow-lg scale-105'
                       : 'bg-black/40 hover:bg-white/20 text-white/90 border border-white/20 backdrop-blur-md'
@@ -149,7 +164,7 @@ export default function Gallery() {
           </div>
 
           {/* Search Bar */}
-          <div className="mt-4 sm:mt-6 mx-auto w-full max-w-2xl relative px-1">
+          <div className="mt-3.5 sm:mt-5 mx-auto w-full max-w-2xl relative px-1">
             <div className="relative flex items-center">
               <FaMagnifyingGlass className="absolute left-4 sm:left-5 text-stone-300 text-xs sm:text-base pointer-events-none z-10" />
               <input
@@ -157,7 +172,7 @@ export default function Gallery() {
                 value={query}
                 onChange={(e) => reset(() => setQuery(e.target.value))}
                 placeholder={tr('Search photos, activities, events...', 'ছবি, ঘটনা বা কার্যক্রমের নাম দিয়ে খুঁজুন...')}
-                className="w-full rounded-full py-3 sm:py-4 pl-10 sm:pl-14 pr-10 text-xs sm:text-base bg-black/40 hover:bg-black/50 focus:bg-black/70 text-white placeholder-stone-300/80 border border-white/30 shadow-2xl backdrop-blur-md outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 transition-all font-bengali"
+                className="w-full rounded-full py-3 sm:py-4 pl-10 sm:pl-14 pr-10 text-xs sm:text-base bg-black/40 hover:bg-black/50 focus:bg-black/70 text-white placeholder-stone-300/80 border border-white/30 shadow-2xl backdrop-blur-md outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 transition-all font-sans"
               />
               {query && (
                 <button
@@ -171,8 +186,8 @@ export default function Gallery() {
             </div>
           </div>
 
-          {/* Popular Tags (Scrollable Row WITHOUT visible scrollbar) */}
-          <div className="mt-3 sm:mt-4 flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2 font-bengali text-xs overflow-x-auto pb-1 px-1 snap-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {/* Popular Tags */}
+          <div className="mt-2.5 sm:mt-3.5 flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2 font-sans text-xs overflow-x-auto pb-1 px-1 snap-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             <span className="text-stone-300 text-xs mr-1 font-medium drop-shadow shrink-0">{tr('Popular:', 'জনপ্রিয়:')}</span>
             {[
               { en: 'Blood Camp', bn: 'রক্তদান শিবির', query: 'blood' },
@@ -192,15 +207,15 @@ export default function Gallery() {
           </div>
         </div>
 
-        {/* Bottom Info Bar */}
-        <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center justify-center gap-1.5 pt-2 text-white/90 text-center">
+        {/* Bottom Info Bar — pinned cleanly at the bottom edge of the banner */}
+        <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center justify-center gap-2 mt-auto pt-6 pb-1 text-white/90 text-center">
           {/* Featured Photo Caption */}
           {currentSlide && (
             <div className="text-xs text-stone-200/90 font-medium drop-shadow truncate max-w-full px-4">
-              <span className="text-stone-300/80">
+              <span className="text-stone-300/80 font-normal">
                 {tr('Featured:', 'বিশেষ:')}{' '}
               </span>
-              <span className="font-semibold text-white">
+              <span className="font-bold text-white tracking-wide uppercase">
                 {currentSlide.alt[lang] || currentSlide.alt.en || currentSlide.alt.bn}
               </span>
             </div>

@@ -75,17 +75,17 @@ function SectionHeader({
   return (
     <div className="mb-10 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
       <div>
-        <h2 className="font-bengali text-3xl font-bold tracking-tight md:text-4xl" style={{ color: INK }}>
+        <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl" style={{ color: INK }}>
           {title}
         </h2>
-        <p className="mt-2 font-bengali text-sm md:text-base" style={{ color: '#57534e' }}>
+        <p className="mt-2 font-sans text-sm md:text-base text-stone-600">
           {subtitle}
         </p>
       </div>
       {linkTo && (
         <Link
           to={linkTo}
-          className="group inline-flex items-center gap-1.5 font-bengali text-sm font-semibold transition-colors"
+          className="group inline-flex items-center gap-1.5 font-sans text-sm font-semibold transition-colors"
           style={{ color: BRAND }}
         >
           {linkText}
@@ -126,12 +126,12 @@ function Hero() {
           </div>
 
           {/* Main Headline */}
-          <h1 className="mt-4 font-bengali text-4xl font-extrabold leading-[1.1] text-white sm:text-5xl md:text-6xl lg:text-7xl">
+          <h1 className="mt-4 font-serif text-4xl font-extrabold leading-[1.1] text-white sm:text-5xl md:text-6xl lg:text-7xl">
             {bn ? 'একসাথে, আমরা গড়ি এক সুন্দর আগামী।' : 'Together, we build a better tomorrow.'}
           </h1>
 
           {/* Subtitle */}
-          <p className="mt-6 max-w-xl font-bengali text-base leading-relaxed text-white/80 md:text-lg">
+          <p className="mt-6 max-w-xl font-sans text-base leading-relaxed text-white/80 md:text-lg">
             {bn
               ? 'শিক্ষা, স্বাস্থ্যসেবা, পরিবেশ এবং সামাজিক উন্নয়নের মাধ্যমে সমাজকে আরও শক্তিশালী ও আলোকিত করে তোলাই ছাত্রদলের মূল লক্ষ্য।'
               : 'Chhatradol SWO is dedicated to social welfare, education, healthcare, and community development for a stronger and brighter society.'}
@@ -414,10 +414,10 @@ function KeyProgramsSection() {
                 {/* Content */}
                 <div className="flex flex-1 flex-col justify-between p-6">
                   <div>
-                    <h3 className="font-bengali text-lg font-bold transition-colors group-hover:text-[#c2410c]" style={{ color: INK }}>
+                    <h3 className="font-serif text-lg font-bold transition-colors group-hover:text-[#c2410c]" style={{ color: INK }}>
                       {prog.title}
                     </h3>
-                    <p className="mt-2 font-bengali text-xs leading-relaxed" style={{ color: '#57534e' }}>
+                    <p className="mt-2 font-sans text-xs leading-relaxed text-stone-600">
                       {prog.desc}
                     </p>
                   </div>
@@ -480,13 +480,13 @@ function MissionSpotlight() {
             <div className="font-mono text-xs font-bold uppercase tracking-wider" style={{ color: ACCENT_LIGHT }}>
               • {bn ? 'আমাদের ভিশন' : 'OUR MISSION'}
             </div>
-            <h2 className="mt-3 font-bengali text-3xl font-extrabold leading-tight text-white md:text-4xl">
+            <h2 className="mt-3 font-serif text-3xl font-extrabold leading-tight text-white md:text-4xl">
               {bn ? 'শিক্ষা: অন্ধকার থেকে আলোর দিকে' : 'Education: from darkness to light'}
             </h2>
 
             <div className="mt-4 flex items-start gap-3 rounded-xl bg-white/5 p-4 border border-white/10">
               <FaQuoteLeft className="h-6 w-6 flex-shrink-0 opacity-80" style={{ color: ACCENT_LIGHT }} />
-              <p className="font-bengali text-sm italic leading-relaxed text-white/90">
+              <p className="font-serif text-sm italic leading-relaxed text-white/90">
                 {bn
                   ? 'আমরা বিশ্বাস করি প্রতিটি শিশুই মানসম্পন্ন শিক্ষার অধিকারী এবং প্রতিটি মানুষ সুযোগ পাওয়ার যোগ্য।'
                   : 'We believe every child deserves quality education and every individual deserves an opportunity to build a better future.'}
@@ -496,14 +496,14 @@ function MissionSpotlight() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 to="/about"
-                className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 font-bengali text-sm font-bold text-white shadow-md transition-all hover:bg-orange-700"
+                className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 font-sans text-sm font-bold text-white shadow-md transition-all hover:bg-orange-700"
                 style={{ background: BRAND }}
               >
                 {bn ? 'আমাদের ভিশন ➔' : 'Our Mission ➔'}
               </Link>
               <Link
                 to="https://www.youtube.com/@Chhatradolswo"
-                className="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-2.5 font-bengali text-sm font-semibold text-white transition-all hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-2.5 font-sans text-sm font-semibold text-white transition-all hover:bg-white/10"
               >
                 <FaPlay className="h-3 w-3" style={{ color: ACCENT_LIGHT }} />
                 {bn ? 'ভিডিও দেখুন' : 'Watch Video'}
@@ -521,8 +521,8 @@ function MissionSpotlight() {
                     <IconComp className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="font-bengali text-sm font-bold text-white">{pt.title}</h4>
-                    <p className="font-bengali text-xs text-white/70">{pt.desc}</p>
+                    <h4 className="font-serif text-sm font-bold text-white">{pt.title}</h4>
+                    <p className="font-sans text-xs text-white/70">{pt.desc}</p>
                   </div>
                 </div>
               );
@@ -676,7 +676,7 @@ function LatestNewsSection() {
                       <FaRegCalendarDays className="h-3.5 w-3.5 text-[#c2410c]" />
                       <span>{currentPost.cat} • Narajole</span>
                     </div>
-                    <h3 className="mt-2.5 font-sans text-xl sm:text-2xl font-bold leading-tight text-slate-900 transition-colors group-hover:text-[#c2410c]">
+                    <h3 className="mt-2.5 font-serif text-xl sm:text-2xl font-bold leading-tight text-slate-900 transition-colors group-hover:text-[#c2410c]">
                       {currentPost.title}
                     </h3>
                     <p className="mt-2.5 font-sans text-sm sm:text-base leading-relaxed text-slate-600 line-clamp-3">
@@ -721,7 +721,7 @@ function LatestNewsSection() {
                     </span>
                   </div>
 
-                  <h4 className="mt-1 font-sans text-xs sm:text-sm font-bold leading-snug text-slate-900 line-clamp-1 transition-colors group-hover:text-[#c2410c]">
+                  <h4 className="mt-1 font-serif text-xs sm:text-sm font-bold leading-snug text-slate-900 line-clamp-1 transition-colors group-hover:text-[#c2410c]">
                     {item.title}
                   </h4>
 
@@ -791,7 +791,7 @@ function TestimonialsSection() {
             >
               <div>
                 <FaQuoteLeft className="h-8 w-8 opacity-80" style={{ color: BRAND }} />
-                <p className="mt-4 font-bengali text-sm leading-relaxed italic" style={{ color: INK }}>
+                <p className="mt-4 font-serif text-sm leading-relaxed italic text-stone-800">
                   "{t.quote}"
                 </p>
               </div>
@@ -805,8 +805,8 @@ function TestimonialsSection() {
                   onError={onImgErr}
                 />
                 <div>
-                  <h4 className="font-bengali text-base font-bold" style={{ color: INK }}>{t.author}</h4>
-                  <span className="font-bengali text-xs text-slate-500">{t.role}</span>
+                  <h4 className="font-serif text-base font-bold text-stone-900">{t.author}</h4>
+                  <span className="font-sans text-xs text-stone-500">{t.role}</span>
                 </div>
               </div>
             </div>
@@ -831,10 +831,10 @@ function CtaBannerSection() {
               <FaUserGroup className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h2 className="font-bengali text-3xl font-extrabold md:text-4xl">
+              <h2 className="font-serif text-3xl font-extrabold md:text-4xl">
                 {bn ? 'পরিবর্তনের অংশ হোন' : 'Be Part of the Change'}
               </h2>
-              <p className="mt-2 font-bengali text-sm md:text-base opacity-90">
+              <p className="mt-2 font-sans text-sm md:text-base opacity-90">
                 {bn
                   ? 'আপনার একটি ছোট সাহায্য কারো জীবনে বড় পরিবর্তন আনতে পারে।'
                   : 'Your small help can bring a big change in someone\'s life.'}
@@ -845,14 +845,14 @@ function CtaBannerSection() {
           <div className="flex flex-wrap gap-4">
             <Link
               to="/donate"
-              className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-bengali text-sm font-bold text-white shadow-md transition-all hover:bg-black"
+              className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-sans text-sm font-bold text-white shadow-md transition-all hover:bg-black"
               style={{ background: INK }}
             >
               {bn ? 'দান করুন ❤' : 'Donate Now ❤'}
             </Link>
             <Link
               to="/volunteer"
-              className="inline-flex items-center gap-2 rounded-full border-2 border-white px-7 py-3.5 font-bengali text-sm font-bold text-white transition-all hover:bg-white hover:text-[#c2410c]"
+              className="inline-flex items-center gap-2 rounded-full border-2 border-white px-7 py-3.5 font-sans text-sm font-bold text-white transition-all hover:bg-white hover:text-[#c2410c]"
             >
               {bn ? 'আমাদের সাথে যুক্ত হোন 💛' : 'Volunteer with Us 💛'}
             </Link>
@@ -906,10 +906,10 @@ function GetInvolvedCardsSection() {
       <div className="mx-auto max-w-[1340px] px-6 md:px-10">
         <Reveal>
           <div className="mb-10 text-left">
-            <h2 className="font-bengali text-3xl font-bold md:text-4xl" style={{ color: INK }}>
+            <h2 className="font-serif text-3xl font-bold md:text-4xl" style={{ color: INK }}>
               {bn ? 'অংশগ্রহণ করুন' : 'Get Involved'}
             </h2>
-            <p className="mt-2 font-bengali text-sm md:text-base" style={{ color: '#57534e' }}>
+            <p className="mt-2 font-sans text-sm md:text-base text-stone-600">
               {bn ? 'আমাদের কাজে সহযাত্রী হওয়ার বিভিন্ন উপায় রয়েছে।' : 'There are many ways you can contribute.'}
             </p>
           </div>
@@ -928,17 +928,17 @@ function GetInvolvedCardsSection() {
                   <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${c.iconBg}`}>
                     <CIcon className="h-6 w-6" />
                   </div>
-                  <h3 className="mt-5 font-bengali text-xl font-bold transition-colors group-hover:text-[#c2410c]" style={{ color: INK }}>
+                  <h3 className="mt-5 font-serif text-xl font-bold transition-colors group-hover:text-[#c2410c]" style={{ color: INK }}>
                     {c.title}
                   </h3>
-                  <p className="mt-2 font-bengali text-sm leading-relaxed" style={{ color: '#57534e' }}>
+                  <p className="mt-2 font-sans text-sm leading-relaxed text-stone-600">
                     {c.desc}
                   </p>
                 </div>
 
                 <Link
                   to={c.to}
-                  className="mt-6 inline-flex items-center gap-1.5 font-bengali text-sm font-bold transition-colors"
+                  className="mt-6 inline-flex items-center gap-1.5 font-sans text-sm font-bold transition-colors"
                   style={{ color: BRAND }}
                 >
                   {c.linkText}

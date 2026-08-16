@@ -38,8 +38,8 @@ export const fjVars: React.CSSProperties = {
   '--c-accent':   FJ.accent,
 } as React.CSSProperties;
 
-export const SERIF_BN: React.CSSProperties = { fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Bengali", sans-serif' };
-export const SERIF_EN: React.CSSProperties = { fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' };
+export const SERIF_BN: React.CSSProperties = { fontFamily: '"Noto Serif Bengali", Georgia, "Noto Serif", serif' };
+export const SERIF_EN: React.CSSProperties = { fontFamily: 'Georgia, "Noto Serif", serif' };
 
 // ─────────────────── Icons (Font Awesome 6 via react-icons) ───────────────────
 export const Icon = {

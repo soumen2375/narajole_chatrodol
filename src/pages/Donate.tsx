@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PageShell, SERIF_BN, Icon, FJ } from './_field-journal';
+import { PageShell, Icon, FJ } from './_field-journal';
 import { startRazorpayPayment } from '@/lib/razorpay';
 import { useT } from '@/i18n';
 import { useSEO } from '@/hooks/useSEO';
@@ -121,11 +121,11 @@ export default function Donate() {
       <section style={{ background: FJ.bg }}>
         <div className="mx-auto grid max-w-[1320px] grid-cols-12 items-center gap-8 px-6 pb-10 pt-12 md:px-10 md:pt-16">
           <div className="col-span-12 lg:col-span-7">
-            <h1 className="font-bengali text-[40px] leading-[1.05] md:text-[58px]" style={{ ...SERIF_BN, color: FJ.ink }}>
+            <h1 className="font-serif text-[40px] font-bold leading-[1.05] md:text-[58px]" style={{ color: FJ.ink }}>
               {tr('আপনার সহানুভূতি ', 'Your kindness creates ')}
               <span style={{ color: FJ.brand }}>{tr('সত্যিকারের পরিবর্তন আনে', 'real change')}</span>
             </h1>
-            <p className="mt-5 max-w-xl font-bengali text-[16px] leading-[1.7]" style={{ color: FJ.ink2 }}>
+            <p className="mt-5 max-w-xl font-sans text-[16px] leading-[1.7] text-stone-600">
               {tr('শিক্ষা, স্বাস্থ্যসেবা, রক্তদান শিবির ও সমাজকল্যাণ কর্মসূচিতে সহায়তা করুন।', 'Support education, healthcare, blood donation camps, and community welfare programs.')}
             </p>
 
