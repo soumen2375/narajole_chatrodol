@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PageShell, Icon, FJ } from './_field-journal';
+import { PageShell, SERIF_BN, Icon, FJ } from './_field-journal';
 import { startRazorpayPayment } from '@/lib/razorpay';
 import { useT } from '@/i18n';
 import { useSEO } from '@/hooks/useSEO';
@@ -142,7 +142,14 @@ export default function Donate() {
               <div className="flex items-center gap-3">
                 <div className="flex -space-x-2">
                   {['pabitra', 'prabal', 'sayan', 'soumen'].map((m) => (
-                    <img key={m} src={`/assets/images/members/${m}.jpg`} alt="" className="h-8 w-8 rounded-full object-cover" style={{ border: `2px solid ${FJ.bg}` }} />
+                    <img
+                      key={m}
+                      src={`/assets/images/about/members/${m}.jpg`}
+                      alt={m}
+                      className="h-8 w-8 rounded-full object-cover shadow-sm"
+                      style={{ border: `2px solid ${FJ.bg}` }}
+                      onError={(e) => { e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }}
+                    />
                   ))}
                 </div>
                 <span className="font-bengali text-[13px] font-semibold" style={{ color: FJ.ink }}>

@@ -6,6 +6,7 @@ import { SEO } from '@/data/seoConfig';
 import {
   PageShell, Reveal, SERIF_BN, SERIF_EN,
 } from './_field-journal';
+import Breadcrumb from '@/components/ui/Breadcrumb';
 import {
   SUCCESS_STORIES,
   FOCUS_AREAS_DATA,
@@ -141,6 +142,7 @@ export default function Impacts() {
 
   return (
     <PageShell>
+      <Breadcrumb title="Our Impacts" />
       {/* ─────────────────── 1. HERO SECTION ─────────────────── */}
       <section className="relative overflow-hidden bg-gradient-to-b from-[#faf6ef] via-[#f7f0e6] to-[#efe5d5] pt-10 md:pt-16 pb-0">
         {/* Background Subtle Leaf Watermark */}
@@ -205,15 +207,15 @@ export default function Impacts() {
             {/* Right Hero Image Column */}
             <div className="lg:col-span-5 relative z-10">
               <Reveal direction="left" delay={150}>
-                <div className="relative mx-auto max-w-md lg:max-w-none">
+                <div className="relative mx-auto max-w-sm sm:max-w-[420px]">
                   {/* Outer decorative ring */}
                   <div className="absolute -inset-3 rounded-3xl bg-gradient-to-tr from-amber-200/50 via-emerald-200/40 to-amber-100/30 blur-lg opacity-70 transform rotate-1"></div>
 
                   <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white bg-white group">
                     <img
-                      src="/assets/images/school_girl_mockup.png"
-                      alt={bn ? 'ছাত্রী আনন্দদায়ক মুহূর্ত' : 'Smiling student with books'}
-                      className="w-full h-[380px] sm:h-[440px] object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                      src="/assets/images/impacts/real_child_book.jpg"
+                      alt={bn ? 'শিশু শিক্ষার্থীর সুন্দর মুহূর্ত' : 'Young student holding book with pride'}
+                      className="w-full h-[320px] sm:h-[370px] md:h-[390px] object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
                       onError={(e) => {
                         e.currentTarget.src = '/assets/images/Chhatradol.jpg';
                       }}

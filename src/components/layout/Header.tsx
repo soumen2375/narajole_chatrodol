@@ -31,7 +31,7 @@ export default function Header() {
 
   // User details for profile pill when logged in
   const userName = member?.full_name || 'Soumen Maity';
-  const userAvatar = member?.avatar_url || '/assets/images/members/soumen.jpg';
+  const userAvatar = member?.avatar_url || '/assets/images/about/members/soumen.jpg';
 
   return (
     <header className="sticky top-0 z-50 w-full px-2 sm:px-4 py-2.5 md:py-3.5 transition-all duration-300">

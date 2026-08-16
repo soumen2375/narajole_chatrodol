@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
 import { useSEO } from '@/hooks/useSEO';
 import { SEO } from '@/data/seoConfig';
-import { PageShell } from './_field-journal';
+import { PageShell, SERIF_BN } from './_field-journal';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 import {
   FaUser,
