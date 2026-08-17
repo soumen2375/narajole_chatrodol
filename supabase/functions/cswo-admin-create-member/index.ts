@@ -55,34 +55,81 @@ Deno.serve(async (req) => {
       return json({ error: 'নাম, ইমেল ও কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড আবশ্যক।' }, 400);
     }
 
-    // Create the auth user
-    const { data: created, error: createErr } = await admin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { full_name },
-    });
-    if (createErr || !created.user) {
-      return json({ error: createErr?.message ?? 'ব্যবহারকারী তৈরি ব্যর্থ হয়েছে।' }, 400);
+    // Check if member already exists in cswo_members table
+    const { data: existingMember } = await admin
+      .from('cswo_members')
+      .select('id, email')
+      .eq('email', email)
+      .maybeSingle();
+
+    let userId: string | null = existingMember?.id ?? null;
+
+    if (!userId) {
+      // Try creating the auth user
+      const { data: created, error: createErr } = await admin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name },
+      });
+
+      if (createErr || !created.user) {
+        const errMsg = createErr?.message ?? '';
+        // If user already exists in auth.users or database error occurs on user creation
+        if (/already|exists|registered/i.test(errMsg) || errMsg.includes('Database error creating new user')) {
+          const { data: usersList } = await admin.auth.admin.listUsers();
+          const found = usersList?.users?.find((u) => u.email?.toLowerCase() === email);
+          if (found) {
+            userId = found.id;
+            // Update password & metadata for existing auth user
+            await admin.auth.admin.updateUserById(userId, {
+              password,
+              email_confirm: true,
+              user_metadata: { full_name },
+            });
+          } else {
+            return json(
+              {
+                error: `ইমেলটি (${email}) দিয়ে অ্যাকাউন্ট তৈরি করা যাচ্ছে না। এই ইমেলটি ইতোমধ্যে নিবন্ধিত হতে পারে।`,
+              },
+              400
+            );
+          }
+        } else {
+          return json({ error: createErr?.message ?? 'ব্যবহারকারী তৈরি ব্যর্থ হয়েছে।' }, 400);
+        }
+      } else {
+        userId = created.user.id;
+      }
+    } else {
+      // User exists in cswo_members table, update password in auth.users
+      await admin.auth.admin.updateUserById(userId, {
+        password,
+        email_confirm: true,
+        user_metadata: { full_name },
+      });
     }
 
-    // Create the member profile (approved)
-    const { error: memberErr } = await admin.from('cswo_members').insert({
-      id: created.user.id,
-      full_name,
-      email,
-      phone,
-      designation,
-      role,
-      status: 'approved',
-    });
+    // Upsert the member profile (approved)
+    const { error: memberErr } = await admin.from('cswo_members').upsert(
+      {
+        id: userId,
+        full_name,
+        email,
+        phone,
+        designation,
+        role,
+        status: 'approved',
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' }
+    );
+
     if (memberErr) {
-      // rollback the auth user to avoid orphans
-      await admin.auth.admin.deleteUser(created.user.id);
       return json({ error: memberErr.message }, 400);
     }
 
-    return json({ ok: true, id: created.user.id });
+    return json({ ok: true, id: userId });
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : 'সার্ভার ত্রুটি।' }, 500);
   }

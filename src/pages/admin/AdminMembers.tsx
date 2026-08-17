@@ -6,6 +6,7 @@ import {
   FaEllipsis, FaPlus, FaDownload, FaCheck, FaUsers, FaUserClock,
   FaUserCheck, FaUserPlus, FaMagnifyingGlass, FaEye, FaPen,
 } from 'react-icons/fa6';
+import { createClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { Member } from '@/types';
@@ -124,23 +125,122 @@ export default function AdminMembers() {
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    setMsg(null);
-    const { data, error } = await supabase.functions.invoke('cswo-admin-create-member', {
-      body: { full_name: form.full_name, email: form.email, password: form.password, phone: form.phone, designation: form.designation, role: form.role },
-    });
-    setSaving(false);
-    if (error || (data && data.error)) {
-      let text = data?.error || error?.message || tr('Failed to create member.', 'সদস্য তৈরি ব্যর্থ হয়েছে।');
-      const ctx = (error as { context?: { json?: () => Promise<{ error?: string }> } } | null)?.context;
-      if (ctx && typeof ctx.json === 'function') { try { const j = await ctx.json(); if (j?.error) text = j.error; } catch { /* ignore */ } }
-      setMsg({ type: 'err', text });
+    const cleanEmail = form.email.trim().toLowerCase();
+    const existing = members.find((m) => m.email.toLowerCase().trim() === cleanEmail);
+    if (existing) {
+      setMsg({
+        type: 'err',
+        text: tr(
+          `Member with email "${cleanEmail}" already exists (${existing.full_name}).`,
+          `"${cleanEmail}" ইমেল দিয়ে ইতোমধ্যে সদস্য (${existing.full_name}) নিবন্ধিত আছে।`
+        ),
+      });
       return;
     }
-    if (form.cap !== 'normal') {
-      await supabase.from('cswo_members').update(capFlags(form.cap)).eq('email', form.email.trim());
+
+    setSaving(true);
+    setMsg(null);
+
+    let createdUserId: string | null = null;
+    let edgeFnSuccess = false;
+
+    // 1. Try via Edge Function first
+    try {
+      const { data, error } = await supabase.functions.invoke('cswo-admin-create-member', {
+        body: { full_name: form.full_name, email: cleanEmail, password: form.password, phone: form.phone, designation: form.designation, role: form.role },
+      });
+      if (!error && data && !data.error && data.id) {
+        createdUserId = data.id;
+        edgeFnSuccess = true;
+      }
+    } catch {
+      /* edge function offline or unavailable */
     }
-    setMsg({ type: 'ok', text: `${tr('Member created', 'সদস্য তৈরি হয়েছে')}: ${form.email}` });
+
+    // 2. Fallback to direct Auth SignUp using an isolated client (so current admin session is not lost)
+    if (!edgeFnSuccess) {
+      try {
+        const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string) || 'https://wzquszbmbpkbhyythdrj.supabase.co';
+        const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || 'sb_publishable_7sZQXGDGxGl9M7yEl0UXpg_o0JLwp-L';
+        const isolatedClient = createClient(supabaseUrl, supabaseAnonKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+
+        const { data: signUpData, error: signUpErr } = await isolatedClient.auth.signUp({
+          email: cleanEmail,
+          password: form.password,
+          options: { data: { full_name: form.full_name } },
+        });
+
+        if (signUpErr) {
+          if (/already|exists|registered/i.test(signUpErr.message)) {
+            setSaving(false);
+            setMsg({
+              type: 'err',
+              text: tr(
+                `An account with email "${cleanEmail}" is already registered in Auth.`,
+                `"${cleanEmail}" ইমেলটি ইতোমধ্যে নিবন্ধিত রয়েছে।`
+              ),
+            });
+            return;
+          }
+          // Check if profile exists in table directly
+          const { data: dbCheck } = await supabase.from('cswo_members').select('id').eq('email', cleanEmail).maybeSingle();
+          if (dbCheck) {
+            createdUserId = dbCheck.id;
+          } else {
+            setSaving(false);
+            setMsg({
+              type: 'err',
+              text: signUpErr.message || tr('Failed to create member account.', 'সদস্য অ্যাকাউন্ট তৈরি ব্যর্থ হয়েছে।'),
+            });
+            return;
+          }
+        } else if (signUpData?.user) {
+          createdUserId = signUpData.user.id;
+        }
+      } catch (err) {
+        setSaving(false);
+        setMsg({
+          type: 'err',
+          text: err instanceof Error ? err.message : tr('Failed to create member.', 'সদস্য তৈরি ব্যর্থ হয়েছে।'),
+        });
+        return;
+      }
+    }
+
+    // 3. Upsert member profile in cswo_members table
+    if (createdUserId) {
+      const { error: upsertErr } = await supabase.from('cswo_members').upsert(
+        {
+          id: createdUserId,
+          full_name: form.full_name,
+          email: cleanEmail,
+          phone: form.phone ? form.phone.trim() : null,
+          designation: form.designation ? form.designation.trim() : null,
+          role: form.role,
+          status: 'approved',
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+
+      if (upsertErr) {
+        setSaving(false);
+        setMsg({ type: 'err', text: upsertErr.message });
+        return;
+      }
+    }
+
+    if (form.cap !== 'normal') {
+      await supabase.from('cswo_members').update(capFlags(form.cap)).eq('email', cleanEmail);
+    }
+
+    setSaving(false);
+    setMsg({
+      type: 'ok',
+      text: `${tr('Member account created successfully', 'সদস্য অ্যাকাউন্ট সফলভাবে তৈরি করা হয়েছে')}: ${cleanEmail}`,
+    });
     setForm(emptyForm);
     setShowForm(false);
     await load();
