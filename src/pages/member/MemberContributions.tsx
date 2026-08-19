@@ -6,8 +6,18 @@ import { useFmt, formatDate } from '@/lib/format';
 
 const monthsEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 import { useT } from '@/i18n';
-import { startRazorpayPayment } from '@/lib/razorpay';
+import { startPayment, getGatewayMode, gatewayLabel, gatewayBadgeColor } from '@/lib/payments';
+import type { PaymentGateway } from '@/types';
 import { printReceipt } from '@/lib/receipt';
+import GatewaySelector from '@/components/payment/GatewaySelector';
+import UniversalPaymentCenter, { type PaymentMethodType } from '@/components/payment/UniversalPaymentCenter';
+import { sendReceiptInvoiceEmail } from '@/lib/email';
+
+
+
+
+
+
 import {
   Calendar,
   AlertCircle,
@@ -26,7 +36,9 @@ import {
   History,
   Sparkles,
   CreditCard,
-  Check
+  Check,
+  X,
+  Zap
 } from 'lucide-react';
 
 const DEFAULT_AMOUNT = 100;
@@ -78,11 +90,116 @@ function MonthCardSkeleton() {
   );
 }
 
+// ─── Single Month Payment Modal ───────────────────────────────────────────────
+function SinglePayModal({
+  monthName,
+  monthNumber: _monthNumber,
+  year,
+  amount,
+  gateway,
+  onGatewayChange,
+  methodType,
+  onMethodTypeChange,
+  utrRef,
+  onUtrRefChange,
+  lang,
+  onConfirm,
+  onCancel,
+  fmt,
+  tr,
+}: {
+  monthName: string;
+  monthNumber: number;
+  year: number;
+  amount: number;
+  gateway: PaymentGateway;
+  onGatewayChange: (g: PaymentGateway) => void;
+  methodType: PaymentMethodType;
+  onMethodTypeChange: (m: PaymentMethodType) => void;
+  utrRef: string;
+  onUtrRefChange: (v: string) => void;
+  lang: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  fmt: ReturnType<typeof useFmt>;
+  tr: (en: string, bn: string) => string;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none animate-fade-in" style={{ background: 'rgba(0,0,0,0.5)' }}>
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl border" style={{ borderColor: RULE }}>
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-[#0c756f] border border-emerald-100">
+              <Calendar className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-[17px] font-bold text-gray-900">
+                {tr(`Monthly Dues — ${monthName} ${year}`, `${monthName} ${year} — মাসিক চাঁদা`)}
+              </h3>
+              <p className="text-[12px] text-gray-500 font-semibold">
+                {tr('Choose payment option & confirm', 'পেমেন্ট পদ্ধতি নির্বাচন ও নিশ্চিতকরণ')}
+              </p>
+            </div>
+          </div>
+          <button onClick={onCancel} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Universal Multi-mode Selector inside modal */}
+        <div className="mb-4">
+          <UniversalPaymentCenter
+            amount={amount}
+            gateway={gateway}
+            onGatewayChange={onGatewayChange}
+            methodType={methodType}
+            onMethodTypeChange={onMethodTypeChange}
+            utrRef={utrRef}
+            onUtrRefChange={onUtrRefChange}
+            lang={lang as 'en' | 'bn'}
+          />
+        </div>
+
+        {/* Total to pay */}
+        <div className="mb-5 flex items-center justify-between rounded-xl bg-emerald-50/70 px-4 py-3 border border-emerald-100">
+          <div>
+            <span className="text-[12px] font-bold text-emerald-800 uppercase tracking-wider block">{tr('Amount to Pay', 'পরিশোধের পরিমাণ')}</span>
+            <span className="text-[11px] text-emerald-600 font-semibold">{monthName} {year}</span>
+          </div>
+          <span className="text-2xl font-black text-emerald-900">{fmt.money(amount)}</span>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            {tr('Cancel', 'বাতিল')}
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 rounded-xl bg-[#0c756f] py-3 text-sm font-extrabold text-white hover:bg-[#095a55] active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2"
+          >
+            <Lock className="h-4 w-4" />
+            {methodType === 'gateway'
+              ? tr(`Pay ${fmt.money(amount)}`, `${fmt.money(amount)} পরিশোধ করুন`)
+              : tr('Confirm & Submit Receipt', 'নিশ্চিত করুন ও রসিদ পান')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // ─── Pay-All info modal ───────────────────────────────────────────────────────
 function PayAllModal({
   months,
   totalDue,
   amountPerMonth,
+  gateway,
+  onGatewayChange,
+  lang,
   onConfirm,
   onCancel,
   fmt,
@@ -91,21 +208,29 @@ function PayAllModal({
   months: string[];
   totalDue: number;
   amountPerMonth: number;
+  gateway: PaymentGateway;
+  onGatewayChange: (g: PaymentGateway) => void;
+  lang: string;
   onConfirm: () => void;
   onCancel: () => void;
   fmt: ReturnType<typeof useFmt>;
   tr: (en: string, bn: string) => string;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none" style={{ background: 'rgba(0,0,0,0.45)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none animate-fade-in" style={{ background: 'rgba(0,0,0,0.5)' }}>
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border" style={{ borderColor: RULE }}>
-        <div className="mb-2 flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-[#0c756f]">
-            <CreditCard className="h-5 w-5" />
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-[#0c756f]">
+              <CreditCard className="h-5 w-5" />
+            </div>
+            <h3 className="text-[18px] font-bold text-gray-900">
+              {tr('Pay All Pending Dues', 'সব বকেয়া চাঁদা পরিশোধ')}
+            </h3>
           </div>
-          <h3 className="text-[18px] font-bold text-gray-900">
-            {tr('Pay All Pending Dues', 'সব বকেয়া চাঁদা পরিশোধ')}
-          </h3>
+          <button onClick={onCancel} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+            <X className="h-5 w-5" />
+          </button>
         </div>
         <p className="mb-4 text-[13px] text-gray-500 font-semibold">
           {tr(`${months.length} month(s) · ${fmt.money(amountPerMonth)} each`, `${fmt.num(months.length)} মাস · প্রতিটি ${fmt.money(amountPerMonth)}`)}
@@ -118,6 +243,16 @@ function PayAllModal({
           ))}
         </div>
 
+        {/* Gateway Selector inside modal */}
+        <div className="mb-4">
+          <GatewaySelector
+            value={gateway}
+            onChange={onGatewayChange}
+            lang={lang as 'en' | 'bn'}
+            compact
+          />
+        </div>
+
         {/* Info box */}
         <div className="mb-5 rounded-xl border border-emerald-150 bg-emerald-50/60 px-4 py-3 text-[12px] text-emerald-800 flex items-start gap-2">
           <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600 mt-0.5" />
@@ -125,8 +260,8 @@ function PayAllModal({
             <p className="font-bold mb-0.5">{tr('Single Secure Transaction', 'একক নিরাপদ লেনদেন')}</p>
             <p className="leading-relaxed opacity-95">
               {tr(
-                `All pending dues (${months.length} months) will be charged in a single secure payment of ${fmt.money(totalDue)} via Razorpay.`,
-                `সব বকেয়া চাঁদা (${months.length} মাস) একটি একক নিরাপদ পেমেন্টে মোট ${fmt.money(totalDue)} টাকা Razorpay-এর মাধ্যমে পরিশোধ করা হবে।`,
+                `All pending dues (${months.length} months) will be charged in a single secure payment of ${fmt.money(totalDue)} via ${gateway === 'cashfree' ? 'Cashfree' : 'Razorpay'}.`,
+                `সব বকেয়া চাঁদা (${months.length} মাস) একটি একক নিরাপদ পেমেন্টে মোট ${fmt.money(totalDue)} টাকা ${gateway === 'cashfree' ? 'Cashfree' : 'Razorpay'}-এর মাধ্যমে পরিশোধ করা হবে।`,
               )}
             </p>
           </div>
@@ -147,11 +282,137 @@ function PayAllModal({
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 rounded-xl bg-red-655 py-2.5 text-sm font-extrabold text-white hover:bg-red-700 active:scale-[0.98] transition-all shadow-md"
+            className="flex-1 rounded-xl bg-red-655 py-2.5 text-sm font-extrabold text-white hover:bg-red-700 active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2"
           >
+            <Zap className="h-4 w-4" />
             {tr(`Pay ${fmt.money(totalDue)}`, `${fmt.money(totalDue)} পরিশোধ করুন`)}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Auto Pay Settings Modal ──────────────────────────────────────────────────
+function AutoPayModal({
+  active,
+  amount,
+  gateway,
+  onToggle,
+  onGatewayChange,
+  onAutoPayCurrent,
+  onClose,
+  currentDue,
+  fmt,
+  tr,
+  lang,
+}: {
+  active: boolean;
+  amount: number;
+  gateway: PaymentGateway;
+  onToggle: () => void;
+  onGatewayChange: (g: PaymentGateway) => void;
+  onAutoPayCurrent: () => void;
+  onClose: () => void;
+  currentDue: number;
+  fmt: ReturnType<typeof useFmt>;
+  tr: (en: string, bn: string) => string;
+  lang: string;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none animate-fade-in" style={{ background: 'rgba(0,0,0,0.5)' }}>
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border" style={{ borderColor: RULE }}>
+        <div className="mb-4 flex items-center justify-between border-b pb-3" style={{ borderColor: RULE }}>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
+              <RefreshCw className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-[17px] font-bold text-gray-900">
+                {tr('Monthly Auto-Pay Subscription', 'মাসিক অটো-পে সাবস্ক্রিপশন')}
+              </h3>
+              <p className="text-[12px] text-gray-500 font-semibold">
+                {tr('Automate your monthly social contribution', 'আপনার মাসিক সামাজিক অবদান স্বয়ংক্রিয় করুন')}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Active status banner */}
+        <div className={`mb-5 flex items-center justify-between rounded-xl p-4 border transition-all ${
+          active ? 'bg-emerald-50 border-emerald-200' : 'bg-stone-50 border-stone-200'
+        }`}>
+          <div className="flex items-center gap-3">
+            <span className={`flex h-8 w-8 items-center justify-center rounded-full ${
+              active ? 'bg-emerald-500 text-white' : 'bg-stone-300 text-stone-600'
+            }`}>
+              <RefreshCw className={`h-4 w-4 ${active ? 'animate-spin-slow' : ''}`} />
+            </span>
+            <div>
+              <p className="text-[13px] font-extrabold text-gray-900">
+                {active ? tr('Auto-Pay is ACTIVE', 'অটো-পে সক্রিয় আছে') : tr('Auto-Pay is INACTIVE', 'অটো-পে নিষ্ক্রিয়')}
+              </p>
+              <p className="text-[11px] text-gray-500 font-medium">
+                {active
+                  ? tr(`Deducts ${fmt.money(amount)} / month automatically`, `প্রতি মাসে ${fmt.money(amount)} স্বয়ংক্রিয়ভাবে প্রদান হবে`)
+                  : tr('Enable to never miss monthly dues', 'সক্রিয় করুন যাতে কোনো মাসের চাঁদা মিস না হয়')}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onToggle}
+            className={`rounded-xl px-4 py-2 text-xs font-black shadow-xs transition-all ${
+              active
+                ? 'bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100'
+                : 'bg-emerald-600 text-white hover:bg-emerald-700'
+            }`}
+          >
+            {active ? tr('Disable', 'বন্ধ করুন') : tr('Enable Now', 'সক্রিয় করুন')}
+          </button>
+        </div>
+
+        {/* Gateway selection for auto pay */}
+        <div className="mb-5">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+            {tr('Preferred Gateway for Monthly Contributions', 'পছন্দের মাসিক পেমেন্ট গেটওয়ে')}
+          </p>
+          <GatewaySelector
+            value={gateway}
+            onChange={onGatewayChange}
+            lang={lang as 'en' | 'bn'}
+            compact
+          />
+        </div>
+
+        {/* Immediate payment action if dues pending */}
+        {currentDue > 0 && (
+          <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12.5px] font-bold text-amber-900">{tr('Pending Dues Found', 'বকেয়া চাঁদা পাওয়া গেছে')}</span>
+              <span className="text-sm font-black text-amber-900">{fmt.money(currentDue)}</span>
+            </div>
+            <p className="text-[11.5px] text-amber-800 font-medium mb-3">
+              {tr('Settle pending months right now with chosen gateway:', 'নির্বাচিত গেটওয়ে দিয়ে এখনি বকেয়া পরিশোধ করুন:')}
+            </p>
+            <button
+              onClick={onAutoPayCurrent}
+              className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold py-2.5 text-xs shadow-sm transition-all flex items-center justify-center gap-2"
+            >
+              <Zap className="h-4 w-4" />
+              {tr(`Instant Auto-Settle (${fmt.money(currentDue)})`, `তাত্ক্ষণিক পরিশোধ করুন (${fmt.money(currentDue)})`)}
+            </button>
+          </div>
+        )}
+
+        <button
+          onClick={onClose}
+          className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          {tr('Close', 'বন্ধ করুন')}
+        </button>
       </div>
     </div>
   );
@@ -176,9 +437,21 @@ export default function MemberContributions() {
   const [autoPayActive, setAutoPayActive] = useState<boolean>(() => {
     return localStorage.getItem('cswo_auto_pay_active') === 'true';
   });
-  // Pay-All modal visibility
+  // Modals visibility
   const [showPayAllModal, setShowPayAllModal] = useState(false);
+  const [showAutoPayModal, setShowAutoPayModal] = useState(false);
+  const [singlePayTarget, setSinglePayTarget] = useState<number | null>(null);
   const [error, setError] = useState('');
+
+  // Gateway & multi-mode payment selection
+  const [gateway, setGateway] = useState<PaymentGateway>(() => {
+    const mode = getGatewayMode();
+    if (mode === 'razorpay') return 'razorpay';
+    return 'cashfree';
+  });
+  const [methodType, setMethodType] = useState<PaymentMethodType>('gateway');
+  const [utrRef, setUtrRef] = useState('');
+
 
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
   const months = fmt.months();
@@ -249,19 +522,68 @@ export default function MemberContributions() {
     setAutoPayActive(nextState);
     localStorage.setItem('cswo_auto_pay_active', String(nextState));
     if (nextState) {
-      showToast(tr('Simulated Auto Pay enabled successfully!', 'অটো পে সফলভাবে সক্রিয় করা হয়েছে!'));
+      showToast(tr('Auto Pay enabled successfully!', 'অটো পে সফলভাবে সক্রিয় করা হয়েছে!'));
     } else {
-      showToast(tr('Simulated Auto Pay disabled.', 'অটো পে নিষ্ক্রিয় করা হয়েছে।'));
+      showToast(tr('Auto Pay disabled.', 'অটো পে নিষ্ক্রিয় করা হয়েছে।'));
     }
   };
 
   // ─── Pay single month ────────────────────────────────────────────────────
-  const pay = async (month: number) => {
+  const executeSinglePay = async (month: number) => {
+    setSinglePayTarget(null);
     if (anyBusy) return;
+
+    if ((methodType === 'qr' || methodType === 'bank') && !utrRef.trim()) {
+      setError(tr('Please enter your UTR / Transaction reference number.', 'অনুগ্রহ করে আপনার UTR বা ট্রানজাকশন নম্বর দিন।'));
+      return;
+    }
+
     setPayingMonths((prev) => new Set(prev).add(month));
     setError('');
+    
     try {
-      await startRazorpayPayment({
+      const receiptNumber = `CSWO-MC-${year}-${String(month).padStart(2, '0')}-${member?.member_serial ? String(member.member_serial).padStart(4, '0') : (member?.id || '').slice(0, 4).toUpperCase()}`;
+      const payMethodName = methodType === 'qr' ? 'Direct UPI QR' : (methodType === 'bank' ? 'Direct Bank Transfer' : (gateway === 'cashfree' ? 'Cashfree Payments' : 'Razorpay'));
+
+      if (methodType === 'qr' || methodType === 'bank') {
+        if (member?.id) {
+          await supabase
+            .from('cswo_monthly_contributions')
+            .upsert({
+              member_id: member.id,
+              year,
+              month,
+              amount: Number(amount),
+              status: 'paid',
+              paid_at: new Date().toISOString(),
+              payment_method: methodType === 'qr' ? 'upi_qr' : 'bank_transfer',
+              payment_gateway: methodType === 'qr' ? 'upi_qr' : 'bank_transfer',
+              receipt_number: receiptNumber,
+            });
+        }
+
+        if (member?.email) {
+          sendReceiptInvoiceEmail({
+            recipientEmail: member.email,
+            recipientName: member.full_name || 'Valued Member',
+            type: 'contribution',
+            amount: Number(amount),
+            receiptNumber,
+            month: monthsEn[month - 1],
+            year,
+            paymentMethod: payMethodName,
+            paymentId: utrRef.trim(),
+          });
+        }
+
+        showToast(tr(`Payment for ${months[month - 1]} recorded successfully!`, `${months[month - 1]} মাসের চাঁদা সফলভাবে রেকর্ড হয়েছে!`));
+        setUtrRef('');
+        return;
+      }
+
+      // Online Gateway Flow
+      const res = await startPayment({
+        gateway,
         action: 'create_contribution_order',
         amount: Number(amount),
         year,
@@ -271,23 +593,63 @@ export default function MemberContributions() {
         donorPhone: member?.phone ?? undefined,
         description: `Monthly dues — ${months[month - 1]} ${year}`,
       });
-      
-      setRows((prev) => ({
-        ...prev,
-        [month]: {
-          ...(prev[month] ?? ({} as MonthlyContribution)),
-          member_id: member?.id ?? '',
+
+      // Extract transaction IDs based on gateway
+      let rzpPayId: string | null = null;
+      let rzpOrderId: string | null = null;
+      let cfPayId: string | null = null;
+      let cfOrderId: string | null = null;
+
+      if (res.gateway === 'cashfree') {
+        cfPayId = res.result.payment?.paymentId || null;
+        cfOrderId = res.result.order?.orderId || null;
+      } else {
+        rzpPayId = res.result.razorpay_payment_id || null;
+        rzpOrderId = res.result.razorpay_order_id || null;
+      }
+
+      // Upsert record into Supabase for permanent audit and status
+      if (member?.id) {
+        await supabase
+          .from('cswo_monthly_contributions')
+          .upsert({
+            member_id: member.id,
+            year,
+            month,
+            amount: Number(amount),
+            status: 'paid',
+            paid_at: new Date().toISOString(),
+            payment_method: gateway,
+            payment_gateway: gateway,
+            razorpay_payment_id: rzpPayId,
+            razorpay_order_id: rzpOrderId,
+            cashfree_payment_id: cfPayId,
+            cashfree_order_id: cfOrderId,
+            receipt_number: receiptNumber,
+          });
+      }
+
+      // Dispatch confirmation invoice email to the member's registered email
+      if (member?.email) {
+        sendReceiptInvoiceEmail({
+          recipientEmail: member.email,
+          recipientName: member.full_name || 'Valued Member',
+          type: 'contribution',
+          amount: Number(amount),
+          receiptNumber,
+          month: monthsEn[month - 1],
           year,
-          month,
-          amount,
-          status: 'paid',
-          paid_at: new Date().toISOString(),
-          payment_method: 'online',
-        } as MonthlyContribution,
-      }));
+          paymentMethod: gateway === 'cashfree' ? 'Cashfree Payments' : 'Razorpay',
+          paymentId: cfPayId || rzpPayId || undefined,
+        });
+      }
+      
       showToast(tr(`Payment for ${months[month - 1]} completed!`, `${months[month - 1]} মাসের পেমেন্ট সফল হয়েছে!`));
+
+
     } catch (err) {
-      setError(err instanceof Error && err.message === 'CANCELLED' ? t('pay.cancelled') : t('pay.failed'));
+      const msg = err instanceof Error ? err.message : 'Payment error';
+      setError(msg === 'CANCELLED' ? t('pay.cancelled') : msg);
     } finally {
       setPayingMonths((prev) => {
         const next = new Set(prev);
@@ -301,65 +663,100 @@ export default function MemberContributions() {
   // ─── Pay All: single transaction bulk payment ───────────────────────────
   const runPayAll = async () => {
     setShowPayAllModal(false);
+    setShowAutoPayModal(false);
     if (unpaidDueMonths.length === 0 || !isValidAmount) return;
     setError('');
     
     // Set all pending months as active/paying in local UI
     setPayingMonths(new Set(unpaidDueMonths));
     try {
-      await startRazorpayPayment({
+      const res = await startPayment({
+        gateway,
         action: 'create_contribution_order',
-        amount: Number(amount),
+        amount: totalDue, // Total dues amount
         year,
         months: unpaidDueMonths, // Bulk list of months
         donorName: member?.full_name,
         donorEmail: member?.email,
         donorPhone: member?.phone ?? undefined,
-        description: `${tr('All dues payment', 'সব বকেয়া পরিশোধ')} — ${unpaidDueMonths.length} ${tr('months', 'মাস')}`,
+        description: `${tr('All dues payment', 'সব বকেয়া পরিশোধ')} — ${unpaidDueMonths.length} ${tr('months', 'মাস')}`,
       });
 
-      // Snackily update local rows for instant UI feedback
-      setRows((prev) => {
-        const next = { ...prev };
-        for (const m of unpaidDueMonths) {
-          next[m] = {
-            ...(next[m] ?? ({} as MonthlyContribution)),
-            member_id: member?.id ?? '',
-            year,
-            month: m,
-            amount,
-            status: 'paid',
-            paid_at: new Date().toISOString(),
-            payment_method: 'online',
-          } as MonthlyContribution;
-        }
-        return next;
-      });
+      let rzpPayId: string | null = null;
+      let rzpOrderId: string | null = null;
+      let cfPayId: string | null = null;
+      let cfOrderId: string | null = null;
+
+      if (res.gateway === 'cashfree') {
+        cfPayId = res.result.payment?.paymentId || null;
+        cfOrderId = res.result.order?.orderId || null;
+      } else {
+        rzpPayId = res.result.razorpay_payment_id || null;
+        rzpOrderId = res.result.razorpay_order_id || null;
+      }
+
+      // Upsert all cleared months to Supabase database
+      if (member?.id) {
+        const payload = unpaidDueMonths.map((m) => ({
+          member_id: member.id,
+          year,
+          month: m,
+          amount: Number(amount),
+          status: 'paid',
+          paid_at: new Date().toISOString(),
+          payment_method: gateway,
+          payment_gateway: gateway,
+          razorpay_payment_id: rzpPayId,
+          razorpay_order_id: rzpOrderId,
+          cashfree_payment_id: cfPayId,
+          cashfree_order_id: cfOrderId,
+          receipt_number: `CSWO-MC-${year}-${String(m).padStart(2, '0')}-${member?.member_serial ? String(member.member_serial).padStart(4, '0') : (member?.id || '').slice(0, 4).toUpperCase()}`,
+        }));
+
+        await supabase.from('cswo_monthly_contributions').upsert(payload);
+      }
+
+      // Dispatch bulk invoice email to the member's registered email
+      if (member?.email) {
+        sendReceiptInvoiceEmail({
+          recipientEmail: member.email,
+          recipientName: member.full_name || 'Valued Member',
+          type: 'contribution',
+          amount: totalDue,
+          receiptNumber: `CSWO-BULK-${year}-${Date.now().toString().slice(-6)}`,
+          purpose: `${unpaidDueMonths.length} Months Dues (${year})`,
+          paymentMethod: gateway === 'cashfree' ? 'Cashfree Payments' : 'Razorpay',
+          paymentId: cfPayId || rzpPayId || undefined,
+        });
+      }
 
       showToast(tr('All pending monthly dues paid successfully!', 'সব বকেয়া চাঁদা সফলভাবে পরিশোধ করা হয়েছে!'));
+
     } catch (err) {
-      setError(err instanceof Error && err.message === 'CANCELLED' ? t('pay.cancelled') : t('pay.failed'));
+      const msg = err instanceof Error ? err.message : 'Payment error';
+      setError(msg === 'CANCELLED' ? t('pay.cancelled') : msg);
     } finally {
       setPayingMonths(new Set());
-      await load(); // sync receipts
+      await load();
     }
   };
 
   // ─── Export CSV Report ────────────────────────────────────────────────────
   const exportCSV = () => {
     const tr = (en: string, _bn: string) => en;
-    const header = [tr('Month', 'মাস'), tr('Status', 'অবস্থা'), tr('Amount (₹)', 'পরিমাণ (₹)'), tr('Paid At', 'পরিশোধের তারিখ'), tr('Method', 'পদ্ধতি'), tr('Receipt/Order ID', 'রসিদ/অর্ডার আইডি')];
+    const header = [tr('Month', 'মাস'), tr('Status', 'অবস্থা'), tr('Amount (₹)', 'পরিমাণ (₹)'), tr('Paid At', 'পরিশোধের তারিখ'), tr('Gateway', 'পদ্ধতি'), tr('Receipt/Order ID', 'রসিদ/অর্ডার আইডি')];
     const dataRows = monthsEn.map((nm, i) => {
       const month = i + 1;
       const row = rows[month];
       const paid = row?.status === 'paid';
+      const gw = row?.payment_gateway || row?.payment_method;
       return [
         nm,
         paid ? tr('Paid', 'পরিশোধিত') : tr('Due', 'বকেয়া'),
         paid ? String(row.amount) : String(amount),
         paid && row.paid_at ? new Date(row.paid_at).toLocaleString('en-US') : '—',
-        paid && row.payment_method ? row.payment_method : '—',
-        paid && (row.receipt_number || row.razorpay_order_id) ? (row.receipt_number || row.razorpay_order_id) : '—'
+        paid && gw ? gatewayLabel(gw) : '—',
+        paid && (row.receipt_number || row.cashfree_order_id || row.razorpay_order_id) ? (row.receipt_number || row.cashfree_order_id || row.razorpay_order_id) : '—'
       ];
     });
     const csv = [header, ...dataRows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
@@ -387,16 +784,37 @@ export default function MemberContributions() {
         </div>
       )}
 
+
       {/* Pay-All confirmation modal */}
       {showPayAllModal && (
         <PayAllModal
           months={unpaidDueMonths.map((mo) => months[mo - 1])}
           totalDue={totalDue}
           amountPerMonth={amount}
+          gateway={gateway}
+          onGatewayChange={setGateway}
+          lang={lang}
           onConfirm={runPayAll}
           onCancel={() => setShowPayAllModal(false)}
           fmt={fmt}
           tr={tr}
+        />
+      )}
+
+      {/* Auto-Pay Configuration Modal */}
+      {showAutoPayModal && (
+        <AutoPayModal
+          active={autoPayActive}
+          amount={amount}
+          gateway={gateway}
+          onToggle={toggleAutoPay}
+          onGatewayChange={setGateway}
+          onAutoPayCurrent={runPayAll}
+          onClose={() => setShowAutoPayModal(false)}
+          currentDue={totalDue}
+          fmt={fmt}
+          tr={tr}
+          lang={lang}
         />
       )}
 
@@ -429,6 +847,14 @@ export default function MemberContributions() {
               </option>
             ))}
           </select>
+
+          <button
+            onClick={() => setShowAutoPayModal(true)}
+            className="flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50/80 px-4 py-2 text-sm font-black text-amber-900 hover:bg-amber-100 active:scale-[0.98] shadow-xs transition-all"
+          >
+            <RefreshCw className={`h-4 w-4 ${autoPayActive ? 'animate-spin-slow' : ''}`} />
+            {autoPayActive ? tr('Auto-Pay (Active)', 'অটো-পে (সক্রিয়)') : tr('Setup Auto-Pay', 'অটো-পে সেটআপ')}
+          </button>
           
           {totalDue > 0 && (
             <button
@@ -452,14 +878,68 @@ export default function MemberContributions() {
         </div>
       </div>
 
+      {/* ══════════════════════════════════════════════════════════════════════
+          ERROR / CANCELLED POPUP MODAL
+         ══════════════════════════════════════════════════════════════════════ */}
       {error && (
-        <div className="mb-6 flex items-start gap-3 rounded-xl bg-red-50 px-4 py-3.5 text-sm text-red-805 border border-red-200 shadow-sm animate-shake">
-          <AlertCircle className="h-5 w-5 shrink-0 text-red-650 mt-0.5" />
-          <div className="flex-1">
-            <p className="font-bold">{error}</p>
-            <button onClick={() => setError('')} className="mt-1 text-xs font-bold text-red-650 hover:underline">
-              {tr('Dismiss', 'বন্ধ করুন')}
-            </button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-[420px] rounded-[24px] bg-white p-6 sm:p-8 shadow-2xl border border-stone-100 text-center animate-scale-up my-auto">
+            
+            {/* Top Graphics (Concentric Red Rings) */}
+            <div className="relative mx-auto mb-5 flex h-20 w-20 items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-red-100/60 animate-ping opacity-30" />
+              <div className="absolute inset-2 rounded-full bg-red-50 border border-red-100" />
+              
+              {/* Center X mark */}
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#c81e1e] text-white shadow-md">
+                <X className="h-6 w-6 stroke-[3]" />
+              </div>
+            </div>
+
+            {/* Headings */}
+            <h3 className="text-xl sm:text-[22px] font-black text-stone-900 tracking-tight leading-snug px-2">
+              {error === 'CANCELLED' || error === t('pay.cancelled') ? tr('Payment was cancelled.', 'পেমেন্ট বাতিল করা হয়েছে।') : (error || tr('Payment Failed.', 'পেমেন্ট ব্যর্থ হয়েছে।'))}
+            </h3>
+            <p className="text-[13px] font-medium text-stone-500 mt-2 px-2 leading-relaxed">
+              {tr('No worries! Your payment was not completed. You can try again anytime.', 'কোনো চিন্তা নেই! আপনার পেমেন্ট সম্পন্ন হয়নি। আপনি যেকোনো সময় আবার চেষ্টা করতে পারেন।')}
+            </p>
+
+            {/* Buttons */}
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setError('')}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#c81e1e] py-3 text-[13px] font-bold text-white shadow-sm hover:bg-[#a51515] transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                {tr('Try Again', 'আবার চেষ্টা করুন')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setError('')}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white py-3 text-[13px] font-bold text-stone-700 shadow-sm border border-stone-200 hover:bg-stone-50 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                {tr('Go Back', 'ফিরে যান')}
+              </button>
+            </div>
+
+            {/* Footer Trust Banner */}
+            <div className="mt-6 border-t border-stone-100 pt-5">
+              <div className="flex items-center justify-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-500 shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                </div>
+                <div className="text-left min-w-0">
+                  <p className="text-[12px] font-bold text-stone-700">
+                    {tr('Your security is our priority.', 'আপনার নিরাপত্তা আমাদের অগ্রাধিকার।')}
+                  </p>
+                  <p className="text-[11px] font-medium text-stone-400">
+                    {tr('All your details are safe with us.', 'আপনার সমস্ত তথ্য আমাদের কাছে নিরাপদ।')}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -536,10 +1016,10 @@ export default function MemberContributions() {
                     {autoPayActive ? tr('Active', 'সক্রিয়') : tr('Inactive', 'নিষ্ক্রিয়')}
                   </p>
                   <button 
-                    onClick={toggleAutoPay} 
-                    className="text-[11px] text-gray-400 hover:text-[#0c756f] font-bold mt-1 inline-block underline"
+                    onClick={() => setShowAutoPayModal(true)} 
+                    className="text-[11px] text-gray-500 hover:text-[#0c756f] font-bold mt-1 inline-block underline"
                   >
-                    {autoPayActive ? tr('Disable auto pay', 'নিষ্ক্রিয় করুন') : tr('Enable auto pay', 'সক্রিয় করুন')}
+                    {tr('Manage auto-pay', 'অটো-পে পরিচালনা')}
                   </button>
                 </div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
@@ -599,8 +1079,9 @@ export default function MemberContributions() {
 
                   if (paid) {
                     // ── Paid Month Card ──
+                    const gw = row.payment_gateway || row.payment_method;
                     return (
-                      <div key={month} className="rounded-2xl border bg-gradient-to-br from-green-50/50 to-emerald-50/30 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-[180px]" style={{ borderColor: '#bbf7d0' }}>
+                      <div key={month} className="rounded-2xl border bg-gradient-to-br from-green-50/50 to-emerald-50/30 p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-[185px]" style={{ borderColor: '#bbf7d0' }}>
                         <div>
                           <div className="flex items-center justify-between">
                             <h3 className="font-bold text-gray-800 text-[14px]">{nm}</h3>
@@ -619,8 +1100,19 @@ export default function MemberContributions() {
                             </p>
                           </div>
                           {row.paid_at && (
-                            <p className="text-[10px] text-gray-400 font-bold mt-2">
-                              {tr(`Paid on ${fmt.date(row.paid_at)}`, `${fmt.date(row.paid_at)} এ পরিশোধিত`)}
+                            <p className="text-[10px] text-gray-400 font-bold mt-2 flex items-center gap-1">
+                              <span>{fmt.date(row.paid_at)}</span>
+                              {gw && (
+                                <span
+                                  className="rounded px-1.5 py-0.2 text-[8.5px] font-extrabold"
+                                  style={{
+                                    backgroundColor: `${gatewayBadgeColor(gw)}18`,
+                                    color: gatewayBadgeColor(gw),
+                                  }}
+                                >
+                                  {gatewayLabel(gw)}
+                                </span>
+                              )}
                             </p>
                           )}
                         </div>
@@ -638,8 +1130,8 @@ export default function MemberContributions() {
                                   date: row.paid_at ? formatDate(row.paid_at, 'en') : '',
                                   month: monthsEn[i],
                                   year,
-                                  paymentMethod: row.payment_method ?? undefined,
-                                  paymentId: row.razorpay_payment_id ?? undefined,
+                                  paymentMethod: gatewayLabel(row.payment_gateway || row.payment_method),
+                                  paymentId: row.cashfree_payment_id || row.razorpay_payment_id || undefined,
                                 },
                                 lang,
                               )
@@ -657,7 +1149,7 @@ export default function MemberContributions() {
                   if (isBusy) {
                     // ── Processing Month Card ──
                     return (
-                      <div key={month} className="rounded-2xl border border-amber-200 bg-amber-50/40 p-5 shadow-sm animate-pulse flex flex-col justify-between h-[180px]">
+                      <div key={month} className="rounded-2xl border border-amber-200 bg-amber-50/40 p-5 shadow-sm animate-pulse flex flex-col justify-between h-[185px]">
                         <div>
                           <div className="flex items-center justify-between">
                             <h3 className="font-bold text-gray-800 text-[14px]">{nm}</h3>
@@ -668,7 +1160,9 @@ export default function MemberContributions() {
                           </div>
                           <div className="mt-4 flex items-center gap-2">
                             <div className="h-7 w-7 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
-                            <p className="text-[12px] text-amber-700 font-bold">{tr('Opening Razorpay…', 'পেমেন্ট খুলছে…')}</p>
+                            <p className="text-[12px] text-amber-700 font-bold">
+                              {tr(`Opening ${gateway === 'cashfree' ? 'Cashfree' : 'Razorpay'}…`, `${gateway === 'cashfree' ? 'Cashfree' : 'Razorpay'} পেমেন্ট খুলছে…`)}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -677,7 +1171,7 @@ export default function MemberContributions() {
 
                   // ── Unpaid / Due Month Card ──
                   return (
-                    <div key={month} className="rounded-2xl border bg-white p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-[180px]" style={{ borderColor: RULE }}>
+                    <div key={month} className="rounded-2xl border bg-white p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-[185px]" style={{ borderColor: RULE }}>
                       <div>
                         <div className="flex items-center justify-between">
                           <h3 className="font-bold text-gray-900 text-[14px]">{nm}</h3>
@@ -699,9 +1193,9 @@ export default function MemberContributions() {
                       </div>
                       
                       <button
-                        onClick={() => pay(month)}
+                        onClick={() => setSinglePayTarget(month)}
                         disabled={anyBusy || !isValidAmount}
-                        className="mt-3 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold py-2 text-[12.5px] transition-all flex items-center justify-center gap-1 select-none active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="mt-3 w-full rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold py-2 text-[12.5px] transition-all flex items-center justify-center gap-1 select-none active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
                       >
                         {tr('Pay Now', 'পরিশোধ করুন')}
                         <ArrowRight className="h-3.5 w-3.5" />
@@ -730,11 +1224,11 @@ export default function MemberContributions() {
             </div>
             
             <button
-              onClick={toggleAutoPay}
+              onClick={() => setShowAutoPayModal(true)}
               className="shrink-0 rounded-xl border border-[#0c756f]/30 hover:border-[#0c756f] bg-white px-5 py-2.5 text-[12.5px] font-bold text-[#0c756f] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 select-none"
             >
-              <Settings className="h-4 w-4" />
-              {tr('Set Auto Pay', 'অটো পে চালু করুন')}
+              <RefreshCw className="h-4 w-4" />
+              {autoPayActive ? tr('Auto-Pay Settings', 'অটো-পে সেটিংস') : tr('Set Auto Pay', 'অটো পে চালু করুন')}
             </button>
           </div>
         </div>
@@ -813,11 +1307,11 @@ export default function MemberContributions() {
               )}
 
               <button
-                onClick={toggleAutoPay}
+                onClick={() => setShowAutoPayModal(true)}
                 className="flex items-center gap-3 rounded-xl border border-green-150 hover:bg-green-50/40 p-3 text-left transition-all active:scale-[0.98] select-none"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-50 text-green-600 shrink-0">
-                  <RefreshCw className="h-4.5 w-4.5" />
+                  <RefreshCw className={`h-4.5 w-4.5 ${autoPayActive ? 'animate-spin-slow' : ''}`} />
                 </div>
                 <div>
                   <p className="text-[12.5px] font-extrabold text-gray-850">{tr('Set Auto Pay', 'অটো পে সক্রিয়করণ')}</p>
@@ -852,8 +1346,8 @@ export default function MemberContributions() {
                         date: r.paid_at ? formatDate(r.paid_at, 'en') : '',
                         month: monthsEn[r.month - 1],
                         year: r.year,
-                        paymentMethod: r.payment_method ?? undefined,
-                        paymentId: r.razorpay_payment_id ?? undefined,
+                        paymentMethod: gatewayLabel(r.payment_gateway || r.payment_method),
+                        paymentId: r.cashfree_payment_id || r.razorpay_payment_id || undefined,
                       },
                       lang,
                     );
@@ -896,7 +1390,16 @@ export default function MemberContributions() {
                         {fmt.money(Number(rp.amount))} <span className="text-gray-300 font-normal">·</span> {months[rp.month - 1]} {rp.year}
                       </p>
                       <p className="text-[10px] text-gray-400 font-bold mt-0.5">
-                        {rp.paid_at ? dtFull(rp.paid_at) : ''} · {rp.payment_method === 'razorpay' ? 'Razorpay' : rp.payment_method || 'Online'}
+                          {rp.paid_at ? dtFull(rp.paid_at) : ''} ·
+                          <span
+                            className="inline-block rounded-full px-1.5 py-0.5 text-[9px] font-extrabold ml-1"
+                            style={{
+                              background: gatewayBadgeColor(rp.payment_gateway || rp.payment_method) + '20',
+                              color: gatewayBadgeColor(rp.payment_gateway || rp.payment_method),
+                            }}
+                          >
+                            {gatewayLabel(rp.payment_gateway || rp.payment_method)}
+                          </span>
                       </p>
                     </div>
                     
@@ -962,6 +1465,65 @@ export default function MemberContributions() {
           </div>
         </div>
       </div>
+
+      {/* ── Single Month Payment Modal ── */}
+      {singlePayTarget !== null && (
+        <SinglePayModal
+          monthName={months[singlePayTarget - 1]}
+          monthNumber={singlePayTarget}
+          year={year}
+          amount={Number(amount)}
+          gateway={gateway}
+          onGatewayChange={setGateway}
+          methodType={methodType}
+          onMethodTypeChange={setMethodType}
+          utrRef={utrRef}
+          onUtrRefChange={setUtrRef}
+          lang={lang}
+          onConfirm={() => executeSinglePay(singlePayTarget)}
+          onCancel={() => {
+            setSinglePayTarget(null);
+            setUtrRef('');
+          }}
+          fmt={fmt}
+          tr={tr}
+        />
+      )}
+
+      {/* ── Auto Pay Settings Modal ── */}
+      {showAutoPayModal && (
+        <AutoPayModal
+          active={autoPayActive}
+          amount={amount}
+          onToggle={toggleAutoPay}
+          gateway={gateway}
+          onGatewayChange={setGateway}
+          currentDue={totalDue}
+          onAutoPayCurrent={runPayAll}
+          lang={lang}
+          onClose={() => setShowAutoPayModal(false)}
+          fmt={fmt}
+          tr={tr}
+        />
+      )}
+
+
+      {/* ── Pay All Dues Modal ── */}
+      {showPayAllModal && (
+        <PayAllModal
+          months={unpaidDueMonths.map((m) => months[m - 1])}
+          totalDue={totalDue}
+          amountPerMonth={amount}
+          gateway={gateway}
+          onGatewayChange={setGateway}
+          lang={lang}
+          onConfirm={runPayAll}
+          onCancel={() => setShowPayAllModal(false)}
+          fmt={fmt}
+          tr={tr}
+        />
+      )}
     </div>
   );
 }
+

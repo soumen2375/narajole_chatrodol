@@ -26,6 +26,8 @@ import { useFmt } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import { Sparkline, BarLineChart, Donut } from '@/components/ui/charts';
 import { useAdminDashboard, type Activity, type QueueItem } from './useAdminDashboard';
+import { AdminGatewaySwitch } from '@/components/payment/GatewaySelector';
+
 
 const INK = '#000201'; // Charcoal black
 const INK2 = '#4a4c4b'; // Charcoal grey
@@ -410,16 +412,25 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* ───────── Shortcuts ───────── */}
-      <div>
-        <Eyebrow>{tr('SHORTCUTS', 'দ্রুত গতিপথ')}</Eyebrow>
-        <div className="mt-3.5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Shortcut to="/admin/members" icon={UserCheck} title={tr('Approve Members', 'সদস্য অনুমোদন')} sub={d.pendingMembers ? tr(`${d.pendingMembers} applicants`, `${num(d.pendingMembers)} জন আবেদনকারী`) : tr('All clear', 'সব পরিষ্কার')} />
-          <Shortcut to="/admin/posts" icon={Send} title={tr('Review Posts', 'পোস্ট পর্যালোচনা')} sub={pendingPosts ? tr(`${pendingPosts} pending`, `${num(pendingPosts)} টি অপেক্ষমাণ`) : tr('No posts pending', 'সব পরিষ্কার')} />
-          <Shortcut to="/admin/events" icon={CalendarPlus} title={tr('Create Event', 'নতুন ইভেন্ট')} sub={tr('Camps or programs', 'শিবির বা কর্মসূচি')} />
-          <Shortcut to="/admin/donations" icon={HandCoins} title={tr('Log Donation', 'অনুদান লগ')} sub={tr('Record offline payments', 'অফলাইন অনুদান রেকর্ড')} />
+      {/* ───────── Gateway Control & Shortcuts ───────── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-4">
+          <Eyebrow>{tr('PAYMENT GATEWAY CONFIG', 'পেমেন্ট গেটওয়ে কনফিগ')}</Eyebrow>
+          <div className="mt-3.5">
+            <AdminGatewaySwitch />
+          </div>
+        </div>
+        <div className="lg:col-span-8">
+          <Eyebrow>{tr('SHORTCUTS', 'দ্রুত গতিপথ')}</Eyebrow>
+          <div className="mt-3.5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Shortcut to="/admin/members" icon={UserCheck} title={tr('Approve Members', 'সদস্য অনুমোদন')} sub={d.pendingMembers ? tr(`${d.pendingMembers} applicants`, `${num(d.pendingMembers)} জন আবেদনকারী`) : tr('All clear', 'সব পরিষ্কার')} />
+            <Shortcut to="/admin/posts" icon={Send} title={tr('Review Posts', 'পোস্ট পর্যালোচনা')} sub={pendingPosts ? tr(`${pendingPosts} pending`, `${num(pendingPosts)} টি অপেক্ষমাণ`) : tr('No posts pending', 'সব পরিষ্কার')} />
+            <Shortcut to="/admin/events" icon={CalendarPlus} title={tr('Create Event', 'নতুন ইভেন্ট')} sub={tr('Camps or programs', 'শিবির বা কর্মসূচি')} />
+            <Shortcut to="/admin/donations" icon={HandCoins} title={tr('Log Donation', 'অনুদান লগ')} sub={tr('Record offline payments', 'অফলাইন অনুদান রেকর্ড')} />
+          </div>
         </div>
       </div>
+
 
       {/* ───────── Footer ───────── */}
       <div 

@@ -375,6 +375,11 @@ h1, h2, h3, h4, h5, h6, .font-serif, .font-serif-bn, .font-english-serif, .font-
   font-family: 'Inter', 'Noto Sans Bengali', system-ui, -apple-system, sans-serif;
 }
 
+/* Arvo font for monetary figures */
+.font-arvo {
+  font-family: 'Arvo', serif;
+}
+
 /* Donate button blink animation (Item 25) */
 @keyframes donatePulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(194,65,12,0.6); opacity: 1; }
@@ -396,3 +401,24 @@ input[type=number] {
 
 /* NOTE: .card-lift and @keyframes fadeIn are defined at the top of this file.
    Duplicate definitions removed here to prevent silent override of the premium animations. */
+
+/* Infinite Looping Marquee / Ticker Banner */
+@keyframes infiniteMarquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: infiniteMarquee 20s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+

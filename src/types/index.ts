@@ -5,6 +5,17 @@ export type EventType = 'event' | 'camp' | 'program';
 export type AttendanceStatus = 'present' | 'absent' | 'volunteered';
 export type PaymentStatus = 'created' | 'paid' | 'failed' | 'refunded';
 export type ContributionStatus = 'paid' | 'unpaid' | 'pending';
+export type PaymentGateway = 'razorpay' | 'cashfree' | 'offline';
+
+// Admin-controlled gateway mode
+export type GatewayMode = 'both' | 'razorpay' | 'cashfree';
+
+export interface SiteSettings {
+  id: string;
+  key: string;
+  value: string;
+  updated_at: string;
+}
 
 // ── CMS Content Types ──────────────────────────────────────────────────────────
 export type PostType =
@@ -288,6 +299,9 @@ export interface Donation {
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
   razorpay_signature: string | null;
+  cashfree_order_id: string | null;
+  cashfree_payment_id: string | null;
+  payment_gateway: PaymentGateway;
   status: PaymentStatus;
   is_anonymous: boolean;
   is_recurring: boolean;
@@ -308,6 +322,9 @@ export interface MonthlyContribution {
   payment_method: string | null;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
+  cashfree_order_id: string | null;
+  cashfree_payment_id: string | null;
+  payment_gateway: PaymentGateway;
   receipt_number: string | null;
   note: string | null;
   recorded_by: string | null;

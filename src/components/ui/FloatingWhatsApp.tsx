@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { startRazorpayPayment } from '@/lib/razorpay';
+import { startCashfreePayment } from '@/lib/cashfree';
 import { printReceipt } from '@/lib/receipt';
 import {
   FaWhatsapp,
@@ -83,10 +83,10 @@ export default function FloatingWhatsApp() {
   };
 
   const handlePay = async () => {
-    // UPI / Cards — open Razorpay checkout directly
+    // UPI / Cards — open Cashfree checkout directly
     setPaying(true);
     try {
-      const response = await startRazorpayPayment({
+      const response = await startCashfreePayment({
         action: 'create_donation_order',
         amount: finalAmount,
         description: `Donation of ₹${finalAmount} to Chhatradol Social Welfare Organization`,
@@ -98,11 +98,11 @@ export default function FloatingWhatsApp() {
 
       const now = new Date();
       const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-      const receiptNum = `DON-${response.razorpay_payment_id.slice(-8).toUpperCase()}`;
+      const receiptNum = `DON-${response.payment.paymentId.slice(-8).toUpperCase()}`;
 
       setSuccessData({
-        paymentId:     response.razorpay_payment_id,
-        orderId:       response.razorpay_order_id,
+        paymentId:     response.payment.paymentId,
+        orderId:       response.order.orderId,
         amount:        finalAmount,
         date:          dateStr,
         name:          donor.name || 'Anonymous',
@@ -131,7 +131,7 @@ export default function FloatingWhatsApp() {
       amount: successData.amount,
       date: successData.date,
       purpose: 'General Donation — Chhatradol Social Welfare Organization',
-      paymentMethod: 'Razorpay (UPI / Card)',
+      paymentMethod: 'Cashfree Payments',
       paymentId: successData.paymentId,
     }, 'en');
   };
@@ -698,7 +698,7 @@ export default function FloatingWhatsApp() {
                   }}
                 >
                   {paying ? (
-                    <><span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> Opening Razorpay…</>
+                    <><span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> Opening Gateway…</>
                   ) : (
                     <><FaLock className="h-3.5 w-3.5" /> Pay ₹{finalAmount.toLocaleString('en-IN')} Securely</>
                   )}
@@ -771,7 +771,7 @@ export default function FloatingWhatsApp() {
                   <div className="px-4 py-3 space-y-2">
                     {[
                       { label: 'Receipt No.',          value: successData.receiptNumber },
-                      { label: 'Razorpay Payment ID',  value: successData.paymentId },
+                      { label: 'Transaction ID',  value: successData.paymentId },
                       { label: 'Chhatradol Order ID',  value: successData.orderId.slice(0,20) + '…' },
                       { label: 'Date & Time',          value: successData.date },
                       ...(successData.name && successData.name !== 'Anonymous'

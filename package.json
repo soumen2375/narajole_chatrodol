@@ -23,6 +23,7 @@
     "@tiptap/pm": "^3.23.6",
     "@tiptap/react": "^3.23.6",
     "@tiptap/starter-kit": "^3.23.6",
+    "canvas-confetti": "^1.9.4",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^1.16.0",
     "qrcode.react": "^4.2.0",
@@ -35,6 +36,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^22.19.19",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",

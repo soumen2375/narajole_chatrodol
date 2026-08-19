@@ -266,11 +266,13 @@ interface StartPaymentArgs {
   donorEmail?: string;
   donorPhone?: string;
   isAnonymous?: boolean;
+  isRecurring?: boolean;
   year?: number;
   month?: number;
   months?: number[];
   description: string;
 }
+
 
 export async function startRazorpayPayment(args: StartPaymentArgs): Promise<RazorpayResponse> {
   const loaded = await loadRazorpayScript();
@@ -292,6 +294,8 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
           amount: args.amount,
           purpose: args.purpose ?? null,
           is_anonymous: !!args.isAnonymous,
+          is_recurring: !!args.isRecurring,
+          payment_gateway: 'razorpay',
           status: 'created',
         })
         .select('id')
@@ -301,6 +305,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
       // Continue even if Supabase is offline
     }
   }
+
 
   const amountPaise = Math.round(args.amount * 100);
   const receipt = donationRecordId ? `don_${donationRecordId}`.slice(0, 40) : `cswo_${Date.now()}`;
