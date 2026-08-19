@@ -898,9 +898,18 @@ export default function MemberContributions() {
 
             {/* Headings */}
             <h3 className="text-xl sm:text-[22px] font-black text-stone-900 tracking-tight leading-snug px-2">
-              {error === 'CANCELLED' || error === t('pay.cancelled') ? tr('Payment was cancelled.', 'পেমেন্ট বাতিল করা হয়েছে।') : (error || tr('Payment Failed.', 'পেমেন্ট ব্যর্থ হয়েছে।'))}
+              {error === 'CANCELLED' || error === t('pay.cancelled') ? tr('Payment was cancelled.', 'পেমেন্ট বাতিল করা হয়েছে।') : tr('Payment Failed.', 'পেমেন্ট ব্যর্থ হয়েছে।')}
             </h3>
-            <p className="text-[13px] font-medium text-stone-500 mt-2 px-2 leading-relaxed">
+
+            {error && error !== 'CANCELLED' && error !== t('pay.cancelled') && (
+              <div className="mt-3 mx-4 rounded-xl bg-red-50 border border-red-100 p-3">
+                <p className="text-[12px] font-bold text-red-800 break-words leading-relaxed">
+                  {error}
+                </p>
+              </div>
+            )}
+
+            <p className="text-[13px] font-medium text-stone-500 mt-3 px-2 leading-relaxed">
               {tr('No worries! Your payment was not completed. You can try again anytime.', 'কোনো চিন্তা নেই! আপনার পেমেন্ট সম্পন্ন হয়নি। আপনি যেকোনো সময় আবার চেষ্টা করতে পারেন।')}
             </p>
 

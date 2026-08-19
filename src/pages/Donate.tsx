@@ -1108,9 +1108,18 @@ export default function Donate() {
 
             {/* Headings */}
             <h3 className="text-xl sm:text-[22px] font-black text-stone-900 tracking-tight leading-snug px-2">
-              {errMsg === 'CANCELLED' ? tr('পেমেন্ট বাতিল করা হয়েছে।', 'Payment was cancelled.') : (errMsg || tr('পেমেন্ট ব্যর্থ হয়েছে।', 'Payment Failed.'))}
+              {errMsg === 'CANCELLED' ? tr('পেমেন্ট বাতিল করা হয়েছে।', 'Payment was cancelled.') : tr('পেমেন্ট ব্যর্থ হয়েছে।', 'Payment Failed.')}
             </h3>
-            <p className="text-[13px] font-medium text-stone-500 mt-2 px-2 leading-relaxed">
+
+            {errMsg && errMsg !== 'CANCELLED' && (
+              <div className="mt-3 mx-4 rounded-xl bg-red-50 border border-red-100 p-3">
+                <p className="text-[12px] font-bold text-red-800 break-words leading-relaxed">
+                  {errMsg}
+                </p>
+              </div>
+            )}
+
+            <p className="text-[13px] font-medium text-stone-500 mt-3 px-2 leading-relaxed">
               {tr('কোনো চিন্তা নেই! আপনার পেমেন্ট সম্পন্ন হয়নি। আপনি যেকোনো সময় আবার চেষ্টা করতে পারেন।', 'No worries! Your payment was not completed. You can try again anytime.')}
             </p>
 
