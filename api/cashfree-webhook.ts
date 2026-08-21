@@ -91,17 +91,25 @@ async function sendEmailReceipt(data: {
     console.warn('[Webhook] Failed to send receipt email via API:', err);
   }
 }
-  }
-}
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-webhook-signature, x-webhook-timestamp');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.statusCode = 200;
     res.end();
     return;
+  }
+
+  // Friendly health check response when opened in browser (GET request)
+  if (req.method === 'GET') {
+    return sendJson(res, 200, {
+      status: 'ONLINE',
+      service: 'Cashfree Webhook Handler',
+      organization: 'Chhatradol Social Welfare Organization',
+      timestamp: new Date().toISOString(),
+    });
   }
 
   if (req.method !== 'POST') {
