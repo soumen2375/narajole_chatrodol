@@ -146,8 +146,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         customer_phone: customerPhone.replace(/\D/g, '').slice(-10) || '9999999999',
       },
       order_meta: {
-        return_url: `${process.env.SITE_URL || 'https://chhatradol.org'}/payment-return?order_id={order_id}`,
-        notify_url: `${process.env.SITE_URL || 'https://chhatradol.org'}/api/cashfree-webhook`,
+        return_url: `${process.env.SITE_URL || 'https://www.chhatradol.org'}/payment-return?order_id={order_id}`,
+        notify_url: `${process.env.SITE_URL || 'https://www.chhatradol.org'}/api/cashfree-webhook`,
       },
     };
 

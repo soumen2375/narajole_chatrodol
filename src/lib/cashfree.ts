@@ -142,12 +142,12 @@ export async function createCashfreeOrder(
 
 // ── Payment Verification with Retry ──────────────────────────────────────────
 
-const VERIFY_RETRY_DELAYS_MS = [3000, 6000, 10000]; // 3s, 6s, 10s retries
+// ── Payment Verification with Fast Retries ───────────────────────────────────
+
+const VERIFY_RETRY_DELAYS_MS = [1000, 2000, 3000, 4500, 6000]; // Fast 1s, 2s, 3s, 4.5s, 6s
 
 /**
- * Verifies Cashfree order status server-to-server with automatic retries.
- * Cashfree order status can be ACTIVE for a few seconds after payment before
- * switching to PAID — retries handle this race condition.
+ * Verifies Cashfree order status server-to-server with automatic fast retries.
  */
 export async function verifyCashfreePayment(orderId: string): Promise<CashfreeVerifyResponse> {
   let lastResponse: CashfreeVerifyResponse | null = null;
@@ -172,16 +172,17 @@ export async function verifyCashfreePayment(orderId: string): Promise<CashfreeVe
         return { ...lastResponse, success: true };
       }
 
-      // Explicitly failed states — no point retrying
+      // Explicitly failed/cancelled states — stop retrying
       if (
         lastResponse.order_status === 'EXPIRED' ||
         lastResponse.order_status === 'CANCELLED' ||
-        lastResponse.order_status === 'FAILED'
+        lastResponse.order_status === 'FAILED' ||
+        lastResponse.order_status === 'USER_DROPPED'
       ) {
         return lastResponse;
       }
 
-      // ACTIVE / PENDING — retry after delay if we have retries left
+      // ACTIVE / PENDING — retry after short delay
       if (attempt < VERIFY_RETRY_DELAYS_MS.length) {
         await new Promise((resolve) => setTimeout(resolve, VERIFY_RETRY_DELAYS_MS[attempt]));
       }
@@ -191,7 +192,6 @@ export async function verifyCashfreePayment(orderId: string): Promise<CashfreeVe
     }
   }
 
-  // All retries exhausted — return last known response
   return lastResponse ?? { success: false, message: 'Verification timed out. Please contact support.' };
 }
 
@@ -242,7 +242,6 @@ export async function openCashfreeCheckout(
     throw err;
   }
 
-  // Server-side verification with retry for ACTIVE → PAID race condition
   const verification = await verifyCashfreePayment(orderData.order_id);
   if (!verification.success) {
     const err = new Error(verification.message || 'Payment not completed or failed.');
@@ -319,7 +318,6 @@ export async function startCashfreePayment(
       receipt,
     );
   } catch (orderErr) {
-    // Order creation failed — mark DB record as failed
     if (donationRecordId) {
       try {
         await supabase
@@ -347,31 +345,68 @@ export async function startCashfreePayment(
 
   const cashfree = window.Cashfree({ mode });
 
-  let checkoutResult: CashfreeCheckoutResult;
+  // ── Parallel Background Poller while user is completing payment ─────────────
+  let checkoutFinished = false;
+  const pollState: { result: CashfreeVerifyResponse | null } = { result: null };
+
+  const runBackgroundVerification = async () => {
+    // Poll every 2 seconds for up to 50 seconds
+    for (let i = 0; i < 25; i++) {
+      if (checkoutFinished) break;
+      await new Promise((r) => setTimeout(r, 2000));
+      if (checkoutFinished) break;
+
+      try {
+        const check = await fetch('/api/cashfree-verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_id: orderData.order_id }),
+        });
+        if (check.ok) {
+          const res = (await check.json()) as CashfreeVerifyResponse;
+          if (res.success || res.order_status === 'PAID') {
+            pollState.result = { ...res, success: true };
+            break;
+          }
+        }
+      } catch {
+        // ignore background poll errors
+      }
+    }
+  };
+
+  // Start background poller
+  const pollerPromise = runBackgroundVerification();
+
+  let checkoutResult: CashfreeCheckoutResult = {};
   try {
     checkoutResult = await cashfree.checkout({
       paymentSessionId: orderData.payment_session_id,
       redirectTarget: '_modal',
     });
   } catch {
-    // Checkout threw (e.g. network error) — mark as failed
-    if (donationRecordId) {
-      try {
-        await supabase
-          .from('cswo_donations')
-          .update({ status: 'failed' })
-          .eq('id', donationRecordId);
-      } catch { /* ignore */ }
+    // Check if background poller already caught a successful payment
+    if (!pollState.result?.success) {
+      if (donationRecordId) {
+        try {
+          await supabase
+            .from('cswo_donations')
+            .update({ status: 'failed' })
+            .eq('id', donationRecordId);
+        } catch { /* ignore */ }
+      }
+      throw new Error('Payment checkout encountered an error. Please try again.');
     }
-    throw new Error('Payment checkout encountered an error. Please try again.');
+  } finally {
+    checkoutFinished = true;
+    await pollerPromise.catch(() => {});
   }
 
   // ── Handle explicit error / cancellation from checkout ──────────────────────
-  if (checkoutResult?.error) {
+  if (checkoutResult?.error && !pollState.result?.success) {
     const errorCode = checkoutResult.error.code?.toUpperCase() || '';
     const errorMsg = checkoutResult.error.message || '';
 
-    // Detect user cancellation: Cashfree returns code like 'payment_cancelled', 'user_drop' etc.
     const isCancelled =
       errorCode.includes('CANCEL') ||
       errorCode.includes('DROP') ||
@@ -394,25 +429,30 @@ export async function startCashfreePayment(
     throw new Error(isCancelled ? 'CANCELLED' : (errorMsg || 'Payment was cancelled or failed.'));
   }
 
-  // ── Server-side verification with retry (ACTIVE → PAID race condition fix) ──
-  const verification = await verifyCashfreePayment(orderData.order_id);
+  // ── Final Server Verification (Uses pollState.result if already confirmed) ───
+  const verification = pollState.result?.success
+    ? pollState.result
+    : await verifyCashfreePayment(orderData.order_id);
 
   if (donationRecordId) {
     try {
-      // Map Cashfree order_status to our internal status
       let finalStatus = 'failed';
       if (verification.success || verification.order_status === 'PAID') {
         finalStatus = 'paid';
       } else if (
         verification.order_status === 'CANCELLED' ||
-        verification.order_status === 'EXPIRED'
+        verification.order_status === 'EXPIRED' ||
+        verification.order_status === 'USER_DROPPED'
       ) {
         finalStatus = 'cancelled';
       }
 
       await supabase
         .from('cswo_donations')
-        .update({ status: finalStatus })
+        .update({
+          status: finalStatus,
+          cashfree_payment_id: verification.order_id || orderData.order_id,
+        })
         .eq('id', donationRecordId);
     } catch {
       // ignore
@@ -421,7 +461,7 @@ export async function startCashfreePayment(
 
   if (!verification.success) {
     const status = verification.order_status;
-    const isCancelled = status === 'CANCELLED' || status === 'EXPIRED';
+    const isCancelled = status === 'CANCELLED' || status === 'EXPIRED' || status === 'USER_DROPPED';
     throw new Error(
       isCancelled ? 'CANCELLED' : (verification.message || 'Payment was not completed.')
     );
