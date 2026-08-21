@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { PageShell } from './_field-journal';
-import { startPayment, getGatewayMode, type GatewayMode } from '@/lib/payments';
+import { startPayment } from '@/lib/payments';
 import type { PaymentGateway } from '@/types';
 import { useT } from '@/i18n';
 import { useSEO } from '@/hooks/useSEO';
@@ -124,22 +124,7 @@ export default function Donate() {
   
   // Payment Method Selection
   const [payOption, setPayOption] = useState<PaymentOption>('gateway');
-  const [gatewayMode, setGatewayModeState] = useState<GatewayMode>(() => getGatewayMode());
-  const [gateway, setGateway] = useState<PaymentGateway>(() => {
-    const mode = getGatewayMode();
-    return mode === 'razorpay' ? 'razorpay' : 'cashfree';
-  });
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ mode: GatewayMode }>).detail;
-      setGatewayModeState(detail.mode);
-      if (detail.mode === 'razorpay') setGateway('razorpay');
-      if (detail.mode === 'cashfree') setGateway('cashfree');
-    };
-    window.addEventListener('cswo:gateway-mode-change', handler);
-    return () => window.removeEventListener('cswo:gateway-mode-change', handler);
-  }, []);
+  const [gateway] = useState<PaymentGateway>('cashfree');
 
   const [utrRef, setUtrRef] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -332,8 +317,9 @@ export default function Donate() {
         return;
       }
 
-      // Online Gateway Flow
-      const res = await startPayment({
+      // Online Gateway Flow — wrap in 90s timeout to prevent infinite processing
+      const PAYMENT_TIMEOUT_MS = 90_000;
+      const paymentPromise = startPayment({
         gateway,
         action: 'create_donation_order',
         amount,
@@ -345,6 +331,16 @@ export default function Donate() {
         isAnonymous: anonymous,
         isRecurring: frequency === 'monthly',
       });
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(
+          lang === 'bn'
+            ? 'পেমেন্ট যাচাইকরণে অনেক সময় লাগছে। অনুগ্রহ করে আবার চেষ্টা করুন।'
+            : 'Payment verification is taking too long. Please try again.'
+        )), PAYMENT_TIMEOUT_MS)
+      );
+
+      const res = await Promise.race([paymentPromise, timeoutPromise]);
 
       const receiptNumber = `CSWO-DON-${Date.now().toString().slice(-8).toUpperCase()}`;
       const payId = res.gateway === 'cashfree' ? res.result.payment?.paymentId : res.result.razorpay_payment_id;
@@ -390,56 +386,56 @@ export default function Donate() {
       {/* ── Breadcrumb (Clean Single Root) ── */}
       <Breadcrumb title={tr('অনুদান দিন', 'Donate')} />
 
-      {/* ── Top Stepper (Clean & High Contrast) ── */}
-      <div className="bg-gradient-to-b from-[#fcfdfa] to-white border-b border-stone-200/70 py-3.5 sm:py-5 shadow-2xs">
-        <div className="mx-auto max-w-[880px] px-3 sm:px-4">
-          <div className="flex items-center justify-between gap-1.5 sm:gap-4">
+      {/* ── Top Stepper (Clean & High Contrast - Fully Visible on Mobile & Desktop) ── */}
+      <div className="bg-gradient-to-b from-[#fcfdfa] to-white border-b border-stone-200/70 py-2.5 sm:py-4 shadow-2xs">
+        <div className="mx-auto max-w-[880px] px-2 sm:px-4">
+          <div className="flex items-center justify-between gap-1 sm:gap-3">
             {/* Step 1 */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <div className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-[#0c756f] text-white font-black text-xs sm:text-sm shadow-md ring-2 sm:ring-4 ring-emerald-500/10">
+            <div className="flex items-center gap-1 sm:gap-2.5 shrink min-w-0">
+              <div className="flex h-6 w-6 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-[#0c756f] text-white font-black text-[10px] sm:text-sm shadow-md ring-2 sm:ring-4 ring-emerald-500/10">
                 1
               </div>
-              <div className="hidden sm:block text-left">
-                <p className="text-[13.5px] font-black text-stone-900 leading-tight">
+              <div className="text-left min-w-0">
+                <p className="text-[10px] sm:text-[13.5px] font-black text-stone-900 leading-tight truncate">
                   {tr('আপনার বিবরণ', 'Your Details')}
                 </p>
-                <p className="text-[11px] font-semibold text-stone-500">
+                <p className="text-[8.5px] sm:text-[11px] font-semibold text-stone-500 truncate">
                   {tr('বিবরণ পূরণ করুন', 'Fill in your details')}
                 </p>
               </div>
             </div>
 
-            <div className="h-[2px] flex-1 bg-emerald-300 rounded-full mx-1 sm:mx-3 min-w-[12px]" />
+            <div className="h-[2px] flex-1 bg-emerald-300 rounded-full mx-1 sm:mx-2.5 min-w-[6px]" />
 
             {/* Step 2 */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <div className={`flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full font-black text-xs sm:text-sm transition-all ${
+            <div className="flex items-center gap-1 sm:gap-2.5 shrink min-w-0">
+              <div className={`flex h-6 w-6 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full font-black text-[10px] sm:text-sm transition-all ${
                 donor.name.trim() && emailOk && phoneOk && amount > 0 ? 'bg-[#0c756f] text-white shadow-md' : 'bg-stone-100 text-stone-600 border border-stone-200'
               }`}>
                 2
               </div>
-              <div className="hidden sm:block text-left">
-                <p className="text-[13.5px] font-black text-stone-900 leading-tight">
+              <div className="text-left min-w-0">
+                <p className="text-[10px] sm:text-[13.5px] font-black text-stone-900 leading-tight truncate">
                   {tr('পেমেন্ট', 'Payment')}
                 </p>
-                <p className="text-[11px] font-semibold text-stone-500">
+                <p className="text-[8.5px] sm:text-[11px] font-semibold text-stone-500 truncate">
                   {tr('পেমেন্টের মাধ্যম বাছুন', 'Choose payment method')}
                 </p>
               </div>
             </div>
 
-            <div className="h-[2px] flex-1 bg-stone-200 rounded-full mx-1 sm:mx-3 min-w-[12px]" />
+            <div className="h-[2px] flex-1 bg-stone-200 rounded-full mx-1 sm:mx-2.5 min-w-[6px]" />
 
             {/* Step 3 */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <div className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-stone-100 text-stone-400 font-black text-xs sm:text-sm border border-stone-200">
+            <div className="flex items-center gap-1 sm:gap-2.5 shrink min-w-0">
+              <div className="flex h-6 w-6 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-400 font-black text-[10px] sm:text-sm border border-stone-200">
                 3
               </div>
-              <div className="hidden sm:block text-left">
-                <p className="text-[13.5px] font-black text-stone-400 leading-tight">
+              <div className="text-left min-w-0">
+                <p className="text-[10px] sm:text-[13.5px] font-black text-stone-400 leading-tight truncate">
                   {tr('নিশ্চিতকরণ', 'Confirmation')}
                 </p>
-                <p className="text-[11px] font-medium text-stone-400">
+                <p className="text-[8.5px] sm:text-[11px] font-medium text-stone-400 truncate">
                   {tr('ধন্যবাদ!', 'Thank you!')}
                 </p>
               </div>
@@ -751,9 +747,10 @@ export default function Donate() {
 
               <div className="space-y-3">
                 {/* ── Option 1: Pay Securely Online ── */}
-                <div
+                <button
+                  type="button"
                   onClick={() => setPayOption('gateway')}
-                  className={`rounded-2xl border-2 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 ${
+                  className={`w-full text-left rounded-2xl border-2 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 ${
                     payOption === 'gateway'
                       ? 'border-[#00a35c] bg-white shadow-md ring-2 ring-emerald-500/10'
                       : 'border-stone-200 bg-white hover:border-stone-300'
@@ -793,47 +790,13 @@ export default function Donate() {
                     <img src="/assets/payment/rupay.svg" alt="RuPay" className="h-3.5 w-auto object-contain shrink-0" />
                     <img src="/assets/payment/paytm.svg" alt="Paytm" className="h-3.5 w-auto object-contain shrink-0" />
                   </div>
-
-                  {/* Sub-selector for Gateway when expanded */}
-                  {payOption === 'gateway' && gatewayMode === 'both' && (
-                    <div className="mt-3 pt-3 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2 text-xs animate-fade-in">
-                      <span className="text-[11px] font-bold text-stone-500">
-                        {tr('গেটওয়ে প্রোভাইডার:', 'Gateway Provider:')}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setGateway('cashfree');
-                          }}
-                          className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
-                            gateway === 'cashfree' ? 'bg-[#00a35c] text-white shadow-2xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                          }`}
-                        >
-                          Cashfree
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setGateway('razorpay');
-                          }}
-                          className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${
-                            gateway === 'razorpay' ? 'bg-[#2563eb] text-white shadow-2xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                          }`}
-                        >
-                          Razorpay
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                </button>
 
                 {/* ── Option 2: Scan & Pay (UPI QR) ── */}
-                <div
+                <button
+                  type="button"
                   onClick={() => setPayOption('qr')}
-                  className={`rounded-2xl border-2 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 ${
+                  className={`w-full text-left rounded-2xl border-2 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 ${
                     payOption === 'qr'
                       ? 'border-[#00a35c] bg-white shadow-md ring-2 ring-emerald-500/10'
                       : 'border-stone-200 bg-white hover:border-stone-300'
@@ -909,12 +872,13 @@ export default function Donate() {
                       </div>
                     </div>
                   )}
-                </div>
+                </button>
 
                 {/* ── Option 3: Bank Transfer ── */}
-                <div
+                <button
+                  type="button"
                   onClick={() => setPayOption('bank')}
-                  className={`rounded-2xl border-2 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 ${
+                  className={`w-full text-left rounded-2xl border-2 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 ${
                     payOption === 'bank'
                       ? 'border-[#00a35c] bg-white shadow-md ring-2 ring-emerald-500/10'
                       : 'border-stone-200 bg-white hover:border-stone-300'
@@ -1000,7 +964,7 @@ export default function Donate() {
                       </div>
                     </div>
                   )}
-                </div>
+                </button>
               </div>
 
               {/* Removed Inline Error Alert - Now replaced by a Modal */}

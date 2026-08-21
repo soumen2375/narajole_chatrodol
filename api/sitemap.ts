@@ -41,7 +41,7 @@ const FALLBACK_EVENT_SLUGS = [
   'world-blood-donor-day-2026',
 ];
 
-export default async function handler(req: IncomingMessage, res: ServerResponse) {
+export default async function handler(_req: IncomingMessage, res: ServerResponse) {
   try {
     const today = new Date().toISOString().split('T')[0];
 

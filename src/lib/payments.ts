@@ -20,9 +20,9 @@ const STORAGE_KEY = 'cswo_gateway_mode';
 export type GatewayMode = 'both' | 'razorpay' | 'cashfree';
 
 export function getGatewayMode(): GatewayMode {
-  if (typeof window === 'undefined') return 'both';
+  if (typeof window === 'undefined') return 'cashfree';
   const stored = localStorage.getItem(STORAGE_KEY) as GatewayMode | null;
-  return stored ?? 'both';
+  return stored ?? 'cashfree';
 }
 
 export function setGatewayMode(mode: GatewayMode): void {

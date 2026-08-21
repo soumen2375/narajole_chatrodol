@@ -388,12 +388,36 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
         }
       },
       modal: {
-        ondismiss: () => reject(new Error('CANCELLED')),
+        ondismiss: () => {
+          // Update Supabase record to cancelled when user closes/dismisses
+          if (donationRecordId) {
+            void (async () => {
+              try {
+                await supabase
+                  .from('cswo_donations')
+                  .update({ status: 'cancelled' })
+                  .eq('id', donationRecordId);
+              } catch { /* ignore */ }
+            })();
+          }
+          reject(new Error('CANCELLED'));
+        },
       },
     });
 
     rzp.on('payment.failed', (failData: unknown) => {
       const errorDetail = (failData as { error?: { description?: string } })?.error?.description || 'Payment Failed';
+      // Update Supabase record to failed
+      if (donationRecordId) {
+        void (async () => {
+          try {
+            await supabase
+              .from('cswo_donations')
+              .update({ status: 'failed' })
+              .eq('id', donationRecordId);
+          } catch { /* ignore */ }
+        })();
+      }
       reject(new Error(errorDetail));
     });
 

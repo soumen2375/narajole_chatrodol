@@ -8,7 +8,13 @@ function apiDevServerPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url ? req.url.split('?')[0] : '';
-        if (url === '/api/create-order' || url === '/api/verify-payment' || url === '/api/cashfree-order' || url === '/api/send-receipt-email') {
+        if (
+          url === '/api/create-order' ||
+          url === '/api/verify-payment' ||
+          url === '/api/cashfree-order' ||
+          url === '/api/cashfree-verify' ||
+          url === '/api/send-receipt-email'
+        ) {
           // Always reload latest .env variables in dev
           const env = loadEnv('development', process.cwd(), '');
           if (env.RAZORPAY_KEY_ID) process.env.RAZORPAY_KEY_ID = env.RAZORPAY_KEY_ID;
@@ -17,6 +23,9 @@ function apiDevServerPlugin(): Plugin {
           if (env.CASHFREE_APP_ID) process.env.CASHFREE_APP_ID = env.CASHFREE_APP_ID;
           if (env.CASHFREE_SECRET_KEY) process.env.CASHFREE_SECRET_KEY = env.CASHFREE_SECRET_KEY;
           if (env.CASHFREE_API_ENV) process.env.CASHFREE_API_ENV = env.CASHFREE_API_ENV;
+          if (env.RESEND_API_KEY) process.env.RESEND_API_KEY = env.RESEND_API_KEY;
+          if (env.RESEND_FROM_EMAIL) process.env.RESEND_FROM_EMAIL = env.RESEND_FROM_EMAIL;
+          if (env.RESEND_REPLY_TO) process.env.RESEND_REPLY_TO = env.RESEND_REPLY_TO;
 
           if (url === '/api/create-order') {
             try {
@@ -57,6 +66,19 @@ function apiDevServerPlugin(): Plugin {
             return;
           }
 
+          if (url === '/api/cashfree-verify') {
+            try {
+              const { default: handler } = await import('./api/cashfree-verify');
+              await handler(req, res);
+            } catch (e: unknown) {
+              console.error('Error in /api/cashfree-verify dev middleware:', e);
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: e instanceof Error ? e.message : 'Internal Server Error' }));
+            }
+            return;
+          }
+
           if (url === '/api/send-receipt-email') {
             try {
               const { default: handler } = await import('./api/send-receipt-email');
@@ -85,6 +107,9 @@ export default defineConfig(({ mode }) => {
   if (env.CASHFREE_APP_ID) process.env.CASHFREE_APP_ID = env.CASHFREE_APP_ID;
   if (env.CASHFREE_SECRET_KEY) process.env.CASHFREE_SECRET_KEY = env.CASHFREE_SECRET_KEY;
   if (env.CASHFREE_API_ENV) process.env.CASHFREE_API_ENV = env.CASHFREE_API_ENV;
+  if (env.RESEND_API_KEY) process.env.RESEND_API_KEY = env.RESEND_API_KEY;
+  if (env.RESEND_FROM_EMAIL) process.env.RESEND_FROM_EMAIL = env.RESEND_FROM_EMAIL;
+  if (env.RESEND_REPLY_TO) process.env.RESEND_REPLY_TO = env.RESEND_REPLY_TO;
 
 
   return {

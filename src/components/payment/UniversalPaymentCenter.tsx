@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { PaymentGateway } from '@/types';
-import { getGatewayMode, type GatewayMode } from '@/lib/payments';
 import {
   CreditCard,
   QrCode,
@@ -55,18 +54,6 @@ export default function UniversalPaymentCenter({
   className = '',
 }: UniversalPaymentCenterProps) {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [gatewayMode, setGatewayModeState] = useState<GatewayMode>(() => getGatewayMode());
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ mode: GatewayMode }>).detail;
-      setGatewayModeState(detail.mode);
-      if (detail.mode === 'razorpay' && gateway !== 'razorpay') onGatewayChange('razorpay');
-      if (detail.mode === 'cashfree' && gateway !== 'cashfree') onGatewayChange('cashfree');
-    };
-    window.addEventListener('cswo:gateway-mode-change', handler);
-    return () => window.removeEventListener('cswo:gateway-mode-change', handler);
-  }, [gateway, onGatewayChange]);
 
   const tr = (bn: string, en: string) => (lang === 'bn' ? bn : en);
 
@@ -215,12 +202,14 @@ export default function UniversalPaymentCenter({
           </div>
 
           {/* Cards Grid: Cashfree & Razorpay (Responsive Multi-Column) */}
-          <div className={`grid grid-cols-1 gap-4 ${gatewayMode === 'both' ? 'md:grid-cols-2' : ''}`}>
+            <div className="grid grid-cols-1 gap-4">
             {/* ── Cashfree Card ── */}
-            {(gatewayMode === 'both' || gatewayMode === 'cashfree') && (
-            <div
+            <button
+              type="button"
+              role="radio"
+              aria-checked={gateway === 'cashfree'}
               onClick={() => onGatewayChange('cashfree')}
-              className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border-2 p-4 cursor-pointer transition-all duration-200 ${
+              className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border-2 p-4 w-full text-left cursor-pointer transition-all duration-200 ${
                 gateway === 'cashfree'
                   ? 'border-[#00a35c] bg-white shadow-md ring-2 ring-emerald-500/20'
                   : 'border-stone-200 bg-white hover:border-stone-300 hover:shadow-sm'
@@ -308,101 +297,7 @@ export default function UniversalPaymentCenter({
                 <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
                 <span className="truncate">PCI-DSS Compliant · 256-bit Encrypted · 100% Secure</span>
               </div>
-            </div>
-            )}
-
-            {/* ── Razorpay Card ── */}
-            {(gatewayMode === 'both' || gatewayMode === 'razorpay') && (
-            <div
-              onClick={() => onGatewayChange('razorpay')}
-              className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border-2 p-4 cursor-pointer transition-all duration-200 ${
-                gateway === 'razorpay'
-                  ? 'border-[#2563eb] bg-white shadow-md ring-2 ring-blue-500/20'
-                  : 'border-stone-200 bg-white hover:border-stone-300 hover:shadow-sm'
-              }`}
-            >
-              {/* Corner Ribbon on Active */}
-              {gateway === 'razorpay' && (
-                <div className="absolute top-0 right-0 h-9 w-9 overflow-hidden z-10">
-                  <div className="absolute transform rotate-45 bg-[#2563eb] text-white font-bold text-[8px] py-0.5 right-[-32px] top-[10px] w-[100px] text-center shadow-xs flex items-center justify-center">
-                    <Check className="h-2.5 w-2.5 stroke-[3]" />
-                  </div>
-                </div>
-              )}
-
-              <div>
-                {/* Header row: Radio + Logo + Trusted Badge */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    {/* Radio */}
-                    <span
-                      className={`flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
-                        gateway === 'razorpay'
-                          ? 'border-[#2563eb] bg-white'
-                          : 'border-stone-300 bg-white'
-                      }`}
-                    >
-                      {gateway === 'razorpay' && (
-                        <span className="h-2 w-2 rounded-full bg-[#2563eb]" />
-                      )}
-                    </span>
-
-                    {/* Official Razorpay Logo */}
-                    <div className="flex items-center h-7 max-w-[130px] shrink-0">
-                      <img
-                        src="/assets/payment/razorpay.svg"
-                        alt="Razorpay"
-                        className="h-5.5 w-auto max-w-full object-contain"
-                      />
-                    </div>
-                  </div>
-
-                  <span className="shrink-0 whitespace-nowrap rounded-full bg-[#2563eb] px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wide text-white shadow-2xs">
-                    🛡️ {tr('বিশ্বস্ত', 'TRUSTED')}
-                  </span>
-                </div>
-
-                {/* Heading & Subtitle */}
-                <div className="mt-3">
-                  <h4 className="text-[13.5px] font-black text-stone-900 leading-snug">
-                    {tr('সমস্ত কার্ড, UPI, নেট ব্যাংকিং ও ওয়ালেট', 'All Indian Cards, UPI, NetBanking & Wallets')}
-                  </h4>
-                  <p className="text-[11px] text-stone-500 font-semibold mt-0.5 leading-relaxed">
-                    {tr(
-                      'নিরাপদ ও নির্ভরযোগ্য পেমেন্টের জন্য লাখ লাখ প্রতিষ্ঠানের বিশ্বস্ত।',
-                      'Trusted by millions of businesses for secure and reliable payments.',
-                    )}
-                  </p>
-                </div>
-
-                {/* 4 Method Pill Badges */}
-                <div className="mt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                  {[
-                    { name: 'UPI', icon: '/assets/payment/upi.svg' },
-                    { name: 'Cards', icon: '/assets/payment/visa.svg' },
-                    { name: 'NetBanking', icon: '/assets/payment/rupay.svg' },
-                    { name: 'Wallets', icon: '/assets/payment/paytm.svg' },
-                  ].map((m) => (
-                    <div
-                      key={m.name}
-                      className="flex flex-col items-center justify-center rounded-lg border border-stone-100 bg-[#f8fafc] py-1.5 px-1 text-center min-h-[42px]"
-                    >
-                      <img src={m.icon} alt={m.name} className="h-3.5 w-auto object-contain mb-0.5" />
-                      <span className="text-[8.5px] font-bold text-stone-600 leading-none truncate max-w-full">
-                        {m.name}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Bottom Trust Tagline */}
-              <div className="mt-4 flex items-center justify-center gap-1.5 rounded-lg bg-blue-50/80 px-2 py-1.5 text-[10px] font-bold text-blue-800 border border-blue-100/70">
-                <CheckCircle2 className="h-3 w-3 text-blue-600 shrink-0" />
-                <span className="truncate">Bank-level Security · 256-bit SSL · Secure Checkout</span>
-              </div>
-            </div>
-            )}
+            </button>
           </div>
 
           {/* ── Security Priority Banner (Exact Mockup) ── */}
