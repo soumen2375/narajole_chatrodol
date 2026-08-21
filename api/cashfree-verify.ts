@@ -1,15 +1,7 @@
-/**
- * api/cashfree-verify.ts
- *
- * Server-side endpoint to verify a Cashfree order status directly against Cashfree REST APIs.
- * Ensures payment is officially marked 'PAID' before returning success.
- */
-
 import type { IncomingMessage, ServerResponse } from 'http';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
 import path from 'node:path';
-import { buildReceiptHtml } from './send-receipt-email';
 
 function sendJson(res: ServerResponse, statusCode: number, data: unknown) {
   res.setHeader('Content-Type', 'application/json');
@@ -101,40 +93,17 @@ async function sendEmailReceipt(data: {
   paymentId?: string;
   date: string;
 }) {
-  const apiKey = getEnvValue('RESEND_API_KEY');
-  if (!apiKey || !data.recipientEmail) return;
-
-  const fromEmail = getEnvValue(
-    'RESEND_FROM_EMAIL',
-    'Chhatradol Social Welfare Organization <donations@chhatradol.org>'
-  );
-  const replyTo = getEnvValue('RESEND_REPLY_TO', 'info@chhatradol.org');
-
-  const subject =
-    data.type === 'contribution'
-      ? 'Chhatradol Social Welfare Organization - Monthly Donation Successful'
-      : 'Chhatradol Social Welfare Organization - Donation Successful';
-
-  const html = buildReceiptHtml(data);
+  if (!data.recipientEmail) return;
+  const siteUrl = getEnvValue('SITE_URL', 'https://www.chhatradol.org');
 
   try {
-    await fetch('https://api.resend.com/emails', {
+    await fetch(`${siteUrl}/api/send-receipt-email`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [data.recipientEmail],
-        reply_to: replyTo,
-        subject,
-        html,
-        tags: [{ name: 'category', value: 'verify-receipt' }],
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
     });
   } catch (err) {
-    console.warn('[Verify] Failed to send receipt email:', err);
+    console.warn('[Verify] Failed to send receipt email via API:', err);
   }
 }
 
