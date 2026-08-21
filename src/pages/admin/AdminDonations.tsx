@@ -17,7 +17,8 @@ import {
   Receipt,
   FileCheck,
   X,
-  Repeat
+  Repeat,
+  RefreshCw,
 } from 'lucide-react';
 
 const RULE = '#e5dec9';
@@ -252,6 +253,31 @@ export default function AdminDonations() {
       },
       lang,
     );
+  };
+
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+
+  const syncCashfreeStatus = async (d: DonationRow) => {
+    setSyncingId(d.id);
+    try {
+      const orderId = d.cashfree_payment_id || `don_cf_${d.id}`;
+      const res = await fetch('/api/cashfree-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(tr('Payment verified and marked as Paid!', 'পেমেন্ট সফলভাবে যাচাই হয়েছে!'));
+        loadDonations();
+      } else {
+        alert(tr(`Status in Cashfree: ${data.order_status || 'NOT PAID'}`, `ক্যাশফ্রি স্ট্যাটাস: ${data.order_status || 'NOT PAID'}`));
+      }
+    } catch {
+      alert(tr('Sync failed. Please check network.', 'যাচাই ব্যর্থ হয়েছে।'));
+    } finally {
+      setSyncingId(null);
+    }
   };
 
   const exportCSV = () => {
@@ -506,6 +532,17 @@ export default function AdminDonations() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2.5">
+                        {d.status !== 'paid' && (
+                          <button
+                            onClick={() => syncCashfreeStatus(d)}
+                            disabled={syncingId === d.id}
+                            title={tr('Verify & Sync with Cashfree', 'ক্যাশফ্রি থেকে যাচাই করুন')}
+                            className="inline-flex items-center gap-1 font-bold text-sky-600 hover:text-sky-800 disabled:opacity-50"
+                          >
+                            <RefreshCw className={`h-3.5 w-3.5 ${syncingId === d.id ? 'animate-spin' : ''}`} />
+                            <span className="text-[11px]">{tr('Sync', 'সিঙ্ক')}</span>
+                          </button>
+                        )}
                         {d.status === 'paid' && (
                           <button
                             onClick={() => handleReceipt(d)}

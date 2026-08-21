@@ -152,11 +152,25 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       if (sb) {
         // 1. Check cswo_donations
         try {
-          const { data: donRec } = await sb
+          let { data: donRec } = await sb
             .from('cswo_donations')
             .select('*')
             .eq('cashfree_order_id', orderId)
             .maybeSingle();
+
+          // Fallback: match by UUID extracted from don_cf_<uuid>_...
+          if (!donRec && orderId.includes('don_cf_')) {
+            const raw = orderId.replace(/^.*don_cf_/, '');
+            const candidateId = raw.split('_')[0];
+            if (candidateId && candidateId.length >= 8) {
+              const { data: fallbackRec } = await sb
+                .from('cswo_donations')
+                .select('*')
+                .eq('id', candidateId)
+                .maybeSingle();
+              if (fallbackRec) donRec = fallbackRec;
+            }
+          }
 
           if (donRec) {
             const receiptNum = donRec.receipt_number || `CSWO-DON-${Date.now().toString().slice(-8).toUpperCase()}`;
@@ -166,6 +180,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
                 status: 'paid',
                 receipt_number: receiptNum,
                 cashfree_payment_id: cfPaymentId || null,
+                cashfree_order_id: orderId,
               })
               .eq('id', donRec.id);
 

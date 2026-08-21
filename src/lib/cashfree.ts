@@ -345,17 +345,15 @@ export async function startCashfreePayment(
 
   const cashfree = window.Cashfree({ mode });
 
-  // ── Parallel Background Poller while user is completing payment ─────────────
-  let checkoutFinished = false;
-  const pollState: { result: CashfreeVerifyResponse | null } = { result: null };
+  // ── Parallel Race: Active Server Poller vs Modal Checkout ─────────────────
+  let isDone = false;
 
-  const runBackgroundVerification = async () => {
-    // Poll every 2 seconds for up to 50 seconds
-    for (let i = 0; i < 25; i++) {
-      if (checkoutFinished) break;
-      await new Promise((r) => setTimeout(r, 2000));
-      if (checkoutFinished) break;
-
+  const pollerPromise = new Promise<CashfreeVerifyResponse>((resolve) => {
+    const pollInterval = setInterval(async () => {
+      if (isDone) {
+        clearInterval(pollInterval);
+        return;
+      }
       try {
         const check = await fetch('/api/cashfree-verify', {
           method: 'POST',
@@ -365,74 +363,65 @@ export async function startCashfreePayment(
         if (check.ok) {
           const res = (await check.json()) as CashfreeVerifyResponse;
           if (res.success || res.order_status === 'PAID') {
-            pollState.result = { ...res, success: true };
-            break;
+            isDone = true;
+            clearInterval(pollInterval);
+            resolve({ ...res, success: true });
           }
         }
       } catch {
         // ignore background poll errors
       }
-    }
-  };
+    }, 1500);
 
-  // Start background poller
-  const pollerPromise = runBackgroundVerification();
+    setTimeout(() => {
+      clearInterval(pollInterval);
+    }, 60000);
+  });
 
-  let checkoutResult: CashfreeCheckoutResult = {};
-  try {
-    checkoutResult = await cashfree.checkout({
-      paymentSessionId: orderData.payment_session_id,
-      redirectTarget: '_modal',
-    });
-  } catch {
-    // Check if background poller already caught a successful payment
-    if (!pollState.result?.success) {
-      if (donationRecordId) {
-        try {
-          await supabase
-            .from('cswo_donations')
-            .update({ status: 'failed' })
-            .eq('id', donationRecordId);
-        } catch { /* ignore */ }
+  const checkoutPromise = (async (): Promise<CashfreeVerifyResponse> => {
+    try {
+      const checkoutResult = await cashfree.checkout({
+        paymentSessionId: orderData.payment_session_id,
+        redirectTarget: '_modal',
+      });
+
+      isDone = true;
+
+      if (checkoutResult?.error) {
+        const errorCode = checkoutResult.error.code?.toUpperCase() || '';
+        const errorMsg = checkoutResult.error.message || '';
+        const isCancelled =
+          errorCode.includes('CANCEL') ||
+          errorCode.includes('DROP') ||
+          errorCode.includes('DISMISS') ||
+          errorMsg.toLowerCase().includes('cancel') ||
+          errorMsg.toLowerCase().includes('dismiss') ||
+          errorMsg.toLowerCase().includes('closed');
+
+        return {
+          success: false,
+          order_status: isCancelled ? 'CANCELLED' : 'FAILED',
+          message: isCancelled ? 'CANCELLED' : (errorMsg || 'Payment failed'),
+        };
       }
-      throw new Error('Payment checkout encountered an error. Please try again.');
+
+      return await verifyCashfreePayment(orderData.order_id);
+    } catch (checkoutErr: unknown) {
+      isDone = true;
+      const msg = checkoutErr instanceof Error ? checkoutErr.message : 'Checkout failed';
+      return { success: false, order_status: 'FAILED', message: msg };
     }
-  } finally {
-    checkoutFinished = true;
-    await pollerPromise.catch(() => {});
+  })();
+
+  // Race them: whichever confirms first resolves the user immediately!
+  const winner = await Promise.race([pollerPromise, checkoutPromise]);
+  isDone = true;
+
+  let verification = winner;
+  if (!verification.success && verification.order_status !== 'CANCELLED') {
+    // If modal closed or cancelled prematurely, check one last time
+    verification = await verifyCashfreePayment(orderData.order_id);
   }
-
-  // ── Handle explicit error / cancellation from checkout ──────────────────────
-  if (checkoutResult?.error && !pollState.result?.success) {
-    const errorCode = checkoutResult.error.code?.toUpperCase() || '';
-    const errorMsg = checkoutResult.error.message || '';
-
-    const isCancelled =
-      errorCode.includes('CANCEL') ||
-      errorCode.includes('DROP') ||
-      errorCode.includes('DISMISS') ||
-      errorMsg.toLowerCase().includes('cancel') ||
-      errorMsg.toLowerCase().includes('dismiss') ||
-      errorMsg.toLowerCase().includes('closed');
-
-    const newStatus = isCancelled ? 'cancelled' : 'failed';
-
-    if (donationRecordId) {
-      try {
-        await supabase
-          .from('cswo_donations')
-          .update({ status: newStatus })
-          .eq('id', donationRecordId);
-      } catch { /* ignore */ }
-    }
-
-    throw new Error(isCancelled ? 'CANCELLED' : (errorMsg || 'Payment was cancelled or failed.'));
-  }
-
-  // ── Final Server Verification (Uses pollState.result if already confirmed) ───
-  const verification = pollState.result?.success
-    ? pollState.result
-    : await verifyCashfreePayment(orderData.order_id);
 
   if (donationRecordId) {
     try {

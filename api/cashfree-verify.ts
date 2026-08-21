@@ -221,11 +221,26 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       const sb = getSupabaseClient();
       if (sb) {
         try {
-          const { data: donRec } = await sb
+          // 1. Try match by cashfree_order_id
+          let { data: donRec } = await sb
             .from('cswo_donations')
             .select('*')
             .eq('cashfree_order_id', orderId)
             .maybeSingle();
+
+          // 2. Fallback: Extract UUID from don_cf_<uuid>_... pattern if not matched by order_id
+          if (!donRec && orderId.includes('don_cf_')) {
+            const raw = orderId.replace(/^.*don_cf_/, '');
+            const candidateId = raw.split('_')[0];
+            if (candidateId && candidateId.length >= 8) {
+              const { data: fallbackRec } = await sb
+                .from('cswo_donations')
+                .select('*')
+                .eq('id', candidateId)
+                .maybeSingle();
+              if (fallbackRec) donRec = fallbackRec;
+            }
+          }
 
           if (donRec) {
             const receiptNum = donRec.receipt_number || `CSWO-DON-${Date.now().toString().slice(-8).toUpperCase()}`;
@@ -235,6 +250,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
                 status: 'paid',
                 receipt_number: receiptNum,
                 cashfree_payment_id: paymentId || null,
+                cashfree_order_id: orderId,
               })
               .eq('id', donRec.id);
 
