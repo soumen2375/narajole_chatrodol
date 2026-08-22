@@ -15,8 +15,8 @@ import path from 'node:path';
 // ── Optional Supabase client (for in-app notification logging) ────────────────
 function getSupabaseClient() {
   try {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://wzquszbmbpkbhyythdrj.supabase.co';
-    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_7sZQXGDGxGl9M7yEl0UXpg_o0JLwp-L';
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://wzquszbmbpkbhyythdrj.supabase.co';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseKey) return null;
     return createClient(supabaseUrl, supabaseKey);
   } catch {
@@ -773,16 +773,25 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       : 'Chhatradol Social Welfare Organization - Donation Successful';
     const subject = `${typeLabel}`;
 
-    // ── Save in-app notification to Supabase (non-blocking) ──────────────────
+    // ── Save in-app notification to Supabase (non-blocking, deduped) ──────────
     try {
       const client = getSupabaseClient();
       if (client) {
-        await client.from('cswo_notifications').insert({
-          title: `Payment Receipt: ${body.receiptNumber}`,
-          body: `Your payment of ₹${body.amount} for ${body.purpose || body.month || 'CSWO'} was confirmed. Receipt: ${body.receiptNumber}`,
-          kind: 'payment',
-          link: '/member/contributions',
-        });
+        const notifTitle = `Payment Receipt: ${body.receiptNumber}`;
+        const { data: existingNotif } = await client
+          .from('cswo_notifications')
+          .select('id')
+          .eq('title', notifTitle)
+          .maybeSingle();
+
+        if (!existingNotif) {
+          await client.from('cswo_notifications').insert({
+            title: notifTitle,
+            body: `Your payment of ₹${body.amount} for ${body.purpose || body.month || 'CSWO'} was confirmed. Receipt: ${body.receiptNumber}`,
+            kind: 'payment',
+            link: '/member/contributions',
+          });
+        }
       }
     } catch {
       // Non-critical — continue even if notification save fails

@@ -160,6 +160,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         'x-client-secret': secretKey,
       },
       body: JSON.stringify(orderPayload),
+      signal: AbortSignal.timeout(10000),
     });
 
     const data = await response.json() as {

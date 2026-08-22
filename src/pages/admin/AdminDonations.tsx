@@ -19,6 +19,7 @@ import {
   X,
   Repeat,
   RefreshCw,
+  Mail,
 } from 'lucide-react';
 
 const RULE = '#e5dec9';
@@ -256,27 +257,71 @@ export default function AdminDonations() {
   };
 
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const syncCashfreeStatus = async (d: DonationRow) => {
     setSyncingId(d.id);
     try {
-      const orderId = d.cashfree_payment_id || `don_cf_${d.id}`;
+      // Use cashfree_order_id — NOT cashfree_payment_id (they are different!)
+      const orderId = d.cashfree_order_id || '';
+      if (!orderId) {
+        alert(tr(
+          'Cashfree order ID not found on this record. Cannot sync.',
+          'এই রেকর্ডে Cashfree অর্ডার আইডি নেই। সিঙ্ক করা সম্ভব নয়।',
+        ));
+        return;
+      }
       const res = await fetch('/api/cashfree-verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order_id: orderId }),
       });
       const data = await res.json();
-      if (data.success) {
-        alert(tr('Payment verified and marked as Paid!', 'পেমেন্ট সফলভাবে যাচাই হয়েছে!'));
+      if (data.status === 'paid' || data.success) {
+        alert(tr('Payment verified and marked as Paid!', 'পেমেন্ট সফলভাবে যাচাই হয়েছে!'));
         loadDonations();
       } else {
-        alert(tr(`Status in Cashfree: ${data.order_status || 'NOT PAID'}`, `ক্যাশফ্রি স্ট্যাটাস: ${data.order_status || 'NOT PAID'}`));
+        alert(tr(
+          `Status in Cashfree: ${data.status || data.order_status || 'NOT PAID'}`,
+          `ক্যাশফ্রি স্ট্যাটাস: ${data.status || data.order_status || 'NOT PAID'}`,
+        ));
       }
     } catch {
-      alert(tr('Sync failed. Please check network.', 'যাচাই ব্যর্থ হয়েছে।'));
+      alert(tr('Sync failed. Please check network.', 'যাচাই ব্যর্থ হয়েছে।'));
     } finally {
       setSyncingId(null);
+    }
+  };
+
+  const resendReceipt = async (d: DonationRow) => {
+    if (!d.donor_email) {
+      alert(tr('No email address on this record.', 'এই রেকর্ডে কোনো ইমেল নেই।'));
+      return;
+    }
+    setResendingId(d.id);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+
+      const res = await fetch('/api/resend-payment-receipt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ id: d.id, type: 'donation' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(tr('Receipt sent successfully!', 'রসিদ সফলভাবে পাঠানো হয়েছে!'));
+        loadDonations();
+      } else {
+        alert(data.error || tr('Unable to resend receipt.', 'রসিদ পাঠাতে সমস্যা হয়েছে।'));
+      }
+    } catch {
+      alert(tr('Network error. Please try again.', 'নেটওয়ার্ক ত্রুটি। পুনরায় চেষ্টা করুন।'));
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -551,6 +596,17 @@ export default function AdminDonations() {
                           >
                             <Receipt className="h-3.5 w-3.5" />
                             {tr('Receipt', 'রসিদ')}
+                          </button>
+                        )}
+                        {d.status === 'paid' && d.donor_email && (
+                          <button
+                            onClick={() => resendReceipt(d)}
+                            disabled={resendingId === d.id}
+                            title={tr('Resend Receipt Email', 'রসিদ ইমেল পুনরায় পাঠান')}
+                            className="inline-flex items-center gap-1 font-bold text-violet-600 hover:text-violet-800 disabled:opacity-50"
+                          >
+                            <Mail className={`h-3.5 w-3.5 ${resendingId === d.id ? 'animate-pulse' : ''}`} />
+                            <span className="text-[11px]">{tr('Email', 'ইমেল')}</span>
                           </button>
                         )}
                         {d.status === 'paid' && (

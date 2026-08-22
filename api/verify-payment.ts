@@ -1,7 +1,21 @@
+/**
+ * api/verify-payment.ts
+ *
+ * Verifies a Razorpay payment signature and finalizes the payment record.
+ * Delegates ALL Supabase record updates to the central finalizePayment() function.
+ *
+ * POST /api/verify-payment
+ * Body: { order_id, payment_id, razorpay_signature }
+ *
+ * Response: { success, status, type, receipt_number, order_id, payment_id }
+ */
+
 import type { IncomingMessage, ServerResponse } from 'http';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { finalizePayment } from './lib/finalize-payment';
+import { sendPaymentReceipt } from './lib/payment-receipt';
 
 function sendJson(res: ServerResponse, statusCode: number, data: unknown) {
   res.setHeader('Content-Type', 'application/json');
@@ -12,10 +26,14 @@ function sendJson(res: ServerResponse, statusCode: number, data: unknown) {
   res.end(JSON.stringify(data));
 }
 
-async function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
+async function parseBody(
+  req: IncomingMessage,
+): Promise<Record<string, unknown>> {
   if ((req as unknown as { body?: unknown }).body) {
     const b = (req as unknown as { body: unknown }).body;
-    return typeof b === 'string' ? JSON.parse(b) : (b as Record<string, unknown>);
+    return typeof b === 'string'
+      ? JSON.parse(b)
+      : (b as Record<string, unknown>);
   }
   return new Promise((resolve, reject) => {
     let data = '';
@@ -34,7 +52,10 @@ async function parseBody(req: IncomingMessage): Promise<Record<string, unknown>>
 }
 
 function getCredentials(): { keyId: string; keySecret: string } {
-  let keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || '';
+  let keyId =
+    process.env.RAZORPAY_KEY_ID ||
+    process.env.VITE_RAZORPAY_KEY_ID ||
+    '';
   let keySecret = process.env.RAZORPAY_KEY_SECRET || '';
 
   try {
@@ -67,7 +88,10 @@ function timingSafeEqualStr(a: string, b: string): boolean {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-export default async function handler(req: IncomingMessage, res: ServerResponse) {
+export default async function handler(
+  req: IncomingMessage,
+  res: ServerResponse,
+) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -78,31 +102,40 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
 
   if (req.method !== 'POST') {
-    return sendJson(res, 405, { success: false, error: 'Method Not Allowed. Use POST.' });
+    return sendJson(res, 405, {
+      success: false,
+      error: 'Method Not Allowed. Use POST.',
+    });
   }
 
   const { keySecret } = getCredentials();
   if (!keySecret) {
     return sendJson(res, 500, {
       success: false,
-      error: 'Razorpay secret key not configured. Please set RAZORPAY_KEY_SECRET in environment variables.',
+      error:
+        'Razorpay secret key not configured. Please set RAZORPAY_KEY_SECRET in environment variables.',
     });
   }
 
   try {
     const body = await parseBody(req);
-    const orderId = ((body.order_id || body.razorpay_order_id) as string)?.trim();
-    const paymentId = ((body.payment_id || body.razorpay_payment_id) as string)?.trim();
-    const signature = (body.razorpay_signature as string)?.trim();
+    const orderId = (
+      (body.order_id as string) || (body.razorpay_order_id as string) || ''
+    ).trim();
+    const paymentId = (
+      (body.payment_id as string) || (body.razorpay_payment_id as string) || ''
+    ).trim();
+    const signature = ((body.razorpay_signature as string) || '').trim();
 
     if (!orderId || !paymentId || !signature) {
       return sendJson(res, 400, {
         success: false,
-        error: 'Missing required parameters (order_id, payment_id, razorpay_signature).',
+        error:
+          'Missing required parameters (order_id, payment_id, razorpay_signature).',
       });
     }
 
-    // Generate expected signature HMAC-SHA256(order_id + "|" + payment_id, KEY_SECRET)
+    // ── Cryptographic signature verification ───────────────────────────────
     const expectedSignature = crypto
       .createHmac('sha256', keySecret)
       .update(`${orderId}|${paymentId}`)
@@ -117,14 +150,40 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       });
     }
 
+    // ── Signature is valid → finalize the payment in Supabase ─────────────
+    const result = await finalizePayment({
+      gateway: 'razorpay',
+      orderId,
+      paymentId,
+      gatewayStatus: 'SUCCESS',
+      paymentMethod: 'Razorpay',
+    });
+
+    // ── Await receipt email dispatch so serverless runtime doesn't terminate prematurely ──
+    if (result.success && result.status === 'paid' && result.shouldSendReceipt) {
+      try {
+        await sendPaymentReceipt({
+          type: result.type!,
+          record: result.record!,
+          paymentMethod: 'Razorpay',
+        });
+      } catch (receiptErr) {
+        console.error('[verify-payment] Receipt email error:', receiptErr);
+      }
+    }
+
     return sendJson(res, 200, {
       success: true,
-      message: 'Payment verified successfully.',
+      status: result.status || 'paid',
+      type: result.type,
+      receipt_number:
+        (result.record as Record<string, unknown> | undefined)
+          ?.receipt_number ?? null,
       order_id: orderId,
       payment_id: paymentId,
     });
   } catch (err: unknown) {
-    console.error('Error verifying Razorpay signature:', err);
+    console.error('[verify-payment] Error:', err);
     const message = err instanceof Error ? err.message : 'Internal verification error';
     return sendJson(res, 500, { success: false, error: message });
   }

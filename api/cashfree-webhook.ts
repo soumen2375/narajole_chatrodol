@@ -1,38 +1,32 @@
 /**
  * api/cashfree-webhook.ts
  *
- * Webhook handler for Cashfree PG events (e.g. PAYMENT_SUCCESS_WEBHOOK, PAYMENT_FAILED_WEBHOOK).
- * Automatically updates Supabase records and dispatches Resend email receipts.
+ * Secure Webhook handler for Cashfree PG events.
+ *
+ * Security & Reliability:
+ *   1. Verifies Cashfree HMAC-SHA256 signature using x-webhook-signature and x-webhook-timestamp.
+ *   2. Delegates ALL payment state logic to central finalizePayment().
+ *   3. Awaits receipt email dispatch so serverless runtime doesn't terminate prematurely.
+ *   4. Handles all statuses (PAID, FAILED, CANCELLED, USER_DROPPED, EXPIRED, PENDING).
  */
 
 import type { IncomingMessage, ServerResponse } from 'http';
-import { createClient } from '@supabase/supabase-js';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { finalizePayment } from './lib/finalize-payment';
+import { sendPaymentReceipt } from './lib/payment-receipt';
 
 function sendJson(res: ServerResponse, statusCode: number, data: unknown) {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-webhook-signature, x-webhook-timestamp');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, x-webhook-signature, x-webhook-timestamp',
+  );
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   res.statusCode = statusCode;
   res.end(JSON.stringify(data));
-}
-
-async function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
-  if ((req as unknown as { body?: unknown }).body) {
-    const b = (req as unknown as { body: unknown }).body;
-    return typeof b === 'string' ? JSON.parse(b) : (b as Record<string, unknown>);
-  }
-  return new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', (chunk) => { data += chunk; });
-    req.on('end', () => {
-      try { resolve(data ? JSON.parse(data) : {}); }
-      catch (err) { reject(err); }
-    });
-    req.on('error', reject);
-  });
 }
 
 function getEnvValue(key: string, fallback = ''): string {
@@ -56,58 +50,82 @@ function getEnvValue(key: string, fallback = ''): string {
   return fallback;
 }
 
-function getSupabaseClient() {
-  try {
-    const supabaseUrl = getEnvValue('VITE_SUPABASE_URL', 'https://wzquszbmbpkbhyythdrj.supabase.co');
-    const supabaseKey = getEnvValue('VITE_SUPABASE_ANON_KEY', 'sb_publishable_7sZQXGDGxGl9M7yEl0UXpg_o0JLwp-L');
-    if (!supabaseUrl || !supabaseKey) return null;
-    return createClient(supabaseUrl, supabaseKey);
-  } catch {
-    return null;
-  }
-}
-
-async function sendEmailReceipt(data: {
-  recipientEmail: string;
-  recipientName: string;
-  type: 'donation' | 'contribution';
-  amount: number;
-  receiptNumber: string;
-  purpose?: string;
-  paymentMethod?: string;
-  paymentId?: string;
-  date: string;
-}) {
-  if (!data.recipientEmail) return;
-  const siteUrl = getEnvValue('SITE_URL', 'https://www.chhatradol.org');
-
-  try {
-    await fetch(`${siteUrl}/api/send-receipt-email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+function readRawBody(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let raw = '';
+    req.on('data', (chunk) => {
+      raw += chunk.toString();
     });
+    req.on('end', () => {
+      resolve(raw);
+    });
+    req.on('error', reject);
+  });
+}
+
+function verifyCashfreeSignature(
+  rawBody: string,
+  signatureHeader?: string,
+  timestampHeader?: string,
+  secretKey?: string,
+): boolean {
+  if (!signatureHeader || !timestampHeader || !secretKey) {
+    return false;
+  }
+
+  try {
+    const dataToSign = timestampHeader + rawBody;
+
+    // Cashfree PG v2/v3 Webhooks use HMAC-SHA256 encoded as base64 or hex
+    const hmac = crypto.createHmac('sha256', secretKey);
+    hmac.update(dataToSign);
+    const expectedBase64 = hmac.digest('base64');
+
+    const hmacHex = crypto.createHmac('sha256', secretKey);
+    hmacHex.update(dataToSign);
+    const expectedHex = hmacHex.digest('hex');
+
+    const sigBuf = Buffer.from(signatureHeader);
+    const base64Buf = Buffer.from(expectedBase64);
+    const hexBuf = Buffer.from(expectedHex);
+
+    const matchesBase64 =
+      sigBuf.length === base64Buf.length &&
+      crypto.timingSafeEqual(sigBuf, base64Buf);
+
+    const matchesHex =
+      sigBuf.length === hexBuf.length &&
+      crypto.timingSafeEqual(sigBuf, hexBuf);
+
+    return matchesBase64 || matchesHex;
   } catch (err) {
-    console.warn('[Webhook] Failed to send receipt email via API:', err);
+    console.error('[Cashfree Webhook Signature Check Error]:', err);
+    return false;
   }
 }
 
-export default async function handler(req: IncomingMessage, res: ServerResponse) {
+export default async function handler(
+  req: IncomingMessage,
+  res: ServerResponse,
+) {
+  // CORS preflight
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-webhook-signature, x-webhook-timestamp');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, x-webhook-signature, x-webhook-timestamp',
+    );
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.statusCode = 200;
     res.end();
     return;
   }
 
-  // Friendly health check response when opened in browser (GET request)
+  // Health check
   if (req.method === 'GET') {
     return sendJson(res, 200, {
       status: 'ONLINE',
       service: 'Cashfree Webhook Handler',
-      organization: 'Chhatradol Social Welfare Organization',
       timestamp: new Date().toISOString(),
     });
   }
@@ -116,125 +134,115 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     return sendJson(res, 405, { error: 'Method Not Allowed. Use POST.' });
   }
 
+  const secretKey = getEnvValue('CASHFREE_SECRET_KEY');
+
   try {
-    const payload = await parseBody(req);
-    const eventType = (payload.type as string) || (payload.event as string) || '';
-    const eventData = (payload.data as Record<string, unknown>) || payload;
+    const rawBody = await readRawBody(req);
+    const signature = (req.headers['x-webhook-signature'] as string) || '';
+    const timestamp = (req.headers['x-webhook-timestamp'] as string) || '';
+
+    // ── 1. Cryptographic Signature Verification ─────────────────────────────
+    if (secretKey) {
+      const isValid = verifyCashfreeSignature(
+        rawBody,
+        signature,
+        timestamp,
+        secretKey,
+      );
+
+      if (!isValid) {
+        console.error('[Cashfree Webhook] ❌ Invalid signature received.');
+        return sendJson(res, 401, {
+          success: false,
+          error: 'Invalid webhook signature',
+        });
+      }
+    } else {
+      console.warn('[Cashfree Webhook] ⚠️ CASHFREE_SECRET_KEY not set; skipping signature verification.');
+    }
+
+    // ── 2. Parse payload ───────────────────────────────────────────────────
+    let payload: Record<string, unknown> = {};
+    try {
+      payload = rawBody ? (JSON.parse(rawBody) as Record<string, unknown>) : {};
+    } catch {
+      return sendJson(res, 400, { error: 'Invalid JSON payload' });
+    }
+
+    const eventType =
+      (payload.type as string) || (payload.event as string) || '';
+
+    const eventData =
+      (payload.data as Record<string, unknown>) || payload;
 
     const order = (eventData.order as Record<string, unknown>) || {};
     const payment = (eventData.payment as Record<string, unknown>) || {};
-    const customer = (eventData.customer_details as Record<string, unknown>) || {};
 
-    const orderId = (order.order_id as string) || (eventData.order_id as string) || '';
+    const orderId =
+      (order.order_id as string) ||
+      (eventData.order_id as string) ||
+      '';
+
+    const paymentId = String(
+      payment.cf_payment_id || eventData.cf_payment_id || '',
+    ) || undefined;
+
     const paymentStatus =
       (payment.payment_status as string) ||
       (eventData.payment_status as string) ||
       (order.order_status as string) ||
       '';
-    const cfPaymentId =
-      String(payment.cf_payment_id || eventData.cf_payment_id || orderId || '');
-    const amount = Number(payment.payment_amount || order.order_amount || eventData.order_amount || 0);
 
-    const customerEmail =
-      (customer.customer_email as string) || (eventData.customer_email as string) || '';
-    const customerName =
-      (customer.customer_name as string) || (eventData.customer_name as string) || 'Valued Supporter';
+    const paymentGroup = payment.payment_group as string | undefined;
+    const paymentMethod = paymentGroup
+      ? `Cashfree (${paymentGroup.toUpperCase()})`
+      : 'Cashfree Payments';
 
-    const isSuccess =
-      eventType.toUpperCase().includes('SUCCESS') ||
-      paymentStatus.toUpperCase() === 'SUCCESS' ||
-      paymentStatus.toUpperCase() === 'PAID';
+    if (!orderId) {
+      console.warn('[Cashfree Webhook] Missing order_id in payload');
+      return sendJson(res, 200, {
+        received: true,
+        warning: 'Order ID missing in payload',
+      });
+    }
 
-    console.log(`[Cashfree Webhook] Event: ${eventType}, Order: ${orderId}, Status: ${paymentStatus}, Success: ${isSuccess}`);
+    console.log(
+      `[Cashfree Webhook] Event: ${eventType}, Order: ${orderId}, Status: ${paymentStatus}`,
+    );
 
-    if (isSuccess && orderId) {
-      const sb = getSupabaseClient();
-      if (sb) {
-        // 1. Check cswo_donations
-        try {
-          let { data: donRec } = await sb
-            .from('cswo_donations')
-            .select('*')
-            .eq('cashfree_order_id', orderId)
-            .maybeSingle();
+    // ── 3. Central payment update ──────────────────────────────────────────
+    const result = await finalizePayment({
+      gateway: 'cashfree',
+      orderId,
+      paymentId: paymentId || undefined,
+      gatewayStatus: paymentStatus,
+      eventType,
+      paymentMethod,
+    });
 
-          // Fallback: match by UUID extracted from don_cf_<uuid>_...
-          if (!donRec && orderId.includes('don_cf_')) {
-            const raw = orderId.replace(/^.*don_cf_/, '');
-            const candidateId = raw.split('_')[0];
-            if (candidateId && candidateId.length >= 8) {
-              const { data: fallbackRec } = await sb
-                .from('cswo_donations')
-                .select('*')
-                .eq('id', candidateId)
-                .maybeSingle();
-              if (fallbackRec) donRec = fallbackRec;
-            }
-          }
-
-          if (donRec) {
-            const receiptNum = donRec.receipt_number || `CSWO-DON-${Date.now().toString().slice(-8).toUpperCase()}`;
-            await sb
-              .from('cswo_donations')
-              .update({
-                status: 'paid',
-                receipt_number: receiptNum,
-                cashfree_payment_id: cfPaymentId || null,
-                cashfree_order_id: orderId,
-              })
-              .eq('id', donRec.id);
-
-            const emailToUse = donRec.donor_email || customerEmail;
-            if (emailToUse) {
-              await sendEmailReceipt({
-                recipientEmail: emailToUse,
-                recipientName: donRec.donor_name || customerName,
-                type: 'donation',
-                amount: donRec.amount || amount,
-                receiptNumber: receiptNum,
-                purpose: donRec.purpose || 'Donation & Social Welfare',
-                paymentMethod: 'Cashfree Payments',
-                paymentId: cfPaymentId,
-                date: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-              });
-            }
-          }
-        } catch (donErr) {
-          console.warn('[Webhook] cswo_donations update failed:', donErr);
-        }
-
-        // 2. Check cswo_contributions
-        try {
-          const { data: contRec } = await sb
-            .from('cswo_contributions')
-            .select('*')
-            .eq('cashfree_order_id', orderId)
-            .maybeSingle();
-
-          if (contRec) {
-            const receiptNum = contRec.receipt_number || `CSWO-MBR-${Date.now().toString().slice(-8).toUpperCase()}`;
-            await sb
-              .from('cswo_contributions')
-              .update({
-                status: 'paid',
-                receipt_number: receiptNum,
-                cashfree_payment_id: cfPaymentId || null,
-              })
-              .eq('id', contRec.id);
-          }
-        } catch (contErr) {
-          console.warn('[Webhook] cswo_contributions update failed:', contErr);
-        }
+    // ── 4. Await receipt email dispatch before serverless exit ─────────────
+    if (result.success && result.status === 'paid' && result.shouldSendReceipt) {
+      try {
+        await sendPaymentReceipt({
+          type: result.type!,
+          record: result.record!,
+          paymentMethod: result.paymentMethod || 'Cashfree Payments',
+        });
+      } catch (receiptErr) {
+        console.error('[Cashfree Webhook] Receipt email error:', receiptErr);
       }
     }
 
     return sendJson(res, 200, {
-      status: 'OK',
       received: true,
       order_id: orderId,
+      status: result.status || 'unknown',
     });
   } catch (err: unknown) {
     console.error('[Cashfree Webhook Error]:', err);
-    return sendJson(res, 200, { status: 'OK', error: 'Handled with fallback' });
+    return sendJson(res, 500, {
+      received: false,
+      error: 'Webhook processing error',
+    });
   }
 }

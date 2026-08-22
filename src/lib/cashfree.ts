@@ -345,127 +345,104 @@ export async function startCashfreePayment(
 
   const cashfree = window.Cashfree({ mode });
 
-  // ── Parallel Race: Active Server Poller vs Modal Checkout ─────────────────
-  let isDone = false;
+  // ── Max polling constants ──────────────────────────────────────────────────
+  const MAX_VERIFY_ATTEMPTS = 10;
+  const VERIFY_POLL_MS = 3000;
 
-  const pollerPromise = new Promise<CashfreeVerifyResponse>((resolve) => {
-    const pollInterval = setInterval(async () => {
-      if (isDone) {
-        clearInterval(pollInterval);
-        return;
-      }
-      try {
-        const check = await fetch('/api/cashfree-verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ order_id: orderData.order_id }),
-        });
-        if (check.ok) {
-          const res = (await check.json()) as CashfreeVerifyResponse;
-          if (res.success || res.order_status === 'PAID') {
-            isDone = true;
-            clearInterval(pollInterval);
-            resolve({ ...res, success: true });
-          }
-        }
-      } catch {
-        // ignore background poll errors
-      }
-    }, 1500);
-
-    setTimeout(() => {
-      clearInterval(pollInterval);
-    }, 60000);
+  // ── Open the Cashfree checkout modal ──────────────────────────────────────
+  const checkoutResult = await cashfree.checkout({
+    paymentSessionId: orderData.payment_session_id,
+    redirectTarget: '_modal',
   });
 
-  const checkoutPromise = (async (): Promise<CashfreeVerifyResponse> => {
+  // ── Handle modal close / error ────────────────────────────────────────────
+  if (checkoutResult?.error) {
+    const errorCode = checkoutResult.error.code?.toUpperCase() || '';
+    const errorMsg = checkoutResult.error.message || '';
+    const isCancelled =
+      errorCode.includes('CANCEL') ||
+      errorCode.includes('DROP') ||
+      errorCode.includes('DISMISS') ||
+      errorMsg.toLowerCase().includes('cancel') ||
+      errorMsg.toLowerCase().includes('dismiss') ||
+      errorMsg.toLowerCase().includes('closed');
+
+    throw new Error(isCancelled ? 'CANCELLED' : errorMsg || 'Payment failed');
+  }
+
+  // ── Poll server to confirm payment (capped at MAX_VERIFY_ATTEMPTS) ────────
+  let lastVerification: CashfreeVerifyResponse | null = null;
+
+  for (let attempt = 0; attempt < MAX_VERIFY_ATTEMPTS; attempt++) {
     try {
-      const checkoutResult = await cashfree.checkout({
-        paymentSessionId: orderData.payment_session_id,
-        redirectTarget: '_modal',
+      const verifyRes = await fetch('/api/cashfree-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderData.order_id }),
       });
 
-      isDone = true;
+      const verifyData = (await verifyRes.json()) as CashfreeVerifyResponse & {
+        status?: string;
+      };
 
-      if (checkoutResult?.error) {
-        const errorCode = checkoutResult.error.code?.toUpperCase() || '';
-        const errorMsg = checkoutResult.error.message || '';
-        const isCancelled =
-          errorCode.includes('CANCEL') ||
-          errorCode.includes('DROP') ||
-          errorCode.includes('DISMISS') ||
-          errorMsg.toLowerCase().includes('cancel') ||
-          errorMsg.toLowerCase().includes('dismiss') ||
-          errorMsg.toLowerCase().includes('closed');
+      lastVerification = verifyData;
 
+      const resolvedStatus =
+        (verifyData as { status?: string }).status ||
+        (verifyData.success ? 'paid' : (verifyData.order_status || '').toLowerCase());
+
+      // Payment confirmed
+      if (resolvedStatus === 'paid' || verifyData.success || verifyData.order_status === 'PAID') {
         return {
-          success: false,
-          order_status: isCancelled ? 'CANCELLED' : 'FAILED',
-          message: isCancelled ? 'CANCELLED' : (errorMsg || 'Payment failed'),
+          order: {
+            orderId: orderData.order_id,
+            orderAmount: args.amount,
+            orderCurrency: 'INR',
+          },
+          payment: {
+            paymentId: verifyData.order_id || orderData.order_id,
+            paymentStatus: 'SUCCESS',
+            paymentAmount: args.amount,
+          },
         };
       }
 
-      return await verifyCashfreePayment(orderData.order_id);
-    } catch (checkoutErr: unknown) {
-      isDone = true;
-      const msg = checkoutErr instanceof Error ? checkoutErr.message : 'Checkout failed';
-      return { success: false, order_status: 'FAILED', message: msg };
-    }
-  })();
-
-  // Race them: whichever confirms first resolves the user immediately!
-  const winner = await Promise.race([pollerPromise, checkoutPromise]);
-  isDone = true;
-
-  let verification = winner;
-  if (!verification.success && verification.order_status !== 'CANCELLED') {
-    // If modal closed or cancelled prematurely, check one last time
-    verification = await verifyCashfreePayment(orderData.order_id);
-  }
-
-  if (donationRecordId) {
-    try {
-      let finalStatus = 'failed';
-      if (verification.success || verification.order_status === 'PAID') {
-        finalStatus = 'paid';
-      } else if (
-        verification.order_status === 'CANCELLED' ||
-        verification.order_status === 'EXPIRED' ||
-        verification.order_status === 'USER_DROPPED'
+      // Terminal failure states — stop polling immediately
+      if (
+        resolvedStatus === 'failed' ||
+        resolvedStatus === 'cancelled' ||
+        resolvedStatus === 'expired' ||
+        verifyData.order_status === 'FAILED' ||
+        verifyData.order_status === 'CANCELLED' ||
+        verifyData.order_status === 'USER_DROPPED' ||
+        verifyData.order_status === 'EXPIRED'
       ) {
-        finalStatus = 'cancelled';
+        const isCancelled =
+          resolvedStatus === 'cancelled' ||
+          resolvedStatus === 'expired' ||
+          verifyData.order_status === 'CANCELLED' ||
+          verifyData.order_status === 'EXPIRED' ||
+          verifyData.order_status === 'USER_DROPPED';
+        throw new Error(isCancelled ? 'CANCELLED' : 'PAYMENT_FAILED');
       }
 
-      await supabase
-        .from('cswo_donations')
-        .update({
-          status: finalStatus,
-          cashfree_payment_id: verification.order_id || orderData.order_id,
-        })
-        .eq('id', donationRecordId);
-    } catch {
-      // ignore
+      // Still pending — wait before next attempt
+      if (attempt < MAX_VERIFY_ATTEMPTS - 1) {
+        await new Promise((resolve) => setTimeout(resolve, VERIFY_POLL_MS));
+      }
+    } catch (pollErr) {
+      if (pollErr instanceof Error && (pollErr.message === 'CANCELLED' || pollErr.message === 'PAYMENT_FAILED')) {
+        throw pollErr;
+      }
+      // Network error — retry
+      if (attempt < MAX_VERIFY_ATTEMPTS - 1) {
+        await new Promise((resolve) => setTimeout(resolve, VERIFY_POLL_MS));
+      }
     }
   }
 
-  if (!verification.success) {
-    const status = verification.order_status;
-    const isCancelled = status === 'CANCELLED' || status === 'EXPIRED' || status === 'USER_DROPPED';
-    throw new Error(
-      isCancelled ? 'CANCELLED' : (verification.message || 'Payment was not completed.')
-    );
-  }
-
-  return {
-    order: {
-      orderId: orderData.order_id,
-      orderAmount: args.amount,
-      orderCurrency: 'INR',
-    },
-    payment: {
-      paymentId: verification.order_id || orderData.order_id,
-      paymentStatus: 'SUCCESS',
-      paymentAmount: args.amount,
-    },
-  };
+  // All attempts exhausted — payment still pending
+  throw new Error(
+    lastVerification?.message || 'Payment verification timed out. Please check your payment status.'
+  );
 }
