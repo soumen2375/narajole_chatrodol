@@ -185,11 +185,17 @@ export async function sendPaymentReceipt(
       null;
 
     // ── 3. Dispatch to internal email endpoint ─────────────────────────────────
+    const internalSecret = getEnvValue('INTERNAL_API_SECRET');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (internalSecret) {
+      headers['x-internal-secret'] = internalSecret;
+    }
+
     const response = await fetch(
       `${siteUrl}/api/send-receipt-email`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           recipientEmail,
           recipientName: recipientName || 'Valued Supporter',

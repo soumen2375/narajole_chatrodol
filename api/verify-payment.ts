@@ -159,17 +159,15 @@ export default async function handler(
       paymentMethod: 'Razorpay',
     });
 
-    // ── Await receipt email dispatch so serverless runtime doesn't terminate prematurely ──
+    // ── Dispatch receipt email asynchronously (fire-and-forget) ────────────────
     if (result.success && result.status === 'paid' && result.shouldSendReceipt) {
-      try {
-        await sendPaymentReceipt({
-          type: result.type!,
-          record: result.record!,
-          paymentMethod: 'Razorpay',
-        });
-      } catch (receiptErr) {
+      void sendPaymentReceipt({
+        type: result.type!,
+        record: result.record!,
+        paymentMethod: 'Razorpay',
+      }).catch((receiptErr) => {
         console.error('[verify-payment] Receipt email error:', receiptErr);
-      }
+      });
     }
 
     return sendJson(res, 200, {

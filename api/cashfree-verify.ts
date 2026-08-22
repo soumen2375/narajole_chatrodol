@@ -240,17 +240,15 @@ export default async function handler(
       paymentMethod,
     });
 
-    // ── Await receipt email dispatch so serverless runtime doesn't terminate prematurely ──
+    // ── Dispatch receipt email asynchronously (fire-and-forget) to keep verification polling fast ──
     if (result.success && result.status === 'paid' && result.shouldSendReceipt) {
-      try {
-        await sendPaymentReceipt({
-          type: result.type!,
-          record: result.record!,
-          paymentMethod: result.paymentMethod || paymentMethod,
-        });
-      } catch (err) {
-        console.error('[cashfree-verify] Receipt email error:', err);
-      }
+      void sendPaymentReceipt({
+        type: result.type!,
+        record: result.record!,
+        paymentMethod: result.paymentMethod || paymentMethod,
+      }).catch((err) => {
+        console.error('[cashfree-verify] Receipt email dispatch error:', err);
+      });
     }
 
     const finalStatus = result.status || (isPaid ? 'paid' : 'pending');

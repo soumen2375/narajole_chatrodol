@@ -30,7 +30,7 @@ function sendJson(res: ServerResponse, status: number, data: unknown) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-internal-secret');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.end(JSON.stringify(data));
 }
@@ -127,6 +127,32 @@ function getResendReplyTo(): string {
   } catch { /* fallback */ }
 
   return replyTo || 'info@chhatradol.org';
+}
+
+/**
+ * Read INTERNAL_API_SECRET from env or .env file.
+ */
+function getInternalApiSecret(): string {
+  let secret = process.env.INTERNAL_API_SECRET || '';
+  if (secret) return secret;
+
+  try {
+    const envPath = path.resolve(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf-8');
+      for (const line of content.split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const [k, ...v] = trimmed.split('=');
+        if (k?.trim() === 'INTERNAL_API_SECRET') {
+          secret = v.join('=').trim().replace(/^["']|["']$/g, '');
+          break;
+        }
+      }
+    }
+  } catch { /* fallback */ }
+
+  return secret;
 }
 
 // ── Payload type ──────────────────────────────────────────────────────────────
@@ -754,6 +780,19 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
   if (req.method !== 'POST') {
     return sendJson(res, 405, { error: 'Method Not Allowed' });
+  }
+
+  // ── Authorization: ensure only internal backend calls this endpoint ───────
+  const expectedSecret = getInternalApiSecret();
+  if (expectedSecret) {
+    const internalSecret =
+      (req.headers['x-internal-secret'] as string | undefined) ||
+      ((req.headers as Record<string, unknown>)['X-Internal-Secret'] as string | undefined);
+
+    if (internalSecret !== expectedSecret) {
+      console.warn('[Receipt Email] Unauthorized attempt to invoke /api/send-receipt-email directly');
+      return sendJson(res, 401, { error: 'Unauthorized: internal secret required' });
+    }
   }
 
   try {

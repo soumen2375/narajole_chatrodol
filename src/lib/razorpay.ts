@@ -40,6 +40,7 @@ export interface RazorpayResponse {
   razorpay_payment_id: string;
   razorpay_order_id: string;
   razorpay_signature: string;
+  receipt_number?: string | null;
 }
 
 export interface CreateOrderResponse {
@@ -56,6 +57,7 @@ export interface VerifyPaymentResponse {
   error?: string;
   order_id?: string;
   payment_id?: string;
+  receipt_number?: string | null;
 }
 
 const ENV_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
@@ -351,7 +353,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
       theme: { color: '#c2410c' },
       handler: async (response: RazorpayResponse) => {
         try {
-          await verifyPayment(
+          const verifyResult = await verifyPayment(
             response.razorpay_order_id,
             response.razorpay_payment_id,
             response.razorpay_signature
@@ -372,7 +374,10 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
             }
           }
 
-          resolve(response);
+          resolve({
+            ...response,
+            receipt_number: verifyResult.receipt_number || null,
+          });
         } catch (err) {
           if (donationRecordId) {
             try {

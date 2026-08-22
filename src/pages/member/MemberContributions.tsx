@@ -7,11 +7,12 @@ import { useFmt, formatDate } from '@/lib/format';
 const monthsEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 import { useT } from '@/i18n';
 import { startPayment, getGatewayMode, gatewayLabel, gatewayBadgeColor } from '@/lib/payments';
+import { loadRazorpayScript } from '@/lib/razorpay';
+import { loadCashfreeScript } from '@/lib/cashfree';
 import type { PaymentGateway } from '@/types';
 import { printReceipt } from '@/lib/receipt';
 import GatewaySelector from '@/components/payment/GatewaySelector';
 import UniversalPaymentCenter, { type PaymentMethodType } from '@/components/payment/UniversalPaymentCenter';
-import { sendReceiptInvoiceEmail } from '@/lib/email';
 
 
 
@@ -456,6 +457,12 @@ export default function MemberContributions() {
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
   const months = fmt.months();
 
+  // Preload gateway SDK scripts on mount so modal triggers immediately on click
+  useEffect(() => {
+    void loadRazorpayScript();
+    void loadCashfreeScript();
+  }, []);
+
   const pad = (n: number) => String(n).padStart(2, '0');
   const dtFull = (s: string) => {
     const d = new Date(s);
@@ -543,7 +550,6 @@ export default function MemberContributions() {
     
     try {
       const receiptNumber = `CSWO-MC-${year}-${String(month).padStart(2, '0')}-${member?.member_serial ? String(member.member_serial).padStart(4, '0') : (member?.id || '').slice(0, 4).toUpperCase()}`;
-      const payMethodName = methodType === 'qr' ? 'Direct UPI QR' : (methodType === 'bank' ? 'Direct Bank Transfer' : (gateway === 'cashfree' ? 'Cashfree Payments' : 'Razorpay'));
 
       if (methodType === 'qr' || methodType === 'bank') {
         if (member?.id) {
@@ -562,27 +568,14 @@ export default function MemberContributions() {
             });
         }
 
-        if (member?.email) {
-          sendReceiptInvoiceEmail({
-            recipientEmail: member.email,
-            recipientName: member.full_name || 'Valued Member',
-            type: 'contribution',
-            amount: Number(amount),
-            receiptNumber,
-            month: monthsEn[month - 1],
-            year,
-            paymentMethod: payMethodName,
-            paymentId: utrRef.trim(),
-          });
-        }
-
         showToast(tr(`Payment for ${months[month - 1]} recorded successfully!`, `${months[month - 1]} মাসের চাঁদা সফলভাবে রেকর্ড হয়েছে!`));
         setUtrRef('');
         return;
       }
 
-      // Online Gateway Flow
-      const res = await startPayment({
+      // Online Gateway Flow — protected with 90s timeout guard to prevent infinite processing
+      const PAYMENT_TIMEOUT_MS = 90_000;
+      const paymentPromise = startPayment({
         gateway,
         action: 'create_contribution_order',
         amount: Number(amount),
@@ -593,6 +586,16 @@ export default function MemberContributions() {
         donorPhone: member?.phone ?? undefined,
         description: `Monthly dues — ${months[month - 1]} ${year}`,
       });
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(
+          lang === 'bn'
+            ? 'পেমেন্ট যাচাইকরণে অনেক সময় লাগছে। অনুগ্রহ করে আবার চেষ্টা করুন।'
+            : 'Payment verification is taking too long. Please try again.'
+        )), PAYMENT_TIMEOUT_MS)
+      );
+
+      const res = await Promise.race([paymentPromise, timeoutPromise]);
 
       // Extract transaction IDs based on gateway
       let rzpPayId: string | null = null;
@@ -607,6 +610,8 @@ export default function MemberContributions() {
         rzpPayId = res.result.razorpay_payment_id || null;
         rzpOrderId = res.result.razorpay_order_id || null;
       }
+
+      const finalReceiptNumber = res.result.receipt_number || receiptNumber;
 
       // Upsert record into Supabase for permanent audit and status
       if (member?.id) {
@@ -625,27 +630,11 @@ export default function MemberContributions() {
             razorpay_order_id: rzpOrderId,
             cashfree_payment_id: cfPayId,
             cashfree_order_id: cfOrderId,
-            receipt_number: receiptNumber,
+            receipt_number: finalReceiptNumber,
           });
-      }
-
-      // Dispatch confirmation invoice email to the member's registered email
-      if (member?.email) {
-        sendReceiptInvoiceEmail({
-          recipientEmail: member.email,
-          recipientName: member.full_name || 'Valued Member',
-          type: 'contribution',
-          amount: Number(amount),
-          receiptNumber,
-          month: monthsEn[month - 1],
-          year,
-          paymentMethod: gateway === 'cashfree' ? 'Cashfree Payments' : 'Razorpay',
-          paymentId: cfPayId || rzpPayId || undefined,
-        });
       }
       
       showToast(tr(`Payment for ${months[month - 1]} completed!`, `${months[month - 1]} মাসের পেমেন্ট সফল হয়েছে!`));
-
 
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Payment error';
@@ -670,7 +659,8 @@ export default function MemberContributions() {
     // Set all pending months as active/paying in local UI
     setPayingMonths(new Set(unpaidDueMonths));
     try {
-      const res = await startPayment({
+      const PAYMENT_TIMEOUT_MS = 90_000;
+      const paymentPromise = startPayment({
         gateway,
         action: 'create_contribution_order',
         amount: totalDue, // Total dues amount
@@ -681,6 +671,16 @@ export default function MemberContributions() {
         donorPhone: member?.phone ?? undefined,
         description: `${tr('All dues payment', 'সব বকেয়া পরিশোধ')} — ${unpaidDueMonths.length} ${tr('months', 'মাস')}`,
       });
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(
+          lang === 'bn'
+            ? 'পেমেন্ট যাচাইকরণে অনেক সময় লাগছে। অনুগ্রহ করে আবার চেষ্টা করুন।'
+            : 'Payment verification is taking too long. Please try again.'
+        )), PAYMENT_TIMEOUT_MS)
+      );
+
+      const res = await Promise.race([paymentPromise, timeoutPromise]);
 
       let rzpPayId: string | null = null;
       let rzpOrderId: string | null = null;
@@ -714,20 +714,6 @@ export default function MemberContributions() {
         }));
 
         await supabase.from('cswo_monthly_contributions').upsert(payload);
-      }
-
-      // Dispatch bulk invoice email to the member's registered email
-      if (member?.email) {
-        sendReceiptInvoiceEmail({
-          recipientEmail: member.email,
-          recipientName: member.full_name || 'Valued Member',
-          type: 'contribution',
-          amount: totalDue,
-          receiptNumber: `CSWO-BULK-${year}-${Date.now().toString().slice(-6)}`,
-          purpose: `${unpaidDueMonths.length} Months Dues (${year})`,
-          paymentMethod: gateway === 'cashfree' ? 'Cashfree Payments' : 'Razorpay',
-          paymentId: cfPayId || rzpPayId || undefined,
-        });
       }
 
       showToast(tr('All pending monthly dues paid successfully!', 'সব বকেয়া চাঁদা সফলভাবে পরিশোধ করা হয়েছে!'));

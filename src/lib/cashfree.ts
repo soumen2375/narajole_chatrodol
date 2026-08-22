@@ -41,6 +41,7 @@ export interface CashfreeSuccessResponse {
     paymentStatus: string;
     paymentAmount: number;
   };
+  receipt_number?: string | null;
 }
 
 export interface CashfreeOrderResponse {
@@ -60,6 +61,7 @@ export interface CashfreeVerifyResponse {
   order_status?: string;
   order_amount?: number;
   order_currency?: string;
+  receipt_number?: string | null;
 }
 
 // ── SDK Loader ─────────────────────────────────────────────────────────────────
@@ -367,6 +369,15 @@ export async function startCashfreePayment(
       errorMsg.toLowerCase().includes('dismiss') ||
       errorMsg.toLowerCase().includes('closed');
 
+    if (donationRecordId) {
+      try {
+        await supabase
+          .from('cswo_donations')
+          .update({ status: isCancelled ? 'cancelled' : 'failed' })
+          .eq('id', donationRecordId);
+      } catch { /* ignore */ }
+    }
+
     throw new Error(isCancelled ? 'CANCELLED' : errorMsg || 'Payment failed');
   }
 
@@ -383,6 +394,7 @@ export async function startCashfreePayment(
 
       const verifyData = (await verifyRes.json()) as CashfreeVerifyResponse & {
         status?: string;
+        receipt_number?: string | null;
       };
 
       lastVerification = verifyData;
@@ -404,6 +416,7 @@ export async function startCashfreePayment(
             paymentStatus: 'SUCCESS',
             paymentAmount: args.amount,
           },
+          receipt_number: verifyData.receipt_number || null,
         };
       }
 

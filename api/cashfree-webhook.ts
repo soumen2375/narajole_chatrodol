@@ -142,23 +142,27 @@ export default async function handler(
     const timestamp = (req.headers['x-webhook-timestamp'] as string) || '';
 
     // ── 1. Cryptographic Signature Verification ─────────────────────────────
-    if (secretKey) {
-      const isValid = verifyCashfreeSignature(
-        rawBody,
-        signature,
-        timestamp,
-        secretKey,
-      );
+    if (!secretKey) {
+      console.error('[Cashfree Webhook] ❌ CASHFREE_SECRET_KEY not configured — rejecting webhook.');
+      return sendJson(res, 500, {
+        success: false,
+        error: 'Webhook signing key not configured',
+      });
+    }
 
-      if (!isValid) {
-        console.error('[Cashfree Webhook] ❌ Invalid signature received.');
-        return sendJson(res, 401, {
-          success: false,
-          error: 'Invalid webhook signature',
-        });
-      }
-    } else {
-      console.warn('[Cashfree Webhook] ⚠️ CASHFREE_SECRET_KEY not set; skipping signature verification.');
+    const isValid = verifyCashfreeSignature(
+      rawBody,
+      signature,
+      timestamp,
+      secretKey,
+    );
+
+    if (!isValid) {
+      console.error('[Cashfree Webhook] ❌ Invalid signature received.');
+      return sendJson(res, 401, {
+        success: false,
+        error: 'Invalid webhook signature',
+      });
     }
 
     // ── 2. Parse payload ───────────────────────────────────────────────────
