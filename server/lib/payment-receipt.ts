@@ -1,5 +1,5 @@
 /**
- * api/lib/payment-receipt.ts
+ * server/lib/payment-receipt.ts
  *
  * Safe, atomic, idempotent receipt email sender.
  *
