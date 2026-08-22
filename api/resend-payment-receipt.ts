@@ -179,16 +179,33 @@ export default async function handler(
       });
     }
 
-    const table =
-      type === 'donation' ? 'cswo_donations' : 'cswo_monthly_contributions';
+    let record: Record<string, unknown> | null = null;
 
-    const { data: record, error: fetchErr } = await supabase
-      .from(table)
-      .select(type === 'contribution' ? '*, member:cswo_members(full_name, email)' : '*')
-      .eq('id', id)
-      .maybeSingle();
+    if (type === 'donation') {
+      const { data, error: fetchErr } = await supabase
+        .from('cswo_donations')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
 
-    if (fetchErr || !record) {
+      if (fetchErr) {
+        console.error('[Resend Receipt] Error fetching donation:', fetchErr);
+      }
+      record = data as Record<string, unknown> | null;
+    } else {
+      const { data, error: fetchErr } = await supabase
+        .from('cswo_monthly_contributions')
+        .select('*, member:cswo_members(full_name, email)')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (fetchErr) {
+        console.error('[Resend Receipt] Error fetching contribution:', fetchErr);
+      }
+      record = data as Record<string, unknown> | null;
+    }
+
+    if (!record) {
       return sendJson(res, 404, {
         success: false,
         error: `${type} record not found`,
