@@ -3,6 +3,7 @@ import {
   preCreateContributionRows,
   linkContributionOrderId,
   updateDonationGatewayLink,
+  donationReceiptTag,
   type ContributionBatch,
 } from './contributions';
 
@@ -336,7 +337,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
 
   const amountPaise = Math.round(args.amount * 100);
   const receipt = donationRecordId
-    ? `don_${donationRecordId}`.slice(0, 40)
+    ? donationReceiptTag(donationRecordId)
     : contributionBatch
       ? `con_${contributionBatch.memberId}_${Date.now()}`.slice(0, 40)
       : `cswo_${Date.now()}`;

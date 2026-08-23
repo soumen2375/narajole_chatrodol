@@ -13,6 +13,22 @@
 import { supabase } from './supabase';
 
 /**
+ * Builds the gateway receipt/order-id prefix for a donation.
+ *
+ * Cashfree caps order_id at 50 chars, and api/cashfree-order.ts appends
+ * `_${Date.now()}` (14 more chars). The old `don_cf_<uuid>` form was 43
+ * chars and got sliced to 40, lopping the last 3 characters off the UUID —
+ * so the order id no longer contained a recoverable donation id. Stripping
+ * the dashes fits the whole UUID with room to spare (2 + 32 + 1 + 13 = 48),
+ * which lets the server recover the donation from the order id alone if the
+ * client-side link write is ever lost. Keep in sync with
+ * parseDonationIdFromOrderId() in server/lib/finalize-payment.ts.
+ */
+export function donationReceiptTag(donationId: string): string {
+  return `d_${donationId.replace(/-/g, '')}`;
+}
+
+/**
  * Attaches the gateway order id to a donation row, and/or moves it to a
  * terminal client-observable state (failed/cancelled).
  *

@@ -3,6 +3,7 @@ import {
   preCreateContributionRows,
   linkContributionOrderId,
   updateDonationGatewayLink,
+  donationReceiptTag,
   type ContributionBatch,
 } from './contributions';
 
@@ -349,7 +350,7 @@ export async function startCashfreePayment(
   }
 
   const receipt = donationRecordId
-    ? `don_cf_${donationRecordId}`.slice(0, 40)
+    ? donationReceiptTag(donationRecordId)
     : contributionBatch
       ? `con_cf_${contributionBatch.memberId}_${Date.now()}`.slice(0, 40)
       : `cswo_cf_${Date.now()}`;

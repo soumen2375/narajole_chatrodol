@@ -114,6 +114,30 @@ const MONTH_NAMES = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
 
+/**
+ * Recovers the donation id embedded in a gateway order id.
+ *
+ * Order ids are built client-side as `d_<uuid-without-dashes>_<timestamp>`
+ * (see donationReceiptTag() in src/lib/contributions.ts). Because the full
+ * UUID is carried in the order id itself, a payment can still be matched to
+ * its donation even if the client-side "attach the order id" write never
+ * landed — which is exactly the failure that left real paid donations
+ * stranded as 'created'. Returns null when the order id predates this
+ * scheme or isn't a donation order.
+ */
+function parseDonationIdFromOrderId(orderId: string): string | null {
+  const match = /^d_([0-9a-f]{32})(?:_|$)/i.exec(orderId);
+  if (!match) return null;
+  const hex = match[1].toLowerCase();
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20, 32),
+  ].join('-');
+}
+
 // ── Main finalizer ────────────────────────────────────────────────────────────
 
 export async function finalizePayment(
@@ -133,7 +157,7 @@ export async function finalizePayment(
 
   // ── 1. Try donations first ─────────────────────────────────────────────────
 
-  const { data: donation, error: donFetchError } = await supabase
+  let { data: donation, error: donFetchError } = await supabase
     .from('cswo_donations')
     .select('*')
     .eq(orderColumn, orderId)
@@ -141,6 +165,35 @@ export async function finalizePayment(
 
   if (donFetchError) {
     console.error('[finalizePayment] Error fetching donation:', donFetchError);
+  }
+
+  // Fallback: the order id itself carries the donation's UUID, so a payment
+  // can still be matched even if the client never managed to write the
+  // order id onto the row. Also backfills the link so later lookups hit
+  // the fast path.
+  if (!donation) {
+    const embeddedId = parseDonationIdFromOrderId(orderId);
+    if (embeddedId) {
+      const { data: byId } = await supabase
+        .from('cswo_donations')
+        .select('*')
+        .eq('id', embeddedId)
+        .maybeSingle();
+
+      if (byId) {
+        console.warn(
+          `[finalizePayment] Donation ${embeddedId} was not linked to order ${orderId}; recovered via embedded id and backfilling.`,
+        );
+        const { data: relinked } = await supabase
+          .from('cswo_donations')
+          .update({ [orderColumn]: orderId })
+          .eq('id', embeddedId)
+          .select()
+          .single();
+
+        donation = relinked || byId;
+      }
+    }
   }
 
   if (donation) {
