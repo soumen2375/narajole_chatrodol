@@ -43,6 +43,8 @@ export interface UnifiedPaymentArgs {
   donorPhone?: string;
   isAnonymous?: boolean;
   isRecurring?: boolean;
+  /** Required for create_contribution_order — links the pre-created row(s) to the paying member */
+  memberId?: string;
   year?: number;
   month?: number;
   months?: number[];
@@ -69,6 +71,7 @@ export async function startPayment(args: UnifiedPaymentArgs): Promise<UnifiedPay
       donorPhone: args.donorPhone,
       isAnonymous: args.isAnonymous,
       isRecurring: args.isRecurring,
+      memberId: args.memberId,
       year: args.year,
       month: args.month,
       months: args.months,
@@ -88,6 +91,7 @@ export async function startPayment(args: UnifiedPaymentArgs): Promise<UnifiedPay
     donorPhone: args.donorPhone,
     isAnonymous: args.isAnonymous,
     isRecurring: args.isRecurring,
+    memberId: args.memberId,
     year: args.year,
     month: args.month,
     months: args.months,

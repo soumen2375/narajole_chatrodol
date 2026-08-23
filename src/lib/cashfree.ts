@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { preCreateContributionRows, linkContributionOrderId, type ContributionBatch } from './contributions';
 
 // ── Cashfree SDK v3 type declarations ─────────────────────────────────────────
 
@@ -197,6 +198,23 @@ export async function verifyCashfreePayment(orderId: string): Promise<CashfreeVe
   return lastResponse ?? { success: false, message: 'Verification timed out. Please contact support.' };
 }
 
+// ── Mobile / in-app-webview aware redirect target ───────────────────────────────
+//
+// '_modal' renders Cashfree checkout in an iframe overlay. Launching a UPI
+// intent (upi://...) for GPay/PhonePe from inside an iframe is blocked by
+// many mobile browsers and by in-app webviews (Facebook/Instagram/WhatsApp
+// share links), so the "Pay" tap silently does nothing there. '_self' does a
+// full-page redirect to Cashfree's hosted checkout and back to
+// order_meta.return_url (/payment-return), which works everywhere.
+
+function getCashfreeRedirectTarget(): '_modal' | '_self' {
+  if (typeof window === 'undefined') return '_modal';
+  const ua = navigator.userAgent || '';
+  const isSmallScreen = window.innerWidth < 768;
+  const isInAppWebview = /FBAN|FBAV|Instagram|Line\/|WhatsApp|; wv\)|GSA\//i.test(ua);
+  return isSmallScreen || isInAppWebview ? '_self' : '_modal';
+}
+
 // ── Checkout Launcher ──────────────────────────────────────────────────────────
 
 export interface OpenCashfreeCheckoutOptions {
@@ -235,7 +253,7 @@ export async function openCashfreeCheckout(
 
   const result = await cashfree.checkout({
     paymentSessionId: orderData.payment_session_id,
-    redirectTarget: '_modal',
+    redirectTarget: getCashfreeRedirectTarget(),
   });
 
   if (result?.error) {
@@ -266,6 +284,7 @@ interface StartCashfreePaymentArgs {
   donorPhone?: string;
   isAnonymous?: boolean;
   isRecurring?: boolean;
+  memberId?: string;
   year?: number;
   month?: number;
   months?: number[];
@@ -281,6 +300,7 @@ export async function startCashfreePayment(
   }
 
   let donationRecordId: string | null = null;
+  let contributionBatch: ContributionBatch | null = null;
 
   if (args.action === 'create_donation_order') {
     try {
@@ -305,9 +325,21 @@ export async function startCashfreePayment(
     }
   }
 
+  if (args.action === 'create_contribution_order' && args.memberId && args.year) {
+    contributionBatch = await preCreateContributionRows({
+      memberId: args.memberId,
+      year: args.year,
+      months: args.months && args.months.length > 0 ? args.months : (args.month ? [args.month] : []),
+      totalAmount: args.amount,
+      gateway: 'cashfree',
+    });
+  }
+
   const receipt = donationRecordId
     ? `don_cf_${donationRecordId}`.slice(0, 40)
-    : `cswo_cf_${Date.now()}`;
+    : contributionBatch
+      ? `con_cf_${contributionBatch.memberId}_${Date.now()}`.slice(0, 40)
+      : `cswo_cf_${Date.now()}`;
 
   let orderData: CashfreeOrderResponse;
   try {
@@ -328,6 +360,9 @@ export async function startCashfreePayment(
           .eq('id', donationRecordId);
       } catch { /* ignore */ }
     }
+    if (contributionBatch) {
+      await linkContributionOrderId(contributionBatch, 'cashfree', null, 'failed');
+    }
     throw orderErr;
   }
 
@@ -342,6 +377,10 @@ export async function startCashfreePayment(
     }
   }
 
+  if (contributionBatch) {
+    await linkContributionOrderId(contributionBatch, 'cashfree', orderData.order_id, 'created');
+  }
+
   const mode =
     (import.meta.env.VITE_CASHFREE_MODE as 'sandbox' | 'production' | undefined) || 'production';
 
@@ -351,13 +390,15 @@ export async function startCashfreePayment(
   const MAX_VERIFY_ATTEMPTS = 10;
   const VERIFY_POLL_MS = 3000;
 
-  // ── Open the Cashfree checkout modal ──────────────────────────────────────
+  // ── Open the Cashfree checkout (modal on desktop, full-page on mobile/webviews) ──
   const checkoutResult = await cashfree.checkout({
     paymentSessionId: orderData.payment_session_id,
-    redirectTarget: '_modal',
+    redirectTarget: getCashfreeRedirectTarget(),
   });
 
   // ── Handle modal close / error ────────────────────────────────────────────
+  // (On '_self' redirects this never returns — the browser has navigated away
+  // to Cashfree's hosted page and back to /payment-return on completion.)
   if (checkoutResult?.error) {
     const errorCode = checkoutResult.error.code?.toUpperCase() || '';
     const errorMsg = checkoutResult.error.message || '';
@@ -376,6 +417,14 @@ export async function startCashfreePayment(
           .update({ status: isCancelled ? 'cancelled' : 'failed' })
           .eq('id', donationRecordId);
       } catch { /* ignore */ }
+    }
+    if (contributionBatch) {
+      await linkContributionOrderId(
+        contributionBatch,
+        'cashfree',
+        orderData.order_id,
+        isCancelled ? 'cancelled' : 'failed',
+      );
     }
 
     throw new Error(isCancelled ? 'CANCELLED' : errorMsg || 'Payment failed');

@@ -99,6 +99,15 @@ function getRazorpayCredentials(): {
   return { keyId, keySecret };
 }
 
+const CASHFREE_TERMINAL_STATUSES = new Set([
+  'PAID',
+  'SUCCESS',
+  'FAILED',
+  'CANCELLED',
+  'EXPIRED',
+  'USER_DROPPED',
+]);
+
 async function verifyCashfreeOrder(orderId: string, appId: string, secretKey: string, apiEnv: string) {
   const baseUrl =
     apiEnv === 'sandbox'
@@ -245,11 +254,20 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
             );
 
             if (cfOrder && cfOrder.order_status) {
+              // Cashfree orders stay ACTIVE until their own expiry — that's
+              // not a terminal state, so don't just relay it (it would only
+              // ever normalize to 'pending' and the row would never resolve).
+              // A stale, still-non-terminal order past our 20-min window is
+              // treated as abandoned and explicitly cancelled.
+              const effectiveStatus = CASHFREE_TERMINAL_STATUSES.has(cfOrder.order_status.toUpperCase())
+                ? cfOrder.order_status
+                : 'CANCELLED';
+
               const finResult = await finalizePayment({
                 gateway: 'cashfree',
                 orderId: don.cashfree_order_id,
                 paymentId: cfOrder.cf_order_id,
-                gatewayStatus: cfOrder.order_status,
+                gatewayStatus: effectiveStatus,
                 paymentMethod: 'Cashfree Payments',
               });
 
@@ -260,7 +278,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
                   paymentMethod: 'Cashfree Payments',
                 }).catch(() => {});
               }
-              results.reconciledDonations++;
+              if (effectiveStatus === 'CANCELLED') {
+                results.cancelledAbandonedDonations++;
+              } else {
+                results.reconciledDonations++;
+              }
             }
           } else if (don.razorpay_order_id && rzpKeyId && rzpSecretKey) {
             // Verify with Razorpay
@@ -347,11 +369,15 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
             );
 
             if (cfOrder && cfOrder.order_status) {
+              const effectiveStatus = CASHFREE_TERMINAL_STATUSES.has(cfOrder.order_status.toUpperCase())
+                ? cfOrder.order_status
+                : 'CANCELLED';
+
               const finResult = await finalizePayment({
                 gateway: 'cashfree',
                 orderId: con.cashfree_order_id,
                 paymentId: cfOrder.cf_order_id,
-                gatewayStatus: cfOrder.order_status,
+                gatewayStatus: effectiveStatus,
                 paymentMethod: 'Cashfree Payments',
               });
 
@@ -359,10 +385,15 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
                 void sendPaymentReceipt({
                   type: 'contribution',
                   record: finResult.record!,
+                  linkedRecordIds: finResult.linkedRecordIds,
                   paymentMethod: 'Cashfree Payments',
                 }).catch(() => {});
               }
-              results.reconciledContributions++;
+              if (effectiveStatus === 'CANCELLED') {
+                results.cancelledAbandonedContributions++;
+              } else {
+                results.reconciledContributions++;
+              }
             }
           } else if (con.razorpay_order_id && rzpKeyId && rzpSecretKey) {
             const rzpPayments = await verifyRazorpayOrder(
@@ -389,6 +420,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
                   void sendPaymentReceipt({
                     type: 'contribution',
                     record: finResult.record!,
+                    linkedRecordIds: finResult.linkedRecordIds,
                     paymentMethod: 'Razorpay',
                   }).catch(() => {});
                 }

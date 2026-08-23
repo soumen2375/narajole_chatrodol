@@ -240,18 +240,30 @@ export default async function handler(
       paymentMethod,
     });
 
+    if (!result.success) {
+      // Cashfree may say PAID, but if we have no matching Supabase record we
+      // must NOT tell the browser "paid" — that would show a false success
+      // screen with no receipt behind it. Report 'pending' so the client
+      // keeps polling / eventually surfaces a clear timeout instead.
+      console.error(
+        `[cashfree-verify] finalizePayment could not locate a record for order ${orderId} (Cashfree isPaid=${isPaid}):`,
+        result.error,
+      );
+    }
+
     // ── Dispatch receipt email asynchronously (fire-and-forget) to keep verification polling fast ──
     if (result.success && result.status === 'paid' && result.shouldSendReceipt) {
       void sendPaymentReceipt({
         type: result.type!,
         record: result.record!,
+        linkedRecordIds: result.linkedRecordIds,
         paymentMethod: result.paymentMethod || paymentMethod,
       }).catch((err) => {
         console.error('[cashfree-verify] Receipt email dispatch error:', err);
       });
     }
 
-    const finalStatus = result.status || (isPaid ? 'paid' : 'pending');
+    const finalStatus = result.success ? (result.status || 'pending') : 'pending';
 
     return sendJson(res, 200, {
       success: finalStatus === 'paid',

@@ -88,6 +88,9 @@ export interface FinalizePaymentResult {
   type?: 'donation' | 'contribution';
   status?: string;
   record?: Record<string, unknown>;
+  /** For a bulk "Pay All" contribution batch: sibling row ids sharing this
+   *  receipt, beyond record.id, that also need marking 'sent'. */
+  linkedRecordIds?: string[];
   shouldSendReceipt?: boolean;
   paymentMethod?: string;
   error?: string;
@@ -105,6 +108,11 @@ function generateContributionReceipt(): string {
   const rand = crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase();
   return `CSWO-MBR-${Date.now().toString().slice(-6)}-${rand}`;
 }
+
+const MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
 
 // ── Main finalizer ────────────────────────────────────────────────────────────
 
@@ -190,41 +198,54 @@ export async function finalizePayment(
   }
 
   // ── 2. Try monthly contributions ──────────────────────────────────────────
+  // A single gateway order can cover multiple months at once ("Pay All"), so
+  // several rows may share the same order id — fetch all of them, not just one.
 
-  const { data: contribution, error: conFetchError } = await supabase
+  const { data: contributions, error: conFetchError } = await supabase
     .from('cswo_monthly_contributions')
     .select('*, member:cswo_members(id, full_name, email, phone)')
-    .eq(orderColumn, orderId)
-    .maybeSingle();
+    .eq(orderColumn, orderId);
 
   if (conFetchError) {
     console.error('[finalizePayment] Error fetching contribution:', conFetchError);
   }
 
-  if (contribution) {
-    // Extract member data for receipt payload
-    const memberObj = contribution.member as { full_name?: string; email?: string; phone?: string } | null;
+  if (contributions && contributions.length > 0) {
+    const first = contributions[0];
+    const memberObj = first.member as { full_name?: string; email?: string; phone?: string } | null;
     const memberName = memberObj?.full_name || 'Member';
     const memberEmail = memberObj?.email || '';
 
-    // Never downgrade a paid record
-    if (contribution.status === 'paid') {
+    const monthsLabel = contributions
+      .map((c) => `${MONTH_NAMES[(c.month as number) - 1] || c.month}/${c.year}`)
+      .join(', ');
+    const totalAmount = contributions.reduce((sum, c) => sum + Number(c.amount || 0), 0);
+
+    // Never downgrade already-paid rows; only act on the ones still pending.
+    const unpaid = contributions.filter((c) => c.status !== 'paid');
+
+    if (unpaid.length === 0) {
       return {
         success: true,
         alreadyProcessed: true,
         type: 'contribution',
         status: 'paid',
         record: {
-          ...contribution,
+          ...first,
           member_name: memberName,
           member_email: memberEmail,
+          amount: totalAmount,
+          purpose: `Monthly Dues — ${monthsLabel}`,
         },
         shouldSendReceipt:
-          contribution.receipt_email_status !== 'sent' &&
-          !!contribution.receipt_number,
+          first.receipt_email_status !== 'sent' && !!first.receipt_number,
         paymentMethod,
       };
     }
+
+    const sharedReceiptNumber =
+      contributions.find((c) => c.receipt_number)?.receipt_number ||
+      generateContributionReceipt();
 
     const updateData: Record<string, unknown> = {
       status,
@@ -236,38 +257,38 @@ export async function finalizePayment(
     }
 
     if (status === 'paid') {
-      updateData.paid_at = contribution.paid_at || new Date().toISOString();
+      updateData.paid_at = new Date().toISOString();
       updateData.payment_method = paymentMethod || (gateway === 'cashfree' ? 'cashfree' : 'razorpay');
-      updateData.receipt_number =
-        contribution.receipt_number || generateContributionReceipt();
-
-      updateData.receipt_email_status =
-        contribution.receipt_email_status === 'sent' ? 'sent' : 'pending';
+      updateData.receipt_number = sharedReceiptNumber;
+      updateData.receipt_email_status = 'pending';
     }
 
-    const { data: updated, error } = await supabase
+    const { data: updatedRows, error } = await supabase
       .from('cswo_monthly_contributions')
       .update(updateData)
-      .eq('id', contribution.id)
-      .select('*, member:cswo_members(id, full_name, email, phone)')
-      .single();
+      .in('id', unpaid.map((c) => c.id))
+      .select('*, member:cswo_members(id, full_name, email, phone)');
 
     if (error) throw error;
 
-    const updatedMember = updated.member as { full_name?: string; email?: string } | null;
+    const updatedFirst = (updatedRows && updatedRows[0]) || first;
+    const updatedMember = updatedFirst.member as { full_name?: string; email?: string } | null;
 
     return {
       success: true,
       type: 'contribution',
       status,
       record: {
-        ...updated,
+        ...updatedFirst,
         member_name: updatedMember?.full_name || memberName,
         member_email: updatedMember?.email || memberEmail,
+        amount: totalAmount,
+        purpose: `Monthly Dues — ${monthsLabel}`,
+        receipt_number: sharedReceiptNumber,
+        receipt_email_status: status === 'paid' ? 'pending' : updatedFirst.receipt_email_status,
       },
-      shouldSendReceipt:
-        status === 'paid' &&
-        (updated as Record<string, unknown>).receipt_email_status !== 'sent',
+      linkedRecordIds: unpaid.slice(1).map((c) => c.id as string),
+      shouldSendReceipt: status === 'paid',
       paymentMethod,
     };
   }

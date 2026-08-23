@@ -164,6 +164,7 @@ export default async function handler(
       void sendPaymentReceipt({
         type: result.type!,
         record: result.record!,
+        linkedRecordIds: result.linkedRecordIds,
         paymentMethod: 'Razorpay',
       }).catch((receiptErr) => {
         console.error('[verify-payment] Receipt email error:', receiptErr);

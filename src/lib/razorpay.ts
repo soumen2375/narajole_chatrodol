@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { preCreateContributionRows, linkContributionOrderId, type ContributionBatch } from './contributions';
 
 declare global {
   interface Window {
@@ -269,6 +270,7 @@ interface StartPaymentArgs {
   donorPhone?: string;
   isAnonymous?: boolean;
   isRecurring?: boolean;
+  memberId?: string;
   year?: number;
   month?: number;
   months?: number[];
@@ -283,6 +285,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
   }
 
   let donationRecordId: string | null = null;
+  let contributionBatch: ContributionBatch | null = null;
 
   // If donation, optionally insert pending record into Supabase for audit/history
   if (args.action === 'create_donation_order') {
@@ -308,9 +311,22 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
     }
   }
 
+  if (args.action === 'create_contribution_order' && args.memberId && args.year) {
+    contributionBatch = await preCreateContributionRows({
+      memberId: args.memberId,
+      year: args.year,
+      months: args.months && args.months.length > 0 ? args.months : (args.month ? [args.month] : []),
+      totalAmount: args.amount,
+      gateway: 'razorpay',
+    });
+  }
 
   const amountPaise = Math.round(args.amount * 100);
-  const receipt = donationRecordId ? `don_${donationRecordId}`.slice(0, 40) : `cswo_${Date.now()}`;
+  const receipt = donationRecordId
+    ? `don_${donationRecordId}`.slice(0, 40)
+    : contributionBatch
+      ? `con_${contributionBatch.memberId}_${Date.now()}`.slice(0, 40)
+      : `cswo_${Date.now()}`;
 
   const orderData = await createOrder(
     amountPaise,
@@ -335,6 +351,10 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
     }
   }
 
+  if (contributionBatch) {
+    await linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'created');
+  }
+
   const key = orderData.key_id || ENV_KEY_ID || '';
 
   return new Promise<RazorpayResponse>((resolve, reject) => {
@@ -353,26 +373,15 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
       theme: { color: '#c2410c' },
       handler: async (response: RazorpayResponse) => {
         try {
+          // verifyPayment() checks the cryptographic signature server-side and,
+          // on success, calls finalizePayment() there — that's the only place
+          // status is allowed to become 'paid' (RLS blocks the client from
+          // self-granting it). No client-side status write needed here.
           const verifyResult = await verifyPayment(
             response.razorpay_order_id,
             response.razorpay_payment_id,
             response.razorpay_signature
           );
-
-          if (donationRecordId) {
-            try {
-              await supabase
-                .from('cswo_donations')
-                .update({
-                  status: 'paid',
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                })
-                .eq('id', donationRecordId);
-            } catch {
-              // ignore
-            }
-          }
 
           resolve({
             ...response,
@@ -388,6 +397,9 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
             } catch {
               // ignore
             }
+          }
+          if (contributionBatch) {
+            await linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'failed');
           }
           reject(err);
         }
@@ -405,6 +417,9 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
               } catch { /* ignore */ }
             })();
           }
+          if (contributionBatch) {
+            void linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'cancelled');
+          }
           reject(new Error('CANCELLED'));
         },
       },
@@ -412,6 +427,9 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
 
     rzp.on('payment.failed', (failData: unknown) => {
       const errorDetail = (failData as { error?: { description?: string } })?.error?.description || 'Payment Failed';
+      if (contributionBatch) {
+        void linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'failed');
+      }
       // Update Supabase record to failed
       if (donationRecordId) {
         void (async () => {

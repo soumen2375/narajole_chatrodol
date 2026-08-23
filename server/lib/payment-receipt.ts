@@ -66,6 +66,9 @@ export interface ReceiptInput {
   paymentMethod?: string;
   /** Force send even if receipt_email_status is already 'sent' or 'sending' */
   forceResend?: boolean;
+  /** Sibling row ids (bulk "Pay All" contribution batch) covered by the same
+   *  email as `record` — marked 'sent' alongside it, never emailed separately. */
+  linkedRecordIds?: string[];
 }
 
 export interface ReceiptResult {
@@ -81,7 +84,7 @@ export interface ReceiptResult {
 export async function sendPaymentReceipt(
   input: ReceiptInput,
 ): Promise<ReceiptResult> {
-  const { type, record, paymentMethod, forceResend = false } = input;
+  const { type, record, paymentMethod, forceResend = false, linkedRecordIds = [] } = input;
 
   if (!record || !record.id) {
     return { success: false, error: 'Invalid record supplied to sendPaymentReceipt' };
@@ -228,15 +231,20 @@ export async function sendPaymentReceipt(
     }
 
     // ── 4. Mark successfully sent ─────────────────────────────────────────────
-    await supabase
-      .from(table)
-      .update({
-        receipt_email_status: 'sent',
-        receipt_email_sent_at: new Date().toISOString(),
-        receipt_email_message_id: result.messageId || null,
-        receipt_email_error: null,
-      })
-      .eq('id', record.id);
+    const sentUpdate = {
+      receipt_email_status: 'sent',
+      receipt_email_sent_at: new Date().toISOString(),
+      receipt_email_message_id: result.messageId || null,
+      receipt_email_error: null,
+    };
+
+    await supabase.from(table).update(sentUpdate).eq('id', record.id);
+
+    // A bulk "Pay All" batch is covered by this same email — mark siblings
+    // 'sent' too so they're never picked up for a duplicate solo resend.
+    if (linkedRecordIds.length > 0) {
+      await supabase.from(table).update(sentUpdate).in('id', linkedRecordIds);
+    }
 
     return {
       success: true,

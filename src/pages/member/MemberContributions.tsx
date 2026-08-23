@@ -579,6 +579,7 @@ export default function MemberContributions() {
         gateway,
         action: 'create_contribution_order',
         amount: Number(amount),
+        memberId: member?.id,
         year,
         month,
         donorName: member?.full_name,
@@ -595,45 +596,13 @@ export default function MemberContributions() {
         )), PAYMENT_TIMEOUT_MS)
       );
 
-      const res = await Promise.race([paymentPromise, timeoutPromise]);
+      // cashfree.ts/razorpay.ts already pre-create the row and, once the
+      // checkout resolves, the server-side verify/webhook (finalizePayment)
+      // has already marked it paid and dispatched the receipt email — there
+      // is nothing left to write from the client.
+      await Promise.race([paymentPromise, timeoutPromise]);
 
-      // Extract transaction IDs based on gateway
-      let rzpPayId: string | null = null;
-      let rzpOrderId: string | null = null;
-      let cfPayId: string | null = null;
-      let cfOrderId: string | null = null;
 
-      if (res.gateway === 'cashfree') {
-        cfPayId = res.result.payment?.paymentId || null;
-        cfOrderId = res.result.order?.orderId || null;
-      } else {
-        rzpPayId = res.result.razorpay_payment_id || null;
-        rzpOrderId = res.result.razorpay_order_id || null;
-      }
-
-      const finalReceiptNumber = res.result.receipt_number || receiptNumber;
-
-      // Upsert record into Supabase for permanent audit and status
-      if (member?.id) {
-        await supabase
-          .from('cswo_monthly_contributions')
-          .upsert({
-            member_id: member.id,
-            year,
-            month,
-            amount: Number(amount),
-            status: 'paid',
-            paid_at: new Date().toISOString(),
-            payment_method: gateway,
-            payment_gateway: gateway,
-            razorpay_payment_id: rzpPayId,
-            razorpay_order_id: rzpOrderId,
-            cashfree_payment_id: cfPayId,
-            cashfree_order_id: cfOrderId,
-            receipt_number: finalReceiptNumber,
-          });
-      }
-      
       showToast(tr(`Payment for ${months[month - 1]} completed!`, `${months[month - 1]} মাসের পেমেন্ট সফল হয়েছে!`));
 
     } catch (err) {
@@ -664,6 +633,7 @@ export default function MemberContributions() {
         gateway,
         action: 'create_contribution_order',
         amount: totalDue, // Total dues amount
+        memberId: member?.id,
         year,
         months: unpaidDueMonths, // Bulk list of months
         donorName: member?.full_name,
@@ -680,41 +650,10 @@ export default function MemberContributions() {
         )), PAYMENT_TIMEOUT_MS)
       );
 
-      const res = await Promise.race([paymentPromise, timeoutPromise]);
-
-      let rzpPayId: string | null = null;
-      let rzpOrderId: string | null = null;
-      let cfPayId: string | null = null;
-      let cfOrderId: string | null = null;
-
-      if (res.gateway === 'cashfree') {
-        cfPayId = res.result.payment?.paymentId || null;
-        cfOrderId = res.result.order?.orderId || null;
-      } else {
-        rzpPayId = res.result.razorpay_payment_id || null;
-        rzpOrderId = res.result.razorpay_order_id || null;
-      }
-
-      // Upsert all cleared months to Supabase database
-      if (member?.id) {
-        const payload = unpaidDueMonths.map((m) => ({
-          member_id: member.id,
-          year,
-          month: m,
-          amount: Number(amount),
-          status: 'paid',
-          paid_at: new Date().toISOString(),
-          payment_method: gateway,
-          payment_gateway: gateway,
-          razorpay_payment_id: rzpPayId,
-          razorpay_order_id: rzpOrderId,
-          cashfree_payment_id: cfPayId,
-          cashfree_order_id: cfOrderId,
-          receipt_number: `CSWO-MC-${year}-${String(m).padStart(2, '0')}-${member?.member_serial ? String(member.member_serial).padStart(4, '0') : (member?.id || '').slice(0, 4).toUpperCase()}`,
-        }));
-
-        await supabase.from('cswo_monthly_contributions').upsert(payload);
-      }
+      // cashfree.ts/razorpay.ts pre-create one row per month (sharing the
+      // same gateway order id) and the server-side verify/webhook marks all
+      // of them paid + sends a single combined receipt once confirmed.
+      await Promise.race([paymentPromise, timeoutPromise]);
 
       showToast(tr('All pending monthly dues paid successfully!', 'সব বকেয়া চাঁদা সফলভাবে পরিশোধ করা হয়েছে!'));
 
