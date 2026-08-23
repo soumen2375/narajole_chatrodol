@@ -303,25 +303,33 @@ export async function startCashfreePayment(
   let contributionBatch: ContributionBatch | null = null;
 
   if (args.action === 'create_donation_order') {
+    // Generate the row's id client-side and insert without .select() — an
+    // anonymous donor has no auth.uid(), so there is deliberately no SELECT
+    // RLS policy for the anon role (that would leak every pending donor's
+    // name/email/phone to any visitor). Requesting the row back via
+    // .select() forces an implicit RETURNING, which needs SELECT visibility
+    // and would fail RLS even though the INSERT itself is allowed.
+    const generatedId = crypto.randomUUID();
     try {
-      const { data: rec } = await supabase
-        .from('cswo_donations')
-        .insert({
-          donor_name: args.donorName ?? null,
-          donor_email: args.donorEmail ?? null,
-          donor_phone: args.donorPhone ?? null,
-          amount: args.amount,
-          purpose: args.purpose ?? null,
-          is_anonymous: !!args.isAnonymous,
-          is_recurring: !!args.isRecurring,
-          status: 'created',
-          payment_gateway: 'cashfree',
-        })
-        .select('id')
-        .single();
-      if (rec?.id) donationRecordId = rec.id;
-    } catch {
-      // Continue even if Supabase is temporarily offline
+      const { error } = await supabase.from('cswo_donations').insert({
+        id: generatedId,
+        donor_name: args.donorName ?? null,
+        donor_email: args.donorEmail ?? null,
+        donor_phone: args.donorPhone ?? null,
+        amount: args.amount,
+        purpose: args.purpose ?? null,
+        is_anonymous: !!args.isAnonymous,
+        is_recurring: !!args.isRecurring,
+        status: 'created',
+        payment_gateway: 'cashfree',
+      });
+      if (!error) {
+        donationRecordId = generatedId;
+      } else {
+        console.error('[cashfree] Failed to pre-create donation record:', error);
+      }
+    } catch (err) {
+      console.error('[cashfree] Failed to pre-create donation record:', err);
     }
   }
 
