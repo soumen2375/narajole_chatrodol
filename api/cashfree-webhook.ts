@@ -230,6 +230,7 @@ export default async function handler(
         await sendPaymentReceipt({
           type: result.type!,
           record: result.record!,
+          linkedRecordIds: result.linkedRecordIds,
           paymentMethod: result.paymentMethod || 'Cashfree Payments',
         });
       } catch (receiptErr) {
