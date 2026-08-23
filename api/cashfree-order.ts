@@ -23,6 +23,61 @@ function sendJson(res: ServerResponse, statusCode: number, data: unknown) {
   res.end(JSON.stringify(data));
 }
 
+/**
+ * Resolves the public origin to build return_url/notify_url from.
+ *
+ * Priority:
+ *   1. The incoming request's own Host header — this is always the exact
+ *      domain the paying user's browser is actually talking to, so it's
+ *      correct in every environment (production, a Vercel preview deploy,
+ *      local dev, an ngrok tunnel for pre-launch testing) with zero config.
+ *   2. An explicitly configured SITE_URL (env var or .env), only used when
+ *      no request host is available at all (e.g. some non-HTTP invocation).
+ *   3. Hardcoded production URL, as a last-resort fallback.
+ *
+ * Getting this wrong sends the gateway's redirect/webhook to the wrong
+ * domain — on a full-page ('_self') mobile checkout redirect, that strands
+ * the browser on a different site entirely and looks like the payment is
+ * stuck "processing" forever on the page the user is actually watching.
+ * (SITE_URL is deliberately NOT given priority here: a stale/unrelated
+ * value left in .env — e.g. the production domain, during ngrok testing —
+ * would otherwise silently redirect Cashfree away from the host actually
+ * being tested, which is exactly this bug.)
+ */
+function resolveSiteOrigin(req: IncomingMessage): string {
+  const forwardedHost = req.headers['x-forwarded-host'];
+  const host = (Array.isArray(forwardedHost) ? forwardedHost[0] : forwardedHost) || req.headers.host;
+  if (host) {
+    const forwardedProto = req.headers['x-forwarded-proto'];
+    const proto = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto) || 'https';
+    return `${proto}://${host}`;
+  }
+
+  let explicitSiteUrl = process.env.SITE_URL || '';
+  if (!explicitSiteUrl) {
+    try {
+      const envPath = path.resolve(process.cwd(), '.env');
+      if (fs.existsSync(envPath)) {
+        const content = fs.readFileSync(envPath, 'utf-8');
+        for (const line of content.split('\n')) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const [k, ...v] = trimmed.split('=');
+          if (k?.trim() === 'SITE_URL') {
+            explicitSiteUrl = v.join('=').trim().replace(/^["']|["']$/g, '');
+            break;
+          }
+        }
+      }
+    } catch {
+      // fallback below
+    }
+  }
+  if (explicitSiteUrl) return explicitSiteUrl.replace(/\/$/, '');
+
+  return 'https://www.chhatradol.org';
+}
+
 async function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   if ((req as unknown as { body?: unknown }).body) {
     const b = (req as unknown as { body: unknown }).body;
@@ -146,8 +201,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         customer_phone: customerPhone.replace(/\D/g, '').slice(-10) || '9999999999',
       },
       order_meta: {
-        return_url: `${process.env.SITE_URL || 'https://www.chhatradol.org'}/payment-return?order_id={order_id}`,
-        notify_url: `${process.env.SITE_URL || 'https://www.chhatradol.org'}/api/cashfree-webhook`,
+        return_url: `${resolveSiteOrigin(req)}/payment-return?order_id={order_id}`,
+        notify_url: `${resolveSiteOrigin(req)}/api/cashfree-webhook`,
       },
     };
 
