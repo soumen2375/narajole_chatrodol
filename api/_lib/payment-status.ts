@@ -1,5 +1,5 @@
 /**
- * server/lib/payment-status.ts
+ * api/_lib/payment-status.ts
  *
  * Single source of truth for internal payment status values.
  * All gateways (Cashfree, Razorpay) normalize through `normalizePaymentStatus`.

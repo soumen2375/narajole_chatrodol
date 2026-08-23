@@ -3,7 +3,7 @@
  *
  * Shared helper for pre-creating cswo_monthly_contributions rows BEFORE a
  * gateway checkout opens, so the server-side finalize pipeline
- * (server/lib/finalize-payment.ts) can find them by cashfree_order_id /
+ * (api/_lib/finalize-payment.ts) can find them by cashfree_order_id /
  * razorpay_order_id once the payment completes, and so a receipt email can
  * actually be sent. Used by both src/lib/cashfree.ts and src/lib/razorpay.ts
  * — this mirrors the pattern already used for cswo_donations, which did not
@@ -22,7 +22,7 @@ import { supabase } from './supabase';
  * the dashes fits the whole UUID with room to spare (2 + 32 + 1 + 13 = 48),
  * which lets the server recover the donation from the order id alone if the
  * client-side link write is ever lost. Keep in sync with
- * parseDonationIdFromOrderId() in server/lib/finalize-payment.ts.
+ * parseDonationIdFromOrderId() in api/_lib/finalize-payment.ts.
  */
 export function donationReceiptTag(donationId: string): string {
   return `d_${donationId.replace(/-/g, '')}`;

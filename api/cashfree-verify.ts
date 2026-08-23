@@ -10,8 +10,8 @@
  */
 
 import type { IncomingMessage, ServerResponse } from 'http';
-import { finalizePayment } from '../server/lib/finalize-payment';
-import { sendPaymentReceipt } from '../server/lib/payment-receipt';
+import { finalizePayment } from './_lib/finalize-payment';
+import { sendPaymentReceipt } from './_lib/payment-receipt';
 import fs from 'node:fs';
 import path from 'node:path';
 

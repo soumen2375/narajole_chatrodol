@@ -1,5 +1,5 @@
 /**
- * server/lib/finalize-payment.ts
+ * api/_lib/finalize-payment.ts
  *
  * Central payment finalizer — the single place that updates Supabase
  * when a payment completes, fails, is cancelled, or expires.
