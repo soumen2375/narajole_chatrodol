@@ -1,5 +1,10 @@
 import { supabase } from './supabase';
-import { preCreateContributionRows, linkContributionOrderId, type ContributionBatch } from './contributions';
+import {
+  preCreateContributionRows,
+  linkContributionOrderId,
+  updateDonationGatewayLink,
+  type ContributionBatch,
+} from './contributions';
 
 declare global {
   interface Window {
@@ -349,14 +354,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
   );
 
   if (donationRecordId) {
-    try {
-      await supabase
-        .from('cswo_donations')
-        .update({ razorpay_order_id: orderData.order_id })
-        .eq('id', donationRecordId);
-    } catch {
-      // ignore
-    }
+    await updateDonationGatewayLink(donationRecordId, orderData.order_id, 'created', 'razorpay');
   }
 
   if (contributionBatch) {
@@ -397,14 +395,12 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
           });
         } catch (err) {
           if (donationRecordId) {
-            try {
-              await supabase
-                .from('cswo_donations')
-                .update({ status: 'failed' })
-                .eq('id', donationRecordId);
-            } catch {
-              // ignore
-            }
+            await updateDonationGatewayLink(
+              donationRecordId,
+              orderData.order_id,
+              'failed',
+              'razorpay',
+            );
           }
           if (contributionBatch) {
             await linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'failed');
@@ -416,14 +412,12 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
         ondismiss: () => {
           // Update Supabase record to cancelled when user closes/dismisses
           if (donationRecordId) {
-            void (async () => {
-              try {
-                await supabase
-                  .from('cswo_donations')
-                  .update({ status: 'cancelled' })
-                  .eq('id', donationRecordId);
-              } catch { /* ignore */ }
-            })();
+            void updateDonationGatewayLink(
+              donationRecordId,
+              orderData.order_id,
+              'cancelled',
+              'razorpay',
+            );
           }
           if (contributionBatch) {
             void linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'cancelled');
@@ -438,16 +432,13 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
       if (contributionBatch) {
         void linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'failed');
       }
-      // Update Supabase record to failed
       if (donationRecordId) {
-        void (async () => {
-          try {
-            await supabase
-              .from('cswo_donations')
-              .update({ status: 'failed' })
-              .eq('id', donationRecordId);
-          } catch { /* ignore */ }
-        })();
+        void updateDonationGatewayLink(
+          donationRecordId,
+          orderData.order_id,
+          'failed',
+          'razorpay',
+        );
       }
       reject(new Error(errorDetail));
     });

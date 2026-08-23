@@ -1,5 +1,10 @@
 import { supabase } from './supabase';
-import { preCreateContributionRows, linkContributionOrderId, type ContributionBatch } from './contributions';
+import {
+  preCreateContributionRows,
+  linkContributionOrderId,
+  updateDonationGatewayLink,
+  type ContributionBatch,
+} from './contributions';
 
 // ── Cashfree SDK v3 type declarations ─────────────────────────────────────────
 
@@ -361,12 +366,7 @@ export async function startCashfreePayment(
     );
   } catch (orderErr) {
     if (donationRecordId) {
-      try {
-        await supabase
-          .from('cswo_donations')
-          .update({ status: 'failed' })
-          .eq('id', donationRecordId);
-      } catch { /* ignore */ }
+      await updateDonationGatewayLink(donationRecordId, null, 'failed');
     }
     if (contributionBatch) {
       await linkContributionOrderId(contributionBatch, 'cashfree', null, 'failed');
@@ -375,14 +375,7 @@ export async function startCashfreePayment(
   }
 
   if (donationRecordId) {
-    try {
-      await supabase
-        .from('cswo_donations')
-        .update({ cashfree_order_id: orderData.order_id })
-        .eq('id', donationRecordId);
-    } catch {
-      // ignore
-    }
+    await updateDonationGatewayLink(donationRecordId, orderData.order_id, 'created');
   }
 
   if (contributionBatch) {
@@ -419,12 +412,11 @@ export async function startCashfreePayment(
       errorMsg.toLowerCase().includes('closed');
 
     if (donationRecordId) {
-      try {
-        await supabase
-          .from('cswo_donations')
-          .update({ status: isCancelled ? 'cancelled' : 'failed' })
-          .eq('id', donationRecordId);
-      } catch { /* ignore */ }
+      await updateDonationGatewayLink(
+        donationRecordId,
+        orderData.order_id,
+        isCancelled ? 'cancelled' : 'failed',
+      );
     }
     if (contributionBatch) {
       await linkContributionOrderId(

@@ -12,6 +12,35 @@
 
 import { supabase } from './supabase';
 
+/**
+ * Attaches the gateway order id to a donation row, and/or moves it to a
+ * terminal client-observable state (failed/cancelled).
+ *
+ * Goes through the cswo_update_donation_gateway_link RPC rather than a plain
+ * table .update(): PostgREST needs a SELECT policy to compute the
+ * affected-row count for any PATCH, and anonymous donors deliberately have
+ * no SELECT policy (it would expose every pending donor's contact details).
+ * A raw update therefore silently no-ops for exactly the users who matter.
+ * The RPC is SECURITY DEFINER but far narrower than table UPDATE — it can
+ * only touch the order-id/status columns and can never set 'paid'.
+ */
+export async function updateDonationGatewayLink(
+  donationId: string,
+  orderId: string | null,
+  status: 'created' | 'failed' | 'cancelled',
+  gateway: 'cashfree' | 'razorpay' = 'cashfree',
+): Promise<void> {
+  const { error } = await supabase.rpc('cswo_update_donation_gateway_link', {
+    p_donation_id: donationId,
+    p_gateway: gateway,
+    p_order_id: orderId,
+    p_status: status,
+  });
+  if (error) {
+    console.error('[payment] Failed to link donation to gateway order:', error);
+  }
+}
+
 export interface ContributionBatch {
   memberId: string;
   year: number;
