@@ -178,57 +178,73 @@ export default async function handler(
     }
 
     let isPaid = orderData.order_status === 'PAID';
-    let paymentId: string | undefined = orderData.cf_order_id || orderData.order_id;
+    let paymentId: string | undefined;
     let paymentMethod = 'Cashfree Payments';
     let rawStatus = orderData.order_status || 'PENDING';
 
-    // ── If order is ACTIVE/PENDING, check payments list for a SUCCESS ──────
-    if (!isPaid) {
-      try {
-        const paymentsUrl =
-          apiEnv === 'sandbox'
-            ? `https://sandbox.cashfree.com/pg/orders/${orderId}/payments`
-            : `https://api.cashfree.com/pg/orders/${orderId}/payments`;
+    // ── Always resolve the real payment id from the payments list ──────────
+    //
+    // The transaction id a customer sees in the Cashfree dashboard is
+    // `cf_payment_id`, which only exists on the payments endpoint.
+    // `cf_order_id` is a *different* number for the same transaction, so
+    // showing it on the receipt is a mismatch the donor cannot reconcile
+    // against their bank/UPI record.
+    //
+    // This used to run only when the order was NOT already PAID, which meant
+    // the successful path — the one that actually prints a receipt — always
+    // fell back to cf_order_id and displayed the wrong id.
+    try {
+      const paymentsUrl =
+        apiEnv === 'sandbox'
+          ? `https://sandbox.cashfree.com/pg/orders/${orderId}/payments`
+          : `https://api.cashfree.com/pg/orders/${orderId}/payments`;
 
-        const pRes = await fetch(paymentsUrl, {
-          method: 'GET',
-          headers: baseHeaders,
-          signal: AbortSignal.timeout(10000),
-        });
+      const pRes = await fetch(paymentsUrl, {
+        method: 'GET',
+        headers: baseHeaders,
+        signal: AbortSignal.timeout(10000),
+      });
 
-        if (pRes.ok) {
-          const pList = (await pRes.json()) as Array<{
-            payment_status?: string;
-            cf_payment_id?: string;
-            payment_group?: string;
-          }>;
+      if (pRes.ok) {
+        const pList = (await pRes.json()) as Array<{
+          payment_status?: string;
+          cf_payment_id?: string;
+          payment_group?: string;
+        }>;
 
-          if (Array.isArray(pList) && pList.length > 0) {
-            const successPayment = pList.find(
-              (p) => p.payment_status?.toUpperCase() === 'SUCCESS',
-            );
+        if (Array.isArray(pList) && pList.length > 0) {
+          // An order can carry several attempts (e.g. one USER_DROPPED then
+          // one SUCCESS) — always report the one that actually succeeded.
+          const successPayment = pList.find(
+            (p) => p.payment_status?.toUpperCase() === 'SUCCESS',
+          );
 
-            if (successPayment) {
-              isPaid = true;
-              rawStatus = 'SUCCESS';
-              if (successPayment.cf_payment_id) {
-                paymentId = String(successPayment.cf_payment_id);
-              }
-              if (successPayment.payment_group) {
-                paymentMethod = `Cashfree (${successPayment.payment_group.toUpperCase()})`;
-              }
-            } else {
-              // Use the most recent payment's status for accurate reporting
-              const latest = pList[0];
-              if (latest?.payment_status) {
-                rawStatus = latest.payment_status.toUpperCase();
-              }
+          if (successPayment) {
+            isPaid = true;
+            rawStatus = 'SUCCESS';
+            if (successPayment.cf_payment_id) {
+              paymentId = String(successPayment.cf_payment_id);
+            }
+            if (successPayment.payment_group) {
+              paymentMethod = `Cashfree (${successPayment.payment_group.toUpperCase()})`;
+            }
+          } else if (!isPaid) {
+            // Use the most recent payment's status for accurate reporting
+            const latest = pList[0];
+            if (latest?.payment_status) {
+              rawStatus = latest.payment_status.toUpperCase();
             }
           }
         }
-      } catch (pErr) {
-        console.warn('[cashfree-verify] Error checking payments list:', pErr);
       }
+    } catch (pErr) {
+      console.warn('[cashfree-verify] Error checking payments list:', pErr);
+    }
+
+    // Last-resort fallback only if the payments endpoint was unreachable —
+    // better to record the order id than nothing at all.
+    if (!paymentId) {
+      paymentId = orderData.cf_order_id || orderData.order_id;
     }
 
     // ── Centrally update Supabase ──────────────────────────────────────────
