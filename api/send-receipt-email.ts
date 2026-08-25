@@ -11,6 +11,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
 import path from 'node:path';
+import { generateReceiptPdfBase64, receiptFileName } from './_lib/receipt-pdf';
 
 // ── Optional Supabase client (for in-app notification logging) ────────────────
 function getSupabaseClient() {
@@ -727,6 +728,7 @@ async function sendViaResend(
   toName: string,
   subject: string,
   htmlContent: string,
+  attachment?: { filename: string; content: string },
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const fromAddress = getResendFromEmail();
@@ -744,6 +746,18 @@ async function sendViaResend(
         subject,
         html: htmlContent,
         reply_to: replyToAddress,
+        // Resend takes attachment bytes as a base64 string in `content`.
+        ...(attachment
+          ? {
+              attachments: [
+                {
+                  filename: attachment.filename,
+                  content: attachment.content,
+                  content_type: 'application/pdf',
+                },
+              ],
+            }
+          : {}),
         tags: [
           { name: 'category', value: 'payment-receipt' },
         ],
@@ -849,12 +863,37 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       });
     }
 
+    // ── Render the official PDF receipt to attach ─────────────────────────────
+    // Best-effort: a rendering fault must never cost the donor their email, so
+    // a failure here degrades to sending the HTML receipt without the file
+    // rather than aborting the dispatch.
+    let attachment: { filename: string; content: string } | undefined;
+    try {
+      attachment = {
+        filename: receiptFileName(body.receiptNumber),
+        content: await generateReceiptPdfBase64({
+          type: body.type === 'contribution' ? 'contribution' : 'donation',
+          receiptNumber: body.receiptNumber,
+          donorName: body.recipientName || 'Valued Supporter',
+          donorEmail: body.recipientEmail,
+          amount: Number(body.amount),
+          purpose: body.purpose || body.month || '',
+          paymentMethod: body.paymentMethod || 'Online Payment',
+          transactionId: body.paymentId || undefined,
+          date: body.date,
+        }),
+      };
+    } catch (pdfErr) {
+      console.error('[Receipt Email] PDF generation failed, sending without attachment:', pdfErr);
+    }
+
     const emailResult = await sendViaResend(
       resendApiKey,
       body.recipientEmail,
       body.recipientName || 'Valued Supporter',
       subject,
       htmlContent,
+      attachment,
     );
 
     if (!emailResult.success) {
