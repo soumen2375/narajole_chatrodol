@@ -6,7 +6,7 @@ import { useGallery } from '@/hooks/useGallery';
 import { useT } from '@/i18n';
 import { useSEO } from '@/hooks/useSEO';
 import { SEO } from '@/data/seoConfig';
-import { PageShell, Icon, FJ } from './_field-journal';
+import { PageShell, Icon } from './_field-journal';
 import Breadcrumb from '@/components/ui/Breadcrumb';
 
 // ════════════════════════════════════════════════════════════════════
@@ -95,8 +95,8 @@ export default function Gallery() {
     <PageShell>
       <Breadcrumb title="Gallery" />
 
-      {/* ════ PIXABAY-STYLE FULL-PHOTO HERO BANNER ════ */}
-      <section className="relative min-h-[500px] sm:min-h-[540px] md:min-h-[580px] w-full overflow-hidden flex flex-col justify-between pt-8 sm:pt-12 md:pt-16 pb-4 sm:pb-6 px-4 sm:px-6 md:px-10 bg-stone-950">
+      {/* ════ FULL-PHOTO HERO BANNER ════ */}
+      <section className="page-hero relative flex min-h-[500px] w-full flex-col justify-between overflow-hidden px-5 pb-6 pt-10 sm:min-h-[540px] sm:px-8 sm:pt-14 md:min-h-[580px] md:pt-16">
         {/* Full-size Featured Photo Background with Smooth Crossfade */}
         <div className="absolute inset-0 z-0">
           {slides.map((slide, idx) => (
@@ -105,21 +105,24 @@ export default function Gallery() {
               src={slide.src}
               onError={onErr}
               alt={slide.alt[lang] || ''}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
                 idx === slideIdx ? 'opacity-100 scale-100' : 'opacity-0 scale-105 pointer-events-none'
               }`}
             />
           ))}
-          {/* Dark Overlay with smooth gradient */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/35 to-black/75" />
+          {/* Neutral charcoal scrim.
+              A green wash used to sit here, but it tinted every photo and
+              washed out the real colours of the work being shown. A neutral
+              dark gradient keeps the headline and search field readable while
+              letting the photography read true, and it deepens toward the
+              bottom where the carousel controls sit. */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(23,23,26,.58) 0%, rgba(23,23,26,.46) 45%, rgba(15,15,17,.80) 100%)' }} />
         </div>
 
         {/* Center Content */}
-        <div className="relative z-10 mx-auto w-full max-w-4xl text-center pt-2 sm:pt-4">
-          {/* Title: 2 lines on mobile ("Captured Moments of" / "Service & Impact"), 3 lines on desktop */}
-          <h1
-            className="font-serif text-[24px] xs:text-[26px] sm:text-4xl md:text-5xl lg:text-[54px] font-bold tracking-tight text-white leading-[1.22] sm:leading-[1.18] drop-shadow-2xl px-2"
-          >
+        <div className="relative z-10 mx-auto w-full max-w-4xl pt-2 text-center sm:pt-4">
+          <div className="eyebrow-light">{tr('Gallery', 'চিত্রশালা')}</div>
+          <h1 className="h-display mx-auto mt-4 text-white">
             {bn ? (
               <>
                 সেবা, সমাজ কল্যাণ <br />
@@ -143,18 +146,19 @@ export default function Gallery() {
           </h1>
 
           {/* Category Filter Tabs */}
-          <div className="mt-5 sm:mt-7 flex items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-1 px-1 snap-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mt-6 flex snap-x items-center justify-start gap-2 overflow-x-auto px-1 pb-1 sm:mt-8 sm:justify-center [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {categories.map((c) => {
               const active = filter === c;
               return (
                 <button
                   key={c}
                   type="button"
+                  aria-pressed={active}
                   onClick={() => reset(() => setFilter(c))}
-                  className={`snap-center shrink-0 rounded-full px-4 sm:px-5 py-1.5 sm:py-2 font-sans text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                  className={`chip shrink-0 snap-center px-5 text-[13px] ${
                     active
-                      ? 'bg-white text-stone-900 shadow-lg scale-105'
-                      : 'bg-black/40 hover:bg-white/20 text-white/90 border border-white/20 backdrop-blur-md'
+                      ? 'border-site-yellow bg-site-yellow text-site-ink'
+                      : 'border-white/35 bg-transparent text-white hover:border-site-yellow hover:text-site-yellow'
                   }`}
                 >
                   {c}
@@ -164,21 +168,26 @@ export default function Gallery() {
           </div>
 
           {/* Search Bar */}
-          <div className="mt-3.5 sm:mt-5 mx-auto w-full max-w-2xl relative px-1">
+          <div className="relative mx-auto mt-4 w-full max-w-2xl px-1 sm:mt-5">
+            <label htmlFor="gallery-search" className="sr-only">
+              {tr('Search photos, activities, events...', 'ছবি, ঘটনা বা কার্যক্রমের নাম দিয়ে খুঁজুন...')}
+            </label>
             <div className="relative flex items-center">
-              <FaMagnifyingGlass className="absolute left-4 sm:left-5 text-stone-300 text-xs sm:text-base pointer-events-none z-10" />
+              <FaMagnifyingGlass className="pointer-events-none absolute left-6 z-10 text-sm text-site-faint" />
               <input
+                id="gallery-search"
                 type="text"
                 value={query}
                 onChange={(e) => reset(() => setQuery(e.target.value))}
-                placeholder={tr('Search photos, activities, events...', 'ছবি, ঘটনা বা কার্যক্রমের নাম দিয়ে খুঁজুন...')}
-                className="w-full rounded-full py-3 sm:py-4 pl-10 sm:pl-14 pr-10 text-xs sm:text-base bg-black/40 hover:bg-black/50 focus:bg-black/70 text-white placeholder-stone-300/80 border border-white/30 shadow-2xl backdrop-blur-md outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 transition-all font-sans"
+                placeholder={tr('Search photos, activities, events...', 'ছবি, ঘটনা বা কার্যক্রমের নাম দিয়ে খুঁজুন...')}
+                className="site-input pl-14 pr-12 text-[14.5px]"
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => reset(() => setQuery(''))}
-                  className="absolute right-3.5 sm:right-4 text-stone-300 hover:text-white text-xs bg-white/20 hover:bg-white/30 w-6 h-6 rounded-full flex items-center justify-center transition-all z-10"
+                  aria-label={tr('Clear search', 'অনুসন্ধান মুছুন')}
+                  className="absolute right-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-site-cream text-[12px] text-site-green transition-colors hover:bg-site-yellow hover:text-site-ink"
                 >
                   ✕
                 </button>
@@ -187,8 +196,8 @@ export default function Gallery() {
           </div>
 
           {/* Popular Tags */}
-          <div className="mt-2.5 sm:mt-3.5 flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2 font-sans text-xs overflow-x-auto pb-1 px-1 snap-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-            <span className="text-stone-300 text-xs mr-1 font-medium drop-shadow shrink-0">{tr('Popular:', 'জনপ্রিয়:')}</span>
+          <div className="mt-3.5 flex snap-x items-center justify-start gap-2 overflow-x-auto px-1 pb-1 font-dmsans text-xs sm:justify-center [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <span className="mr-1 shrink-0 font-dmsans text-[12px] font-medium text-white/60">{tr('Popular:', 'জনপ্রিয়:')}</span>
             {[
               { en: 'Blood Camp', bn: 'রক্তদান শিবির', query: 'blood' },
               { en: 'Health Checkup', bn: 'স্বাস্থ্য পরীক্ষা', query: 'health' },
@@ -199,7 +208,7 @@ export default function Gallery() {
                 key={tag.en}
                 type="button"
                 onClick={() => reset(() => setQuery(tag.query))}
-                className="snap-center shrink-0 rounded-lg px-2.5 py-1 bg-black/40 hover:bg-white/20 text-stone-200 hover:text-white border border-white/15 backdrop-blur-md transition-all text-xs"
+                className="shrink-0 snap-center rounded-full border border-white/25 px-3.5 py-1.5 text-[12px] text-white/85 transition-colors hover:border-site-yellow hover:text-site-yellow"
               >
                 #{tr(tag.en, tag.bn)}
               </button>
@@ -208,14 +217,14 @@ export default function Gallery() {
         </div>
 
         {/* Bottom Info Bar — pinned cleanly at the bottom edge of the banner */}
-        <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center justify-center gap-2 mt-auto pt-6 pb-1 text-white/90 text-center">
+        <div className="relative z-10 mx-auto mt-auto flex w-full max-w-4xl flex-col items-center justify-center gap-2 pb-1 pt-6 text-center text-white/90">
           {/* Featured Photo Caption */}
           {currentSlide && (
-            <div className="text-xs text-stone-200/90 font-medium drop-shadow truncate max-w-full px-4">
-              <span className="text-stone-300/80 font-normal">
+            <div className="max-w-full truncate px-4 font-dmsans text-[12px] font-medium">
+              <span className="font-normal text-white/55">
                 {tr('Featured:', 'বিশেষ:')}{' '}
               </span>
-              <span className="font-bold text-white tracking-wide uppercase">
+              <span className="font-bold uppercase tracking-[0.14em] text-site-yellow">
                 {currentSlide.alt[lang] || currentSlide.alt.en || currentSlide.alt.bn}
               </span>
             </div>
@@ -226,10 +235,10 @@ export default function Gallery() {
             <button
               type="button"
               onClick={slidePrev}
-              className="p-1 text-white/70 hover:text-white transition-all active:scale-95"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-white/70 transition-all hover:text-site-yellow active:scale-95"
               aria-label="Previous Slide"
             >
-              <FaChevronLeft className="w-3.5 h-3.5" />
+              <FaChevronLeft className="h-3.5 w-3.5" />
             </button>
 
             <div className="flex items-center gap-1.5">
@@ -238,8 +247,8 @@ export default function Gallery() {
                   key={idx}
                   type="button"
                   onClick={() => setSlideIdx(idx)}
-                  className={`h-1 rounded-full transition-all duration-300 ${
-                    idx === slideIdx ? 'w-5 bg-white shadow' : 'w-1.5 bg-white/40 hover:bg-white/70'
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    idx === slideIdx ? 'w-6 bg-site-yellow' : 'w-1.5 bg-white/40 hover:bg-white/70'
                   }`}
                   aria-label={`Slide ${idx + 1}`}
                 />
@@ -249,37 +258,40 @@ export default function Gallery() {
             <button
               type="button"
               onClick={slideNext}
-              className="p-1 text-white/70 hover:text-white transition-all active:scale-95"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-white/70 transition-all hover:text-site-yellow active:scale-95"
               aria-label="Next Slide"
             >
-              <FaChevronRight className="w-3.5 h-3.5" />
+              <FaChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
       </section>
 
       {/* ════ PHOTO GRID SECTION ════ */}
-      <section id="gallery-grid" className="py-6 sm:py-8" style={{ background: FJ.bg }}>
-        <div className="mx-auto max-w-[1320px] px-4 sm:px-6 md:px-10">
+      <section id="gallery-grid" className="py-12 md:py-16">
+        <div className="mx-auto max-w-site px-5 sm:px-8">
           {/* Filter Bar: Reset & Sort */}
-          <div className="flex items-center justify-between pb-4 border-b border-stone-200/80 mb-6">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-site-line pb-5">
             {(filter !== ALL || query) ? (
               <button
                 type="button"
                 onClick={() => reset(() => { setFilter(ALL); setQuery(''); })}
-                className="inline-flex items-center gap-1 text-xs text-amber-700 hover:text-amber-900 font-semibold"
+                className="btn-tertiary gap-1.5"
               >
-                <FaRotateLeft className="w-3 h-3" />
+                <FaRotateLeft className="h-3 w-3" />
                 {tr('Reset filters', 'ফিল্টার মুছুন')}
               </button>
             ) : <div />}
 
-            <div className="flex items-center gap-2 ml-auto">
-              <span className="font-mono text-xs text-stone-500">{tr('Sort by:', 'সাজান:')}</span>
+            <div className="ml-auto flex items-center gap-2.5">
+              <label htmlFor="gallery-sort" className="font-dmmono text-[11px] uppercase tracking-[0.14em] text-site-faint">
+                {tr('Sort by:', 'সাজান:')}
+              </label>
               <select
+                id="gallery-sort"
                 value={sort}
                 onChange={(e) => reset(() => setSort(e.target.value as 'latest' | 'oldest'))}
-                className="cursor-pointer rounded-lg px-2.5 py-1.5 font-bengali text-xs font-semibold outline-none bg-white border border-stone-300 text-stone-800 shadow-sm"
+                className="site-select w-auto cursor-pointer font-bengali text-[13px]"
               >
                 <option value="latest">{tr('Latest First', 'সর্বশেষ আগে')}</option>
                 <option value="oldest">{tr('Oldest First', 'পুরনো আগে')}</option>
@@ -289,28 +301,29 @@ export default function Gallery() {
 
           {/* Grid Layout (Shows 10 photos initially) */}
           {loading ? (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="overflow-hidden rounded-xl animate-pulse border border-stone-200">
-                  <div className="aspect-square w-full bg-stone-200" />
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div key={i} className="soft-card animate-pulse overflow-hidden p-5">
+                  <div className="aspect-[4/3] w-full rounded-[16px]" style={{ background: '#eef4e7' }} />
+                  <div className="mt-4 h-4 w-2/3 rounded-full" style={{ background: '#eef4e7' }} />
                 </div>
               ))}
             </div>
           ) : shown.length === 0 ? (
-            <div className="rounded-2xl py-16 text-center border-2 border-dashed border-stone-300 bg-white px-4">
-              <p className="font-bengali text-base font-semibold text-stone-800">
-                {tr('No photographs found matching your criteria.', 'কোনো ছবি খুঁজে পাওয়া যায়নি।')}
+            <div className="rounded-panel border border-dashed border-site-line-2 bg-white px-5 py-16 text-center">
+              <p className="font-bengali text-[16px] font-bold text-site-ink">
+                {tr('No photographs found matching your criteria.', 'কোনো ছবি খুঁজে পাওয়া যায়নি।')}
               </p>
               <button
                 type="button"
                 onClick={() => reset(() => { setFilter(ALL); setQuery(''); })}
-                className="mt-4 inline-flex items-center gap-2 rounded-full px-5 py-2 font-bengali text-xs font-bold text-white transition-all bg-amber-700 hover:bg-amber-800"
+                className="btn-green mt-6 font-bengali text-[13.5px]"
               >
                 {tr('Show all photos', 'সব ছবি দেখুন')}
               </button>
             </div>
           ) : (
-            <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4 space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {shown.map((g) => {
                 const categoryText = g.category[lang] || g.category.en || g.category.bn;
                 const altText = g.alt[lang] || g.alt.en || g.alt.bn;
@@ -318,34 +331,29 @@ export default function Gallery() {
                   <button
                     key={g.id}
                     onClick={() => openAt(g.id)}
-                    className="group relative block w-full break-inside-avoid overflow-hidden rounded-xl text-left bg-stone-900 border border-stone-200/80 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                    className="group soft-card flex w-full flex-col overflow-hidden p-5 text-left transition-colors hover:border-site-green/35"
                   >
-                    <div className="relative overflow-hidden">
+                    <div className="img-zoom relative aspect-[4/3] w-full overflow-hidden rounded-[16px]">
                       <img
                         src={g.src}
                         onError={onErr}
                         loading="lazy"
                         alt={altText}
-                        className="block h-auto max-h-[440px] w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="h-full w-full object-cover"
                       />
-                      <div
-                        className="absolute inset-0 flex flex-col justify-end p-3 sm:p-4 opacity-90 group-hover:opacity-100 transition-opacity"
-                        style={{ background: 'linear-gradient(180deg, transparent 35%, rgba(15,12,10,0.9))' }}
-                      >
-                        {categoryText && (
-                          <div className="font-mono text-[9px] uppercase tracking-[0.2em] font-bold text-amber-400">
-                            {categoryText}
-                          </div>
-                        )}
-                        {altText && (
-                          <div
-                            className="mt-1 font-bengali text-xs sm:text-sm font-semibold leading-snug text-white"
-                            style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}
-                          >
-                            {altText}
-                          </div>
-                        )}
-                      </div>
+                    </div>
+                    {/* Caption bar */}
+                    <div className="pt-4">
+                      {categoryText && (
+                        <div className="font-dmmono text-[10px] font-medium uppercase tracking-[0.16em] text-site-red">
+                          {categoryText}
+                        </div>
+                      )}
+                      {altText && (
+                        <div className="mt-2 line-clamp-2 font-archivo text-[15px] font-bold leading-snug text-site-ink">
+                          {altText}
+                        </div>
+                      )}
                     </div>
                   </button>
                 );
@@ -355,13 +363,13 @@ export default function Gallery() {
 
           {/* Load More Button */}
           {visible < filtered.length && (
-            <div className="mt-10 sm:mt-12 text-center">
+            <div className="mt-12 text-center">
               <button
                 type="button"
                 onClick={() => setVisible((v) => v + 10)}
-                className="inline-flex items-center gap-2 rounded-full px-7 sm:px-8 py-2.5 sm:py-3 font-bengali text-xs sm:text-sm font-bold text-stone-900 bg-white border border-stone-300 shadow-md hover:shadow-lg transition-all hover:bg-stone-50"
+                className="btn-ghost-dark font-bengali text-[14px]"
               >
-                {tr('Load more photos', 'আরও ছবি দেখুন')} <Icon.Arrow className="h-3.5 w-3.5 text-amber-700" />
+                {tr('Load more photos', 'আরও ছবি দেখুন')} <Icon.Arrow className="h-3 w-3" />
               </button>
             </div>
           )}
@@ -376,13 +384,13 @@ export default function Gallery() {
         return (
           <div
             className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
-            style={{ background: 'rgba(12,10,8,0.96)' }}
+            style={{ background: 'rgba(10,59,47,0.96)' }}
             onClick={() => setLightbox(null)}
           >
             <button
               type="button"
               onClick={() => setLightbox(null)}
-              className="absolute right-4 top-4 sm:right-6 sm:top-6 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full text-white z-10 bg-white/10 hover:bg-white/20 transition-transform active:scale-95"
+              className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-transform hover:bg-site-yellow hover:text-site-ink active:scale-95 sm:right-6 sm:top-6"
               aria-label="Close"
             >
               ✕
@@ -390,7 +398,7 @@ export default function Gallery() {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); step(-1); }}
-              className="absolute left-3 top-1/2 flex h-9 w-9 sm:h-12 sm:w-12 -translate-y-1/2 items-center justify-center rounded-full text-white z-10 md:left-6 bg-white/10 hover:bg-white/20 transition-transform active:scale-95"
+              className="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition-transform hover:bg-site-yellow hover:text-site-ink active:scale-95 md:left-6 md:h-12 md:w-12"
               aria-label="Previous"
             >
               <FaChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -398,30 +406,30 @@ export default function Gallery() {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); step(1); }}
-              className="absolute right-3 top-1/2 flex h-9 w-9 sm:h-12 sm:w-12 -translate-y-1/2 items-center justify-center rounded-full text-white z-10 md:right-6 bg-white/10 hover:bg-white/20 transition-transform active:scale-95"
+              className="absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition-transform hover:bg-site-yellow hover:text-site-ink active:scale-95 md:right-6 md:h-12 md:w-12"
               aria-label="Next"
             >
               <FaChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
 
-            <figure className="max-h-[92vh] max-w-[92vw] sm:max-w-[1000px] overflow-y-auto px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" onClick={(e) => e.stopPropagation()}>
-              <img src={current.src} onError={onErr} alt={photoTitle} className="mx-auto max-h-[64vh] sm:max-h-[74vh] w-auto max-w-full rounded-xl object-contain shadow-2xl" />
+            <figure className="max-h-[92vh] max-w-[92vw] overflow-y-auto px-1 sm:max-w-[1000px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" onClick={(e) => e.stopPropagation()}>
+              <img src={current.src} onError={onErr} alt={photoTitle} className="mx-auto max-h-[64vh] w-auto max-w-full rounded-panel object-contain sm:max-h-[74vh]" />
 
-              <figcaption className="mt-3.5 text-center px-2">
-                <div className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-amber-400">
+              <figcaption className="mt-5 px-2 text-center">
+                <div className="font-dmmono text-[11px] font-medium uppercase tracking-[0.16em] text-site-yellow">
                   {photoCategory}
                 </div>
-                <div className="mt-1 font-bengali font-sans text-xs sm:text-base font-semibold text-white leading-snug max-w-2xl mx-auto">
+                <div className="mx-auto mt-2 max-w-2xl font-archivo text-[16px] font-bold leading-snug text-white">
                   {photoTitle}
                 </div>
 
                 {/* Direct 'More' button pointing to Facebook / Story link */}
-                <div className="mt-3.5 flex justify-center">
+                <div className="mt-5 flex justify-center">
                   <a
                     href={current.more || 'https://www.facebook.com/chhatradol'}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full px-5 py-2 font-bengali text-xs font-bold text-white bg-amber-700 hover:bg-amber-800 transition-all shadow-md active:scale-95"
+                    className="btn-yellow font-bengali text-[13.5px]"
                   >
                     <span>{tr('More', 'আরও')}</span>
                     <FaArrowRight className="h-3 w-3" />

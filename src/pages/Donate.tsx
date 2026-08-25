@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { PageShell } from './_field-journal';
-import { startPayment } from '@/lib/payments';
+import { PageShell, PageHero } from './_field-journal';
+import { startPayment, type UnifiedPaymentResult } from '@/lib/payments';
 import { loadRazorpayScript } from '@/lib/razorpay';
 import { loadCashfreeScript } from '@/lib/cashfree';
 import type { PaymentGateway } from '@/types';
@@ -20,9 +20,8 @@ import {
   Heart,
   Check,
   Copy,
-  ArrowRight,
+  ShieldCheck,
   Info,
-  Smartphone,
   Mail,
   Calendar,
   Bookmark,
@@ -44,13 +43,50 @@ const CAUSES: Cause[] = [
   { key: 'general', icon: Heart, bn: 'সাধারণ তহবিল', en: 'General Fund', purpose: 'General Fund', desc: 'Where help is needed most' },
 ];
 
-const AMOUNTS = [
-  { v: 500, bn: 'একজন শিশুর জন্য', en: 'Support a child' },
-  { v: 1000, bn: 'প্রয়োজনীয় সামগ্রী', en: 'Provide essentials' },
-  { v: 2500, bn: 'পরিবর্তন আনুন', en: 'Make a difference' },
-  { v: 5000, bn: 'পরিবর্তনে শক্তি', en: 'Empower change' },
-  { v: 10000, bn: 'একটি পরিবারকে', en: 'Support a family' },
-  { v: 20000, bn: 'বড় প্রভাব', en: 'Create big impact' },
+// Each tier doubles as an amount picker: tapping a card fills the form in.
+const TIERS = [
+  {
+    v: 300, causeKey: 'education', catEn: 'Education', catBn: 'শিক্ষা',
+    en: 'A new school kit for a child', bn: 'একটি শিশুর জন্য নতুন স্কুল কিট',
+    descEn: 'Notebooks, pens and a bag so one child starts the year ready.',
+    descBn: 'খাতা, কলম আর ব্যাগ — একটি শিশু যেন প্রস্তুত হয়ে বছর শুরু করতে পারে।',
+    img: '/assets/images/service/post-34-students-book-support.jpg',
+  },
+  {
+    v: 500, causeKey: 'environment', catEn: 'Environment', catBn: 'পরিবেশ',
+    en: '20Kg of waste collected', bn: '২০ কেজি বর্জ্য সংগ্রহ',
+    descEn: 'A neighbourhood clean-up drive, from collection to safe disposal.',
+    descBn: 'একটি পাড়া পরিচ্ছন্নতা অভিযান — সংগ্রহ থেকে নিরাপদ নিষ্কাশন পর্যন্ত।',
+    img: '/assets/images/service/post-29-house-repair-flood.jpg',
+  },
+  {
+    v: 1000, causeKey: 'environment', catEn: 'Environment', catBn: 'পরিবেশ',
+    en: '10 trees planted', bn: '১০টি গাছ রোপণ',
+    descEn: 'Saplings, guards and a season of care along the village ponds.',
+    descBn: 'চারা, বেড়া আর এক মরসুমের পরিচর্যা — গ্রামের পুকুরপাড় ঘিরে।',
+    img: '/assets/images/impacts/tree_plantations.jpg',
+  },
+  {
+    v: 2000, causeKey: 'education', catEn: 'Education', catBn: 'শিক্ষা',
+    en: 'Support monthly education', bn: 'মাসিক শিক্ষা সহায়তা',
+    descEn: 'One month of coaching, materials and mentoring for a student.',
+    descBn: 'একজন শিক্ষার্থীর এক মাসের কোচিং, শিক্ষাসামগ্রী ও দিকনির্দেশনা।',
+    img: '/assets/images/impacts/education.jpg',
+  },
+  {
+    v: 5000, causeKey: 'healthcare', catEn: 'Health', catBn: 'স্বাস্থ্য',
+    en: 'Screening kits for one blood camp', bn: 'একটি রক্তদান শিবিরের স্ক্রিনিং কিট',
+    descEn: 'Screening kits, refreshments and logistics for a donation camp.',
+    descBn: 'একটি রক্তদান শিবিরের স্ক্রিনিং কিট, জলখাবার ও আয়োজন।',
+    img: '/assets/images/service/post-33-raktokotha-camp.jpg',
+  },
+  {
+    v: 10000, causeKey: 'food', catEn: 'Relief', catBn: 'ত্রাণ',
+    en: '1 Month Ration to widow family', bn: 'বিধবা পরিবারকে ১ মাসের রেশন',
+    descEn: 'Rice, pulses, oil and essentials delivered to a family for a month.',
+    descBn: 'চাল, ডাল, তেল ও নিত্যপ্রয়োজনীয় সামগ্রী — এক মাসের জন্য একটি পরিবারে।',
+    img: '/assets/images/service/post-30-tarpaulin-distribution.jpg',
+  },
 ];
 
 export const BANK_DETAILS = {
@@ -58,7 +94,7 @@ export const BANK_DETAILS = {
   accountNumber: '50200123995352',
   ifsc: 'HDFC0002593',
   bankName: 'HDFC Bank',
-  branch: 'Daspur / Narajole Branch',
+  branch: 'Medinipur',
   accountType: 'Current Account',
   upiId: '50200123995352@hdfcbank',
 };
@@ -111,12 +147,14 @@ export default function Donate() {
   useSEO(SEO['/donate']);
   const tr = (bn: string, en: string) => (lang === 'en' ? en : bn);
 
-  const [causeKey, setCauseKey] = useState('general');
-  const [picked, setPicked] = useState<number>(2500);
+  // Start on a real tier so the summary panel and the pre-selected amount agree.
+  const DEFAULT_TIER = TIERS.find((t) => t.v === 1000) || TIERS[0];
+  const [causeKey, setCauseKey] = useState(DEFAULT_TIER.causeKey);
+  const [picked, setPicked] = useState<number>(DEFAULT_TIER.v);
   const [custom, setCustom] = useState('');
   const [frequency, setFrequency] = useState<Frequency>('once');
-  const [anonymous, setAnonymous] = useState(false);
-  const [wantReceipt, setWantReceipt] = useState(false);
+  // The reference form has no anonymity/receipt toggles; the payload still reads this.
+  const [anonymous] = useState(false);
   const [donor, setDonor] = useState({ name: '', email: '', phone: '', pan: '' });
   const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
   const [formNotice, setFormNotice] = useState<string>('');
@@ -124,10 +162,11 @@ export default function Donate() {
   const [errMsg, setErrMsg] = useState('');
   
   // Payment Method Selection
-  const [payOption, setPayOption] = useState<PaymentOption>('gateway');
+  // Checkout runs through the gateway only — the QR/UTR flow was removed from the UI.
+  const [payOption] = useState<PaymentOption>('gateway');
   const [gateway] = useState<PaymentGateway>('cashfree');
 
-  const [utrRef, setUtrRef] = useState('');
+  const [utrRef] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
@@ -140,6 +179,8 @@ export default function Donate() {
     name: string;
     purpose: string;
     paymentMethod: string;
+    /** Real gateway transaction id (Cashfree cf_payment_id / Razorpay payment id) */
+    transactionId?: string;
   } | null>(null);
 
   // Preload gateway SDK scripts on page mount so user clicks open instantly
@@ -200,6 +241,22 @@ export default function Donate() {
 
   const cause = CAUSES.find((c) => c.key === causeKey) || CAUSES[5];
 
+  // Tapping a cause card fills the amount in, then drops the donor straight
+  // into the name field so they can keep going without hunting for the form.
+  const pickTier = (tier: { v: number; causeKey: string }) => {
+    setPicked(tier.v);
+    setCustom('');
+    setCauseKey(tier.causeKey);
+    // setTimeout, not rAF: rAF never fires in a backgrounded tab, which would
+    // leave the donor stranded on the card they just tapped.
+    window.setTimeout(() => {
+      const nameField = document.getElementById('donor-name') as HTMLInputElement | null;
+      if (!nameField) return;
+      nameField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      nameField.focus({ preventScroll: true });
+    }, 0);
+  };
+
   const setField = (k: keyof typeof donor) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setDonor({ ...donor, [k]: e.target.value });
     if (formErrors[k]) setFormErrors((prev) => ({ ...prev, [k]: undefined }));
@@ -218,6 +275,16 @@ export default function Donate() {
   };
 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  /**
+   * Pulls the real gateway transaction id out of a unified payment result.
+   * This is the id the donor can match against their bank/UPI statement and
+   * the gateway dashboard — distinct from our own receipt number.
+   */
+  const extractTransactionId = (res: UnifiedPaymentResult): string | undefined =>
+    res.gateway === 'cashfree'
+      ? res.result.payment?.paymentId || undefined
+      : res.result.razorpay_payment_id || undefined;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -339,6 +406,7 @@ export default function Donate() {
             name: anonymous ? 'Anonymous' : (donor.name || 'Anonymous'),
             purpose: cause.purpose,
             paymentMethod: r.gateway === 'cashfree' ? 'Cashfree Payments' : 'Razorpay',
+            transactionId: extractTransactionId(r),
           });
           setStatus('done');
           setShowSuccessModal(true);
@@ -371,6 +439,7 @@ export default function Donate() {
         name: anonymous ? 'Anonymous' : (donor.name || 'Anonymous'),
         purpose: cause.purpose,
         paymentMethod: res.gateway === 'cashfree' ? 'Cashfree Payments' : 'Razorpay',
+        transactionId: extractTransactionId(res),
       });
 
       setStatus('done');
@@ -383,63 +452,67 @@ export default function Donate() {
     }
   };
 
-  const upiDeepLink = `upi://pay?pa=${BANK_DETAILS.accountNumber}@hdfcbank&pn=CHHATRADOL%20SOCIAL%20WELFARE%20ORGANIZATION&am=${amount || 100}&cu=INR&tn=Donation`;
-
   return (
     <PageShell>
       {/* ── Breadcrumb (Clean Single Root) ── */}
       <Breadcrumb title={tr('অনুদান দিন', 'Donate')} />
 
+      <PageHero
+        eyebrow={tr('অনুদান দিন', 'Donate')}
+        title={tr('অনুদান দিন', 'Donate')}
+        lede={SEO['/donate'].description}
+      />
+
       {/* ── Top Stepper (Clean & High Contrast - Fully Visible on Mobile & Desktop) ── */}
-      <div className="bg-gradient-to-b from-[#fcfdfa] to-white border-b border-stone-200/70 py-2.5 sm:py-4 shadow-2xs">
+      <div className="bg-white border-b border-site-line py-3 sm:py-4">
         <div className="mx-auto max-w-[880px] px-2 sm:px-4">
           <div className="flex items-center justify-between gap-1 sm:gap-3">
             {/* Step 1 */}
             <div className="flex items-center gap-1 sm:gap-2.5 shrink min-w-0">
-              <div className="flex h-6 w-6 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-[#0c756f] text-white font-black text-[10px] sm:text-sm shadow-md ring-2 sm:ring-4 ring-emerald-500/10">
+              <div className="flex h-6 w-6 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-site-green text-white font-bold text-[10px] sm:text-sm">
                 1
               </div>
               <div className="text-left min-w-0">
-                <p className="text-[10px] sm:text-[13.5px] font-black text-stone-900 leading-tight truncate">
+                <p className="text-[10px] sm:text-[13.5px] font-black text-site-ink leading-tight truncate">
                   {tr('আপনার বিবরণ', 'Your Details')}
                 </p>
-                <p className="text-[8.5px] sm:text-[11px] font-semibold text-stone-500 truncate">
+                <p className="text-[8.5px] sm:text-[11px] font-semibold text-site-muted truncate">
                   {tr('বিবরণ পূরণ করুন', 'Fill in your details')}
                 </p>
               </div>
             </div>
 
-            <div className="h-[2px] flex-1 bg-emerald-300 rounded-full mx-1 sm:mx-2.5 min-w-[6px]" />
+            <div className="h-[2px] flex-1 rounded-full bg-site-yellow mx-1 sm:mx-2.5 min-w-[6px]" />
 
             {/* Step 2 */}
             <div className="flex items-center gap-1 sm:gap-2.5 shrink min-w-0">
-              <div className={`flex h-6 w-6 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full font-black text-[10px] sm:text-sm transition-all ${
-                donor.name.trim() && emailOk && phoneOk && amount > 0 ? 'bg-[#0c756f] text-white shadow-md' : 'bg-stone-100 text-stone-600 border border-stone-200'
+              <div className={`flex h-6 w-6 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full font-bold text-[10px] sm:text-sm transition-all ${
+                donor.name.trim() && emailOk && phoneOk && amount > 0 ? 'bg-site-green text-white' : 'bg-site-cream text-site-soft border border-site-line'
               }`}>
                 2
               </div>
               <div className="text-left min-w-0">
-                <p className="text-[10px] sm:text-[13.5px] font-black text-stone-900 leading-tight truncate">
+                <p className="text-[10px] sm:text-[13.5px] font-black text-site-ink leading-tight truncate">
                   {tr('পেমেন্ট', 'Payment')}
                 </p>
-                <p className="text-[8.5px] sm:text-[11px] font-semibold text-stone-500 truncate">
+                <p className="text-[8.5px] sm:text-[11px] font-semibold text-site-muted truncate">
                   {tr('পেমেন্টের মাধ্যম বাছুন', 'Choose payment method')}
                 </p>
               </div>
             </div>
 
-            <div className="h-[2px] flex-1 bg-stone-200 rounded-full mx-1 sm:mx-2.5 min-w-[6px]" />
+            <div className="h-[2px] flex-1 rounded-full bg-site-line-2 mx-1 sm:mx-2.5 min-w-[6px]" />
 
             {/* Step 3 */}
             <div className="flex items-center gap-1 sm:gap-2.5 shrink min-w-0">
-              <div className="flex h-6 w-6 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-400 font-black text-[10px] sm:text-sm border border-stone-200">
+              <div className="flex h-6 w-6 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-site-cream text-site-faint font-black text-[10px] sm:text-sm border border-site-line">
                 3
               </div>
               <div className="text-left min-w-0">
-                <p className="text-[10px] sm:text-[13.5px] font-black text-stone-400 leading-tight truncate">
+                <p className="text-[10px] sm:text-[13.5px] font-black text-site-faint leading-tight truncate">
                   {tr('নিশ্চিতকরণ', 'Confirmation')}
                 </p>
-                <p className="text-[8.5px] sm:text-[11px] font-medium text-stone-400 truncate">
+                <p className="text-[8.5px] sm:text-[11px] font-medium text-site-faint truncate">
                   {tr('ধন্যবাদ!', 'Thank you!')}
                 </p>
               </div>
@@ -449,611 +522,406 @@ export default function Donate() {
       </div>
 
       {/* ── Main Donation Form (Responsive 2-Column Layout) ── */}
-      <section className="mx-auto max-w-[1240px] px-3 sm:px-6 py-6 sm:py-8 lg:py-10">
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-12 items-start">
-          
+      <section className="mx-auto max-w-[1340px] px-5 pb-[70px] pt-10 sm:px-8 lg:pb-[90px] lg:pt-[60px]">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 items-start gap-x-8 gap-y-6 lg:grid-cols-[1.35fr_1fr] lg:gap-x-12 lg:gap-y-7">
+
           {/* ══════════════════════════════════════════════════════════════════
-              LEFT COLUMN: 1. Purpose, 2. Amount, 3. Your Details
+              LEFT: pick a cause — tapping a card fills the amount in
              ══════════════════════════════════════════════════════════════════ */}
-          <div className="space-y-5 sm:space-y-6 lg:col-span-6 xl:col-span-6">
-            
-            {/* 1. Select Donation Purpose */}
-            <div className="rounded-2xl sm:rounded-3xl border border-stone-200/90 bg-white p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h3 className="text-base sm:text-lg font-black text-stone-900 flex items-center gap-2">
-                    <span className="text-[#0c756f]">1.</span>
-                    <span>{tr('অনুদানের উদ্দেশ্য নির্বাচন করুন', 'Select Donation Purpose')}</span>
-                  </h3>
-                  <p className="text-[11px] sm:text-xs text-stone-500 font-semibold mt-0.5">
-                    {tr('যে ক্ষেত্রে আপনার সাহায্য সরাসরি পৌঁছাবে', 'Choose the cause you want to support directly')}
-                  </p>
-                </div>
-                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-stone-400 bg-stone-50 px-2.5 py-1 rounded-full border border-stone-200/60">
-                  {cause.purpose}
+          {/* Section heading spans both columns so the cards and the donation
+              panel still start on the same line. */}
+          <div className="flex flex-wrap items-end justify-between gap-4 lg:col-span-2">
+            <div>
+              <div className="eyebrow">{tr('একটি উদ্দেশ্য বাছুন', 'Choose a cause')}</div>
+              <h2 className="mt-3 font-archivo text-[clamp(22px,2.2vw,27px)] font-bold leading-[1.2] tracking-[-0.02em] text-site-ink">
+                {tr('আপনার সহায়তা কোথায় পরিবর্তন আনবে বেছে নিন', 'Choose where your support can make a difference')}
+              </h2>
+            </div>
+            <p className="font-dmsans text-[13px] font-medium text-site-faint">
+              {tr('যেকোনো সময় পরিবর্তন করতে পারেন', 'You can change it any time')}
+            </p>
+          </div>
+
+          <div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              {TIERS.map((t) => {
+                const active = picked === t.v && !custom;
+                return (
+                  <button
+                    key={`tier-${t.v}`}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => pickTier(t)}
+                    className={`flex h-full flex-col overflow-hidden rounded-[34px] border-2 bg-white text-left transition-all duration-200 hover:-translate-y-1 ${
+                      active ? 'border-site-green' : 'border-site-line'
+                    }`}
+                  >
+                    <div className="img-zoom aspect-[16/9] w-full overflow-hidden bg-[#eef4e7]">
+                      <img
+                        src={t.img}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                        onError={(e) => { e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }}
+                      />
+                    </div>
+
+                    <div className="flex flex-1 flex-col px-6 pb-6 pt-5">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span className="inline-flex items-center rounded-full border border-site-line bg-site-cream px-3 py-[7px] font-dmsans text-[11px] font-semibold text-site-green">
+                        {lang === 'en' ? t.catEn : t.catBn}
+                      </span>
+                      <span className="font-archivo text-[20px] font-bold text-site-red">
+                        ₹{t.v.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+
+                    <h3 className="mt-3.5 font-archivo text-[18px] font-bold leading-[1.3] text-site-ink">
+                      {lang === 'en' ? t.en : t.bn}
+                    </h3>
+
+                    <p className="mb-[18px] mt-2 line-clamp-2 font-dmsans text-[13.5px] leading-[1.7] text-site-muted">
+                      {lang === 'en' ? t.descEn : t.descBn}
+                    </p>
+
+                    <div className="mt-auto flex flex-wrap items-center justify-between gap-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-[22px] py-3 font-dmsans text-[12.5px] font-bold ${
+                          active ? 'bg-site-green text-white' : 'bg-site-yellow text-site-ink'
+                        }`}
+                      >
+                        {active ? (
+                          <>
+                            {tr('নির্বাচিত', 'Selected')} <Check className="h-3 w-3 stroke-[3]" />
+                          </>
+                        ) : (
+                          tr('দান করুন', 'Donate Now')
+                        )}
+                      </span>
+                      <span className="font-dmsans text-[11.5px] font-medium text-site-faint">
+                        {frequency === 'monthly' ? tr('মাসিক', 'monthly gift') : tr('একবারের দান', 'one-time gift')}
+                      </span>
+                    </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ══════════════════════════════════════════════════════════════════
+              RIGHT: your donation — sticky summary + form + bank details
+             ══════════════════════════════════════════════════════════════════ */}
+          <div>
+            <div className="grid gap-5 lg:sticky lg:top-[100px]">
+
+            <div className="rounded-[44px] border border-site-line bg-white p-6 sm:p-8">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-archivo text-[22px] font-bold leading-[1.2] text-site-ink">
+                  {tr('আপনার অনুদান', 'Your donation')}
+                </h3>
+                <span className="inline-flex items-center gap-1.5 font-dmsans text-[10.5px] font-bold uppercase tracking-[0.14em] text-site-green">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  {tr('নিরাপদ', 'Secure')}
                 </span>
               </div>
 
-              {/* Purpose Cards: 2-cols on mobile, 3-cols on tablet/desktop */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
-                {CAUSES.map((c) => {
-                  const active = causeKey === c.key;
-                  const IconComp = c.icon;
-                  return (
-                    <button
-                      key={c.key}
-                      type="button"
-                      onClick={() => setCauseKey(c.key)}
-                      className={`relative flex flex-col items-center justify-center rounded-2xl border-2 p-2.5 sm:p-3 text-center transition-all duration-200 cursor-pointer active:scale-95 min-h-[82px] sm:min-h-[90px] ${
-                        active
-                          ? 'border-[#00a35c] bg-emerald-50/50 shadow-sm ring-2 ring-emerald-500/10'
-                          : 'border-stone-200/80 bg-white hover:border-stone-300 hover:bg-stone-50/50'
-                      }`}
-                    >
-                      {active && (
-                        <span className="absolute top-1.5 right-1.5 flex h-4 w-4 sm:h-4.5 sm:w-4.5 items-center justify-center rounded-full bg-[#00a35c] text-white shadow-xs">
-                          <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 stroke-[3]" />
-                        </span>
-                      )}
-                      <div className={`mb-1 flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-xl transition-colors ${
-                        active ? 'bg-emerald-100/80 text-[#00a35c]' : 'bg-stone-100 text-stone-600'
-                      }`}>
-                        <IconComp className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
-                      </div>
-                      <span className={`text-[11.5px] sm:text-[12.5px] font-black leading-tight px-0.5 text-center ${active ? 'text-stone-900' : 'text-stone-700'}`}>
-                        {lang === 'en' ? c.en : c.bn}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 2. Choose Amount */}
-            <div className="rounded-2xl sm:rounded-3xl border border-stone-200/90 bg-white p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h3 className="text-base sm:text-lg font-black text-stone-900 flex items-center gap-2">
-                    <span className="text-[#0c756f]">2.</span>
-                    <span>{tr('পরিমাণ নির্বাচন করুন', 'Choose Amount')}</span>
-                  </h3>
-                  <p className="text-[11px] sm:text-xs text-stone-500 font-semibold mt-0.5">
-                    {tr('যেকোনো পরিমাণের সাহায্য অত্যন্ত মূল্যবান', 'Every contribution creates real impact')}
-                  </p>
+              {/* Live summary of what is about to be paid */}
+              <div className="mt-4 rounded-[26px] bg-site-cream px-6 py-4">
+                <div className="font-dmsans text-[12px] font-medium text-site-faint">
+                  {tr('যেখানে যাচ্ছে', 'Supporting')}
                 </div>
-
-                {/* Frequency Pill Switcher */}
-                <div className="flex items-center rounded-xl bg-stone-100 p-1 border border-stone-200/70 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setFrequency('once')}
-                    className={`rounded-lg px-2.5 sm:px-3 py-1 text-[10.5px] sm:text-[11.5px] font-black transition-all cursor-pointer ${
-                      frequency === 'once' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500 hover:text-stone-800'
-                    }`}
-                  >
-                    {tr('একবার', 'One-time')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFrequency('monthly')}
-                    className={`rounded-lg px-2.5 sm:px-3 py-1 text-[10.5px] sm:text-[11.5px] font-black transition-all cursor-pointer ${
-                      frequency === 'monthly' ? 'bg-[#0c756f] text-white shadow-xs' : 'text-stone-500 hover:text-stone-800'
-                    }`}
-                  >
-                    {tr('মাসিক', 'Monthly')}
-                  </button>
+                <div className="mt-2 font-archivo text-[16px] font-bold leading-[1.35] text-site-ink">
+                  {lang === 'en' ? cause.en : cause.bn}
+                </div>
+                <div className="mt-3.5 flex flex-wrap items-baseline gap-2">
+                  <span className="font-archivo text-[34px] font-bold leading-none text-site-green">
+                    ₹{amountFmt}
+                  </span>
+                  <span className="font-dmsans text-[13px] font-medium text-site-faint">
+                    {frequency === 'monthly' ? tr('মাসিক', 'monthly') : tr('একবার', 'one-time')}
+                  </span>
                 </div>
               </div>
 
-              {/* 6 Preset Cards */}
-              <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-                {AMOUNTS.map((a) => {
-                  const active = picked === a.v && !custom;
+              {/* Frequency */}
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFrequency('once')}
+                  className={`rounded-full border py-3 font-dmsans text-[13px] font-semibold transition-all ${
+                    frequency === 'once'
+                      ? 'border-site-green bg-site-green text-white'
+                      : 'border-site-line bg-white text-site-ink hover:border-site-green'
+                  }`}
+                >
+                  {tr('একবার', 'One-time')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFrequency('monthly')}
+                  className={`rounded-full border py-3 font-dmsans text-[13px] font-semibold transition-all ${
+                    frequency === 'monthly'
+                      ? 'border-site-green bg-site-green text-white'
+                      : 'border-site-line bg-white text-site-ink hover:border-site-green'
+                  }`}
+                >
+                  {tr('মাসিক', 'Monthly')}
+                </button>
+              </div>
+
+              {/* Amount chips */}
+              <div className="mb-2 mt-4 font-dmsans text-[12px] font-semibold text-[#33443c]">
+                {tr('অথবা পরিমাণ বাছুন', 'Or choose an amount')}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {TIERS.map((t) => {
+                  const active = picked === t.v && !custom;
                   return (
                     <button
-                      key={a.v}
+                      key={`chip-${t.v}`}
                       type="button"
-                      onClick={() => {
-                        setPicked(a.v);
-                        setCustom('');
-                      }}
-                      className={`relative flex flex-col items-center justify-center rounded-2xl border-2 p-2 sm:p-3 text-center transition-all duration-200 cursor-pointer active:scale-95 ${
+                      aria-pressed={active}
+                      onClick={() => { setPicked(t.v); setCustom(''); setCauseKey(t.causeKey); }}
+                      className={`rounded-[16px] border px-1 py-3.5 font-archivo text-[14px] font-bold transition-all ${
                         active
-                          ? 'border-[#00a35c] bg-emerald-50/50 shadow-sm ring-2 ring-emerald-500/10'
-                          : 'border-stone-200/80 bg-white hover:border-stone-300 hover:bg-stone-50/50'
+                          ? 'border-site-green bg-site-green text-white'
+                          : 'border-site-line bg-white text-site-ink hover:border-site-green'
                       }`}
                     >
-                      {active && (
-                        <span className="absolute top-1.5 right-1.5 flex h-4 w-4 sm:h-4.5 sm:w-4.5 items-center justify-center rounded-full bg-[#00a35c] text-white shadow-xs">
-                          <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 stroke-[3]" />
-                        </span>
-                      )}
-                      <span className={`font-arvo font-bold text-[16px] sm:text-[18px] tracking-tight ${active ? 'text-[#00a35c]' : 'text-stone-900'}`}>
-                        ₹{a.v.toLocaleString('en-IN')}
-                      </span>
-                      <span className="font-sans font-semibold text-[10px] sm:text-[11px] text-stone-500 mt-0.5 leading-tight truncate w-full px-0.5">
-                        {lang === 'en' ? a.en : a.bn}
-                      </span>
+                      ₹{t.v.toLocaleString('en-IN')}
                     </button>
                   );
                 })}
               </div>
 
-              {/* Custom Amount Input (No wrapping on INR tag) */}
-              <div className="mt-3 flex items-center rounded-2xl border-2 border-stone-200 bg-stone-50/60 px-3.5 py-2.5 sm:py-3 focus-within:border-[#00a35c] focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/10 transition-all">
-                <span className="text-base font-black text-stone-500 mr-2 shrink-0">₹</span>
+              {/* Custom amount */}
+              <div className="mt-2.5 flex items-center rounded-full border border-site-line bg-site-field px-[22px] py-[13px] transition-colors focus-within:border-site-green">
+                {/* <span className="mr-2 shrink-0 font-dmsans text-[15px] font-bold text-site-muted">₹</span> */}
+                <label htmlFor="donate-custom" className="sr-only">
+                  {tr('নিজের ইচ্ছেমতো পরিমাণ লিখুন', 'Other amount')}
+                </label>
                 <input
+                  id="donate-custom"
                   type="number"
-                  placeholder={tr('নিজের ইচ্ছেমতো পরিমাণ লিখুন', 'Enter custom amount')}
+                  min="10"
+                  placeholder={tr('নিজের ইচ্ছেমতো পরিমাণ', 'Other amount (₹)')}
                   value={custom}
                   onChange={(e) => setCustom(e.target.value)}
-                  min="10"
-                  className="w-full bg-transparent text-xs sm:text-sm font-black text-stone-900 placeholder:text-stone-400 focus:outline-none min-w-0"
+                  className="w-full min-w-0 bg-transparent font-dmsans text-[14px] font-bold text-site-ink placeholder:font-medium placeholder:text-[#9aa9a0] focus:outline-none"
                 />
-                <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider shrink-0 whitespace-nowrap ml-2">
-                  INR
-                </span>
               </div>
-            </div>
 
-            {/* 3. Your Details */}
-            <div id="details-section" className="rounded-2xl sm:rounded-3xl border border-stone-200/90 bg-white p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
-              <h3 className="text-base sm:text-lg font-black text-stone-900 flex items-center gap-2">
-                <span className="text-[#0c756f]">3.</span>
-                <span>{tr('আপনার বিবরণ', 'Your Details')}</span>
-              </h3>
-              <p className="text-[11px] sm:text-xs text-stone-500 font-semibold mt-0.5 mb-3.5">
-                {tr('রসিদ ও নিশ্চিতকরণের জন্য আপনার তথ্য দিন', 'Enter your contact details for official invoice & receipt')}
-              </p>
-
-              <div className="space-y-3">
+              {/* Donor details */}
+              <div id="details-section" className="mt-4 grid gap-2">
                 <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    {tr('পুরো নাম *', 'Full Name *')}
-                  </label>
+                  <label htmlFor="donor-name" className="sr-only">{tr('পুরো নাম', 'Full name')}</label>
                   <input
                     id="donor-name"
                     type="text"
-                    placeholder={tr('আপনার পুরো নাম', 'Enter your full name')}
+                    placeholder={tr('পুরো নাম', 'Full name')}
                     value={donor.name}
                     onChange={setField('name')}
-                    className={`w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all ${
-                      formErrors.name
-                        ? 'border-rose-400 bg-rose-50/20 text-stone-900 focus:ring-2 focus:ring-rose-400'
-                        : 'border-stone-300 bg-stone-50/40 text-stone-800 focus:bg-white focus:ring-2 focus:ring-[#00a35c]'
-                    }`}
+                    className={`site-input min-h-0 px-[22px] py-[13px] text-[14px] ${formErrors.name ? 'border-site-blood' : ''}`}
                   />
-                  {formErrors.name && (
-                    <p className="text-[11px] font-bold text-rose-600 mt-1 animate-fade-in">{formErrors.name}</p>
-                  )}
+                  {formErrors.name && <p className="field-error">{formErrors.name}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    {tr('ইমেল ঠিকানা *', 'Email Address *')}
-                  </label>
+                  <label htmlFor="donor-email" className="sr-only">{tr('ইমেল ঠিকানা', 'Email address')}</label>
                   <input
                     id="donor-email"
                     type="email"
-                    placeholder={tr('আপনার ইমেল (রসিদ পাঠানোর জন্য)', 'Enter your email')}
+                    placeholder={tr('৮০জি রসিদের জন্য ইমেল', 'Email for the 80G receipt')}
                     value={donor.email}
                     onChange={setField('email')}
-                    className={`w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all ${
-                      formErrors.email
-                        ? 'border-rose-400 bg-rose-50/20 text-stone-900 focus:ring-2 focus:ring-rose-400'
-                        : 'border-stone-300 bg-stone-50/40 text-stone-800 focus:bg-white focus:ring-2 focus:ring-[#00a35c]'
-                    }`}
+                    className={`site-input min-h-0 px-[22px] py-[13px] text-[14px] ${formErrors.email ? 'border-site-blood' : ''}`}
                   />
-                  {formErrors.email && (
-                    <p className="text-[11px] font-bold text-rose-600 mt-1 animate-fade-in">{formErrors.email}</p>
-                  )}
+                  {formErrors.email && <p className="field-error">{formErrors.email}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    {tr('ফোন নম্বর *', 'Phone Number *')}
-                  </label>
+                  <label htmlFor="donor-phone" className="sr-only">{tr('ফোন নম্বর', 'Phone number')}</label>
                   <input
                     id="donor-phone"
                     type="tel"
-                    placeholder={tr('আপনার ফোন নম্বর', 'Enter your phone number')}
+                    placeholder={tr('ফোন নম্বর', 'Phone number')}
                     value={donor.phone}
                     onChange={setField('phone')}
-                    className={`w-full rounded-xl border px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition-all ${
-                      formErrors.phone
-                        ? 'border-rose-400 bg-rose-50/20 text-stone-900 focus:ring-2 focus:ring-rose-400'
-                        : 'border-stone-300 bg-stone-50/40 text-stone-800 focus:bg-white focus:ring-2 focus:ring-[#00a35c]'
-                    }`}
+                    className={`site-input min-h-0 px-[22px] py-[13px] text-[14px] ${formErrors.phone ? 'border-site-blood' : ''}`}
                   />
-                  {formErrors.phone && (
-                    <p className="text-[11px] font-bold text-rose-600 mt-1 animate-fade-in">{formErrors.phone}</p>
-                  )}
+                  {formErrors.phone && <p className="field-error">{formErrors.phone}</p>}
                 </div>
 
-                {/* Checkboxes */}
-                <div className="pt-1.5 space-y-2">
-                  <label className="flex items-center gap-2.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={wantReceipt}
-                      onChange={(e) => setWantReceipt(e.target.checked)}
-                      className="h-4 w-4 rounded text-[#00a35c] focus:ring-[#00a35c]"
-                    />
-                    <span className="text-xs font-bold text-stone-700 flex items-center gap-1">
-                      {tr('আমি ৮০জি কর-রসিদ চাই', 'I want 80G tax receipt')}
-                      <span className="text-[10.5px] font-normal text-stone-400">({tr('শীঘ্রই', 'Coming Soon')})</span>
-                      <Info className="h-3.5 w-3.5 text-stone-400" />
-                    </span>
-                  </label>
-
-                  <label className="flex items-start gap-2.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={anonymous}
-                      onChange={(e) => setAnonymous(e.target.checked)}
-                      className="h-4 w-4 rounded text-[#00a35c] focus:ring-[#00a35c] mt-0.5"
-                    />
-                    <span className="text-xs font-bold text-stone-700">
-                      {tr('নাম প্রকাশ না করে দান করুন', 'Donate anonymously')}
-                      <span className="block text-[10.5px] font-normal text-stone-400">
-                        {tr('আপনার নাম পাবলিক তালিকায় দেখা যাবে না।', 'Your name will not appear in public lists.')}
-                      </span>
-                    </span>
-                  </label>
+                <div>
+                  <label htmlFor="donor-pan" className="sr-only">{tr('প্যান (৮০জি-র জন্য)', 'PAN (for 80G)')}</label>
+                  <input
+                    id="donor-pan"
+                    type="text"
+                    placeholder={tr('প্যান (৮০জি-র জন্য)', 'PAN (for 80G)')}
+                    value={donor.pan}
+                    onChange={setField('pan')}
+                    className={`site-input min-h-0 px-[22px] py-[13px] text-[14px] ${formErrors.pan ? 'border-site-blood' : ''}`}
+                  />
+                  {formErrors.pan && <p className="field-error">{formErrors.pan}</p>}
                 </div>
 
-                {/* Fill-Details Prompt Banner */}
                 {formNotice && (
-                  <div className="rounded-xl bg-amber-50 border border-amber-300 p-3 text-xs font-bold text-amber-900 flex items-center gap-2 animate-fade-in shadow-2xs">
-                    <Info className="h-4 w-4 text-amber-600 shrink-0" />
+                  <div className="error-panel flex items-center gap-2">
+                    <Info className="h-4 w-4 shrink-0" />
                     <span>{formNotice}</span>
                   </div>
                 )}
 
-                {/* Primary CTA Submit Button (Always Active & Responsive) */}
                 <button
                   type="submit"
                   disabled={status === 'processing'}
-                  className="mt-3 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#0c756f] to-[#095a55] hover:from-[#095a55] hover:to-[#074743] py-3.5 sm:py-4 text-xs sm:text-base font-black text-white shadow-lg hover:shadow-xl transition-all duration-200 active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-yellow mt-4 w-full py-4 text-[15px]"
                 >
                   {status === 'processing' ? (
-                    <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                      {tr('প্রসেস হচ্ছে…', 'Processing…')}
-                    </span>
-                  ) : (
                     <>
-                      <span>{tr(`পেমেন্টে এগিয়ে যান (₹${amountFmt})`, `Proceed to Payment ₹${amountFmt}`)}</span>
-                      <ArrowRight className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-site-ink border-t-transparent" />
+                      {tr('প্রসেস হচ্ছে…', 'Processing…')}
                     </>
+                  ) : (
+                    <span>{tr(`দান করুন ₹${amountFmt}`, `Donate ₹${amountFmt}`)}</span>
                   )}
                 </button>
+
+                <p className="mt-3 text-center font-dmsans text-[11.5px] leading-[1.6] text-site-faint">
+                  {tr('পেমেন্ট সুরক্ষিত · রসিদ ইমেলে পাঠানো হবে', 'Payments secured by the gateway · receipt emailed within 48 hours')}
+                </p>
               </div>
+            </div>
+
+            {/* Bank transfer — for donors who would rather send money directly */}
+            <div className="rounded-[40px] bg-site-green px-6 py-7 text-white sm:px-8">
+              <div className="font-dmsans text-[12px] font-bold uppercase tracking-[0.14em] text-site-yellow">
+                {tr('ব্যাংক ট্রান্সফার', 'Bank Transfer')}
+              </div>
+              <p className="mb-4 mt-2.5 font-dmsans text-[13.5px] leading-[1.6] text-white/70">
+                {tr('সরাসরি ব্যাংকে পাঠাতে চাইলে নিচের তথ্য ব্যবহার করুন।', 'Prefer to transfer directly? Use the details below.')}
+              </p>
+
+              <dl className="grid gap-0.5">
+                {[
+                  { k: 'name', label: tr('অ্যাকাউন্টের নাম', 'Account Name'), value: BANK_DETAILS.accountName, mono: false },
+                  { k: 'acc', label: tr('অ্যাকাউন্ট নম্বর', 'Account Number'), value: BANK_DETAILS.accountNumber, mono: true },
+                  { k: 'ifsc', label: tr('IFSC কোড', 'IFSC Code'), value: BANK_DETAILS.ifsc, mono: true },
+                  { k: 'bank', label: tr('ব্যাংক ও শাখা', 'Branch'), value: `${BANK_DETAILS.branch}`, mono: false },
+                ].map((row) => (
+                  <div
+                    key={row.k}
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 border-b border-white/15 py-3.5 last:border-0 sm:grid-cols-[86px_minmax(0,1fr)_auto] sm:gap-x-4"
+                  >
+                    <dt className="col-span-2 font-dmsans text-[10.5px] font-semibold uppercase leading-[1.4] tracking-[0.1em] text-white/50 sm:col-span-1">
+                      {row.label}
+                    </dt>
+                    <dd className={`${row.mono ? 'font-dmmono' : 'font-dmsans'} min-w-0 break-words text-[13px] font-bold leading-[1.45] text-white sm:text-right`}>
+                      {row.value}
+                    </dd>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(row.k, row.value)}
+                      className="inline-flex w-[92px] shrink-0 items-center justify-center gap-1.5 rounded-full border border-white/[0.28] px-3 py-2 font-dmsans text-[11.5px] font-semibold text-white transition-colors hover:border-site-yellow hover:text-site-yellow"
+                    >
+                      {copiedKey === row.k ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      <span>{copiedKey === row.k ? tr('কপি হয়েছে!', 'Copied') : tr('কপি', 'Copy')}</span>
+                    </button>
+                  </div>
+                ))}
+              </dl>
+
+              <p className="mt-4 font-dmsans text-[11.5px] leading-[1.6] text-white/55">
+                {tr('ট্রান্সফারের পর রসিদের জন্য আমাদের সাথে যোগাযোগ করুন।', 'After transferring, contact us to receive your receipt.')}
+              </p>
+            </div>
             </div>
           </div>
+        </form>
 
-          {/* ══════════════════════════════════════════════════════════════════
-              RIGHT COLUMN: 4. Choose Payment Method & 5. Frequently Asked Questions
-             ══════════════════════════════════════════════════════════════════ */}
-          <div className="space-y-5 sm:space-y-6 lg:col-span-6 xl:col-span-6">
-            
-            {/* 4. Choose Payment Method Card */}
-            <div className="rounded-2xl sm:rounded-3xl border border-stone-200/90 bg-white p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="mb-3.5">
-                <h3 className="text-base sm:text-lg font-black text-stone-900 flex items-center gap-2">
-                  <span className="text-[#0c756f]">4.</span>
-                  <span>{tr('পেমেন্ট মাধ্যম বেছে নিন', 'Choose Payment Method')}</span>
-                </h3>
-                <p className="text-[11px] sm:text-xs text-stone-500 font-semibold mt-0.5">
-                  {tr('আপনার পছন্দের সুবিধাজনক মাধ্যমটি নির্বাচন করুন', 'Select your preferred payment option')}
-                </p>
-              </div>
+        {/* FAQs + accepted methods sit full width under the two columns */}
+        <div className="mt-10 space-y-6">
+          {/* ── 5. Frequently Asked Questions ── */}
+          <div className="space-y-5 sm:space-y-6 pt-6 sm:pt-8 mt-2 sm:mt-4">
+            <h2 className="mb-4 px-1 font-archivo text-[22px] font-bold tracking-[-0.02em] text-site-ink sm:text-[26px]">
+              {tr('সাধারণ জিজ্ঞাসা', 'Frequently Asked Questions')}
+            </h2>
 
-              <div className="space-y-3">
-                {/* ── Option 1: Pay Securely Online ── */}
-                <button
-                  type="button"
-                  onClick={() => setPayOption('gateway')}
-                  className={`w-full text-left rounded-2xl border-2 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 ${
-                    payOption === 'gateway'
-                      ? 'border-[#00a35c] bg-white shadow-md ring-2 ring-emerald-500/10'
-                      : 'border-stone-200 bg-white hover:border-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                      {/* Radio */}
-                      <span
-                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
-                          payOption === 'gateway' ? 'border-[#00a35c]' : 'border-stone-300'
-                        }`}
-                      >
-                        {payOption === 'gateway' && <span className="h-2.5 w-2.5 rounded-full bg-[#00a35c]" />}
+            <div className="overflow-hidden rounded-[24px] border border-site-line bg-white divide-y divide-site-line">
+              {FAQS.map((faq, idx) => {
+                const isOpen = openFaq === idx;
+                return (
+                  <div key={idx} className="transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(isOpen ? null : idx)}
+                      className="flex w-full cursor-pointer items-start justify-between gap-4 px-6 py-5 text-left transition-colors hover:bg-site-cream/60 sm:px-8 sm:py-6"
+                    >
+                      <span className="font-dmsans text-[14px] font-bold leading-[1.5] text-site-ink sm:text-[15px]">
+                        {lang === 'en' ? faq.qEn : faq.qBn}
                       </span>
-
-                      <div className="min-w-0">
-                        <h4 className="text-xs sm:text-[13.5px] font-black text-stone-900 truncate">
-                          {tr('অনলাইনে নিরাপদে পে করুন', 'Pay Securely Online')}
-                        </h4>
-                        <p className="text-[10.5px] sm:text-[11px] font-semibold text-stone-500 truncate">
-                          {tr('UPI, Cards, NetBanking ও Wallets', 'UPI, Cards, NetBanking & Wallets')}
-                        </p>
+                      <span className={`shrink-0 text-[20px] leading-none transition-colors ${isOpen ? 'font-bold text-site-red' : 'text-site-faint'}`}>
+                        {isOpen ? '×' : '+'}
+                      </span>
+                    </button>
+                    {isOpen && (
+                      <div className="animate-fade-in px-6 pb-6 pt-0 font-dmsans text-[13.5px] leading-[1.8] text-site-soft sm:px-8 sm:pb-7 sm:text-[14px]">
+                        {lang === 'en' ? faq.aEn : faq.aBn}
                       </div>
-                    </div>
-
-                    <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[8.5px] sm:text-[9.5px] font-black text-emerald-800 uppercase tracking-wider shrink-0 whitespace-nowrap">
-                      {tr('প্রস্তাবিত', 'Recommended')}
-                    </span>
+                    )}
                   </div>
-
-                  {/* Payment Brands Row */}
-                  <div className="mt-2.5 flex items-center gap-2 pt-2 border-t border-stone-100 overflow-x-auto no-scrollbar">
-                    <img src="/assets/payment/upi.svg" alt="UPI" className="h-3.5 w-auto object-contain shrink-0" />
-                    <img src="/assets/payment/visa.svg" alt="VISA" className="h-3.5 w-auto object-contain shrink-0" />
-                    <img src="/assets/payment/mastercard.svg" alt="Mastercard" className="h-3.5 w-auto object-contain shrink-0" />
-                    <img src="/assets/payment/rupay.svg" alt="RuPay" className="h-3.5 w-auto object-contain shrink-0" />
-                    <img src="/assets/payment/paytm.svg" alt="Paytm" className="h-3.5 w-auto object-contain shrink-0" />
-                  </div>
-                </button>
-
-                {/* ── Option 2: Scan & Pay (UPI QR) ── */}
-                <button
-                  type="button"
-                  onClick={() => setPayOption('qr')}
-                  className={`w-full text-left rounded-2xl border-2 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 ${
-                    payOption === 'qr'
-                      ? 'border-[#00a35c] bg-white shadow-md ring-2 ring-emerald-500/10'
-                      : 'border-stone-200 bg-white hover:border-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 sm:gap-3">
-                    {/* Radio */}
-                    <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
-                        payOption === 'qr' ? 'border-[#00a35c]' : 'border-stone-300'
-                      }`}
-                    >
-                      {payOption === 'qr' && <span className="h-2.5 w-2.5 rounded-full bg-[#00a35c]" />}
-                    </span>
-
-                    <div className="min-w-0">
-                      <h4 className="text-xs sm:text-[13.5px] font-black text-stone-900">
-                        {tr('স্ক্যান করে পে করুন (UPI QR)', 'Scan & Pay (UPI QR)')}
-                      </h4>
-                      <p className="text-[10.5px] sm:text-[11px] font-semibold text-stone-500">
-                        {tr('যেকোনো UPI অ্যাপ দিয়ে স্ক্যান করুন', 'Scan using any UPI app')}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* UPI Apps Row */}
-                  <div className="mt-2.5 flex items-center gap-3 pl-7 sm:pl-8 overflow-x-auto no-scrollbar">
-                    <img src="/assets/payment/gpay.svg" alt="GPay" className="h-3.5 w-auto object-contain shrink-0" />
-                    <img src="/assets/payment/phonepe.svg" alt="PhonePe" className="h-3.5 w-auto object-contain shrink-0" />
-                    <img src="/assets/payment/paytm.svg" alt="Paytm" className="h-3.5 w-auto object-contain shrink-0" />
-                    <img src="/assets/payment/upi.svg" alt="BHIM UPI" className="h-3.5 w-auto object-contain shrink-0" />
-                  </div>
-
-                  {/* Expanded QR Box when active */}
-                  {payOption === 'qr' && (
-                    <div className="mt-4 pt-3 border-t border-stone-100 flex flex-col items-center text-center animate-fade-in">
-                      <div className="rounded-2xl border border-stone-200 bg-white p-3 shadow-sm">
-                        <img
-                          src="/assets/payment/cswo-qr.png"
-                          alt="CSWO UPI QR"
-                          className="h-40 w-40 sm:h-44 sm:w-44 object-contain rounded-xl"
-                        />
-                      </div>
-                      <p className="mt-2.5 font-mono text-xs font-black text-stone-800 break-all px-2">
-                        UPI ID: <span className="text-[#0c756f]">{BANK_DETAILS.accountNumber}@hdfcbank</span>
-                      </p>
-                      <p className="text-[10.5px] sm:text-[11px] font-semibold text-stone-400 mt-0.5">
-                        {tr('স্ক্যান করে আপনার পেমেন্ট সম্পন্ন করুন', 'Scan and complete your payment')}
-                      </p>
-
-                      <div className="mt-2.5 block sm:hidden w-full">
-                        <a
-                          href={upiDeepLink}
-                          className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#0c756f] py-2 text-xs font-extrabold text-white shadow-sm"
-                        >
-                          <Smartphone className="h-3.5 w-3.5" />
-                          {tr('UPI অ্যাপে খুলুন', 'Open in UPI App')}
-                        </a>
-                      </div>
-
-                      {/* UTR Input */}
-                      <div className="mt-3.5 w-full text-left">
-                        <label className="block text-xs font-bold text-stone-700 mb-1">
-                          {tr('পেমেন্ট রেফারেন্স / UTR নম্বর *', 'Payment Reference / UTR Number *')}
-                        </label>
-                        <input
-                          type="text"
-                          placeholder={tr('১২-সংখ্যার UTR বা ট্রানজাকশন আইডি লিখুন', 'Enter 12-digit UTR or Txn ID')}
-                          value={utrRef}
-                          onChange={(e) => setUtrRef(e.target.value)}
-                          className="w-full rounded-xl border border-stone-300 bg-stone-50 px-3.5 py-2.5 text-xs font-bold text-stone-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#00a35c]"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </button>
-
-                {/* ── Option 3: Bank Transfer ── */}
-                <button
-                  type="button"
-                  onClick={() => setPayOption('bank')}
-                  className={`w-full text-left rounded-2xl border-2 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 ${
-                    payOption === 'bank'
-                      ? 'border-[#00a35c] bg-white shadow-md ring-2 ring-emerald-500/10'
-                      : 'border-stone-200 bg-white hover:border-stone-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 sm:gap-3">
-                    {/* Radio */}
-                    <span
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
-                        payOption === 'bank' ? 'border-[#00a35c]' : 'border-stone-300'
-                      }`}
-                    >
-                      {payOption === 'bank' && <span className="h-2.5 w-2.5 rounded-full bg-[#00a35c]" />}
-                    </span>
-
-                    <div className="min-w-0">
-                      <h4 className="text-xs sm:text-[13.5px] font-black text-stone-900">
-                        {tr('ব্যাংক ট্রান্সফার', 'Bank Transfer')}
-                      </h4>
-                      <p className="text-[10.5px] sm:text-[11px] font-semibold text-stone-500">
-                        {tr('সরাসরি আমাদের ব্যাংক অ্যাকাউন্টে ট্রান্সফার করুন', 'Transfer directly to our bank account')}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Expanded Bank Box when active */}
-                  {payOption === 'bank' && (
-                    <div className="mt-4 pt-3 border-t border-stone-100 animate-fade-in">
-                      <div className="rounded-2xl border border-stone-200 bg-stone-50/80 p-3.5 sm:p-4 text-xs font-semibold space-y-2.5">
-                        <div className="flex justify-between items-center pb-2 border-b border-stone-200/60 gap-2">
-                          <span className="text-stone-400 uppercase text-[9px] sm:text-[9.5px] font-bold tracking-wider shrink-0">{tr('অ্যাকাউন্টের নাম', 'Account Name')}</span>
-                          <span className="font-mono font-black text-stone-900 text-right text-[11px] sm:text-[11.5px] break-words">{BANK_DETAILS.accountName}</span>
-                        </div>
-
-                        <div className="flex justify-between items-center pb-2 border-b border-stone-200/60 gap-2">
-                          <span className="text-stone-400 uppercase text-[9px] sm:text-[9.5px] font-bold tracking-wider shrink-0">{tr('ব্যাংকের নাম', 'Bank Name')}</span>
-                          <span className="font-bold text-stone-800 text-right">{BANK_DETAILS.bankName}</span>
-                        </div>
-
-                        <div className="flex justify-between items-center pb-2 border-b border-stone-200/60 gap-2">
-                          <span className="text-stone-400 uppercase text-[9px] sm:text-[9.5px] font-bold tracking-wider shrink-0">{tr('অ্যাকাউন্ট নম্বর', 'Account Number')}</span>
-                          <div className="flex items-center gap-1.5 sm:gap-2">
-                            <span className="font-mono font-black text-[#0c756f] text-xs sm:text-[13px]">{BANK_DETAILS.accountNumber}</span>
-                            <button
-                              type="button"
-                              onClick={() => copyToClipboard('acc', BANK_DETAILS.accountNumber)}
-                              className="flex items-center gap-1 rounded-md bg-stone-200/70 px-2 py-0.5 text-[9.5px] sm:text-[10px] font-black text-stone-700 hover:bg-stone-300 cursor-pointer shrink-0"
-                            >
-                              {copiedKey === 'acc' ? <Check className="h-3 w-3 text-emerald-600 stroke-[3]" /> : <Copy className="h-3 w-3" />}
-                              <span>{copiedKey === 'acc' ? tr('কপি হয়েছে!', 'Copied!') : tr('কপি', 'Copy')}</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-between items-center gap-2">
-                          <span className="text-stone-400 uppercase text-[9px] sm:text-[9.5px] font-bold tracking-wider shrink-0">{tr('IFSC কোড', 'IFSC Code')}</span>
-                          <div className="flex items-center gap-1.5 sm:gap-2">
-                            <span className="font-mono font-black text-stone-900 text-xs sm:text-[13px]">{BANK_DETAILS.ifsc}</span>
-                            <button
-                              type="button"
-                              onClick={() => copyToClipboard('ifsc', BANK_DETAILS.ifsc)}
-                              className="flex items-center gap-1 rounded-md bg-stone-200/70 px-2 py-0.5 text-[9.5px] sm:text-[10px] font-black text-stone-700 hover:bg-stone-300 cursor-pointer shrink-0"
-                            >
-                              {copiedKey === 'ifsc' ? <Check className="h-3 w-3 text-emerald-600 stroke-[3]" /> : <Copy className="h-3 w-3" />}
-                              <span>{copiedKey === 'ifsc' ? tr('কপি হয়েছে!', 'Copied!') : tr('কপি', 'Copy')}</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* UTR Input */}
-                      <div className="mt-3.5">
-                        <label className="block text-xs font-bold text-stone-700 mb-1">
-                          {tr('ব্যাংক ট্রানজাকশন / UTR নম্বর *', 'Bank Transaction / UTR Number *')}
-                        </label>
-                        <input
-                          type="text"
-                          placeholder={tr('ট্রান্সফারের পর ব্যাংক থেকে প্রাপ্ত UTR নম্বর লিখুন', 'Enter UTR number received from bank')}
-                          value={utrRef}
-                          onChange={(e) => setUtrRef(e.target.value)}
-                          className="w-full rounded-xl border border-stone-300 bg-stone-50 px-3.5 py-2.5 text-xs font-bold text-stone-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#00a35c]"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </button>
-              </div>
-
-              {/* Removed Inline Error Alert - Now replaced by a Modal */}
+                );
+              })}
             </div>
 
-            {/* ── 5. Frequently Asked Questions ── */}
-            <div className="space-y-5 sm:space-y-6 pt-6 sm:pt-8 mt-2 sm:mt-4">
-              <h2 className="font-serif text-xl sm:text-[26px] font-normal text-stone-900 tracking-tight px-1 mb-2">
-                {tr('সাধারণ জিজ্ঞাসা', 'Frequently Asked Questions')}
-              </h2>
+            {/* ── We Accept Infinite Looping Ticker Marquee ── */}
+            <div className="rounded-card border border-site-line bg-white p-3.5 sm:p-5 overflow-hidden relative">
+              <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-site-faint mb-3 text-center">
+                {tr('আমরা গ্রহণ করি', 'WE ACCEPT')}
+              </p>
 
-              <div className="rounded-2xl border border-stone-200/90 bg-white shadow-2xs divide-y divide-stone-200/80 overflow-hidden">
-                {FAQS.map((faq, idx) => {
-                  const isOpen = openFaq === idx;
-                  return (
-                    <div key={idx} className="transition-colors">
-                      <button
-                        type="button"
-                        onClick={() => setOpenFaq(isOpen ? null : idx)}
-                        className="flex w-full items-start justify-between p-3.5 sm:p-4.5 text-left transition-colors hover:bg-stone-50/50 gap-2.5 cursor-pointer"
-                      >
-                        <span className="font-sans text-xs sm:text-[13.5px] font-semibold text-stone-900 leading-snug">
-                          {lang === 'en' ? faq.qEn : faq.qBn}
-                        </span>
-                        <span className={`text-base font-normal transition-colors shrink-0 ${isOpen ? 'text-amber-700 font-bold' : 'text-stone-400'}`}>
-                          {isOpen ? '×' : '+'}
-                        </span>
-                      </button>
-                      {isOpen && (
-                        <div className="px-3.5 pb-3.5 sm:px-4.5 sm:pb-4.5 pt-0 text-xs sm:text-[13px] text-stone-600 leading-relaxed animate-fade-in font-sans">
-                          {lang === 'en' ? faq.aEn : faq.aBn}
-                        </div>
-                      )}
+              {/* Left & Right Gradient Fade Masks */}
+              <div className="pointer-events-none absolute left-0 top-8 bottom-0 w-8 sm:w-10 bg-gradient-to-r from-white to-transparent z-10" />
+              <div className="pointer-events-none absolute right-0 top-8 bottom-0 w-8 sm:w-10 bg-gradient-to-l from-white to-transparent z-10" />
+
+              <div className="flex overflow-hidden select-none w-full">
+                <div className="animate-marquee flex items-center gap-5 sm:gap-8 shrink-0">
+                  {[
+                    { name: 'UPI', src: '/assets/payment/upi.svg', h: 'h-4 sm:h-5' },
+                    { name: 'Google Pay', src: '/assets/payment/gpay.svg', h: 'h-4 sm:h-5' },
+                    { name: 'PhonePe', src: '/assets/payment/phonepe.svg', h: 'h-4 sm:h-5' },
+                    { name: 'Paytm', src: '/assets/payment/paytm.svg', h: 'h-4 sm:h-5' },
+                    { name: 'VISA', src: '/assets/payment/visa.svg', h: 'h-4 sm:h-5' },
+                    { name: 'Mastercard', src: '/assets/payment/mastercard.svg', h: 'h-4 sm:h-5' },
+                    { name: 'RuPay', src: '/assets/payment/rupay.svg', h: 'h-4 sm:h-5' },
+                    { name: 'Cashfree', src: '/assets/payment/cashfree.svg', h: 'h-3.5 sm:h-4' },
+                    { name: 'Razorpay', src: '/assets/payment/razorpay.svg', h: 'h-3.5 sm:h-4' },
+                    { name: 'UPI', src: '/assets/payment/upi.svg', h: 'h-4 sm:h-5' },
+                    { name: 'Google Pay', src: '/assets/payment/gpay.svg', h: 'h-4 sm:h-5' },
+                    { name: 'PhonePe', src: '/assets/payment/phonepe.svg', h: 'h-4 sm:h-5' },
+                    { name: 'Paytm', src: '/assets/payment/paytm.svg', h: 'h-4 sm:h-5' },
+                    { name: 'VISA', src: '/assets/payment/visa.svg', h: 'h-4 sm:h-5' },
+                    { name: 'Mastercard', src: '/assets/payment/mastercard.svg', h: 'h-4 sm:h-5' },
+                    { name: 'RuPay', src: '/assets/payment/rupay.svg', h: 'h-4 sm:h-5' },
+                    { name: 'Cashfree', src: '/assets/payment/cashfree.svg', h: 'h-3.5 sm:h-4' },
+                    { name: 'Razorpay', src: '/assets/payment/razorpay.svg', h: 'h-3.5 sm:h-4' }
+                  ].map((logo, idx) => (
+                    <div key={idx} className="flex items-center justify-center shrink-0 px-1.5 sm:px-2">
+                      <img
+                        src={logo.src}
+                        alt={logo.name}
+                        className={`${logo.h} w-auto object-contain max-w-[75px] sm:max-w-[85px] opacity-85 hover:opacity-100 transition-opacity`}
+                      />
                     </div>
-                  );
-                })}
-              </div>
-
-              {/* ── We Accept Infinite Looping Ticker Marquee ── */}
-              <div className="rounded-2xl border border-stone-200/90 bg-white p-3.5 sm:p-5 shadow-2xs overflow-hidden relative">
-                <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-3 text-center">
-                  {tr('আমরা গ্রহণ করি', 'WE ACCEPT')}
-                </p>
-
-                {/* Left & Right Gradient Fade Masks */}
-                <div className="pointer-events-none absolute left-0 top-8 bottom-0 w-8 sm:w-10 bg-gradient-to-r from-white to-transparent z-10" />
-                <div className="pointer-events-none absolute right-0 top-8 bottom-0 w-8 sm:w-10 bg-gradient-to-l from-white to-transparent z-10" />
-
-                <div className="flex overflow-hidden select-none w-full">
-                  <div className="animate-marquee flex items-center gap-5 sm:gap-8 shrink-0">
-                    {[
-                      { name: 'UPI', src: '/assets/payment/upi.svg', h: 'h-4 sm:h-5' },
-                      { name: 'Google Pay', src: '/assets/payment/gpay.svg', h: 'h-4 sm:h-5' },
-                      { name: 'PhonePe', src: '/assets/payment/phonepe.svg', h: 'h-4 sm:h-5' },
-                      { name: 'Paytm', src: '/assets/payment/paytm.svg', h: 'h-4 sm:h-5' },
-                      { name: 'VISA', src: '/assets/payment/visa.svg', h: 'h-4 sm:h-5' },
-                      { name: 'Mastercard', src: '/assets/payment/mastercard.svg', h: 'h-4 sm:h-5' },
-                      { name: 'RuPay', src: '/assets/payment/rupay.svg', h: 'h-4 sm:h-5' },
-                      { name: 'Cashfree', src: '/assets/payment/cashfree.svg', h: 'h-3.5 sm:h-4' },
-                      { name: 'Razorpay', src: '/assets/payment/razorpay.svg', h: 'h-3.5 sm:h-4' },
-                      { name: 'UPI', src: '/assets/payment/upi.svg', h: 'h-4 sm:h-5' },
-                      { name: 'Google Pay', src: '/assets/payment/gpay.svg', h: 'h-4 sm:h-5' },
-                      { name: 'PhonePe', src: '/assets/payment/phonepe.svg', h: 'h-4 sm:h-5' },
-                      { name: 'Paytm', src: '/assets/payment/paytm.svg', h: 'h-4 sm:h-5' },
-                      { name: 'VISA', src: '/assets/payment/visa.svg', h: 'h-4 sm:h-5' },
-                      { name: 'Mastercard', src: '/assets/payment/mastercard.svg', h: 'h-4 sm:h-5' },
-                      { name: 'RuPay', src: '/assets/payment/rupay.svg', h: 'h-4 sm:h-5' },
-                      { name: 'Cashfree', src: '/assets/payment/cashfree.svg', h: 'h-3.5 sm:h-4' },
-                      { name: 'Razorpay', src: '/assets/payment/razorpay.svg', h: 'h-3.5 sm:h-4' }
-                    ].map((logo, idx) => (
-                      <div key={idx} className="flex items-center justify-center shrink-0 px-1.5 sm:px-2">
-                        <img
-                          src={logo.src}
-                          alt={logo.name}
-                          className={`${logo.h} w-auto object-contain max-w-[75px] sm:max-w-[85px] opacity-85 hover:opacity-100 transition-opacity`}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
-
           </div>
-        </form>
+
+        </div>
+
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════════
@@ -1061,33 +929,33 @@ export default function Donate() {
          ══════════════════════════════════════════════════════════════════════ */}
       {status === 'error' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-[420px] rounded-[24px] bg-white p-6 sm:p-8 shadow-2xl border border-stone-100 text-center animate-scale-up my-auto">
+          <div className="relative w-full max-w-[420px] rounded-[24px] bg-white p-6 sm:p-8 border border-site-line text-center animate-scale-up my-auto">
             
             {/* Top Graphics (Concentric Red Rings) */}
             <div className="relative mx-auto mb-5 flex h-20 w-20 items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-red-100/60 animate-ping opacity-30" />
-              <div className="absolute inset-2 rounded-full bg-red-50 border border-red-100" />
+              <div className="absolute inset-0 rounded-full bg-site-cream animate-ping opacity-30" />
+              <div className="absolute inset-2 rounded-full bg-site-cream border border-site-blood/40" />
               
               {/* Center X mark */}
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[#c81e1e] text-white shadow-md">
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[var(--blood)] text-white">
                 <X className="h-6 w-6 stroke-[3]" />
               </div>
             </div>
 
             {/* Headings */}
-            <h3 className="text-xl sm:text-[22px] font-black text-stone-900 tracking-tight leading-snug px-2">
+            <h3 className="text-xl sm:text-[22px] font-black text-site-ink tracking-tight leading-snug px-2">
               {errMsg === 'CANCELLED' ? tr('পেমেন্ট বাতিল করা হয়েছে।', 'Payment was cancelled.') : tr('পেমেন্ট ব্যর্থ হয়েছে।', 'Payment Failed.')}
             </h3>
 
             {errMsg && errMsg !== 'CANCELLED' && (
-              <div className="mt-3 mx-4 rounded-xl bg-red-50 border border-red-100 p-3">
-                <p className="text-[12px] font-bold text-red-800 break-words leading-relaxed">
+              <div className="mt-3 mx-4 rounded-soft bg-site-cream border border-site-blood/40 p-3">
+                <p className="text-[12px] font-bold text-site-blood break-words leading-relaxed">
                   {errMsg}
                 </p>
               </div>
             )}
 
-            <p className="text-[13px] font-medium text-stone-500 mt-3 px-2 leading-relaxed">
+            <p className="text-[13px] font-medium text-site-muted mt-3 px-2 leading-relaxed">
               {tr('কোনো চিন্তা নেই! আপনার পেমেন্ট সম্পন্ন হয়নি। আপনি যেকোনো সময় আবার চেষ্টা করতে পারেন।', 'No worries! Your payment was not completed. You can try again anytime.')}
             </p>
 
@@ -1099,7 +967,7 @@ export default function Donate() {
                   setStatus('idle');
                   setErrMsg('');
                 }}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#c81e1e] py-3 text-[13px] font-bold text-white shadow-sm hover:bg-[#a51515] transition-colors"
+                className="flex flex-1 items-center justify-center gap-2 rounded-soft bg-[var(--blood)] py-3 text-[13px] font-bold text-white hover:bg-[var(--blood)] transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                 {tr('আবার চেষ্টা করুন', 'Try Again')}
@@ -1110,7 +978,7 @@ export default function Donate() {
                   setStatus('idle');
                   setErrMsg('');
                 }}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white py-3 text-[13px] font-bold text-stone-700 shadow-sm border border-stone-200 hover:bg-stone-50 transition-colors"
+                className="flex flex-1 items-center justify-center gap-2 rounded-soft bg-white py-3 text-[13px] font-bold text-site-soft border border-site-line hover:bg-site-cream transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
                 {tr('ফিরে যান', 'Go Back')}
@@ -1118,16 +986,16 @@ export default function Donate() {
             </div>
 
             {/* Footer Trust Banner */}
-            <div className="mt-6 border-t border-stone-100 pt-5">
+            <div className="mt-6 border-t border-site-line pt-5">
               <div className="flex items-center justify-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-500 shrink-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-site-cream text-site-blood shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
                 </div>
                 <div className="text-left min-w-0">
-                  <p className="text-[12px] font-bold text-stone-700">
+                  <p className="text-[12px] font-bold text-site-soft">
                     {tr('আপনার নিরাপত্তা আমাদের অগ্রাধিকার।', 'Your security is our priority.')}
                   </p>
-                  <p className="text-[11px] font-medium text-stone-400">
+                  <p className="text-[11px] font-medium text-site-faint">
                     {tr('আপনার সমস্ত তথ্য আমাদের কাছে নিরাপদ।', 'All your details are safe with us.')}
                   </p>
                 </div>
@@ -1142,13 +1010,13 @@ export default function Donate() {
          ══════════════════════════════════════════════════════════════════════ */}
       {showSuccessModal && completedReceipt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-fade-in overflow-y-auto">
-          <div className="relative w-full max-w-xl rounded-3xl bg-white p-5 sm:p-8 shadow-2xl border border-stone-100 text-center animate-scale-up my-auto max-h-[94vh] overflow-y-auto">
+          <div className="relative w-full max-w-xl rounded-panel bg-white p-5 sm:p-8 border border-site-line text-center animate-scale-up my-auto max-h-[94vh] overflow-y-auto">
             
             {/* Close Button */}
             <button
               type="button"
               onClick={() => setShowSuccessModal(false)}
-              className="absolute top-4 right-4 rounded-full p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+              className="absolute top-4 right-4 rounded-full p-2 text-site-faint hover:text-site-soft hover:bg-site-cream transition-colors cursor-pointer"
               title="Close modal"
             >
               <X className="h-5 w-5" />
@@ -1156,82 +1024,105 @@ export default function Donate() {
 
             {/* Top Celebration Graphics (Concentric Mint Rings) */}
             <div className="relative mx-auto mb-4 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-emerald-100/70 animate-ping opacity-25" />
-              <div className="absolute inset-1.5 rounded-full bg-emerald-50 border border-emerald-200" />
+              <div className="absolute inset-0 rounded-full bg-site-cream animate-ping opacity-25" />
+              <div className="absolute inset-1.5 rounded-full bg-site-cream border border-site-line" />
               
               {/* Center Checkmark */}
-              <div className="relative flex h-11 w-11 sm:h-13 sm:w-13 items-center justify-center rounded-full bg-[#00a35c] text-white shadow-md">
+              <div className="relative flex h-11 w-11 sm:h-13 sm:w-13 items-center justify-center rounded-full bg-[var(--green)] text-white">
                 <Check className="h-6 w-6 sm:h-7 sm:w-7 stroke-[3]" />
               </div>
             </div>
 
             {/* Headings */}
-            <h3 className="text-lg sm:text-2xl font-black text-stone-900 tracking-tight leading-snug px-2">
+            <h3 className="text-lg sm:text-2xl font-black text-site-ink tracking-tight leading-snug px-2">
               {tr('ধন্যবাদ! আপনার অনুদান সফলভাবে নিশ্চিত হয়েছে।', 'Thank You! Your contribution is confirmed.')}
             </h3>
-            <p className="text-xs sm:text-sm font-semibold text-stone-500 mt-1 px-2">
+            <p className="text-xs sm:text-sm font-semibold text-site-muted mt-1 px-2">
               {tr('আপনার সহায়তা একটি সুন্দর আগামী গড়ে তুলতে সাহায্য করবে।', 'Your support helps us create a better tomorrow.')}
             </p>
 
             {/* Official Email Invoice Banner */}
-            <div className="mt-4 flex items-center gap-3 rounded-2xl bg-emerald-50/90 border border-emerald-200/80 p-3 sm:p-3.5 text-left">
-              <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 shrink-0">
+            <div className="mt-4 flex items-center gap-3 rounded-card bg-site-cream border border-site-line p-3 sm:p-3.5 text-left">
+              <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-soft bg-site-cream text-site-green shrink-0">
                 <Mail className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-[13px] font-black text-stone-900 leading-tight">
+                <p className="text-xs sm:text-[13px] font-black text-site-ink leading-tight">
                   {tr('অফিশিয়াল রসিদ ও ইনভয়েস আপনার ইমেলে পাঠানো হয়েছে।', 'Official receipt & invoice has been sent to your email.')}
                 </p>
-                <p className="text-[10.5px] sm:text-[11px] font-semibold text-stone-500 mt-0.5">
+                <p className="text-[10.5px] sm:text-[11px] font-semibold text-site-muted mt-0.5">
                   {tr('বিস্তারিত জানতে আপনার ইনবক্স (বা স্প্যাম ফোল্ডার) চেক করুন।', 'Please check your inbox (and spam folder) for the details.')}
                 </p>
               </div>
             </div>
 
-            {/* Transaction Details 3-Column Responsive Card (Fully Visible, No Truncation) */}
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 rounded-2xl border border-stone-200/90 bg-stone-50/70 p-3 sm:p-3.5 text-left">
-              {/* Col 1: Transaction ID */}
-              <div className="flex items-center gap-2.5 p-1">
-                <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 shrink-0">
+            {/* Payment Details
+                Long identifiers get their own full-width row and are allowed to
+                wrap — squeezing them into a 3-up grid with whitespace-nowrap
+                clipped the receipt number on narrow screens. Date and amount are
+                short, so they sit side by side even on mobile. */}
+            <div className="mt-4 rounded-card border border-site-line bg-site-cream/70 p-3 sm:p-3.5 text-left space-y-2.5">
+              {/* Receipt number (our own reference) */}
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-[18px] bg-site-cream text-site-green shrink-0">
                   <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[9px] sm:text-[9.5px] font-bold uppercase tracking-wider text-stone-400">
-                    {tr('ট্রানজাকশন আইডি', 'Transaction ID')}
+                  <p className="text-[9px] sm:text-[9.5px] font-bold uppercase tracking-wider text-site-faint">
+                    {tr('রসিদ নম্বর', 'Receipt No.')}
                   </p>
-                  <p className="font-mono text-xs sm:text-[12.5px] font-black text-stone-900 select-all whitespace-nowrap">
+                  <p className="font-dmmono text-xs sm:text-[12.5px] font-black text-site-ink select-all break-all leading-snug">
                     {completedReceipt.receiptNumber}
                   </p>
                 </div>
               </div>
 
-              {/* Col 2: Date */}
-              <div className="flex items-center gap-2.5 p-1 border-t sm:border-t-0 sm:border-l border-stone-200/60 pt-2 sm:pt-0 sm:pl-3">
-                <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 shrink-0">
-                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              {/* Gateway transaction id — what the donor sees on their bank/UPI
+                  statement. Only rendered when the gateway actually returned one. */}
+              {completedReceipt.transactionId && (
+                <div className="flex items-start gap-2.5 border-t border-site-line pt-2.5">
+                  <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-[18px] bg-site-cream text-site-green shrink-0">
+                    <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] sm:text-[9.5px] font-bold uppercase tracking-wider text-site-faint">
+                      {tr('ট্রানজাকশন আইডি', 'Transaction ID')}
+                    </p>
+                    <p className="font-dmmono text-xs sm:text-[12.5px] font-black text-site-ink select-all break-all leading-snug">
+                      {completedReceipt.transactionId}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[9px] sm:text-[9.5px] font-bold uppercase tracking-wider text-stone-400">
-                    {tr('তারিখ', 'Date')}
-                  </p>
-                  <p className="text-xs sm:text-[12.5px] font-black text-stone-900 whitespace-nowrap">
-                    {completedReceipt.date.split(',')[0]}
-                  </p>
-                </div>
-              </div>
+              )}
 
-              {/* Col 3: Amount */}
-              <div className="flex items-center gap-2.5 p-1 border-t sm:border-t-0 sm:border-l border-stone-200/60 pt-2 sm:pt-0 sm:pl-3">
-                <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 shrink-0">
-                  <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              {/* Date + Amount */}
+              <div className="grid grid-cols-2 gap-2 border-t border-site-line pt-2.5">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-[18px] bg-site-cream text-site-green shrink-0">
+                    <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] sm:text-[9.5px] font-bold uppercase tracking-wider text-site-faint">
+                      {tr('তারিখ', 'Date')}
+                    </p>
+                    <p className="text-xs sm:text-[12.5px] font-black text-site-ink leading-snug">
+                      {completedReceipt.date.split(',')[0]}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[9px] sm:text-[9.5px] font-bold uppercase tracking-wider text-stone-400">
-                    {tr('পরিমাণ', 'Amount')}
-                  </p>
-                  <p className="text-xs sm:text-[15px] font-black text-[#00a35c] whitespace-nowrap">
-                    ₹{completedReceipt.amount.toLocaleString('en-IN')}
-                  </p>
+
+                <div className="flex items-start gap-2.5 min-w-0 border-l border-site-line pl-2 sm:pl-3">
+                  <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-[18px] bg-site-cream text-site-green shrink-0">
+                    <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] sm:text-[9.5px] font-bold uppercase tracking-wider text-site-faint">
+                      {tr('পরিমাণ', 'Amount')}
+                    </p>
+                    <p className="text-xs sm:text-[15px] font-black text-[var(--green)] leading-snug">
+                      ₹{completedReceipt.amount.toLocaleString('en-IN')}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1250,12 +1141,13 @@ export default function Donate() {
                       date: completedReceipt.date,
                       purpose: completedReceipt.purpose,
                       paymentMethod: completedReceipt.paymentMethod,
+                      paymentId: completedReceipt.transactionId,
                       email: donor.email,
                     },
                     lang as 'en' | 'bn',
                   )
                 }
-                className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#0c756f] to-[#095a55] hover:from-[#095a55] hover:to-[#074743] py-3.5 sm:py-4 text-xs sm:text-sm font-black text-white shadow-lg hover:shadow-xl active:scale-[0.98] transition-all cursor-pointer"
+                className="flex w-full items-center justify-center gap-2.5 rounded-card bg-site-green hover:bg-site-green-2 py-3.5 sm:py-4 text-xs sm:text-sm font-black text-white active:scale-[0.98] transition-all cursor-pointer"
               >
                 <FileText className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
                 <span>{tr('অফিশিয়াল রসিদ ডাউনলোড / প্রিন্ট করুন', 'Download / Print Official Receipt')}</span>
