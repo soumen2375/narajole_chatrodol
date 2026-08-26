@@ -49,6 +49,8 @@ export interface CashfreeSuccessResponse {
     paymentAmount: number;
   };
   receipt_number?: string | null;
+  /** Resolved method label from the gateway, e.g. "Cashfree (UPI)". */
+  payment_method?: string;
 }
 
 export interface CashfreeOrderResponse {
@@ -69,6 +71,11 @@ export interface CashfreeVerifyResponse {
   order_amount?: number;
   order_currency?: string;
   receipt_number?: string | null;
+  /** Real Cashfree transaction id (cf_payment_id) — NOT the order id. */
+  payment_id?: string;
+  /** Resolved method label, e.g. "Cashfree (UPI)". */
+  payment_method?: string;
+  status?: string;
 }
 
 // ── SDK Loader ─────────────────────────────────────────────────────────────────
@@ -462,11 +469,17 @@ export async function startCashfreePayment(
             orderCurrency: 'INR',
           },
           payment: {
-            paymentId: verifyData.order_id || orderData.order_id,
+            // The real Cashfree transaction id (cf_payment_id), which is what
+            // the donor sees on their bank/UPI statement and in the Cashfree
+            // dashboard. This used to fall back to the ORDER id, so the
+            // success screen and printed receipt showed an identifier that
+            // matched nothing the donor could look up.
+            paymentId: verifyData.payment_id || orderData.order_id,
             paymentStatus: 'SUCCESS',
             paymentAmount: args.amount,
           },
           receipt_number: verifyData.receipt_number || null,
+          payment_method: verifyData.payment_method,
         };
       }
 

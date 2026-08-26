@@ -286,6 +286,15 @@ export default function Donate() {
       ? res.result.payment?.paymentId || undefined
       : res.result.razorpay_payment_id || undefined;
 
+  /**
+   * Prefers the method the gateway actually reported (e.g. "Cashfree (UPI)")
+   * over a generic label, so the on-screen receipt matches the emailed one.
+   */
+  const extractPaymentMethod = (res: UnifiedPaymentResult): string =>
+    res.gateway === 'cashfree'
+      ? res.result.payment_method || 'Cashfree Payments'
+      : 'Razorpay';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -405,7 +414,7 @@ export default function Donate() {
             date: lateDateStr,
             name: anonymous ? 'Anonymous' : (donor.name || 'Anonymous'),
             purpose: cause.purpose,
-            paymentMethod: r.gateway === 'cashfree' ? 'Cashfree Payments' : 'Razorpay',
+            paymentMethod: extractPaymentMethod(r),
             transactionId: extractTransactionId(r),
           });
           setStatus('done');
@@ -438,7 +447,7 @@ export default function Donate() {
         date: dateStr,
         name: anonymous ? 'Anonymous' : (donor.name || 'Anonymous'),
         purpose: cause.purpose,
-        paymentMethod: res.gateway === 'cashfree' ? 'Cashfree Payments' : 'Razorpay',
+        paymentMethod: extractPaymentMethod(res),
         transactionId: extractTransactionId(res),
       });
 

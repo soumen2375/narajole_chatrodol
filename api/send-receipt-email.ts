@@ -780,6 +780,117 @@ async function sendViaResend(
   }
 }
 
+// ── Core dispatcher (callable in-process, no HTTP hop) ───────────────────────
+
+export interface DispatchReceiptResult {
+  success: boolean;
+  messageId?: string;
+  warning?: string;
+  previewHtml?: string;
+}
+
+/**
+ * Builds the receipt email, renders the official PDF, records the in-app
+ * notification, and sends via Resend.
+ *
+ * Exported so the payment pipeline can call it directly rather than POSTing to
+ * this file's own HTTP route. That round-trip used to target
+ * `${SITE_URL}/api/send-receipt-email` — an absolute, hard-coded production
+ * URL — so a receipt triggered from any other environment (local dev, an
+ * ngrok tunnel, a preview deploy) was silently generated and sent by
+ * PRODUCTION instead, running whatever code was deployed there. Calling the
+ * function directly keeps the receipt in the same process that took the
+ * payment, and drops the internal-secret dance entirely.
+ */
+export async function dispatchReceiptEmail(
+  body: SendReceiptEmailPayload,
+): Promise<DispatchReceiptResult> {
+  const htmlContent = buildReceiptHtml(body);
+
+  const subject =
+    body.type === 'contribution'
+      ? 'Chhatradol Social Welfare Organization - Monthly Donation Successful'
+      : 'Chhatradol Social Welfare Organization - Donation Successful';
+
+  // ── In-app notification (non-critical, deduped) ────────────────────────────
+  try {
+    const client = getSupabaseClient();
+    if (client) {
+      const notifTitle = `Payment Receipt: ${body.receiptNumber}`;
+      const { data: existingNotif } = await client
+        .from('cswo_notifications')
+        .select('id')
+        .eq('title', notifTitle)
+        .maybeSingle();
+
+      if (!existingNotif) {
+        await client.from('cswo_notifications').insert({
+          title: notifTitle,
+          body: `Your payment of ₹${body.amount} for ${body.purpose || body.month || 'CSWO'} was confirmed. Receipt: ${body.receiptNumber}`,
+          kind: 'payment',
+          link: '/member/contributions',
+        });
+      }
+    }
+  } catch {
+    // Non-critical — continue even if notification save fails
+  }
+
+  const resendApiKey = getResendApiKey();
+  if (!resendApiKey) {
+    console.warn('[Receipt Email] RESEND_API_KEY not configured — email not sent.');
+    return {
+      success: false,
+      warning: 'RESEND_API_KEY not configured. Email was not sent.',
+      previewHtml: htmlContent,
+    };
+  }
+
+  // ── Official PDF receipt ───────────────────────────────────────────────────
+  // Best-effort: a rendering fault must never cost the donor their email, so a
+  // failure degrades to sending the HTML receipt without the attachment.
+  let attachment: { filename: string; content: string } | undefined;
+  try {
+    attachment = {
+      filename: receiptFileName(body.receiptNumber),
+      content: await generateReceiptPdfBase64({
+        type: body.type === 'contribution' ? 'contribution' : 'donation',
+        receiptNumber: body.receiptNumber,
+        donorName: body.recipientName || 'Valued Supporter',
+        donorEmail: body.recipientEmail,
+        amount: Number(body.amount),
+        purpose: body.purpose || body.month || '',
+        paymentMethod: body.paymentMethod || 'Online Payment',
+        transactionId: body.paymentId || undefined,
+        date: body.date,
+      }),
+    };
+  } catch (pdfErr) {
+    console.error('[Receipt Email] PDF generation failed, sending without attachment:', pdfErr);
+  }
+
+  const emailResult = await sendViaResend(
+    resendApiKey,
+    body.recipientEmail,
+    body.recipientName || 'Valued Supporter',
+    subject,
+    htmlContent,
+    attachment,
+  );
+
+  if (!emailResult.success) {
+    console.error(`[Receipt Email] Failed to send to ${body.recipientEmail}: ${emailResult.error}`);
+    return { success: false, warning: `Email dispatch failed: ${emailResult.error}` };
+  }
+
+  console.log(
+    `[Receipt Email] ✓ Sent to ${body.recipientEmail} (${body.receiptNumber})` +
+      `${attachment ? ' with PDF' : ' WITHOUT PDF'} — Resend ID: ${emailResult.messageId}`,
+  );
+
+  return { success: true, messageId: emailResult.messageId };
+}
+
 // ── Main Handler ──────────────────────────────────────────────────────────────
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
@@ -819,99 +930,22 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return sendJson(res, 400, { error: 'receiptNumber and amount are required' });
     }
 
-    const htmlContent = buildReceiptHtml(body);
+    const result = await dispatchReceiptEmail(body);
 
-    const typeLabel = body.type === 'contribution'
-      ? 'Chhatradol Social Welfare Organization - Monthly Donation Successful'
-      : 'Chhatradol Social Welfare Organization - Donation Successful';
-    const subject = `${typeLabel}`;
-
-    // ── Save in-app notification to Supabase (non-blocking, deduped) ──────────
-    try {
-      const client = getSupabaseClient();
-      if (client) {
-        const notifTitle = `Payment Receipt: ${body.receiptNumber}`;
-        const { data: existingNotif } = await client
-          .from('cswo_notifications')
-          .select('id')
-          .eq('title', notifTitle)
-          .maybeSingle();
-
-        if (!existingNotif) {
-          await client.from('cswo_notifications').insert({
-            title: notifTitle,
-            body: `Your payment of ₹${body.amount} for ${body.purpose || body.month || 'CSWO'} was confirmed. Receipt: ${body.receiptNumber}`,
-            kind: 'payment',
-            link: '/member/contributions',
-          });
-        }
-      }
-    } catch {
-      // Non-critical — continue even if notification save fails
-    }
-
-    // ── Dispatch email via Resend ─────────────────────────────────────────────
-    const resendApiKey = getResendApiKey();
-
-    if (!resendApiKey) {
-      console.warn('[Receipt Email] RESEND_API_KEY not configured — email not sent, but receipt HTML generated.');
+    if (!result.success) {
       return sendJson(res, 200, {
         success: false,
-        warning: 'RESEND_API_KEY not configured. Email was not sent.',
+        warning: result.warning,
         receiptNumber: body.receiptNumber,
-        previewHtml: htmlContent,
+        ...(result.previewHtml ? { previewHtml: result.previewHtml } : {}),
       });
     }
-
-    // ── Render the official PDF receipt to attach ─────────────────────────────
-    // Best-effort: a rendering fault must never cost the donor their email, so
-    // a failure here degrades to sending the HTML receipt without the file
-    // rather than aborting the dispatch.
-    let attachment: { filename: string; content: string } | undefined;
-    try {
-      attachment = {
-        filename: receiptFileName(body.receiptNumber),
-        content: await generateReceiptPdfBase64({
-          type: body.type === 'contribution' ? 'contribution' : 'donation',
-          receiptNumber: body.receiptNumber,
-          donorName: body.recipientName || 'Valued Supporter',
-          donorEmail: body.recipientEmail,
-          amount: Number(body.amount),
-          purpose: body.purpose || body.month || '',
-          paymentMethod: body.paymentMethod || 'Online Payment',
-          transactionId: body.paymentId || undefined,
-          date: body.date,
-        }),
-      };
-    } catch (pdfErr) {
-      console.error('[Receipt Email] PDF generation failed, sending without attachment:', pdfErr);
-    }
-
-    const emailResult = await sendViaResend(
-      resendApiKey,
-      body.recipientEmail,
-      body.recipientName || 'Valued Supporter',
-      subject,
-      htmlContent,
-      attachment,
-    );
-
-    if (!emailResult.success) {
-      console.error(`[Receipt Email] Failed to send to ${body.recipientEmail}: ${emailResult.error}`);
-      return sendJson(res, 200, {
-        success: false,
-        warning: `Email dispatch failed: ${emailResult.error}`,
-        receiptNumber: body.receiptNumber,
-      });
-    }
-
-    console.log(`[Receipt Email] ✓ Sent to ${body.recipientEmail} (${body.receiptNumber}) — Resend ID: ${emailResult.messageId}`);
 
     return sendJson(res, 200, {
       success: true,
       message: `Receipt email sent to ${body.recipientEmail}`,
       receiptNumber: body.receiptNumber,
-      messageId: emailResult.messageId,
+      messageId: result.messageId,
     });
 
   } catch (err: unknown) {

@@ -16,6 +16,7 @@
 import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
 import path from 'node:path';
+import { dispatchReceiptEmail } from '../send-receipt-email';
 
 // ── Supabase helper ───────────────────────────────────────────────────────────
 
@@ -172,11 +173,6 @@ export async function sendPaymentReceipt(
       throw new Error(`Valid customer email not found on ${type} record (ID: ${record.id})`);
     }
 
-    const siteUrl = getEnvValue(
-      'SITE_URL',
-      'https://www.chhatradol.org',
-    );
-
     const purposeLabel =
       (record.purpose as string) ||
       (record.month ? `Month ${record.month}/${record.year || ''}` : '') ||
@@ -187,47 +183,30 @@ export async function sendPaymentReceipt(
       (record.razorpay_payment_id as string) ||
       null;
 
-    // ── 3. Dispatch to internal email endpoint ─────────────────────────────────
-    const internalSecret = getEnvValue('INTERNAL_API_SECRET');
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (internalSecret) {
-      headers['x-internal-secret'] = internalSecret;
-    }
+    // ── 3. Send the receipt in-process ────────────────────────────────────────
+    // Called directly rather than POSTed to /api/send-receipt-email. That hop
+    // used an absolute `${SITE_URL}` address, so a receipt for a payment taken
+    // on any other host (local dev, an ngrok tunnel, a preview deploy) was
+    // actually rendered and sent by PRODUCTION — whatever code happened to be
+    // deployed there — which is why locally-tested receipts arrived without
+    // the PDF attachment. Same process now handles payment and receipt.
+    const result = await dispatchReceiptEmail({
+      recipientEmail,
+      recipientName: recipientName || 'Valued Supporter',
+      type,
+      amount: Number(record.amount),
+      receiptNumber: String(record.receipt_number || ''),
+      purpose: purposeLabel,
+      paymentMethod: paymentMethod || 'Online Payment',
+      paymentId: paymentId || undefined,
+      date: new Date().toLocaleString('en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }),
+    });
 
-    const response = await fetch(
-      `${siteUrl}/api/send-receipt-email`,
-      {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          recipientEmail,
-          recipientName: recipientName || 'Valued Supporter',
-          type,
-          amount: record.amount,
-          receiptNumber: record.receipt_number,
-          purpose: purposeLabel,
-          paymentMethod: paymentMethod || 'Online Payment',
-          paymentId,
-          date: new Date().toLocaleString('en-IN', {
-            dateStyle: 'medium',
-            timeStyle: 'short',
-          }),
-        }),
-        signal: AbortSignal.timeout(15000),
-      },
-    );
-
-    const result = (await response.json()) as {
-      success?: boolean;
-      messageId?: string;
-      error?: string;
-      warning?: string;
-    };
-
-    if (!response.ok || !result.success) {
-      throw new Error(
-        result.error || result.warning || `Receipt email API returned HTTP ${response.status}`,
-      );
+    if (!result.success) {
+      throw new Error(result.warning || 'Receipt email dispatch failed');
     }
 
     // ── 4. Mark successfully sent ─────────────────────────────────────────────
