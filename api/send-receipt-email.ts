@@ -228,6 +228,13 @@ export function buildReceiptHtml(data: SendReceiptEmailPayload): string {
       object-fit: contain;
       display: block;
       margin: 0 auto 12px;
+      /* Round white badge, matching the PDF receipt's masthead. The logo art
+         is square on a white ground, so without the radius it reads as a
+         white box sitting on the coloured header. */
+      border-radius: 50%;
+      background-color: #ffffff;
+      padding: 6px;
+      box-sizing: border-box;
     }
 
     .org-name {
@@ -454,10 +461,16 @@ export function buildReceiptHtml(data: SendReceiptEmailPayload): string {
 
       <div class="header">
 
+        <!-- Styling is repeated inline because Gmail and several other
+             clients strip <style> blocks, which would otherwise leave the
+             logo as an unrounded white square on the coloured header. -->
         <img
           src="https://www.chhatradol.org/logo.png"
           alt="Chhatradol Social Welfare Organization"
           class="logo"
+          width="72"
+          height="72"
+          style="width:72px;height:72px;object-fit:contain;display:block;margin:0 auto 12px;border-radius:50%;background-color:#ffffff;padding:6px;box-sizing:border-box;"
         >
 
         <h1 class="org-name">

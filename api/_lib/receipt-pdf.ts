@@ -13,7 +13,21 @@
  * the bundler always ships them.
  */
 
-import { PDFDocument, rgb, type PDFFont, type PDFPage, type RGB } from 'pdf-lib';
+import {
+  PDFDocument,
+  rgb,
+  pushGraphicsState,
+  popGraphicsState,
+  moveTo,
+  appendBezierCurve,
+  closePath,
+  clip,
+  endPath,
+  type PDFFont,
+  type PDFPage,
+  type PDFImage,
+  type RGB,
+} from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import {
   FONT_BEBAS,
@@ -149,6 +163,71 @@ interface Ctx {
   rupee: PDFFont;
 }
 
+/** Bezier constant for approximating a circular arc with four curves. */
+const KAPPA = 0.5522847498;
+
+/**
+ * Draws an image clipped to a circle — a round logo badge.
+ *
+ * pdf-lib has no clipping helper, so the circle is emitted as a raw path and
+ * installed as the clip region between a graphics-state push/pop. Simply
+ * drawing the square logo over a white circle (the previous approach) left
+ * the artwork's white corners covering the circle, so it rendered as a white
+ * box on the maroon masthead.
+ *
+ * `inset` reproduces the design's padding: the artwork is centred and shrunk
+ * inside the badge so it never touches the rim.
+ */
+function drawCircularImage(
+  page: PDFPage,
+  image: PDFImage,
+  centerX: number,
+  centerY: number,
+  radius: number,
+  inset = 0,
+) {
+  const r = radius;
+  page.drawCircle({ x: centerX, y: centerY, size: r, color: WHITE });
+
+  page.pushOperators(
+    pushGraphicsState(),
+    moveTo(centerX + r, centerY),
+    appendBezierCurve(
+      centerX + r, centerY + r * KAPPA,
+      centerX + r * KAPPA, centerY + r,
+      centerX, centerY + r,
+    ),
+    appendBezierCurve(
+      centerX - r * KAPPA, centerY + r,
+      centerX - r, centerY + r * KAPPA,
+      centerX - r, centerY,
+    ),
+    appendBezierCurve(
+      centerX - r, centerY - r * KAPPA,
+      centerX - r * KAPPA, centerY - r,
+      centerX, centerY - r,
+    ),
+    appendBezierCurve(
+      centerX + r * KAPPA, centerY - r,
+      centerX + r, centerY - r * KAPPA,
+      centerX + r, centerY,
+    ),
+    closePath(),
+    clip(),
+    endPath(),
+  );
+
+  const size = (r - inset) * 2;
+  page.drawImage(image, {
+    x: centerX - size / 2,
+    y: centerY - size / 2,
+    width: size,
+    height: size,
+  });
+
+  page.pushOperators(popGraphicsState());
+}
+
 function text(
   ctx: Ctx,
   str: string,
@@ -229,13 +308,16 @@ export async function generateReceiptPdf(input: ReceiptPdfInput): Promise<Uint8A
 
   const logoSize = 66;
   const logoX = MARGIN;
-  const logoY = y - headerH / 2 - logoSize / 2;
-  // White disc behind the logo, mirroring the rounded badge in the design.
-  page.drawCircle({
-    x: logoX + logoSize / 2, y: logoY + logoSize / 2,
-    size: logoSize / 2 + 3, color: WHITE,
-  });
-  page.drawImage(logo, { x: logoX, y: logoY, width: logoSize, height: logoSize });
+  const logoRadius = logoSize / 2;
+  // Round white badge with the artwork clipped inside it, matching the design.
+  drawCircularImage(
+    page,
+    logo,
+    logoX + logoRadius,
+    y - headerH / 2,
+    logoRadius,
+    3,
+  );
 
   const titleX = logoX + logoSize + 18;
   const titleW = PAGE_W - titleX - MARGIN;
