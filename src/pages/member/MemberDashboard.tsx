@@ -19,6 +19,7 @@ import {
   IndianRupee, 
   Sparkles
 } from 'lucide-react';
+import MemberAvatar from '@/components/ui/MemberAvatar';
 
 const BRAND  = '#0c756f'; // Deep Teal
 const INK    = '#000201'; // Charcoal Black
@@ -29,37 +30,6 @@ const ACCENT = '#fdcf6f'; // Warm Gold
 const SERIF  = { fontFamily: '"Noto Serif Bengali", "Noto Sans Bengali", serif' };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-
-function MemberAvatar({ avatarUrl, name, size = 72 }: { avatarUrl: string | null; name: string; size?: number }) {
-  const ini = name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
-  if (avatarUrl) {
-    return (
-      <img src={avatarUrl} alt={name} onError={(e) => { e.currentTarget.style.display = 'none'; }}
-        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', border: `3px solid ${BRAND}`, flexShrink: 0 }} />
-    );
-  }
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%', flexShrink: 0,
-      background: BRAND, color: '#fff',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.34, fontWeight: 700, border: `3px solid ${BRAND}`,
-      ...SERIF,
-    }}>{ini}</div>
-  );
-}
-
-function SenderAvatar({ name, size = 36 }: { name: string; size?: number }) {
-  const ini = name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%', flexShrink: 0,
-      background: BRAND, color: '#fff',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.36, fontWeight: 700, ...SERIF,
-    }}>{ini}</div>
-  );
-}
 
 function CircularProgress({ pct, size = 100 }: { pct: number; size?: number }) {
   const r = (size - 14) / 2;
@@ -362,7 +332,7 @@ export default function MemberDashboard() {
       >
         {/* Avatar + info */}
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <MemberAvatar avatarUrl={member.avatar_url} name={member.full_name} size={72} />
+          <MemberAvatar member={member} size={72} />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[9px] font-extrabold uppercase tracking-[0.2em]" style={{ color: BRAND }}>
@@ -653,7 +623,7 @@ export default function MemberDashboard() {
             <div className="flex-1 space-y-4">
               {data.adminMsgs.map((msg) => (
                 <div key={msg.id} className="flex gap-3">
-                  <SenderAvatar name={msg.sender_name} size={34} />
+                  <MemberAvatar name={msg.sender_name} size={34} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
                       <span className="text-[12px] font-extrabold truncate" style={{ color: INK }}>{msg.sender_name}</span>

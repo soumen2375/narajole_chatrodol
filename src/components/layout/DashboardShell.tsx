@@ -6,6 +6,7 @@ import { useT } from '@/i18n';
 import NotificationBell from '@/components/ui/NotificationBell';
 import { memberDisplayId } from '@/types';
 import { PageSkeleton } from '@/components/ui/Skeleton';
+import MemberAvatar from '@/components/ui/MemberAvatar';
 import { 
   ChevronDown, 
   LogOut, 
@@ -52,41 +53,6 @@ function Chevron({ open }: { open: boolean }) {
       className="h-3.5 w-3.5 shrink-0 transition-transform duration-200"
       style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
     />
-  );
-}
-
-function MemberAvatar({ avatarUrl, name, size = 36 }: { avatarUrl: string | null; name: string; size?: number }) {
-  const [imgError, setImgError] = useState(false);
-  const initials = name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
-  if (avatarUrl && !imgError) {
-    return (
-      <img
-        src={avatarUrl}
-        alt={name}
-        className="shrink-0"
-        style={{
-          width: size, height: size, borderRadius: '50%', objectFit: 'cover',
-          border: '2px solid rgba(255,255,255,0.15)',
-          boxShadow: '0 0 0 3px rgba(255,255,255,0.06)'
-        }}
-        onError={() => setImgError(true)}
-      />
-    );
-  }
-  return (
-    <div
-      className="flex items-center justify-center shrink-0 font-bold"
-      style={{
-        width: size, height: size, borderRadius: '50%',
-        background: 'linear-gradient(135deg, #14b8a6, #0C756F)', color: '#fff',
-        fontSize: size * 0.38,
-        border: '2px solid rgba(255,255,255,0.15)',
-        boxShadow: '0 0 0 3px rgba(255,255,255,0.06)',
-        fontFamily: '"Inter", sans-serif',
-      }}
-    >
-      {initials}
-    </div>
   );
 }
 
@@ -209,7 +175,7 @@ export default function DashboardShell({
           >
             {/* Top row: Avatar, Name & Role, Dots menu */}
             <div className="flex items-center gap-3">
-              <MemberAvatar avatarUrl={member?.avatar_url ?? null} name={member?.full_name ?? 'M'} size={42} />
+              <MemberAvatar member={member} name={member?.full_name ?? title} size={42} />
               <div className="min-w-0 flex-1">
                 <div className="truncate font-bold leading-tight" style={{ fontSize: 14, color: '#ffffff' }}>
                   {member?.full_name ?? title}
@@ -443,7 +409,7 @@ export default function DashboardShell({
               <NotificationBell />
               {member && (
                 <Link to="/member/profile" title={t('m.profile')} className="transition-transform hover:scale-105 active:scale-95">
-                  <MemberAvatar avatarUrl={member.avatar_url} name={member.full_name} size={32} />
+                  <MemberAvatar member={member} size={32} />
                 </Link>
               )}
             </div>

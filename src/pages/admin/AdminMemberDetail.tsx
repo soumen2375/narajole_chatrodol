@@ -9,6 +9,7 @@ import { useT } from '@/i18n';
 import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { compressImage } from '@/lib/imageCompression';
+import { getMemberAvatarUrl } from '@/lib/avatar';
 
 type AttendanceWithEvent = Attendance & { event?: CswoEvent | null };
 
@@ -201,9 +202,9 @@ export default function AdminMemberDetail() {
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal-700 text-xl font-bold text-white ring-2 ring-gray-200">
                 {m.full_name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)}
               </div>
-              {m.avatar_url && (
+              {(m.avatar_url || getMemberAvatarUrl(m)) && (
                 <img
-                  src={`${m.avatar_url}?v=${m.updated_at}`}
+                  src={m.avatar_url ? `${m.avatar_url}?v=${m.updated_at}` : (getMemberAvatarUrl(m) ?? undefined)}
                   alt={m.full_name}
                   className="absolute inset-0 h-16 w-16 rounded-full object-cover ring-2 ring-gray-200"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}

@@ -4,6 +4,7 @@ import type { Member } from '@/types';
 import { memberDisplayId } from '@/types';
 import { useT } from '@/i18n';
 import { Droplet, Search } from 'lucide-react';
+import MemberAvatar from '@/components/ui/MemberAvatar';
 
 const BRAND  = '#0c756f'; // Deep Teal
 const INK    = '#000201'; // Charcoal Black
@@ -12,29 +13,13 @@ const RULE   = '#e5dec9'; // Warm Border
 const SERIF  = { fontFamily: '"Noto Serif Bengali", "Noto Sans Bengali", serif' };
 
 function MemberCard({ m }: { m: Member }) {
-  const initials = m.full_name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
   return (
     <div
       className="flex flex-col gap-3 rounded-2xl p-5 border shadow-sm card-lift"
       style={{ background: '#fff', borderColor: RULE }}
     >
       <div className="flex items-center gap-3">
-        {m.avatar_url ? (
-          <img
-            src={m.avatar_url}
-            alt={m.full_name}
-            style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${BRAND}`, flexShrink: 0 }}
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-          />
-        ) : (
-          <div style={{
-            width: 48, height: 48, borderRadius: '50%', background: BRAND, color: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 16, fontWeight: 800, border: `2px solid ${BRAND}`, flexShrink: 0, ...SERIF,
-          }}>
-            {initials}
-          </div>
-        )}
+        <MemberAvatar member={m} size={48} />
         <div className="min-w-0 flex-1">
           <div className="truncate font-extrabold" style={{ ...SERIF, color: INK, fontSize: 14.5 }}>{m.full_name}</div>
           <div className="mt-0.5 font-mono text-[9px] uppercase tracking-wider opacity-60 font-semibold" style={{ color: BRAND }}>{memberDisplayId(m)}</div>

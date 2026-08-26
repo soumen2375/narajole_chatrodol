@@ -13,16 +13,21 @@ import {
 
 // ─────────────────── Palette ───────────────────
 export const FJ = {
-  bg:        '#faf6ef',
+  bg:        '#f4f9ea',
   paper:     '#ffffff',
-  ink:       '#1c1917',
-  ink2:      '#44403c',
-  muted:     '#78716c',
-  rule:      '#e7e5e4',
-  brand:     '#c2410c',
-  brandDark: '#9a3412',
-  brandLight:'#ea580c',
-  accent:    '#b45309',
+  ink:       '#10241d',
+  ink2:      '#4c5b54',
+  muted:     '#5c6b64',
+  rule:      'rgba(13,77,61,.14)',
+  brand:     '#0d4d3d',
+  brandDark: '#0a3b2f',
+  brandLight:'#14614d',
+  accent:    '#ffc800',
+  yellow:    '#ffc800',
+  red:       '#e2492e',
+  blood:     '#8f2116',
+  field:     '#fbfdf6',
+  faint:     '#7d8f83',
 } as const;
 
 export const fjVars: React.CSSProperties = {
@@ -38,8 +43,9 @@ export const fjVars: React.CSSProperties = {
   '--c-accent':   FJ.accent,
 } as React.CSSProperties;
 
-export const SERIF_BN: React.CSSProperties = { fontFamily: '"Noto Serif Bengali", Georgia, "Noto Serif", serif' };
-export const SERIF_EN: React.CSSProperties = { fontFamily: 'Georgia, "Noto Serif", serif' };
+// Headings are Archivo; Bengali glyphs fall through to Noto Serif Bengali.
+export const SERIF_BN: React.CSSProperties = { fontFamily: 'Archivo, "Noto Serif Bengali", "DM Sans", sans-serif', letterSpacing: '-0.02em' };
+export const SERIF_EN: React.CSSProperties = { fontFamily: 'Archivo, "DM Sans", sans-serif', letterSpacing: '-0.02em' };
 
 // ─────────────────── Icons (Font Awesome 6 via react-icons) ───────────────────
 export const Icon = {
@@ -109,41 +115,84 @@ export function RevealStagger({ children, className = '', style }: { children: R
 // ─────────────────── PageShell ───────────────────
 export function PageShell({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ ...fjVars, background: FJ.bg, color: FJ.ink, fontFamily: 'Inter, "Noto Sans Bengali", sans-serif' }}>
+    <div style={{ ...fjVars, background: FJ.bg, color: FJ.ink, fontFamily: '"DM Sans", "Noto Sans Bengali", sans-serif' }}>
       {children}
     </div>
   );
 }
 
 // ─────────────────── PageHero ───────────────────
-export function PageHero({ title, lede }: { eyebrow?: string; title: string; lede?: string }) {
+export function PageHero({
+  eyebrow,
+  title,
+  lede,
+  image,
+  imageAlt = '',
+  children,
+}: {
+  eyebrow?: string;
+  title: React.ReactNode;
+  lede?: React.ReactNode;
+  /** Optional photo behind the hero — a green scrim keeps the text readable. */
+  image?: string;
+  imageAlt?: string;
+  children?: React.ReactNode;
+}) {
   return (
-    <section className="relative overflow-hidden" style={{ background: 'var(--c-bg)' }}>
-      <div className="relative mx-auto grid max-w-[1320px] grid-cols-12 gap-8 px-6 pb-14 pt-16 md:px-10 md:pt-20">
-        <div className="col-span-12 md:col-span-8">
-          <h1 className="font-bengali text-[44px] leading-[1.05] md:text-[68px]" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>{title}</h1>
-          {lede && (<p className="mt-6 max-w-2xl font-bengali text-[17px] leading-[1.7]" style={{ color: 'var(--c-ink-2)' }}>{lede}</p>)}
-        </div>
-        <div className="col-span-12 md:col-span-4" />
-      </div>
-      <div className="mx-auto h-px max-w-[1320px] px-6 md:px-10">
-        <div className="h-px w-full" style={{ background: 'var(--c-rule)' }} />
+    <section
+      className={`page-hero relative overflow-hidden px-5 pb-14 pt-14 sm:px-8 md:pb-[86px] md:pt-[76px] ${
+        image ? 'flex min-h-[470px] items-end md:min-h-[500px] md:items-center' : ''
+      }`}
+    >
+      {image && (
+        <>
+          <img
+            src={image}
+            alt={imageAlt}
+            className="page-hero-photo absolute inset-0 h-full w-full object-cover"
+          />
+          {/* Green scrim: near-solid over the copy, clearing towards the photo */}
+          <div className="page-hero-scrim absolute inset-0" aria-hidden="true" />
+        </>
+      )}
+      <div className="relative mx-auto w-full max-w-site">
+        {eyebrow && (
+          <div className="flex items-center gap-3">
+            {/* The rule belongs to the photo-hero treatment; plain heroes keep
+                the bare eyebrow they already had. */}
+            {image && <span className="h-[2px] w-[30px] shrink-0 bg-site-yellow" aria-hidden="true" />}
+            <div className="eyebrow-light">{eyebrow}</div>
+          </div>
+        )}
+        <h1 className="h-display mt-4 max-w-4xl text-white" style={SERIF_BN}>{title}</h1>
+        {lede && (
+          <p
+            className={`mt-4 font-dmsans text-[13.5px] leading-[1.7] text-white/85 sm:text-[15px] sm:leading-[1.75] md:text-[16px] md:leading-[1.8] ${
+              image ? 'max-w-[520px]' : 'max-w-2xl'
+            }`}
+          >
+            {lede}
+          </p>
+        )}
+        {children}
       </div>
     </section>
   );
 }
 
 // ─────────────────── SectionHeader ───────────────────
-export function SectionHeader({ title, kicker }: { eyebrow?: string; title: string; kicker?: string }) {
+export function SectionHeader({ eyebrow, title, kicker }: { eyebrow?: string; title: string; kicker?: string }) {
   return (
-    <div className="mb-14">
+    <div className="mb-12">
       <div className="flex flex-col items-start gap-6 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl">
-          <h2 className="font-bengali text-[36px] leading-[1.1] md:text-[52px]" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>{title}</h2>
+          {eyebrow && <div className="eyebrow mb-3">{eyebrow}</div>}
+          <h2 className="h-section" style={{ ...SERIF_BN, color: 'var(--c-ink)' }}>{title}</h2>
         </div>
-        {kicker && (<p className="max-w-sm font-bengali text-[15px] leading-[1.7]" style={{ color: 'var(--c-ink-2)' }}>{kicker}</p>)}
+        {kicker && (
+          <p className="max-w-sm font-dmsans text-[15px] leading-[1.8]" style={{ color: 'var(--c-ink-2)' }}>{kicker}</p>
+        )}
       </div>
-      <div className="mt-6 h-px w-full" style={{ background: 'var(--c-rule)' }} />
     </div>
   );
 }
@@ -181,7 +230,7 @@ export function GetInvolvedSection() {
   ];
   return (
     <section style={{ background: 'var(--c-bg)' }}>
-      <div className="mx-auto max-w-[1320px] px-6 py-28 md:px-10">
+      <div className="mx-auto max-w-site px-5 py-16 sm:px-8 md:py-20">
         <Reveal>
           <SectionHeader
             eyebrow="Three Ways to Help"
@@ -193,19 +242,23 @@ export function GetInvolvedSection() {
           {items.map(({ IIcon, ...it }) => (
             <article
               key={it.tag}
-              className="card-lift group flex flex-col gap-6 rounded-[4px] p-8"
+              className="group flex flex-col gap-5 rounded-card p-8"
               style={it.primary
                 ? { background: 'var(--c-brand)', color: '#fff' }
                 : { background: 'var(--c-paper)', border: '1px solid var(--c-rule)', color: 'var(--c-ink)' }}
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[11px] uppercase tracking-[0.22em]" style={{ opacity: 0.6 }}>{it.tag} · {it.en}</span>
-                <IIcon className="h-5 w-5 transition-transform duration-300 group-hover:scale-125" style={{ opacity: it.primary ? 0.9 : 0.7 }} />
+                <span className="font-dmmono text-[11px] uppercase tracking-[0.14em]" style={{ opacity: 0.6 }}>{it.tag} · {it.en}</span>
+                <IIcon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" style={{ color: it.primary ? FJ.yellow : FJ.red }} />
               </div>
-              <h3 className="font-bengali text-[32px] leading-tight" style={SERIF_BN}>{it.title}</h3>
-              <p className="flex-1 font-bengali text-[14.5px] leading-[1.7]" style={{ opacity: 0.85 }}>{it.lead}</p>
-              <Link to={it.to} className="inline-flex items-center gap-2 self-start border-b pb-0.5 font-bengali text-[13px] font-semibold transition-all duration-300 group-hover:gap-3.5" style={{ borderColor: 'currentColor' }}>
-                {it.cta} <Icon.Arrow className="h-3.5 w-3.5" />
+              <h3 className="h-card" style={SERIF_BN}>{it.title}</h3>
+              <p className="flex-1 font-dmsans text-[14.5px] leading-[1.8]" style={{ opacity: 0.85 }}>{it.lead}</p>
+              <Link
+                to={it.to}
+                className="inline-flex items-center gap-2 self-start pb-1 font-dmsans text-[13px] font-bold transition-all duration-300 group-hover:gap-3"
+                style={{ borderBottom: `2px solid ${FJ.yellow}` }}
+              >
+                {it.cta} <Icon.Arrow className="h-3 w-3" />
               </Link>
             </article>
           ))}

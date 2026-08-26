@@ -127,7 +127,7 @@ function ShareBar({ title, url }: { title: string; url: string }) {
         target="_blank"
         rel="noopener noreferrer"
         title="Share on Facebook"
-        className="flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+        className="flex min-h-[44px] items-center gap-2 rounded-full px-5 font-dmsans text-[12px] font-bold text-white transition-opacity hover:opacity-90"
         style={{ background: '#1877f2' }}
       >
         <FaFacebook className="h-3.5 w-3.5" />
@@ -138,7 +138,7 @@ function ShareBar({ title, url }: { title: string; url: string }) {
         target="_blank"
         rel="noopener noreferrer"
         title="Share on WhatsApp"
-        className="flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+        className="flex min-h-[44px] items-center gap-2 rounded-full px-5 font-dmsans text-[12px] font-bold text-white transition-opacity hover:opacity-90"
         style={{ background: '#25d366' }}
       >
         <FaWhatsapp className="h-3.5 w-3.5" />
@@ -149,7 +149,7 @@ function ShareBar({ title, url }: { title: string; url: string }) {
         target="_blank"
         rel="noopener noreferrer"
         title="Share on X / Twitter"
-        className="flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+        className="flex min-h-[44px] items-center gap-2 rounded-full px-5 font-dmsans text-[12px] font-bold text-white transition-opacity hover:opacity-90"
         style={{ background: '#000' }}
       >
         <FaXTwitter className="h-3.5 w-3.5" />
@@ -159,7 +159,7 @@ function ShareBar({ title, url }: { title: string; url: string }) {
         type="button"
         onClick={copy}
         title="Copy link"
-        className="flex h-8 items-center gap-1.5 rounded-full border px-3 text-[11px] font-semibold shadow-sm transition-colors hover:bg-[color:var(--c-brand)] hover:text-white hover:border-[color:var(--c-brand)]"
+        className="flex min-h-[44px] items-center gap-2 rounded-full border px-5 font-dmsans text-[12px] font-bold transition-colors hover:bg-[color:var(--c-brand)] hover:text-white hover:border-[color:var(--c-brand)]"
         style={{ borderColor: 'var(--c-rule)', color: 'var(--c-ink-2)' }}
       >
         <FaLink className="h-3 w-3" />
@@ -188,22 +188,22 @@ function RelatedCard({
   const linkTarget = slug || id.replace(/^db-/, '');
   return (
     <Link to={`/events/${linkTarget}`} className="group flex items-start gap-3 transition-all">
-      <div className="h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200/60">
+      <div className="img-zoom h-16 w-20 flex-shrink-0 overflow-hidden rounded-[18px] bg-[#eef4e7]">
         <img
           src={featuredImage || FALLBACK}
           alt={title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="h-full w-full object-cover"
           onError={onImgErr}
         />
       </div>
       <div className="flex-1 min-w-0">
-        <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-amber-700">
+        <span className="font-dmmono text-[10px] font-medium uppercase tracking-[0.14em] text-site-red">
           {category || 'Events'}
         </span>
-        <h4 className="mt-1 font-serif text-xs font-bold leading-snug text-slate-900 line-clamp-2 transition-colors group-hover:text-[#c2410c]">
+        <h4 className="mt-1 line-clamp-2 font-archivo text-[13px] font-bold leading-snug text-site-ink transition-colors group-hover:text-site-green">
           {title}
         </h4>
-        <p className="mt-1 font-sans text-[11px] text-slate-400">{publishedDate}</p>
+        <p className="mt-1 font-dmsans text-[11px] text-site-faint">{publishedDate}</p>
       </div>
     </Link>
   );
@@ -298,12 +298,12 @@ export default function EventDetail() {
   if (loading && !post) {
     return (
       <PageShell>
-        <div className="mx-auto max-w-[1320px] px-6 py-32 md:px-10 space-y-4">
+        <div className="mx-auto max-w-site space-y-4 px-5 py-32 sm:px-8">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-6 animate-pulse rounded"
-              style={{ background: 'var(--c-rule)', width: `${80 - i * 15}%` }}
+              className="h-6 animate-pulse rounded-full"
+              style={{ background: '#eef4e7', width: `${80 - i * 15}%` }}
             />
           ))}
         </div>
@@ -320,8 +320,7 @@ export default function EventDetail() {
           </p>
           <button
             onClick={() => navigate('/events')}
-            className="rounded-full px-6 py-3 font-bengali text-[14px] font-semibold text-white"
-            style={{ background: 'var(--c-brand)' }}
+            className="btn-green font-bengali text-[14px]"
           >
             {bn ? 'ফিরে যান' : 'Back to Events'}
           </button>
@@ -336,79 +335,79 @@ export default function EventDetail() {
 
   return (
     <PageShell>
-      <section style={{ background: 'var(--c-paper)' }}>
-        <div className="mx-auto max-w-[1320px] px-4 py-8 sm:px-6 md:px-10 md:py-12">
+      {/* ── Green hero band: breadcrumb, category, title and meta row ── */}
+      <section className="page-hero px-5 pb-14 pt-10 sm:px-8 md:pb-16 md:pt-12">
+        <div className="mx-auto w-full max-w-site">
 
           {/* ── Icon-style breadcrumb ── */}
-          <nav className="mb-5 flex items-center gap-1.5">
+          <nav className="flex flex-wrap items-center gap-1.5">
             <Link
               to="/"
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-[12px] font-medium transition-colors hover:bg-orange-50"
-              style={{ color: 'var(--c-ink-2)', background: 'rgba(194,65,12,0.06)' }}
+              className="flex min-h-[36px] items-center gap-1.5 rounded-full bg-white/10 px-4 font-dmsans text-[12px] font-medium text-white/85 transition-colors hover:text-site-yellow"
             >
               {/* Home icon */}
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5" style={{ color: 'var(--c-brand)' }}>
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 text-site-yellow">
                 <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h4a1 1 0 001-1v-3h2v3a1 1 0 001 1h4a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
               </svg>
               <span>{bn ? 'হোম' : 'Home'}</span>
             </Link>
             {/* Chevron */}
-            <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--c-muted)' }}>
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 flex-shrink-0 text-white/40">
               <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
             </svg>
             <Link
               to="/events"
-              className="font-sans text-[12px] font-medium transition-colors hover:opacity-70"
-              style={{ color: 'var(--c-ink-2)' }}
+              className="font-dmsans text-[12px] font-medium text-white/75 transition-colors hover:text-site-yellow"
             >
               {bn ? 'অনুষ্ঠান' : 'Events'}
             </Link>
-            <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--c-muted)' }}>
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 flex-shrink-0 text-white/40">
               <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
             </svg>
-            <span className="font-sans text-[12px] font-semibold" style={{ color: 'var(--c-brand)' }}>
+            <span className="font-dmsans text-[12px] font-bold text-site-yellow">
               {post.category}
             </span>
           </nav>
 
+          {/* 1. Title */}
+          <h1 className="h-display mt-6 max-w-4xl text-white">
+            {post.title}
+          </h1>
+
+          {/* 2. Author & Meta row */}
+          <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 font-dmsans text-[13px] text-white/65">
+            {post.author && (
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full font-dmmono text-[12px] font-bold text-site-ink"
+                  style={{ background: 'var(--yellow)' }}
+                >
+                  {post.author.charAt(0).toUpperCase()}
+                </span>
+                <span className="font-bold text-white">{post.author}</span>
+              </div>
+            )}
+            <span>{formatDate(post.publishedDate, lang)}</span>
+            <span>• {bn ? `${mins} মিনিট পড়া` : `${mins} min read`}</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div className="mx-auto max-w-site px-5 py-12 sm:px-8 md:py-16">
+
           {/* ── Two-column grid: Article (8/12) + Sidebar (4/12) ── */}
-          {/* Title and Related Stories header are both the first element in their column → same height */}
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-14">
 
             {/* ══ MAIN ARTICLE ══ */}
-            <article className="lg:col-span-8 min-w-0">
-
-              {/* 1. Title — first element so it aligns with Related Stories header */}
-              <h1 className="font-serif text-[24px] font-extrabold leading-tight text-slate-900 sm:text-[30px] md:text-[36px]">
-                {post.title}
-              </h1>
-
-              {/* 2. Author & Meta row */}
-              <div
-                className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-b pb-4 text-xs text-slate-500"
-                style={{ borderColor: 'var(--c-rule)' }}
-              >
-                {post.author && (
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold text-white shadow-sm"
-                      style={{ background: 'var(--c-brand)' }}
-                    >
-                      {post.author.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="font-semibold text-slate-700">{post.author}</span>
-                  </div>
-                )}
-                <span>{formatDate(post.publishedDate, lang)}</span>
-                <span>• {bn ? `${mins} মিনিট পড়া` : `${mins} min read`}</span>
-              </div>
+            <article className="min-w-0 lg:col-span-8">
 
               {/* 4. Featured Image — inside article, always fully visible */}
-              <figure className="my-5">
+              <figure className="mb-7">
                 {/* Outer wrapper: dark bg + overflow hidden for rounded corners */}
                 <div
-                  className="relative w-full overflow-hidden rounded-xl border border-slate-200/70 shadow-md"
-                  style={{ background: '#0f0f0f' }}
+                  className="relative w-full overflow-hidden rounded-panel"
+                  style={{ background: 'var(--green-2)' }}
                 >
                   {/* Blurred backdrop — fills letterbox areas with artistic blur */}
                   <img
@@ -428,26 +427,26 @@ export default function EventDetail() {
                     onError={onImgErr}
                   />
                 </div>
-                <figcaption className="mt-1.5 text-center font-sans text-[10.5px] italic text-slate-400">
+                <figcaption className="mono-label mt-3 block text-center">
                   {post.title}
                 </figcaption>
               </figure>
 
               {/* 5. Share bar */}
-              <div className="mb-5 pb-5 border-b" style={{ borderColor: 'var(--c-rule)' }}>
+              <div className="mb-8 border-b pb-8" style={{ borderColor: 'var(--c-rule)' }}>
                 <ShareBar title={post.title} url={pageUrl} />
               </div>
 
               {/* 6. Article body */}
               {isHtml ? (
                 <div
-                  className="prose prose-base max-w-none font-sans text-slate-700 leading-relaxed"
+                  className="prose prose-base max-w-none font-dmsans leading-[1.9] text-site-soft"
                   dangerouslySetInnerHTML={{ __html: post.content }}
                 />
               ) : (
-                <div className="space-y-4 font-sans">
+                <div className="space-y-4 font-dmsans">
                   {paragraphs.map((para, i) => (
-                    <p key={i} className="text-[15px] leading-[1.9] text-slate-700">
+                    <p key={i} className="text-[15.5px] leading-[1.9] text-site-soft">
                       {para}
                     </p>
                   ))}
@@ -463,7 +462,7 @@ export default function EventDetail() {
                   {post.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-full px-3 py-1 font-sans text-xs font-semibold text-slate-600 bg-slate-100 border border-slate-200"
+                      className="chip-static"
                     >
                       #{tag}
                     </span>
@@ -473,42 +472,42 @@ export default function EventDetail() {
 
               {/* 8. Share bar bottom */}
               <div className="mt-7 border-t pt-5" style={{ borderColor: 'var(--c-rule)' }}>
-                <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.22em] text-slate-400">
+                <p className="eyebrow mb-4">
                   {bn ? 'শেয়ার করুন' : 'Share this post'}
                 </p>
                 <ShareBar title={post.title} url={pageUrl} />
               </div>
 
               {/* 10. NGO Action Conversion CTA (Green Background) */}
-              <div className="mt-8 rounded-2xl border border-emerald-700/50 bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-900 p-6 text-white shadow-lg">
-                <h4 className="font-serif text-lg font-bold text-white">
+              <div className="green-card mt-10">
+                <h4 className="h-card text-white">
                   {bn ? 'আপনি কীভাবে সাহায্য করতে পারেন?' : 'How You Can Support Us'}
                 </h4>
-                <p className="mt-2 font-sans text-xs text-emerald-100/90 leading-relaxed">
+                <p className="mt-3 font-dmsans text-[14.5px] leading-[1.8] text-white/70">
                   {bn
                     ? 'আমাদের রক্তদান শিবির, শিক্ষা কর্মসূচি ও অন্যান্য সমাজসেবামূলক কাজে আপনার সক্রিয় অংশগ্রহণ আমাদের আরও মানুষকে সেবা করতে সাহায্য করে।'
                     : 'Your support helps us reach more families in need through blood donation camps, education initiatives, and healthcare support.'}
                 </p>
-                <div className="mt-5 flex flex-wrap gap-2.5">
+                <div className="mt-7 flex flex-wrap gap-3">
                   <Link
                     to="/donate"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-4 py-2 font-sans text-xs font-bold text-stone-900 transition hover:bg-amber-300 shadow-sm"
+                    className="btn-yellow text-[14px]"
                   >
-                    <FaHeart className="h-3 w-3" />
+                    <FaHeart className="h-3.5 w-3.5" />
                     <span>{bn ? 'দান করুন' : 'Donate'}</span>
                   </Link>
                   <Link
                     to="/volunteer"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#c2410c] px-4 py-2 font-sans text-xs font-bold text-white transition hover:bg-orange-600 shadow-sm"
+                    className="btn-ghost-light text-[14px]"
                   >
-                    <FaHandHoldingHeart className="h-3 w-3" />
+                    <FaHandHoldingHeart className="h-3.5 w-3.5" />
                     <span>{bn ? 'স্বেচ্ছাসেবক হিসেবে যোগ দিন' : 'Volunteer With Us'}</span>
                   </Link>
                   <Link
                     to="/contact"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-white/10 px-4 py-2 font-sans text-xs font-bold text-white transition hover:bg-white/20"
+                    className="btn-ghost-light text-[14px]"
                   >
-                    <FaEnvelope className="h-3 w-3" />
+                    <FaEnvelope className="h-3.5 w-3.5" />
                     <span>{bn ? 'যোগাযোগ' : 'Contact Us'}</span>
                   </Link>
                 </div>
@@ -518,9 +517,9 @@ export default function EventDetail() {
               <div className="mt-10 pt-2">
                 <Link
                   to="/events"
-                  className="group inline-flex items-center gap-2.5 rounded-full border border-stone-300 bg-white px-5 py-2.5 font-sans text-xs sm:text-sm font-semibold text-stone-700 shadow-sm transition-all duration-200 hover:border-amber-600 hover:bg-amber-50/50 hover:text-[#c2410c] hover:shadow-md active:scale-95"
+                  className="chip group px-6 text-[13.5px] font-bold"
                 >
-                  <Icon.Arrow className="h-3.5 w-3.5 rotate-180 text-stone-400 transition-all duration-200 group-hover:-translate-x-1 group-hover:text-[#c2410c]" />
+                  <Icon.Arrow className="h-3 w-3 rotate-180 transition-transform duration-200 group-hover:-translate-x-1" />
                   <span>{bn ? 'সকল ইভেন্টে ফিরুন' : 'Back to all events'}</span>
                 </Link>
               </div>
@@ -528,21 +527,21 @@ export default function EventDetail() {
 
             {/* ══ SIDEBAR ══ */}
             <aside className="lg:col-span-4">
-              <div className="sticky top-24 space-y-6">
+              <div className="sticky top-[92px] space-y-6">
 
                 {/* Related Stories */}
                 {related.length > 0 && (
-                  <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-5 shadow-sm">
+                  <div className="soft-card p-6">
                     <div
-                      className="mb-4 flex items-center justify-between border-b pb-3"
+                      className="mb-5 flex items-center justify-between gap-3 border-b pb-4"
                       style={{ borderColor: 'var(--c-rule)' }}
                     >
-                      <h3 className="font-serif text-base font-bold text-slate-900">
+                      <h3 className="font-archivo text-[17px] font-bold text-site-ink">
                         {bn ? 'সম্পর্কিত পোস্ট' : 'Related Stories'}
                       </h3>
                       <Link
                         to="/events"
-                        className="rounded-full bg-amber-100/80 px-3 py-1 font-sans text-[11px] font-bold text-amber-800 border border-amber-300/60 hover:bg-amber-200/80 transition-colors"
+                        className="shrink-0 rounded-full border border-site-line bg-site-cream px-4 py-2 font-dmsans text-[11px] font-bold text-site-green transition-colors hover:bg-site-yellow hover:text-site-ink"
                       >
                         {bn ? 'সব দেখুন' : 'View all'}
                       </Link>
@@ -564,21 +563,21 @@ export default function EventDetail() {
                 )}
 
                 {/* About org (in between Related Stories and Recent Stories) */}
-                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-5 shadow-sm text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-[#c2410c] mb-3">
-                    <Icon.Heart className="h-6 w-6" />
-                  </div>
-                  <h4 className="font-serif text-base font-bold text-slate-900">
+                <div className="capsule-card">
+                  <span className="mx-auto mb-4 flex h-[78px] w-[78px] items-center justify-center rounded-full bg-site-cream text-site-green">
+                    <Icon.Heart className="h-7 w-7" />
+                  </span>
+                  <h4 className="font-archivo text-[17px] font-bold text-site-ink">
                     {bn ? 'ছাত্রদল' : 'Chhatradol SWO'}
                   </h4>
-                  <p className="mt-2 font-sans text-xs leading-relaxed text-slate-600">
+                  <p className="mt-3 font-dmsans text-[12.5px] leading-[1.7] text-site-muted">
                     {bn
                       ? 'শিক্ষা, স্বাস্থ্য ও মানবিক সেবায় প্রতিশ্রুতিবদ্ধ একটি রেজিস্টার্ড পাবলিক চ্যারিটেবল ট্রাস্ট।'
                       : 'A registered public charitable trust committed to education, health and humanitarian service.'}
                   </p>
                   <Link
                     to="/about"
-                    className="mt-4 inline-flex items-center gap-1.5 font-sans text-xs font-bold text-[#c2410c] hover:underline"
+                    className="btn-tertiary mt-5 gap-1.5"
                   >
                     <span>{bn ? 'আমাদের সম্পর্কে' : 'About us'}</span>
                     <Icon.Arrow className="h-3 w-3" />
@@ -587,17 +586,17 @@ export default function EventDetail() {
 
                 {/* Recent Stories */}
                 {recentStories.length > 0 && (
-                  <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-5 shadow-sm">
+                  <div className="soft-card p-6">
                     <div
-                      className="mb-4 flex items-center justify-between border-b pb-3"
+                      className="mb-5 flex items-center justify-between gap-3 border-b pb-4"
                       style={{ borderColor: 'var(--c-rule)' }}
                     >
-                      <h3 className="font-serif text-base font-bold text-slate-900">
+                      <h3 className="font-archivo text-[17px] font-bold text-site-ink">
                         {bn ? 'সাম্প্রতিক পোস্ট' : 'Recent Stories'}
                       </h3>
                       <Link
                         to="/events"
-                        className="rounded-full bg-amber-100/80 px-3 py-1 font-sans text-[11px] font-bold text-amber-800 border border-amber-300/60 hover:bg-amber-200/80 transition-colors"
+                        className="shrink-0 rounded-full border border-site-line bg-site-cream px-4 py-2 font-dmsans text-[11px] font-bold text-site-green transition-colors hover:bg-site-yellow hover:text-site-ink"
                       >
                         {bn ? 'সব দেখুন' : 'View all'}
                       </Link>

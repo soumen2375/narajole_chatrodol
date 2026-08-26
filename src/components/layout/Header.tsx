@@ -1,158 +1,166 @@
-import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import {
-  FaHouse,
-  FaUser,
-  FaCalendarDays,
-  FaImage,
-  FaPhone,
-  FaUsers,
-  FaHeart,
-  FaChevronDown,
-} from 'react-icons/fa6';
-
-const BRAND_BG = '#c2410c';
+  IconHome,
+  IconPerson,
+  IconCalendar,
+  IconPhoto,
+  IconPeople,
+  IconPhone,
+} from '@/components/site/NavIcons';
+import { getMemberAvatarUrl } from '@/lib/avatar';
 
 export default function Header() {
   const [open, setOpen] = useState(false);
   const { member, isAdmin } = useAuth();
+  const { pathname } = useLocation();
 
   const dashboardPath = isAdmin ? '/admin' : '/member';
 
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  // Header stays pinned; it only gains a hairline + lift once the page moves.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const navLinks = [
-    { to: '/', label: 'Home', icon: FaHouse, exact: true },
-    { to: '/about', label: 'About', icon: FaUser },
-    { to: '/events', label: 'Events', icon: FaCalendarDays },
-    { to: '/gallery', label: 'Gallery', icon: FaImage },
-    { to: '/contact', label: 'Contact', icon: FaPhone },
-    { to: '/volunteer', label: 'Volunteer', icon: FaUsers },
+    { to: '/', label: 'Home', icon: IconHome, exact: true },
+    { to: '/about', label: 'About', icon: IconPerson },
+    { to: '/events', label: 'Events', icon: IconCalendar },
+    { to: '/gallery', label: 'Gallery', icon: IconPhoto },
+    { to: '/contact', label: 'Contact', icon: IconPhone },
+    { to: '/volunteer', label: 'Volunteer', icon: IconPeople },
   ];
 
   // User details for profile pill when logged in
-  const userName = member?.full_name || 'Soumen Maity';
-  const userAvatar = member?.avatar_url || '/assets/images/about/members/soumen.jpg';
+  const userName = member?.full_name || 'Member';
+  const userAvatar = getMemberAvatarUrl(member) || '/assets/images/about/members/soumen.jpg';
 
   return (
-    <header className="sticky top-0 z-50 w-full px-2 sm:px-4 py-2.5 md:py-3.5 transition-all duration-300">
-      <div
-        className="mx-auto flex max-w-[1380px] items-center justify-between rounded-[18px] md:rounded-[22px] border border-amber-500/25 px-4 sm:px-6 py-2.5 md:py-3 shadow-2xl backdrop-blur-md text-white transition-all"
-        style={{ background: BRAND_BG }}
-      >
+    <header
+      className={`sticky top-0 z-50 w-full bg-site-green transition-shadow duration-300 ${
+        scrolled ? 'border-b border-white/10 shadow-[0_10px_30px_-18px_rgba(10,59,47,0.9)]' : ''
+      }`}
+    >
+      <div className="mx-auto flex h-[76px] w-full max-w-[1340px] items-center gap-3 px-5 sm:px-8 xl:gap-6">
         {/* 1. BRAND LOGO & NAME */}
-        <Link to="/" className="flex items-center gap-3 shrink-0 group" onClick={() => setOpen(false)}>
-          <div className="relative flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/50 bg-white p-0.5 shadow-md transition-transform duration-300 group-hover:scale-105">
+        <Link
+          to="/"
+          className="group flex flex-none items-center gap-2.5"
+          onClick={() => setOpen(false)}
+        >
+          <span className="flex h-[44px] w-[44px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-[3px] lg:h-[42px] lg:w-[42px] xl:h-[52px] xl:w-[52px]">
             <img
               src="/assets/images/logo.png"
               alt="Chhatradol Official Logo"
-              className="h-full w-full object-cover scale-110 rounded-full"
+              className="h-full w-full rounded-full object-contain"
               onError={(e) => { e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }}
             />
-          </div>
-          <div className="flex flex-col leading-tight min-w-0">
-            <span
-              className="text-base sm:text-xl md:text-[24px] font-bold text-white tracking-tight truncate"
-              style={{ fontFamily: '"Noto Serif", Georgia, serif' }}
-            >
+          </span>
+          <span className="flex min-w-0 flex-col leading-none">
+            <span className="wordmark whitespace-nowrap text-[17px] text-white sm:text-[19px] lg:text-[17px] xl:text-[22px]">
               Chhatradol
             </span>
-            <span className="block text-[7px] xs:text-[8px] sm:text-[8.5px] md:text-[9.5px] font-bold tracking-[0.12em] sm:tracking-[0.18em] uppercase text-white/90 truncate">
+            <span className="mt-1 block whitespace-nowrap text-[6.5px] font-bold uppercase tracking-[0.12em] text-white/70 sm:mt-1.5 sm:text-[8px] sm:tracking-[0.16em]">
               SOCIAL WELFARE ORGANIZATION
             </span>
-          </div>
+          </span>
         </Link>
 
-        <div className="hidden xl:block h-7 w-px bg-white/25 mx-2" />
-
-        {/* 2. CENTER NAV LINKS WITH ICONS */}
-        <nav className="hidden items-center gap-1.5 xl:gap-2.5 font-medium xl:flex">
+        {/* 2. CENTER NAV LINKS — icons appear once there is room for them */}
+        <nav className="ml-auto hidden items-center gap-1 lg:flex xl:gap-1.5">
           {navLinks.map((item) => {
             const IconComp = item.icon;
             return (
-              <NavLink
-                key={item.to + item.label}
-                to={item.to}
-                end={item.exact}
-              >
-                {({ isActive }) => (
+              <NavLink key={item.to + item.label} to={item.to} end={item.exact}>
+                {({ isActive }) =>
                   isActive ? (
-                    <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[14px] font-bold shadow-md transition-all text-[#c2410c]">
-                      <IconComp className="h-4 w-4 text-[#c2410c]" />
+                    <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-white px-3 py-2.5 font-dmsans text-[13.5px] font-bold text-site-green xl:px-4 xl:text-[14px]">
+                      <IconComp className="hidden shrink-0 xl:block" />
                       <span>{item.label}</span>
-                    </div>
+                    </span>
                   ) : (
-                    <div className="group inline-flex items-center gap-2 rounded-full px-3 py-2 text-[14px] font-semibold text-white/90 transition-colors hover:bg-white/10 hover:text-white">
-                      <IconComp className="h-4 w-4 opacity-90 transition-transform group-hover:scale-110" />
+                    <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-2.5 font-dmsans text-[13.5px] font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-site-yellow xl:px-3.5 xl:text-[14px]">
+                      <IconComp className="hidden shrink-0 xl:block" />
                       <span>{item.label}</span>
-                    </div>
+                    </span>
                   )
-                )}
+                }
               </NavLink>
             );
           })}
         </nav>
 
         {/* 3. RIGHT SECTION: PROFILE/LOGIN + DONATE */}
-        <div className="hidden xl:flex items-center gap-3 shrink-0">
-          {/* Profile Badge (logged in) vs Login Button (logged out) */}
+        <div className="hidden flex-none items-center gap-2.5 lg:flex">
           {member ? (
             <Link
               to={dashboardPath}
-              className="flex items-center gap-2.5 rounded-full border border-amber-300/40 bg-black/15 px-3.5 py-1.5 transition-all hover:bg-black/25 active:scale-95"
+              className="flex items-center gap-2.5 rounded-full border border-white/30 py-1.5 pl-1.5 pr-4 transition-colors hover:border-site-yellow"
             >
               <img
                 src={userAvatar}
                 alt={userName}
-                className="h-8 w-8 rounded-full border border-amber-300 object-cover"
+                className="h-8 w-8 shrink-0 rounded-full object-cover"
                 onError={(e) => { e.currentTarget.src = '/assets/images/members/soumen.jpg'; }}
               />
-              <div className="flex flex-col text-left leading-tight">
-                <span className="text-xs font-bold text-white max-w-[100px] truncate">{userName}</span>
-                <span className="text-[10px] font-semibold text-amber-300 flex items-center gap-0.5">
-                  Dashboard <FaChevronDown className="h-2 w-2" />
+              <span className="flex flex-col text-left leading-tight">
+                <span className="max-w-[80px] truncate font-dmsans text-[12.5px] font-bold text-white xl:max-w-[104px]">
+                  {userName}
                 </span>
-              </div>
+                <span className="whitespace-nowrap font-dmsans text-[10px] font-bold text-site-yellow">
+                  Dashboard
+                </span>
+              </span>
             </Link>
           ) : (
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 hover:bg-white/20 px-4 py-2 text-sm font-bold text-white transition-all"
+              className="inline-flex min-h-[44px] items-center gap-2 whitespace-nowrap rounded-full border border-white/40 px-4 font-dmsans text-[13.5px] font-bold text-white transition-colors hover:border-site-yellow hover:text-site-yellow xl:px-5 xl:text-[14px]"
             >
-              <FaUser className="h-4 w-4 text-white/90" />
+              <IconPerson className="shrink-0" />
               <span>Login</span>
             </Link>
           )}
 
-          {/* Donate Pill Button */}
           <Link
             to="/donate"
-            className="inline-flex items-center gap-2 rounded-full bg-white px-5 sm:px-6 py-2.5 text-sm md:text-[15px] font-extrabold text-[#c2410c] shadow-lg transition-all duration-200 hover:bg-amber-50 hover:scale-105 active:scale-95"
+            className="inline-flex min-h-[44px] items-center whitespace-nowrap rounded-full bg-site-yellow px-5 font-dmsans text-[14px] font-bold text-site-ink transition-all hover:brightness-95 xl:px-7 xl:text-[15px]"
           >
-            <FaHeart className="h-4 w-4 text-rose-600" />
             <span>Donate</span>
           </Link>
         </div>
 
         {/* 4. MOBILE / TABLET RIGHT ACTIONS */}
-        <div className="flex items-center gap-2 xl:hidden shrink-0">
+        <div className="ml-auto flex flex-none items-center gap-2 lg:hidden">
           <Link
             to="/donate"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs sm:text-sm font-bold text-[#c2410c] shadow-md hover:bg-amber-50 transition-all"
+            className="hidden min-h-[44px] items-center whitespace-nowrap rounded-full bg-site-yellow px-5 font-dmsans text-[14px] font-bold text-site-ink sm:inline-flex"
           >
-            <FaHeart className="h-3.5 w-3.5 text-rose-600" />
             <span>Donate</span>
           </Link>
 
           <button
-            className="rounded-xl p-2 text-white hover:bg-white/15 transition-colors focus:outline-none"
+            type="button"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10"
             aria-label="Toggle Navigation Menu"
+            aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {open ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               )}
             </svg>
           </button>
@@ -163,11 +171,11 @@ export default function Header() {
       {open && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm xl:hidden"
+            className="fixed inset-0 top-[76px] z-40 bg-black/50 lg:hidden"
             onClick={() => setOpen(false)}
           />
-          <div className="relative z-50 mt-2 mx-auto max-w-[1380px] max-h-[82vh] overflow-y-auto rounded-[18px] border border-white/15 bg-[#c2410c] p-4 shadow-2xl xl:hidden animate-fade-in text-white">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div className="relative z-50 max-h-[78vh] overflow-y-auto rounded-b-[36px] bg-site-green px-5 pb-8 pt-2 sm:px-8 lg:hidden">
+            <div className="grid gap-1">
               {navLinks.map((item) => {
                 const IconComp = item.icon;
                 return (
@@ -177,57 +185,47 @@ export default function Header() {
                     end={item.exact}
                     onClick={() => setOpen(false)}
                     className={({ isActive }) =>
-                      `flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-sm font-semibold transition-all ${
-                        isActive ? 'bg-white text-[#c2410c] shadow-md font-bold' : 'text-white/90 hover:bg-white/15'
+                      `flex min-h-[48px] items-center gap-3 rounded-full px-5 font-dmsans text-[15px] transition-colors ${
+                        isActive
+                          ? 'bg-white font-bold text-site-green'
+                          : 'font-medium text-white/85 hover:bg-white/10 hover:text-site-yellow'
                       }`
                     }
                   >
-                    <IconComp className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{item.label}</span>
+                    <IconComp className="shrink-0" />
+                    <span>{item.label}</span>
                   </NavLink>
                 );
               })}
             </div>
 
-            <div className="mt-4 flex flex-col gap-2.5 border-t border-white/20 pt-3.5">
+            <div className="mt-5 flex flex-col gap-3 border-t border-white/15 pt-5">
               {member ? (
                 <Link
                   to={dashboardPath}
                   onClick={() => setOpen(false)}
-                  className="flex items-center justify-between rounded-xl border border-amber-300/40 bg-black/20 px-4 py-3 transition-colors hover:bg-black/30"
+                  className="flex min-h-[56px] items-center gap-3 rounded-full border border-white/25 py-2 pl-2 pr-5"
                 >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={userAvatar}
-                      alt={userName}
-                      className="h-8 w-8 rounded-full border border-amber-300 object-cover"
-                      onError={(e) => { e.currentTarget.src = '/assets/images/members/soumen.jpg'; }}
-                    />
-                    <div className="flex flex-col text-left leading-tight">
-                      <span className="font-bold text-sm text-white">{userName}</span>
-                      <span className="text-[10px] text-amber-300 font-semibold">View Dashboard</span>
-                    </div>
-                  </div>
-                  <span className="text-xs text-amber-300 font-bold">Dashboard ➔</span>
+                  <img
+                    src={userAvatar}
+                    alt={userName}
+                    className="h-9 w-9 shrink-0 rounded-full object-cover"
+                    onError={(e) => { e.currentTarget.src = '/assets/images/members/soumen.jpg'; }}
+                  />
+                  <span className="flex flex-col text-left leading-tight">
+                    <span className="font-dmsans text-[14px] font-bold text-white">{userName}</span>
+                    <span className="font-dmsans text-[11px] font-bold text-site-yellow">View Dashboard</span>
+                  </span>
                 </Link>
               ) : (
-                <Link
-                  to="/login"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-white/40 bg-white/10 py-3 text-sm font-bold text-white shadow-sm hover:bg-white/20 transition-all"
-                >
-                  <FaUser className="h-4 w-4" />
-                  <span>Login / Register</span>
+                <Link to="/login" onClick={() => setOpen(false)} className="btn-ghost-light w-full">
+                  <IconPerson className="shrink-0" />
+                  <span>Login</span>
                 </Link>
               )}
 
-              <Link
-                to="/donate"
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-full bg-white py-3 text-center text-sm font-extrabold text-[#c2410c] shadow-md hover:bg-amber-50 transition-all"
-              >
-                <FaHeart className="h-4 w-4 text-rose-600" />
-                <span>Donate Now</span>
+              <Link to="/donate" onClick={() => setOpen(false)} className="btn-yellow w-full">
+                <span>Donate</span>
               </Link>
             </div>
           </div>

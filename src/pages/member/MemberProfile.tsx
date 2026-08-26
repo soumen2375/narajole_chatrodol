@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
 import { compressImage, validateImageUpload } from '@/lib/imageCompression';
+import { getMemberAvatarUrl } from '@/lib/avatar';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -27,7 +28,7 @@ export default function MemberProfile() {
   const [error,    setError]    = useState('');
   const [pw,       setPw]       = useState('');
   const [pwStatus, setPwStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(member?.avatar_url ?? null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(member?.avatar_url || getMemberAvatarUrl(member));
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState('');
 

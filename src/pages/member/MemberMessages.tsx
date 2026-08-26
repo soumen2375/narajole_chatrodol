@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { ListSkeleton } from '@/components/ui/Skeleton';
+import MemberAvatar from '@/components/ui/MemberAvatar';
 import type { Member } from '@/types';
 
 // ─── Extra types for form inbox ────────────────────────────────────────────
@@ -41,26 +42,7 @@ const ROLES = [
 ] as const;
 
 function avatar(name: string, url: string | null, size = 38) {
-  const ini = name.split(' ').filter(Boolean).map((w) => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-  const fallbackDiv = (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: BRAND, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: size * 0.34, flexShrink: 0, ...SERIF }}>
-      {ini}
-    </div>
-  );
-  if (url) {
-    return (
-      <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-        {fallbackDiv}
-        <img
-          src={url}
-          alt={name}
-          style={{ position: 'absolute', inset: 0, width: size, height: size, borderRadius: '50%', objectFit: 'cover' }}
-          onError={(e) => { e.currentTarget.style.display = 'none'; }}
-        />
-      </div>
-    );
-  }
-  return fallbackDiv;
+  return <MemberAvatar name={name} avatarUrl={url} size={size} />;
 }
 
 type Tab = 'inbox' | 'sent' | 'bulletins' | 'form_inbox';

@@ -47,44 +47,44 @@ const CAUSES: Cause[] = [
 const TIERS = [
   {
     v: 300, causeKey: 'education', catEn: 'Education', catBn: 'শিক্ষা',
-    en: 'A new school kit for a child', bn: 'একটি শিশুর জন্য নতুন স্কুল কিট',
-    descEn: 'Notebooks, pens and a bag so one child starts the year ready.',
+    en: 'Provide a School Kit', bn: 'একটি শিশুর জন্য নতুন স্কুল কিট',
+    descEn: 'Give a child the essentials needed for school notebooks, pens, educational supplies and a school bag so they can begin their studies with confidence.',
     descBn: 'খাতা, কলম আর ব্যাগ — একটি শিশু যেন প্রস্তুত হয়ে বছর শুরু করতে পারে।',
     img: '/assets/images/service/post-34-students-book-support.jpg',
   },
   {
     v: 500, causeKey: 'environment', catEn: 'Environment', catBn: 'পরিবেশ',
-    en: '20Kg of waste collected', bn: '২০ কেজি বর্জ্য সংগ্রহ',
-    descEn: 'A neighbourhood clean-up drive, from collection to safe disposal.',
+    en: 'Support a Community Clean Up', bn: '২০ কেজি বর্জ্য সংগ্রহ',
+    descEn: 'Support a local clean up initiative, helping collect and responsibly dispose of approximately 20 kg of waste while promoting cleaner and healthier communities.',
     descBn: 'একটি পাড়া পরিচ্ছন্নতা অভিযান — সংগ্রহ থেকে নিরাপদ নিষ্কাশন পর্যন্ত।',
-    img: '/assets/images/service/post-29-house-repair-flood.jpg',
+    img: '/assets/images/service/post-clean-up.jpg',
   },
   {
     v: 1000, causeKey: 'environment', catEn: 'Environment', catBn: 'পরিবেশ',
-    en: '10 trees planted', bn: '১০টি গাছ রোপণ',
-    descEn: 'Saplings, guards and a season of care along the village ponds.',
+    en: 'Plant 10 Trees', bn: '১০টি গাছ রোপণ',
+    descEn: 'Help us plant and nurture 10 trees in local communities. Your contribution supports saplings, tree guards and essential care to help them grow.',
     descBn: 'চারা, বেড়া আর এক মরসুমের পরিচর্যা — গ্রামের পুকুরপাড় ঘিরে।',
-    img: '/assets/images/impacts/tree_plantations.jpg',
+    img: '/assets/images/service/tree_plantations.jpg',
   },
   {
     v: 2000, causeKey: 'education', catEn: 'Education', catBn: 'শিক্ষা',
-    en: 'Support monthly education', bn: 'মাসিক শিক্ষা সহায়তা',
-    descEn: 'One month of coaching, materials and mentoring for a student.',
+    en: 'Support a Student’s Education', bn: 'মাসিক শিক্ষা সহায়তা',
+    descEn: 'Help provide a student with one month of educational support, including learning materials, guidance and mentoring.',
     descBn: 'একজন শিক্ষার্থীর এক মাসের কোচিং, শিক্ষাসামগ্রী ও দিকনির্দেশনা।',
     img: '/assets/images/impacts/education.jpg',
   },
   {
     v: 5000, causeKey: 'healthcare', catEn: 'Health', catBn: 'স্বাস্থ্য',
-    en: 'Screening kits for one blood camp', bn: 'একটি রক্তদান শিবিরের স্ক্রিনিং কিট',
-    descEn: 'Screening kits, refreshments and logistics for a donation camp.',
-    descBn: 'একটি রক্তদান শিবিরের স্ক্রিনিং কিট, জলখাবার ও আয়োজন।',
-    img: '/assets/images/service/post-33-raktokotha-camp.jpg',
+    en: 'Support a Blood Donation Camp', bn: 'একটি রক্তদান শিবিরে সহায়তা',
+    descEn: 'Your contribution can help us organize a blood donation camp by supporting essential requirements such as screening kits, medical supplies, refreshments and other logistics.',
+    descBn: 'আপনার অনুদানে একটি রক্তদান শিবিরের স্ক্রিনিং কিট, চিকিৎসা সামগ্রী, জলখাবার ও অন্যান্য আয়োজনের খরচ বহন করা সম্ভব হয়।',
+    img: '/assets/images/service/post-blood-donation-camp.jpg',
   },
   {
     v: 10000, causeKey: 'food', catEn: 'Relief', catBn: 'ত্রাণ',
-    en: '1 Month Ration to widow family', bn: 'বিধবা পরিবারকে ১ মাসের রেশন',
-    descEn: 'Rice, pulses, oil and essentials delivered to a family for a month.',
-    descBn: 'চাল, ডাল, তেল ও নিত্যপ্রয়োজনীয় সামগ্রী — এক মাসের জন্য একটি পরিবারে।',
+    en: 'Provide Essential Relief to a Family', bn: 'একটি পরিবারকে জরুরি ত্রাণ সহায়তা',
+    descEn: 'Your contribution can help us provide a comprehensive relief package to a family facing hardship, including essential food items, household necessities and other urgent support based on their needs.',
+    descBn: 'সংকটে থাকা একটি পরিবারের জন্য চাল, ডাল, তেল সহ প্রয়োজনীয় খাদ্য, গৃহস্থালি সামগ্রী ও জরুরি সহায়তার সম্পূর্ণ ত্রাণ প্যাকেজ।',
     img: '/assets/images/service/post-30-tarpaulin-distribution.jpg',
   },
 ];
@@ -468,9 +468,44 @@ export default function Donate() {
 
       <PageHero
         eyebrow={tr('অনুদান দিন', 'Donate')}
-        title={tr('অনুদান দিন', 'Donate')}
-        lede={SEO['/donate'].description}
-      />
+        title={
+          <>
+            {tr('একবার দিন।', 'Give once.')}
+            <br />
+            {tr('এক বছর বদলান।', 'Change a year.')}
+          </>
+        }
+        lede={
+          <>
+            {/* The design runs a shorter lede on phones so it still sets in two
+                lines; the full sentence returns from sm up. */}
+            <span className="sm:hidden">
+              {tr(
+                'আপনার অনুদানে চলে রক্তদান শিবির, স্কুল কিট ও স্বাস্থ্য শিবির — পশ্চিম মেদিনীপুর জুড়ে।',
+                'Every contribution carries the power to make a difference. Your generosity helps us bring care, opportunity, dignity, and hope to people and communities who need a helping hand.'
+              )}
+            </span>
+            <span className="hidden sm:inline">
+              {tr(
+                'আপনার অনুদানে চলে রক্তদান শিবির, স্কুল কিট, স্বাস্থ্য শিবির এবং পশ্চিম মেদিনীপুর জুড়ে সমাজ উন্নয়নের কাজ।',
+                'Every contribution carries the power to make a difference. Your generosity helps us bring care, opportunity, dignity, and hope to people and communities who need a helping hand.'
+              )}
+            </span>
+          </>
+        }
+        image="/assets/images/donate-hero.jpg"
+        imageAlt={tr('ত্রাণ সামগ্রী হাতে একটি শিশু', 'A child holding a relief kit at a Chhatradol distribution')}
+      >
+        <p className="mt-5 flex items-center gap-2.5 font-dmsans text-[12px] font-medium text-white/80 sm:mt-6 sm:text-[13.5px]">
+          {/* <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#7FD3A3]" aria-hidden="true" />
+           <span>
+            {tr('৮০জি রসিদ তাৎক্ষণিক', '80G receipt issued instantly')}
+             <span className="hidden sm:inline">
+              {tr(' · Cashfree-এর সুরক্ষিত পেমেন্ট', ' · Secure payment via Cashfree')}
+            </span> 
+          </span> */}
+        </p>
+      </PageHero>
 
       {/* ── Top Stepper (Clean & High Contrast - Fully Visible on Mobile & Desktop) ── */}
       <div className="bg-white border-b border-site-line py-3 sm:py-4">
@@ -539,20 +574,21 @@ export default function Donate() {
              ══════════════════════════════════════════════════════════════════ */}
           {/* Section heading spans both columns so the cards and the donation
               panel still start on the same line. */}
-          <div className="flex flex-wrap items-end justify-between gap-4 lg:col-span-2">
-            <div>
-              <div className="eyebrow">{tr('একটি উদ্দেশ্য বাছুন', 'Choose a cause')}</div>
-              <h2 className="mt-3 font-archivo text-[clamp(22px,2.2vw,27px)] font-bold leading-[1.2] tracking-[-0.02em] text-site-ink">
-                {tr('আপনার সহায়তা কোথায় পরিবর্তন আনবে বেছে নিন', 'Choose where your support can make a difference')}
-              </h2>
-            </div>
-            <p className="font-dmsans text-[13px] font-medium text-site-faint">
-              {tr('যেকোনো সময় পরিবর্তন করতে পারেন', 'You can change it any time')}
+          <div className="order-2 max-w-[760px] lg:order-1 lg:col-span-2">
+            <div className="eyebrow">{tr('একটি উদ্দেশ্য বাছুন', 'Choose a cause')}</div>
+            <h2 className="mt-3 font-archivo text-[clamp(22px,2.2vw,27px)] font-bold leading-[1.2] tracking-[-0.02em] text-site-ink">
+              {tr('আপনার অনুদান সত্যিকারের পরিবর্তন আনে', 'Your Donation Makes a Real Difference')}
+            </h2>
+            <p className="mt-3 font-dmsans text-[13.5px] font-medium leading-[1.7] text-site-muted sm:text-[14px]">
+              {tr(
+                'ছোট বা বড় — প্রতিটি অনুদানই আমাদের সেই মানুষদের পাশে দাঁড়াতে সাহায্য করে যাঁদের সহায়তা সবচেয়ে বেশি প্রয়োজন। একটি উদ্দেশ্য বেছে নিন, পরিবর্তনের অংশ হন।',
+                'Every contribution, big or small, helps us reach people who need support the most. Choose a cause and be a part of change.'
+              )}
             </p>
           </div>
 
-          <div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="order-3 lg:order-2">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6">
               {TIERS.map((t) => {
                 const active = picked === t.v && !custom;
                 return (
@@ -561,11 +597,19 @@ export default function Donate() {
                     type="button"
                     aria-pressed={active}
                     onClick={() => pickTier(t)}
-                    className={`flex h-full flex-col overflow-hidden rounded-[34px] border-2 bg-white text-left transition-all duration-200 hover:-translate-y-1 ${
-                      active ? 'border-site-green' : 'border-site-line'
+                    className={`relative flex h-full flex-col overflow-hidden rounded-[18px] bg-white text-left transition-all duration-200 hover:-translate-y-1 ${
+                      active ? 'border-2 border-site-green' : 'border border-site-line'
                     }`}
                   >
-                    <div className="img-zoom aspect-[16/9] w-full overflow-hidden bg-[#eef4e7]">
+                    {/* Selected flag — mirrors the SELECTED ✓ pill in the design */}
+                    {active && (
+                      <span className="absolute right-3.5 top-3.5 z-[2] inline-flex items-center gap-1.5 rounded-full bg-site-green px-3 py-[7px] font-dmsans text-[10px] font-bold uppercase tracking-[0.08em] text-white">
+                        {tr('নির্বাচিত', 'Selected')}
+                        <Check className="h-3 w-3 stroke-[3]" />
+                      </span>
+                    )}
+
+                    <div className="img-zoom relative h-[168px] w-full shrink-0 overflow-hidden bg-[#eef4e7] sm:h-[190px]">
                       <img
                         src={t.img}
                         alt=""
@@ -573,44 +617,43 @@ export default function Donate() {
                         className="h-full w-full object-cover"
                         onError={(e) => { e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }}
                       />
-                    </div>
-
-                    <div className="flex flex-1 flex-col px-6 pb-6 pt-5">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="inline-flex items-center rounded-full border border-site-line bg-site-cream px-3 py-[7px] font-dmsans text-[11px] font-semibold text-site-green">
+                      <span className="pointer-events-none absolute left-3.5 top-3.5 rounded-md bg-white/95 px-3 py-1.5 font-dmsans text-[10px] font-bold uppercase leading-none tracking-[0.12em] text-site-soft">
                         {lang === 'en' ? t.catEn : t.catBn}
                       </span>
-                      <span className="font-archivo text-[20px] font-bold text-site-red">
-                        ₹{t.v.toLocaleString('en-IN')}
-                      </span>
                     </div>
 
-                    <h3 className="mt-3.5 font-archivo text-[18px] font-bold leading-[1.3] text-site-ink">
-                      {lang === 'en' ? t.en : t.bn}
-                    </h3>
+                    <div className="flex flex-1 flex-col gap-3.5 px-5 pb-5 pt-5 sm:px-[22px] sm:pb-[22px]">
+                      <div className="flex items-baseline justify-between gap-3.5">
+                        <h3 className="min-w-0 flex-1 font-archivo text-[17px] font-bold leading-[1.3] text-site-ink sm:text-[19px]">
+                          {lang === 'en' ? t.en : t.bn}
+                        </h3>
+                        <span className="shrink-0 font-archivo text-[22px] font-bold leading-none text-site-red sm:text-[24px]">
+                          ₹{t.v.toLocaleString('en-IN')}
+                        </span>
+                      </div>
 
-                    <p className="mb-[18px] mt-2 line-clamp-2 font-dmsans text-[13.5px] leading-[1.7] text-site-muted">
-                      {lang === 'en' ? t.descEn : t.descBn}
-                    </p>
+                      <p className="font-dmsans text-[13px] leading-[1.65] text-site-muted sm:text-[13.5px]">
+                        {lang === 'en' ? t.descEn : t.descBn}
+                      </p>
 
-                    <div className="mt-auto flex flex-wrap items-center justify-between gap-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-[22px] py-3 font-dmsans text-[12.5px] font-bold ${
-                          active ? 'bg-site-green text-white' : 'bg-site-yellow text-site-ink'
-                        }`}
-                      >
-                        {active ? (
-                          <>
-                            {tr('নির্বাচিত', 'Selected')} <Check className="h-3 w-3 stroke-[3]" />
-                          </>
-                        ) : (
-                          tr('দান করুন', 'Donate Now')
-                        )}
-                      </span>
-                      <span className="font-dmsans text-[11.5px] font-medium text-site-faint">
-                        {frequency === 'monthly' ? tr('মাসিক', 'monthly gift') : tr('একবারের দান', 'one-time gift')}
-                      </span>
-                    </div>
+                      <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-site-line pt-4">
+                        <span className="font-dmsans text-[11.5px] font-medium text-site-faint">
+                          {frequency === 'monthly' ? tr('মাসিক দান', 'Monthly gift') : tr('একবারের দান', 'One-time gift')}
+                        </span>
+                        <span
+                          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-[22px] py-3 font-dmsans text-[12.5px] font-bold ${
+                            active ? 'bg-site-green text-white' : 'bg-site-yellow text-site-ink'
+                          }`}
+                        >
+                          {active ? (
+                            <>
+                              {tr('নির্বাচিত', 'Selected')} <Check className="h-3 w-3 stroke-[3]" />
+                            </>
+                          ) : (
+                            tr('দান করুন', 'Donate Now')
+                          )}
+                        </span>
+                      </div>
                     </div>
                   </button>
                 );
@@ -619,12 +662,13 @@ export default function Donate() {
           </div>
 
           {/* ══════════════════════════════════════════════════════════════════
-              RIGHT: your donation — sticky summary + form + bank details
+              RIGHT: your donation — summary + form + bank details (aligned to bottom)
              ══════════════════════════════════════════════════════════════════ */}
-          <div>
-            <div className="grid gap-5 lg:sticky lg:top-[100px]">
+          {/* `contents` on mobile lets the form panel and the bank card be ordered
+              independently around the gift cards; on lg they snap into a sticky right column. */}
+          <div className="contents lg:block lg:order-3 lg:sticky lg:top-[100px] lg:self-start">
 
-            <div className="rounded-[44px] border border-site-line bg-white p-6 sm:p-8">
+            <div id="donate-form" className="order-1 scroll-mt-24 rounded-[44px] border border-site-line bg-white p-6 sm:p-8 lg:order-none">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="font-archivo text-[22px] font-bold leading-[1.2] text-site-ink">
                   {tr('আপনার অনুদান', 'Your donation')}
@@ -803,12 +847,12 @@ export default function Donate() {
               </div>
             </div>
 
-            {/* Bank transfer — for donors who would rather send money directly */}
-            <div className="rounded-[40px] bg-site-green px-6 py-7 text-white sm:px-8">
+            {/* Bank transfer — compact height */}
+            <div className="order-4 mt-5 rounded-[40px] bg-site-green px-6 py-5 text-white sm:px-8 lg:order-none lg:mt-5">
               <div className="font-dmsans text-[12px] font-bold uppercase tracking-[0.14em] text-site-yellow">
                 {tr('ব্যাংক ট্রান্সফার', 'Bank Transfer')}
               </div>
-              <p className="mb-4 mt-2.5 font-dmsans text-[13.5px] leading-[1.6] text-white/70">
+              <p className="mb-3 mt-2 font-dmsans text-[13px] leading-[1.6] text-white/70">
                 {tr('সরাসরি ব্যাংকে পাঠাতে চাইলে নিচের তথ্য ব্যবহার করুন।', 'Prefer to transfer directly? Use the details below.')}
               </p>
 
@@ -821,7 +865,7 @@ export default function Donate() {
                 ].map((row) => (
                   <div
                     key={row.k}
-                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 border-b border-white/15 py-3.5 last:border-0 sm:grid-cols-[86px_minmax(0,1fr)_auto] sm:gap-x-4"
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-b border-white/15 py-2.5 last:border-0 sm:grid-cols-[86px_minmax(0,1fr)_auto] sm:gap-x-4"
                   >
                     <dt className="col-span-2 font-dmsans text-[10.5px] font-semibold uppercase leading-[1.4] tracking-[0.1em] text-white/50 sm:col-span-1">
                       {row.label}
@@ -845,6 +889,21 @@ export default function Donate() {
                 {tr('ট্রান্সফারের পর রসিদের জন্য আমাদের সাথে যোগাযোগ করুন।', 'After transferring, contact us to receive your receipt.')}
               </p>
             </div>
+
+            {/* Every Contribution Matters — sits beneath bank details in the right column */}
+            <div className="order-5 mt-5 rounded-[18px] border border-site-line bg-white px-5 py-5 sm:px-7 sm:py-6 lg:order-none lg:mt-5">
+              <div className="flex items-center gap-2.5">
+                <Heart className="h-[18px] w-[18px] shrink-0 fill-site-red text-site-red" />
+                <h3 className="font-archivo text-[17px] font-bold leading-[1.3] text-site-ink sm:text-[19px]">
+                  {tr('প্রতিটি অনুদানই গুরুত্বপূর্ণ', 'Every Contribution Matters')}
+                </h3>
+              </div>
+              <p className="mt-2.5 font-dmsans text-[13px] leading-[1.75] text-site-muted sm:text-[13.5px]">
+                {tr(
+                  'একটি শিশুর পড়াশোনা চালিয়ে যাওয়া, একটি গাছ রোপণ, শিক্ষাসামগ্রী পৌঁছে দেওয়া কিংবা পরিচ্ছন্ন পরিবেশ গড়া — আপনার অনুদান পরিবর্তনের এক অর্থবহ পদক্ষেপ হয়ে উঠতে পারে।',
+                  'Whether you help a child continue their education, plant a tree, provide essential learning materials or support a cleaner community, your contribution can become a meaningful act of change.'
+                )}
+              </p>
             </div>
           </div>
         </form>

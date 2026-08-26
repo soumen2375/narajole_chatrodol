@@ -14,6 +14,7 @@ import { memberDisplayId } from '@/types';
 import { useT } from '@/i18n';
 import { useFmt } from '@/lib/format';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import MemberAvatar from '@/components/ui/MemberAvatar';
 
 const INK = '#1c1917';
 const INK2 = '#44403c';
@@ -25,7 +26,6 @@ const PAPER = '#ffffff';
 const CREAM = '#faf6ef';
 
 const PAGE_SIZE = 12;
-const AVATAR_COLORS = ['#c2410c', '#4d7c0f', '#0f766e', '#7c3aed', '#b45309', '#9a3412'];
 
 type CapKey = 'normal' | 'content' | 'events' | 'finance';
 type StatusFilter = 'all' | 'pending' | 'active' | 'inactive' | 'committee' | 'volunteer';
@@ -53,14 +53,6 @@ function isVolunteer(m: Member) {
 }
 function isCommittee(m: Member) {
   return m.role === 'admin' || m.can_manage_posts || m.can_manage_events || m.can_manage_finance || (!!m.designation && !isVolunteer(m));
-}
-function initials(name: string) {
-  return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '—';
-}
-function avatarColor(name: string) {
-  let s = 0;
-  for (const ch of name) s += ch.charCodeAt(0);
-  return AVATAR_COLORS[s % AVATAR_COLORS.length];
 }
 
 function exportCsv(members: Member[]) {
@@ -442,7 +434,7 @@ export default function AdminMembers() {
                     {/* Name + ID */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white" style={{ background: avatarColor(m.full_name) }}>{initials(m.full_name)}</span>
+                        <MemberAvatar member={m} size={36} />
                         <div className="min-w-0">
                           <Link to={`/admin/members/${m.id}`} className="block truncate font-semibold hover:underline" style={{ color: INK }}>{m.full_name}</Link>
                           <div className="font-mono text-[10.5px]" style={{ color: MUTED }}>{memberDisplayId(m)}</div>

@@ -8,13 +8,7 @@ import { SEO } from '@/data/seoConfig';
 
 import Breadcrumb from '@/components/ui/Breadcrumb';
 
-const SERIF_BN = { fontFamily: '"Noto Serif", "Noto Serif Bengali", Georgia, serif' };
-const INK    = '#1c1917';
-const CREAM  = '#faf6ef';
-const BRAND  = '#c2410c';
-const PAPER  = '#ffffff';
-const RULE   = '#e7e5e4';
-const MUTED  = '#78716c';
+const SERIF_BN = { fontFamily: 'Archivo, "Noto Serif Bengali", "DM Sans", sans-serif' };
 
 export default function Login() {
   useSEO(SEO['/login']);
@@ -58,116 +52,110 @@ export default function Login() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: CREAM }}>
+    <div className="flex min-h-screen flex-col bg-site-cream">
       <Breadcrumb title="Member Login" />
 
-      {/* Center card */}
-      <div className="flex flex-1 items-center justify-center px-4 py-12 md:py-16">
-        <div className="w-full max-w-md">
-          <h1 className="font-bengali text-[36px] leading-tight" style={{ ...SERIF_BN, color: INK }}>
-            {lang === 'bn' ? 'সদস্য লগইন' : 'Member Login'}
-          </h1>
-          <p className="mt-2 mb-8 font-bengali text-[14px]" style={{ color: MUTED }}>
-            {lang === 'bn' ? 'সদস্য প্যানেলে প্রবেশ করুন।' : 'Sign in to your member panel.'}
-          </p>
+      {/* Center card — form left, green panel right */}
+      <div className="flex flex-1 items-center justify-center px-5 py-12 sm:px-8 md:py-16">
+        <div className="w-full max-w-5xl overflow-hidden rounded-[24px] border border-site-line bg-white">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
 
-          <div
-            className="rounded-[4px] p-8"
-            style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 8px 30px -10px rgba(28,25,23,0.12)' }}
-          >
-            {error && (
-              <div
-                className="mb-5 rounded-[4px] px-4 py-3 font-bengali text-[13px]"
-                style={{ background: 'rgba(194,65,12,0.08)', border: `1px solid rgba(194,65,12,0.2)`, color: BRAND }}
-              >
-                {error}
-              </div>
-            )}
+            {/* ── Form side ── */}
+            <div className="p-8 sm:p-10 md:p-12">
+              <h1 className="h-section font-bengali text-site-ink" style={SERIF_BN}>
+                {lang === 'bn' ? 'সদস্য লগইন' : 'Member Login'}
+              </h1>
+              <p className="mb-8 mt-3 font-bengali text-[14px] text-site-muted">
+                {lang === 'bn' ? 'সদস্য প্যানেলে প্রবেশ করুন।' : 'Sign in to your member panel.'}
+              </p>
 
-            <form onSubmit={submit} className="space-y-5">
-              <div>
-                <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[0.22em]" style={{ color: MUTED }}>
-                  {t('common.email')}
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-[4px] border bg-transparent px-4 py-3 text-[14px] outline-none transition-colors focus:border-[#c2410c]"
-                  style={{ borderColor: RULE, color: INK }}
-                  placeholder="your@email.com"
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[0.22em]" style={{ color: MUTED }}>
-                  {t('login.password')}
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-[4px] border bg-transparent px-4 py-3 text-[14px] outline-none transition-colors focus:border-[#c2410c]"
-                  style={{ borderColor: RULE, color: INK }}
-                  placeholder="••••••••"
-                />
-              </div>
-              {/* Forgot password link */}
-              <div className="text-right">
+              {error && (
+                <div className="error-panel mb-5 font-bengali">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={submit} className="space-y-5">
+                <div>
+                  <label htmlFor="login-email" className="site-label font-bengali">
+                    {t('common.email')}
+                  </label>
+                  <input
+                    id="login-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="site-input"
+                    placeholder="your@email.com"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="login-password" className="site-label font-bengali">
+                    {t('login.password')}
+                  </label>
+                  <input
+                    id="login-password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="site-input"
+                    placeholder="••••••••"
+                  />
+                </div>
+                {/* Forgot password link */}
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setForgotMode(true)}
+                    className="btn-tertiary font-bengali"
+                  >
+                    {lang === 'bn' ? 'পাসওয়ার্ড ভুলে গেছেন?' : 'Forgot password?'}
+                  </button>
+                </div>
                 <button
-                  type="button"
-                  onClick={() => setForgotMode(true)}
-                  className="font-bengali text-[12.5px] transition-opacity hover:opacity-70"
-                  style={{ color: BRAND }}
+                  type="submit"
+                  disabled={loading}
+                  className="btn-yellow w-full font-bengali"
                 >
-                  {lang === 'bn' ? 'পাসওয়ার্ড ভুলে গেছেন?' : 'Forgot password?'}
+                  {loading ? t('login.loggingIn') : t('login.button')}
                 </button>
+              </form>
+            </div>
+
+            {/* ── Green panel side ── */}
+            <div className="flex flex-col justify-center gap-5 bg-site-green p-8 text-white sm:p-10 md:p-12">
+              <div className="eyebrow-light">Chhatradol</div>
+
+              {/* Note */}
+              <div className="rounded-soft border border-white/15 bg-white/5 px-6 py-5 font-bengali text-[13.5px] leading-[1.8] text-white/80">
+                {t('login.note')}{' '}
+                <Link to="/volunteer" className="font-bold text-site-yellow underline underline-offset-4">{t('login.applyHere')}</Link>।
               </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-full py-3.5 font-bengali text-[14px] font-semibold text-white transition-all hover:-translate-y-[1px] disabled:opacity-60"
-                style={{ background: BRAND, boxShadow: '0 8px 20px -8px rgba(194,65,12,0.55)' }}
-              >
-                {loading ? t('login.loggingIn') : t('login.button')}
-              </button>
-            </form>
-          </div>
 
-          {/* Note */}
-          <div
-            className="mt-5 rounded-[4px] px-5 py-4 font-bengali text-[13px]"
-            style={{ background: 'rgba(180,83,9,0.07)', border: `1px solid rgba(180,83,9,0.15)`, color: '#92400e' }}
-          >
-            {t('login.note')}{' '}
-            <Link to="/volunteer" className="font-semibold underline underline-offset-2">{t('login.applyHere')}</Link>।
-          </div>
-
-          {/* Admin link */}
-          <div
-            className="mt-3 rounded-[4px] px-5 py-4 font-bengali text-[13px]"
-            style={{ background: 'rgba(15,23,42,0.04)', border: `1px solid rgba(15,23,42,0.08)`, color: '#374151' }}
-          >
-            {lang === 'bn' ? 'অ্যাডমিন? ' : 'Administrator? '}
-            <Link to="/admin-login" className="font-semibold underline underline-offset-2" style={{ color: '#0f172a' }}>
-              {lang === 'bn' ? 'অ্যাডমিন লগইন পেজে যান' : 'Go to Admin Login'}
-            </Link>
+              {/* Admin link */}
+              <div className="rounded-soft border border-white/15 bg-white/5 px-6 py-5 font-bengali text-[13.5px] leading-[1.8] text-white/80">
+                {lang === 'bn' ? 'অ্যাডমিন? ' : 'Administrator? '}
+                <Link to="/admin-login" className="font-bold text-site-yellow underline underline-offset-4">
+                  {lang === 'bn' ? 'অ্যাডমিন লগইন পেজে যান' : 'Go to Admin Login'}
+                </Link>
+              </div>
+            </div>
           </div>
 
           {/* Forgot password modal */}
           {forgotMode && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
-              <div className="w-full max-w-sm rounded-[4px] p-8" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="font-bengali text-[22px] font-bold" style={{ ...SERIF_BN, color: INK }}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(10,59,47,0.6)' }}>
+              <div className="w-full max-w-md rounded-panel border border-site-line bg-white p-8">
+                <div className="mb-2 flex items-center justify-between gap-4">
+                  <h2 className="h-card font-bengali text-site-ink" style={SERIF_BN}>
                     {lang === 'bn' ? 'পাসওয়ার্ড রিসেট' : 'Reset Password'}
                   </h2>
                   <button
                     type="button"
                     onClick={() => { setForgotMode(false); setForgotStatus('idle'); setForgotEmail(''); }}
-                    className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-black/5"
-                    style={{ color: MUTED }}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-site-muted transition-colors hover:bg-site-cream hover:text-site-green"
                     aria-label="Close"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
@@ -175,37 +163,43 @@ export default function Login() {
                     </svg>
                   </button>
                 </div>
-                <p className="mt-2 mb-5 font-bengali text-[13px]" style={{ color: MUTED }}>
+                <p className="mb-6 mt-2 font-bengali text-[13.5px] leading-[1.8] text-site-muted">
                   {lang === 'bn' ? 'আপনার ইমেল দিন, আমরা রিসেট লিংক পাঠাব।' : 'Enter your email and we will send a reset link.'}
                 </p>
                 {forgotStatus === 'sent' ? (
-                  <div className="rounded-[4px] px-4 py-3 font-bengali text-[13px]" style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', color: '#15803d' }}>
+                  <div className="success-panel font-bengali">
                     {lang === 'bn' ? '✓ রিসেট লিংক পাঠানো হয়েছে। আপনার ইমেল চেক করুন।' : '✓ Reset link sent. Please check your email.'}
                   </div>
                 ) : (
                   <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <label htmlFor="forgot-email" className="sr-only">{t('common.email')}</label>
                     <input
+                      id="forgot-email"
                       type="email"
                       required
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       placeholder="your@email.com"
-                      className="w-full rounded-[4px] border bg-transparent px-4 py-3 text-[14px] outline-none focus:border-[#c2410c]"
-                      style={{ borderColor: RULE, color: INK }}
+                      className="site-input"
                     />
                     {forgotStatus === 'error' && (
-                      <p className="font-bengali text-[12.5px]" style={{ color: BRAND }}>
+                      <p className="field-error font-bengali">
                         {lang === 'bn' ? 'পাঠাতে সমস্যা হয়েছে।' : 'Could not send reset link.'}
                       </p>
                     )}
-                    <div className="flex gap-3">
-                      <button type="button" onClick={() => { setForgotMode(false); setForgotStatus('idle'); setForgotEmail(''); }}
-                        className="flex-1 rounded-full border py-2.5 font-bengali text-[13px]" style={{ borderColor: RULE, color: INK }}>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={() => { setForgotMode(false); setForgotStatus('idle'); setForgotEmail(''); }}
+                        className="btn-ghost-dark flex-1 font-bengali text-[13.5px]"
+                      >
                         {lang === 'bn' ? 'বাতিল' : 'Cancel'}
                       </button>
-                      <button type="submit" disabled={forgotStatus === 'sending'}
-                        className="flex-1 rounded-full py-2.5 font-bengali text-[13px] font-semibold text-white disabled:opacity-60"
-                        style={{ background: BRAND }}>
+                      <button
+                        type="submit"
+                        disabled={forgotStatus === 'sending'}
+                        className="btn-green flex-1 font-bengali text-[13.5px]"
+                      >
                         {forgotStatus === 'sending' ? (lang === 'bn' ? 'পাঠানো হচ্ছে…' : 'Sending…') : (lang === 'bn' ? 'লিংক পাঠান' : 'Send Link')}
                       </button>
                     </div>

@@ -121,8 +121,7 @@ export default function Gallery() {
 
         {/* Center Content */}
         <div className="relative z-10 mx-auto w-full max-w-4xl pt-2 text-center sm:pt-4">
-          <div className="eyebrow-light">{tr('Gallery', 'চিত্রশালা')}</div>
-          <h1 className="h-display mx-auto mt-4 text-white">
+          <h1 className="h-display mx-auto text-white">
             {bn ? (
               <>
                 সেবা, সমাজ কল্যাণ <br />

@@ -21,49 +21,51 @@ export default function NotFound() {
   ];
 
   return (
-    <div className="flex min-h-[75vh] flex-col items-center justify-center px-4 py-16 text-center bg-[#faf6ef]/40">
-      <div className="mx-auto max-w-2xl rounded-3xl border border-stone-200/80 bg-white p-8 md:p-12 shadow-xl shadow-orange-950/5">
-        <span className="inline-flex rounded-full bg-orange-100 px-4 py-1.5 text-sm font-bold text-[#c2410c]">
-          404 Error
-        </span>
-        <h1 className="mt-4 font-serif text-3xl md:text-5xl font-bold tracking-tight text-stone-900">
-          {bn ? 'পৃষ্ঠাটি খুঁজে পাওয়া যায়নি' : 'Page Not Found'}
+    <div className="site-shell flex min-h-screen flex-col items-center justify-center bg-site-cream px-5 py-16 text-center sm:px-8">
+      <div className="mx-auto w-full max-w-3xl">
+        {/* Oversized green figure */}
+        <div className="font-archivo text-[clamp(96px,18vw,200px)] font-bold leading-[0.9] tracking-[-0.04em] text-site-green">
+          404
+        </div>
+        <div className="eyebrow mt-4">404 Error</div>
+
+        <h1 className="h-display mt-5 text-site-ink">
+          {bn ? 'পৃষ্ঠাটি খুঁজে পাওয়া যায়নি' : 'Page Not Found'}
         </h1>
-        <p className="mt-3 text-base text-stone-600">
+        <p className="body-text mx-auto mt-5 max-w-xl">
           {bn
             ? 'আপনি যে পৃষ্ঠাটি খুঁজছেন সেটি স্থানান্তরিত বা মুছে ফেলা হতে পারে। নিচের লিঙ্কগুলি থেকে অন্বেষণ করুন:'
             : 'The page you are looking for may have been moved or does not exist. Explore our helpful links below:'}
         </p>
 
+        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+          <Link to="/" className="btn-yellow">
+            <FaHouse className="h-4 w-4" />
+            <span>{bn ? 'হোমপেজে ফিরে যান' : 'Back to Home'}</span>
+          </Link>
+          <Link to="/contact" className="btn-ghost-dark">
+            <FaEnvelope className="h-4 w-4" />
+            <span>{bn ? 'যোগাযোগ' : 'Contact'}</span>
+          </Link>
+        </div>
+
         {/* Quick Nav Recovery Links */}
-        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {quickLinks.map((item, i) => {
             const IconComp = item.icon;
             return (
               <Link
                 key={i}
                 to={item.to}
-                className="group flex flex-col items-center justify-center gap-2 rounded-2xl border border-stone-100 bg-stone-50/80 p-3 text-xs font-semibold text-stone-700 transition-all hover:border-orange-200 hover:bg-orange-50 hover:text-[#c2410c] hover:shadow-sm"
+                className="group flex min-h-[48px] flex-col items-center justify-center gap-2 rounded-full border border-site-line bg-white px-3 py-4 font-dmsans text-[12.5px] font-medium text-site-green transition-all hover:border-site-green hover:bg-site-green hover:text-white"
               >
-                <IconComp className="h-4 w-4 text-[#c2410c] transition-transform group-hover:scale-110" />
+                <IconComp className="h-4 w-4 transition-transform group-hover:scale-110" />
                 <span>{item.label}</span>
               </Link>
             );
           })}
         </div>
-
-        <div className="mt-8 pt-6 border-t border-stone-100">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 rounded-full px-6 py-3 font-semibold text-white transition hover:opacity-95 shadow-md shadow-orange-950/10"
-            style={{ background: '#c2410c' }}
-          >
-            <FaHouse className="h-4 w-4" />
-            <span>{bn ? 'হোমপেজে ফিরে যান' : 'Back to Home'}</span>
-          </Link>
-        </div>
       </div>
     </div>
   );
 }
-

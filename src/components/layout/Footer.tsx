@@ -2,152 +2,136 @@ import { Link } from 'react-router-dom';
 import { ORG } from '@/data/content';
 import { FaFacebookF, FaInstagram, FaYoutube, FaXTwitter, FaLocationDot, FaPhone, FaEnvelope, FaClock, FaHeart } from 'react-icons/fa6';
 
-const FOOTER_BG = '#1c1917';
+const SOCIALS = [
+  { href: ORG.social.facebook, label: 'Facebook', title: 'Facebook: @chhatradolswo', Icon: FaFacebookF },
+  { href: ORG.social.instagram, label: 'Instagram', title: 'Instagram: @chhatradolswo', Icon: FaInstagram },
+  { href: ORG.social.twitter, label: 'X (Twitter)', title: 'X: @Chhatradolswo', Icon: FaXTwitter },
+  { href: ORG.social.youtube, label: 'YouTube', title: 'YouTube: @Chhatradolswo', Icon: FaYoutube },
+];
+
+const QUICK_LINKS = [
+  { to: '/', label: 'Home' },
+  { to: '/about', label: 'About Us' },
+  { to: '/events', label: 'Events' },
+  { to: '/gallery', label: 'Gallery' },
+  { to: '/programs', label: 'Our Programs' },
+  { to: '/impacts', label: 'Impacts' },
+];
+
+const IMPORTANT_LINKS = [
+  { to: '/contact', label: 'Contact' },
+  { to: '/volunteer', label: 'Volunteer' },
+  { to: '/blood-request', label: 'Blood Request' },
+  { to: '/donate', label: 'Donate' },
+  { to: '/organise-blood-camp', label: 'Blood Camp' },
+];
+
+const LEGAL_LINKS = [
+  { to: '/terms', label: 'Terms & Conditions' },
+  { to: '/privacy', label: 'Privacy Policy' },
+  { to: '/refunds', label: 'Refund Policy' },
+  { to: '/shipping', label: 'Shipping Policy' },
+];
+
+function LinkColumn({ heading, links }: { heading: string; links: { to: string; label: string }[] }) {
+  return (
+    <div className="lg:col-span-2">
+      <h4 className="font-dmsans text-[13px] font-bold uppercase tracking-[0.12em] text-white">
+        {heading}
+      </h4>
+      <ul className="mt-5 grid gap-3 font-dmsans text-[14.5px] text-white/70">
+        {links.map((l) => (
+          <li key={l.to + l.label}>
+            <Link to={l.to} className="transition-colors hover:text-site-yellow">
+              {l.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="text-white/80" style={{ background: FOOTER_BG }}>
-      <div className="mx-auto max-w-[1340px] px-6 pb-12 pt-16 md:px-8">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
+    <footer className="w-full bg-site-green text-white">
+      <div className="mx-auto w-full max-w-[1340px] px-5 pb-10 pt-14 sm:px-8 md:px-10 md:pt-16">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-12">
+
           {/* Col 1: Brand Info & Socials */}
           <div className="lg:col-span-3">
             <Link to="/" className="flex items-center gap-3">
-              <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white p-0.5 shadow-md">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-1 sm:h-16 sm:w-16">
                 <img
                   src="/assets/images/logo.png"
                   alt="Chhatradol SWO Logo"
-                  className="h-full w-full rounded-full object-cover scale-110"
+                  className="h-full w-full rounded-full object-contain"
                   onError={(e) => { e.currentTarget.src = '/assets/images/Chhatradol.jpg'; }}
                 />
-              </div>
-              <div className="flex flex-col leading-tight">
-                <span
-                  className="text-xl font-bold text-white tracking-tight"
-                  style={{ fontFamily: '"Noto Serif", Georgia, serif' }}
-                >
+              </span>
+              <span className="flex min-w-0 flex-col leading-tight">
+                <span className="wordmark text-[21px] text-white sm:text-[23px]">
                   Chhatradol SWO
                 </span>
-                <span className="text-xs text-white/60">
+                <span className="mt-1 font-dmsans text-[12.5px] text-white/55">
                   Narajole, Paschim Medinipur
                 </span>
-              </div>
+              </span>
             </Link>
 
-            <p className="mt-4 font-sans text-sm leading-relaxed text-white/70">
+            <p className="mt-5 max-w-xs font-dmsans text-[14.5px] leading-[1.75] text-white/70">
               Working together for a better society through unity, education, and progress.
             </p>
 
             {/* Social Icons */}
             <div className="mt-6 flex flex-wrap items-center gap-2.5">
-              <a
-                href={ORG.social.facebook}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Facebook"
-                title="Facebook: @chhatradolswo"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition-all hover:border-amber-400 hover:bg-amber-500 hover:text-white"
-              >
-                <FaFacebookF className="h-4 w-4" />
-              </a>
-              <a
-                href={ORG.social.instagram}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Instagram"
-                title="Instagram: @chhatradolswo"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition-all hover:border-amber-400 hover:bg-amber-500 hover:text-white"
-              >
-                <FaInstagram className="h-4 w-4" />
-              </a>
-              <a
-                href={ORG.social.twitter}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="X (Twitter)"
-                title="X: @Chhatradolswo"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition-all hover:border-amber-400 hover:bg-amber-500 hover:text-white"
-              >
-                <FaXTwitter className="h-4 w-4" />
-              </a>
-              <a
-                href={ORG.social.youtube}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="YouTube"
-                title="YouTube: @Chhatradolswo"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80 transition-all hover:border-amber-400 hover:bg-amber-500 hover:text-white"
-              >
-                <FaYoutube className="h-4 w-4" />
-              </a>
+              {SOCIALS.map(({ href, label, title, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={label}
+                  title={title}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition-all hover:border-site-yellow hover:bg-site-yellow hover:text-site-ink"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
             </div>
           </div>
 
           {/* Col 2: Quick Links */}
-          <div className="lg:col-span-2">
-            <h4 className="font-sans text-sm font-bold uppercase tracking-wider text-white">
-              Quick Links
-            </h4>
-            <ul className="mt-4 space-y-2.5 font-sans text-sm text-white/70">
-              <li><Link to="/" className="transition-colors hover:text-amber-400">Home</Link></li>
-              <li><Link to="/about" className="transition-colors hover:text-amber-400">About Us</Link></li>
-              <li><Link to="/events" className="transition-colors hover:text-amber-400">Events</Link></li>
-              <li><Link to="/gallery" className="transition-colors hover:text-amber-400">Gallery</Link></li>
-              <li><Link to="/programs" className="transition-colors hover:text-amber-400">Our Programs</Link></li>
-              <li><Link to="/impacts" className="transition-colors hover:text-amber-400">Impacts</Link></li>
-            </ul>
-          </div>
+          <LinkColumn heading="Quick Links" links={QUICK_LINKS} />
 
           {/* Col 3: Important Links */}
-          <div className="lg:col-span-2">
-            <h4 className="font-sans text-sm font-bold uppercase tracking-wider text-white">
-              Important Links
-            </h4>
-            <ul className="mt-4 space-y-2.5 font-sans text-sm text-white/70">
-              <li><Link to="/contact" className="transition-colors hover:text-amber-400">Contact</Link></li>
-              <li><Link to="/volunteer" className="transition-colors hover:text-amber-400">Volunteer</Link></li>
-              <li><Link to="/blood-request" className="transition-colors hover:text-amber-400">Blood Request</Link></li>
-              <li><Link to="/donate" className="transition-colors hover:text-amber-400">Donate</Link></li>
-              <li><Link to="/organise-blood-camp" className="transition-colors hover:text-amber-400">Blood Camp</Link></li>
-            </ul>
-          </div>
+          <LinkColumn heading="Important Links" links={IMPORTANT_LINKS} />
 
-          {/* Col 4: Legal Policy */}
-          <div className="lg:col-span-2">
-            <h4 className="font-sans text-sm font-bold uppercase tracking-wider text-white">
-              Legal
-            </h4>
-            <ul className="mt-4 space-y-2.5 font-sans text-sm text-white/70">
-              <li><Link to="/terms" className="transition-colors hover:text-amber-400">Terms & Conditions</Link></li>
-              <li><Link to="/privacy" className="transition-colors hover:text-amber-400">Privacy Policy</Link></li>
-              <li><Link to="/refunds" className="transition-colors hover:text-amber-400">Refund Policy</Link></li>
-              <li><Link to="/shipping" className="transition-colors hover:text-amber-400">Shipping Policy</Link></li>
-            </ul>
-          </div>
+          {/* Col 4: Legal */}
+          <LinkColumn heading="Legal" links={LEGAL_LINKS} />
 
           {/* Col 5: Contact Us */}
           <div className="lg:col-span-3">
-            <h4 className="font-sans text-sm font-bold uppercase tracking-wider text-white">
+            <h4 className="font-dmsans text-[13px] font-bold uppercase tracking-[0.12em] text-white">
               Contact Us
             </h4>
-            <ul className="mt-4 space-y-3 font-sans text-sm text-white/70">
+            <ul className="mt-5 grid gap-4 font-dmsans text-[14.5px] leading-[1.6] text-white/70">
               <li className="flex items-start gap-3">
-                <FaLocationDot className="mt-1 h-4 w-4 flex-shrink-0 text-amber-400" />
-                <span>
-                  Narajole, Paschim Medinipur, West Bengal, 721211
-                </span>
+                <FaLocationDot className="mt-1 h-4 w-4 flex-shrink-0 text-site-yellow" />
+                <span>Narajole, Paschim Medinipur, West Bengal, 721211</span>
               </li>
               <li className="flex items-center gap-3">
-                <FaPhone className="h-4 w-4 flex-shrink-0 text-amber-400" />
-                <a href="tel:+917811073412" className="hover:text-amber-400 transition-colors">+91 78110 73412</a>
+                <FaPhone className="h-4 w-4 flex-shrink-0 text-site-yellow" />
+                <a href="tel:+917811073412" className="transition-colors hover:text-site-yellow">+91 78110 73412</a>
               </li>
               <li className="flex items-center gap-3">
-                <FaEnvelope className="h-4 w-4 flex-shrink-0 text-amber-400" />
+                <FaEnvelope className="h-4 w-4 flex-shrink-0 text-site-yellow" />
                 <span>info@chhatradol.org</span>
               </li>
               <li className="flex items-center gap-3">
-                <FaClock className="h-4 w-4 flex-shrink-0 text-amber-400" />
+                <FaClock className="h-4 w-4 flex-shrink-0 text-site-yellow" />
                 <span>Mon - Sun: 9:00 AM - 6:00 PM</span>
               </li>
             </ul>
@@ -155,14 +139,15 @@ export default function Footer() {
         </div>
 
         {/* Bottom Strip */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-xs text-white/50 md:flex-row">
-          <span>© {year} Chhatradol SWO. All rights reserved.</span>
-          <span className="flex items-center gap-1.5 font-medium text-white/60">
-            Made with <FaHeart className="h-3 w-3 text-red-500" /> Riknova Technology
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/15 pt-8 md:flex-row">
+          <span className="font-dmsans text-[13px] text-white/55">
+            © {year} Chhatradol SWO. All rights reserved.
+          </span>
+          <span className="flex items-center gap-1.5 font-dmsans text-[13px] font-medium text-white/60">
+            Powered By <FaHeart className="h-3 w-3 text-site-red" /> Riknova Technology
           </span>
         </div>
       </div>
     </footer>
   );
 }
-

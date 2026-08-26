@@ -21,27 +21,13 @@ import {
   User,
   Calendar
 } from 'lucide-react';
+import MemberAvatar from '@/components/ui/MemberAvatar';
 
 type Grid = Record<string, Record<number, MonthlyContribution>>;
 
 // ─── Tiny avatar ─────────────────────────────────────────────────────────────
 function MAvatar({ name, avatarUrl, size = 32 }: { name: string; avatarUrl?: string | null; size?: number }) {
-  const ini = name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
-  if (avatarUrl) {
-    return (
-      <img src={avatarUrl} alt={name} className="rounded-full object-cover shrink-0"
-        style={{ width: size, height: size }}
-        onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-    );
-  }
-  const colors = ['#0c756f', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
-  const bg = colors[name.charCodeAt(0) % colors.length];
-  return (
-    <div className="rounded-full shrink-0 flex items-center justify-center text-white font-bold"
-      style={{ width: size, height: size, background: bg, fontSize: size * 0.35 }}>
-      {ini}
-    </div>
-  );
+  return <MemberAvatar name={name} avatarUrl={avatarUrl} size={size} />;
 }
 
 // ─── Donut chart ──────────────────────────────────────────────────────────────

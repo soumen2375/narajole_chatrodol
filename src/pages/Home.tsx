@@ -12,14 +12,6 @@ import {
   FaRegCalendarDays
 } from 'react-icons/fa6';
 
-// ─── Original Brand Color Tokens ───
-const BRAND = '#c2410c';       // Terracotta Brand Red-Orange
-const BRAND_LIGHT = '#ea580c'; // Light Terracotta
-const INK = '#1c1917';         // Rich Dark Ink
-const BG_CREAM = '#faf6ef';    // Warm Linen Paper Background
-const ACCENT_LIGHT = '#fdcf6f';// Light Gold
-const RULE = '#e7e5e4';        // Subtle Rule / Border
-
 const FALLBACK_IMG = '/assets/images/Chhatradol.jpg';
 
 const onImgErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -75,21 +67,13 @@ function SectionHeader({
   return (
     <div className="mb-10 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
       <div>
-        <h2 className="font-serif text-3xl font-bold tracking-tight md:text-4xl" style={{ color: INK }}>
-          {title}
-        </h2>
-        <p className="mt-2 font-sans text-sm md:text-base text-stone-600">
-          {subtitle}
-        </p>
+        <h2 className="h-section text-site-ink">{title}</h2>
+        <p className="body-text mt-3 max-w-xl">{subtitle}</p>
       </div>
       {linkTo && (
-        <Link
-          to={linkTo}
-          className="group inline-flex items-center gap-1.5 font-sans text-sm font-semibold transition-colors"
-          style={{ color: BRAND }}
-        >
+        <Link to={linkTo} className="btn-tertiary group gap-1.5">
           {linkText}
-          <FaArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+          <FaArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
         </Link>
       )}
     </div>
@@ -102,59 +86,83 @@ function Hero() {
   const bn = lang === 'bn';
 
   return (
-    <section className="relative flex min-h-[90vh] items-center overflow-hidden" style={{ background: INK }}>
-      {/* Background Image with Original Dark Gradient Overlay */}
-      <img
-        src="/assets/images/Chhatradol.jpg"
-        alt="Chhatradol SWO Team"
-        className="absolute inset-0 h-full w-full object-cover"
-        onError={onImgErr}
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'linear-gradient(110deg, rgba(28, 25, 23, 0.95) 0%, rgba(28, 25, 23, 0.82) 50%, rgba(28, 25, 23, 0.45) 100%)',
-        }}
-      />
+    <section
+      className="relative w-full overflow-hidden bg-site-green px-5 pb-16 pt-12 sm:px-8 md:pb-24 md:pt-16"
+      style={{ borderRadius: '0 0 56px 56px' }}
+    >
+      <div className="mx-auto grid w-full max-w-site items-center gap-12 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
+          <div>
+            {/* Eyebrow Tagline */}
+            <div className="inline-flex items-center gap-2 font-dmsans text-[13px] font-bold uppercase tracking-[0.18em] text-site-yellow">
+              <span>— Unity • Education • Progress</span>
+            </div>
 
-      <div className="relative mx-auto w-full max-w-[1340px] px-6 py-20 md:px-10 md:py-28">
-        <div className="max-w-2xl">
-          {/* Eyebrow Tagline */}
-          <div className="inline-flex items-center gap-2 text-lg sm:text-xl font-medium tracking-wide text-amber-200 font-sans">
-            <span>— Unity • Education • Progress</span>
+            {/* Main Headline */}
+            <h1 className="mt-5 font-archivo text-[clamp(40px,4.6vw,62px)] font-bold leading-[1.08] tracking-[-0.025em] text-white [text-wrap:balance]">
+              {bn ? 'একসাথে, আমরা গড়ি এক সুন্দর আগামী।' : 'Together, we build a better tomorrow.'}
+            </h1>
+
+            {/* Subtitle */}
+            <p className="mt-6 max-w-[470px] font-dmsans text-[16px] leading-[1.8] text-white/70">
+              {bn
+                ? 'শিক্ষা, স্বাস্থ্যসেবা, পরিবেশ এবং সামাজিক উন্নয়নের মাধ্যমে সমাজকে আরও শক্তিশালী ও আলোকিত করে তোলাই ছাত্রদলের মূল লক্ষ্য।'
+                : 'Chhatradol SWO is dedicated to social welfare, education, healthcare, and community development for a stronger and brighter society.'}
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="mt-9 flex flex-col items-stretch gap-3.5 sm:flex-row sm:items-center sm:gap-4">
+              <Link to="/donate" className="btn-yellow font-bengali">
+                {bn ? 'দান করুন' : 'Donate Now'}
+              </Link>
+              <Link to="/events" className="btn-ghost-light font-bengali">
+                {bn ? 'আমাদের কার্যক্রম ➔' : 'Explore Our Work ➔'}
+              </Link>
+            </div>
           </div>
 
-          {/* Main Headline */}
-          <h1 className="mt-4 font-serif text-4xl font-extrabold leading-[1.1] text-white sm:text-5xl md:text-6xl lg:text-7xl">
-            {bn ? 'একসাথে, আমরা গড়ি এক সুন্দর আগামী।' : 'Together, we build a better tomorrow.'}
-          </h1>
+          {/* Concentric-circle photo medallion:
+              thin outline arc → sand ring → deeper sand ring → photo,
+              with sand circles orbiting behind it. */}
+          <div className="relative mx-auto flex aspect-square w-full max-w-[440px] items-center justify-center">
+            {/* Orbiting sand circles */}
+            <span
+              aria-hidden="true"
+              className="absolute right-[2%] top-[2%] h-[16%] w-[16%] rounded-full bg-site-sand-3 opacity-80"
+            />
+            <span
+              aria-hidden="true"
+              className="absolute bottom-[6%] right-[-2%] h-[19%] w-[19%] rounded-full bg-site-sand-3 opacity-70"
+            />
+            <span
+              aria-hidden="true"
+              className="absolute bottom-[10%] left-[-1%] h-[12%] w-[12%] rounded-full bg-site-sand-3 opacity-60"
+            />
 
-          {/* Subtitle */}
-          <p className="mt-6 max-w-xl font-sans text-base leading-relaxed text-white/80 md:text-lg">
-            {bn
-              ? 'শিক্ষা, স্বাস্থ্যসেবা, পরিবেশ এবং সামাজিক উন্নয়নের মাধ্যমে সমাজকে আরও শক্তিশালী ও আলোকিত করে তোলাই ছাত্রদলের মূল লক্ষ্য।'
-              : 'Chhatradol SWO is dedicated to social welfare, education, healthcare, and community development for a stronger and brighter society.'}
-          </p>
+            {/* Thin outline arc */}
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 rounded-full border-2 border-site-sand/45"
+            />
+            <span
+              aria-hidden="true"
+              className="absolute inset-[5%] rounded-full border border-site-sand/30"
+            />
 
-          {/* CTA Buttons */}
-          <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 sm:gap-4">
-            <Link
-              to="/donate"
-              className="inline-flex items-center justify-center gap-2.5 rounded-full px-7 py-3.5 font-bengali text-base font-bold text-white shadow-xl transition-all duration-200 hover:-translate-y-0.5"
-              style={{ background: BRAND, boxShadow: '0 12px 30px -8px rgba(194, 65, 12, 0.6)' }}
-            >
-              {bn ? 'দান করুন 💛' : 'Donate Now 💛'}
-            </Link>
-            <Link
-              to="/events"
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 px-7 py-3.5 font-bengali text-base font-semibold text-white transition-all duration-200 hover:bg-white/10 hover:border-white/60"
-            >
-              {bn ? 'আমাদের কার্যক্রম ➔' : 'Explore Our Work ➔'}
-            </Link>
+            {/* Solid concentric rings + photo */}
+            <div className="relative flex aspect-square w-[86%] rounded-full bg-site-sand p-[6%]">
+              <div className="flex flex-1 rounded-full bg-site-sand-2 p-[5%]">
+                <div className="flex-1 overflow-hidden rounded-full bg-[#eef4e7]">
+                  <img
+                    src="/assets/images/Chhatradol4.jpg"
+                    alt="Chhatradol SWO Team"
+                    className="h-full w-full rounded-full object-cover"
+                    onError={onImgErr}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
     </section>
   );
 }
@@ -188,21 +196,18 @@ function CoreValuesBar() {
   ];
 
   return (
-    <div className="relative z-20 mx-auto -mt-6 sm:-mt-10 max-w-[1340px] px-4 md:px-10">
-      <div
-        className="grid grid-cols-1 divide-y divide-white/10 rounded-2xl border border-white/15 p-4 sm:p-6 shadow-2xl backdrop-blur-md sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4"
-        style={{ background: INK }}
-      >
+    <div className="relative z-10 mx-auto -mt-8 w-full max-w-[1340px] px-5 sm:px-8 md:-mt-12">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {values.map((v, i) => {
           const VIcon = v.icon;
           return (
-            <div key={i} className="flex items-center gap-3.5 py-3 sm:px-6 sm:py-2">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10" style={{ color: ACCENT_LIGHT }}>
+            <div key={i} className="flex items-center gap-3.5 rounded-full border border-site-line bg-white px-6 py-5">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-site-cream text-site-green">
                 <VIcon className="h-5 w-5" />
-              </div>
+              </span>
               <div className="min-w-0 flex-1">
-                <h3 className="font-bengali text-sm sm:text-base font-bold text-white truncate">{v.title}</h3>
-                <p className="font-bengali text-xs text-white/70 truncate">{v.desc}</p>
+                <h3 className="truncate font-archivo text-[15px] font-bold text-site-ink">{v.title}</h3>
+                <p className="truncate font-dmsans text-[12.5px] text-site-muted">{v.desc}</p>
               </div>
             </div>
           );
@@ -219,38 +224,42 @@ function ImpactSection() {
 
   const stats = [
     {
-      icon: FaUserGroup,
       number: 5000,
       suffix: '+',
       label: bn ? 'জীবনের উন্নয়ন' : 'Lives Impacted',
-      color: 'bg-orange-100 text-orange-700',
+      desc: bn
+        ? 'আমাদের নানা সামাজিক উদ্যোগের মাধ্যমে ৫,০০০-এরও বেশি মানুষের জীবন স্পর্শ করেছি — শিক্ষা ও প্রয়োজনীয় সহায়তা থেকে শুরু করে মানবিক ও সমাজকল্যাণমূলক কর্মসূচি পর্যন্ত।'
+        : 'More than 5,000 lives have been touched through our community initiatives, from education and essential support to humanitarian and social welfare programs.',
     },
     {
-      icon: FaGraduationCap,
       number: 25,
       suffix: '+',
       label: bn ? 'শিক্ষা কর্মসূচি' : 'Education Programs',
-      color: 'bg-amber-100 text-amber-700',
+      desc: bn
+        ? '২৫টিরও বেশি শিক্ষাকেন্দ্রিক উদ্যোগের মাধ্যমে আমরা সুবিধাবঞ্চিত পরিবারের শিশু ও তরুণদের জন্য পড়াশোনাকে আরও সহজলভ্য, অর্থবহ ও ক্ষমতায়নমূলক করে তুলতে কাজ করি।'
+        : 'Through 25+ education-focused initiatives, we work to make learning more accessible, meaningful, and empowering for children and young people from underserved communities.',
     },
     {
-      icon: FaHeart,
       number: 2000,
       suffix: '+',
       label: bn ? 'স্বেচ্ছাসেবকের ঘণ্টা' : 'Volunteer Hours',
-      color: 'bg-rose-100 text-rose-700',
+      desc: bn
+        ? '২,০০০-এরও বেশি স্বেচ্ছাসেবী ঘণ্টা সেই মানুষদের সময়, নিষ্ঠা ও সহমর্মিতার প্রতিচ্ছবি, যাঁরা নিজের সমাজের পাশে দাঁড়িয়ে অর্থবহ পরিবর্তন আনতে বেছে নিয়েছেন।'
+        : 'Over 2,000 volunteer hours represent the time, dedication, and compassion of people who chose to stand with their communities and create meaningful change.',
     },
     {
-      icon: FaDroplet,
       number: 47,
       suffix: '+',
       label: bn ? 'রক্তদান শিবির' : 'Blood Donation Camps',
-      color: 'bg-teal-100 text-teal-700',
+      desc: bn
+        ? '৪৭টিরও বেশি রক্তদান শিবিরের মাধ্যমে আমরা থ্যালাসেমিয়া আক্রান্ত শিশু ও নিয়মিত রক্ত সঞ্চালনের উপর নির্ভরশীল রোগীদের জন্য রক্তের নিরবচ্ছিন্ন সরবরাহ নিশ্চিত করতে সহায়তা করি।'
+        : 'Through 47+ blood donation camps, we help ensure a steady supply of blood for thalassemia children and other patients who depend on regular transfusions to live and thrive.',
     },
   ];
 
   return (
-    <section className="py-20" style={{ background: BG_CREAM }}>
-      <div className="mx-auto max-w-[1340px] px-6 md:px-10">
+    <section className="site-section">
+      <div className="site-wrap max-w-[1340px]">
         <Reveal>
           <SectionHeader
             title={bn ? 'আমাদের কাজের প্রভাব' : 'Our Impact in Numbers'}
@@ -260,7 +269,7 @@ function ImpactSection() {
           />
         </Reveal>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((item, idx) => (
             <StatCard key={idx} item={item} lang={lang} />
           ))}
@@ -273,24 +282,22 @@ function ImpactSection() {
 function StatCard({ item, lang }: { item: any; lang: string }) {
   const { ref, inView } = useInView(0.2);
   const count = useCountUp(item.number, inView, 1600);
-  const IconComp = item.icon;
 
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
-      className="group rounded-2xl border bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl"
-      style={{ borderColor: RULE }}
+      className="stat-capsule flex h-full flex-col items-center px-7 py-10"
     >
-      <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${item.color}`}>
-        <IconComp className="h-6 w-6" />
-      </div>
-      <div className="mt-5 font-bengali text-4xl font-extrabold md:text-5xl" style={{ color: INK }}>
+      <div className="font-archivo text-[32px] font-bold leading-none text-site-red">
         {lang === 'bn' ? `${count}${item.suffix}` : `${count}${item.suffix}`}
       </div>
-      <p className="mt-2 font-bengali text-sm font-medium" style={{ color: '#57534e' }}>
+      <p className="mt-3 font-archivo text-[16px] font-bold leading-tight text-site-ink">
         {item.label}
       </p>
-      <div className="mt-4 h-1 w-8 rounded-full transition-all duration-300 group-hover:w-16" style={{ background: BRAND }} />
+      <p className="mt-3.5 font-dmsans text-[13px] leading-[1.75] text-site-muted">
+        {item.desc}
+      </p>
+      <Link to="/impacts" className="read-more mt-5">READ MORE</Link>
     </div>
   );
 }
@@ -307,7 +314,7 @@ function KeyProgramsSection() {
         ? 'জরুরি প্রয়োজনে মুমূর্ষু রোগীদের জীবন বাঁচাতে নিয়মিত রক্তদান শিবিরের আয়োজন করা হয়।'
         : 'Organising regular blood donation camps to save lives and promote health awareness.',
       icon: FaDroplet,
-      iconBg: 'bg-rose-100 text-rose-700',
+      iconBg: 'bg-site-cream text-site-blood',
       img: '/assets/images/service/post-33-raktokotha-camp.jpg',
     },
     {
@@ -316,7 +323,7 @@ function KeyProgramsSection() {
         ? 'দরিদ্র ও মেধাবী শিক্ষার্থীদের জন্য বিনামূল্যে শিক্ষা, পাঠ্যসামগ্রী ও দিকনির্দেশনা।'
         : 'Supporting students with study materials, guidance, and educational support programs.',
       icon: FaGraduationCap,
-      iconBg: 'bg-amber-100 text-amber-700',
+      iconBg: 'bg-site-cream text-site-green',
       img: '/assets/images/service/post-34-students-book-support.jpg',
     },
     {
@@ -325,7 +332,7 @@ function KeyProgramsSection() {
         ? 'বিনামূল্যে স্বাস্থ্য পরীক্ষা, বিশেষজ্ঞ ডাক্তারের পরামর্শ ও ঔষধ বিতরণ কর্মসূচি।'
         : 'Health check-ups, medical camps, and support for underprivileged communities.',
       icon: FaStethoscope,
-      iconBg: 'bg-teal-100 text-teal-700',
+      iconBg: 'bg-site-cream text-site-green',
       img: '/assets/images/service/post-15-mental-care-home.jpg',
     },
     {
@@ -334,7 +341,7 @@ function KeyProgramsSection() {
         ? 'সবুজ বসুন্ধরা গড়তে বৃক্ষরোপণ, পরিচ্ছন্নতা অভিযান ও পরিবেশ সচেতনতা।'
         : 'Tree plantation, clean drives, and environment awareness for a greener future.',
       icon: FaLeaf,
-      iconBg: 'bg-green-100 text-green-700',
+      iconBg: 'bg-site-cream text-site-green',
       img: '/assets/images/service/tree_plantations.jpg',
     },
     {
@@ -343,7 +350,7 @@ function KeyProgramsSection() {
         ? 'স্বাবলম্বী হতে নারীদের আত্মনির্ভরশীলতা ও বৃত্তিমূলক প্রশিক্ষণ প্রদান।'
         : 'Skills training and empowerment programs for women to become self-reliant.',
       icon: FaHandsHoldingChild,
-      iconBg: 'bg-orange-100 text-orange-700',
+      iconBg: 'bg-site-cream text-site-green',
       img: '/assets/images/service/post-35-stop-child-marriage.jpg',
     },
     {
@@ -352,7 +359,7 @@ function KeyProgramsSection() {
         ? 'যুবসমাজের সামাজিক দায়িত্ববোধ বৃদ্ধি ও সুনাগরিক হিসেবে গড়ে তোলার প্রয়াস।'
         : 'Building leadership, confidence, and skills among the youth for a better tomorrow.',
       icon: FaUserGroup,
-      iconBg: 'bg-blue-100 text-blue-700',
+      iconBg: 'bg-site-cream text-site-green',
       img: '/assets/images/service/post-31-freedom-fighters-program.jpg',
     },
     {
@@ -361,7 +368,7 @@ function KeyProgramsSection() {
         ? 'প্রাকৃতিক দুর্যোগ ও দুঃসময়ে অসহায় মানুষদের খাদ্য ও বাসস্থান সহায়তা।'
         : 'Providing help during natural disasters and supporting needy families.',
       icon: FaHandHoldingHeart,
-      iconBg: 'bg-emerald-100 text-emerald-700',
+      iconBg: 'bg-site-cream text-site-green',
       img: '/assets/images/service/post-30-tarpaulin-distribution.jpg',
     },
     {
@@ -370,14 +377,14 @@ function KeyProgramsSection() {
         ? 'ঐতিহ্য ও সাংস্কৃতিক বিকাশ রক্ষায় প্রতিযোগিতা ও মেধা বিকাশ অনুষ্ঠান।'
         : 'Promoting culture, sports, and social harmony through various events.',
       icon: FaMusic,
-      iconBg: 'bg-purple-100 text-purple-700',
+      iconBg: 'bg-site-cream text-site-green',
       img: '/assets/images/service/drawing.jpg',
     },
   ];
 
   return (
-    <section className="bg-white py-20">
-      <div className="mx-auto max-w-[1340px] px-6 md:px-10">
+    <section className="site-section-b">
+      <div className="site-wrap max-w-[1340px]">
         <Reveal>
           <SectionHeader
             title={bn ? 'আমাদের মূল কর্মসূচিসমূহ' : 'Our Key Programs'}
@@ -387,37 +394,33 @@ function KeyProgramsSection() {
           />
         </Reveal>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
           {programs.map((prog, idx) => {
             const PIcon = prog.icon;
             return (
-              <div
-                key={idx}
-                className="group flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl"
-                style={{ borderColor: RULE }}
-              >
+              <div key={idx} className="group soft-card flex flex-col p-7">
                 {/* Thumbnail Image */}
-                <div className="relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden bg-slate-100">
+                <div className="img-zoom relative aspect-[16/10] overflow-hidden rounded-[16px]">
                   <img
                     src={prog.img}
                     alt={prog.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="h-full w-full object-cover"
                     onError={onImgErr}
                   />
                   <div className="absolute left-4 top-4">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl shadow-md ${prog.iconBg}`}>
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${prog.iconBg}`}>
                       <PIcon className="h-5 w-5" />
                     </div>
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex flex-1 flex-col justify-between p-6">
+                <div className="flex flex-1 flex-col justify-between pt-6">
                   <div>
-                    <h3 className="font-serif text-lg font-bold transition-colors group-hover:text-[#c2410c]" style={{ color: INK }}>
+                    <h3 className="font-archivo text-[21px] font-bold leading-[1.25] text-site-ink">
                       {prog.title}
                     </h3>
-                    <p className="mt-2 font-sans text-xs leading-relaxed text-stone-600">
+                    <p className="mt-2.5 font-dmsans text-[14px] leading-[1.75] text-site-muted">
                       {prog.desc}
                     </p>
                   </div>
@@ -460,16 +463,16 @@ function MissionSpotlight() {
   ];
 
   return (
-    <section className="py-20 text-white" style={{ background: INK }}>
-      <div className="mx-auto max-w-[1340px] px-6 md:px-10">
-        <div className="grid grid-cols-1 items-center gap-10 rounded-3xl border border-white/10 p-8 shadow-2xl lg:grid-cols-12 lg:p-12" style={{ background: 'rgba(255,255,255,0.03)' }}>
+    <section className="site-section-b">
+      <div className="site-wrap max-w-[1340px]">
+        <div className="grid grid-cols-1 items-center gap-10 rounded-card bg-site-green p-8 text-white lg:grid-cols-12 lg:p-12">
           {/* Left Column: Image */}
           <div className="lg:col-span-5">
-            <div className="relative overflow-hidden rounded-2xl shadow-xl">
+            <div className="img-zoom overflow-hidden rounded-panel">
               <img
-                src="/assets/images/impacts/education.jpg"
+                src="/assets/images/impacts/education2.jpg"
                 alt="Education Mission"
-                className="aspect-[4/3] w-full object-cover transition-transform duration-500 hover:scale-105"
+                className="aspect-[4/3] w-full object-cover"
                 onError={onImgErr}
               />
             </div>
@@ -477,52 +480,45 @@ function MissionSpotlight() {
 
           {/* Middle Column: Text & Quote */}
           <div className="lg:col-span-4">
-            <div className="font-mono text-xs font-bold uppercase tracking-wider" style={{ color: ACCENT_LIGHT }}>
+            <div className="eyebrow-light">
               • {bn ? 'আমাদের ভিশন' : 'OUR MISSION'}
             </div>
-            <h2 className="mt-3 font-serif text-3xl font-extrabold leading-tight text-white md:text-4xl">
+            <h2 className="h-section mt-4 text-white">
               {bn ? 'শিক্ষা: অন্ধকার থেকে আলোর দিকে' : 'Education: from darkness to light'}
             </h2>
 
-            <div className="mt-4 flex items-start gap-3 rounded-xl bg-white/5 p-4 border border-white/10">
-              <FaQuoteLeft className="h-6 w-6 flex-shrink-0 opacity-80" style={{ color: ACCENT_LIGHT }} />
-              <p className="font-serif text-sm italic leading-relaxed text-white/90">
+            <div className="mt-5 flex items-start gap-3 rounded-soft border border-white/12 bg-white/5 p-5">
+              <FaQuoteLeft className="h-6 w-6 flex-shrink-0 text-site-yellow opacity-80" />
+              <p className="font-dmsans text-[14px] leading-[1.8] text-white/85">
                 {bn
                   ? 'আমরা বিশ্বাস করি প্রতিটি শিশুই মানসম্পন্ন শিক্ষার অধিকারী এবং প্রতিটি মানুষ সুযোগ পাওয়ার যোগ্য।'
                   : 'We believe every child deserves quality education and every individual deserves an opportunity to build a better future.'}
               </p>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                to="/about"
-                className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 font-sans text-sm font-bold text-white shadow-md transition-all hover:bg-orange-700"
-                style={{ background: BRAND }}
-              >
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link to="/about" className="btn-yellow">
                 {bn ? 'আমাদের ভিশন ➔' : 'Our Mission ➔'}
               </Link>
-              <Link
-                to="https://www.youtube.com/@Chhatradolswo"
-                className="inline-flex items-center gap-2 rounded-full border border-white/30 px-6 py-2.5 font-sans text-sm font-semibold text-white transition-all hover:bg-white/10"
-              >
-                <FaPlay className="h-3 w-3" style={{ color: ACCENT_LIGHT }} />
+              <Link to="https://www.youtube.com/@Chhatradolswo" className="btn-ghost-light">
+                <FaPlay className="h-3 w-3 text-site-yellow" />
                 {bn ? 'ভিডিও দেখুন' : 'Watch Video'}
               </Link>
             </div>
           </div>
 
           {/* Right Column: 4 Feature Items */}
-          <div className="space-y-4 lg:col-span-3">
+          <div className="space-y-3.5 lg:col-span-3">
             {missionPoints.map((pt, i) => {
               const IconComp = pt.icon;
               return (
-                <div key={i} className="flex items-center gap-3.5 rounded-xl border border-white/10 bg-white/5 p-3.5 transition-colors hover:bg-white/10">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white/10" style={{ color: ACCENT_LIGHT }}>
+                <div key={i} className="flex items-center gap-3.5 rounded-full border border-white/12 bg-white/5 p-3.5 transition-colors hover:bg-white/10">
+                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-white/10 text-site-yellow">
                     <IconComp className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-serif text-sm font-bold text-white">{pt.title}</h4>
-                    <p className="font-sans text-xs text-white/70">{pt.desc}</p>
+                  </span>
+                  <div className="min-w-0">
+                    <h4 className="font-archivo text-[14px] font-bold text-white">{pt.title}</h4>
+                    <p className="font-dmsans text-[12px] text-white/70">{pt.desc}</p>
                   </div>
                 </div>
               );
@@ -535,10 +531,11 @@ function MissionSpotlight() {
 }
 
 // ─────────────────── 6. LATEST NEWS & EVENTS ───────────────────
-function LatestNewsSection() {
+// Shared post list — the news strip and the blog cards read from the same source.
+function useHomePosts() {
   const { posts: dbPosts } = usePosts();
 
-  const allPosts = useMemo(() => {
+  return useMemo(() => {
     const DEFAULT_NEWS = [
       {
         id: '1',
@@ -628,13 +625,17 @@ function LatestNewsSection() {
 
     return DEFAULT_NEWS;
   }, [dbPosts]);
+}
+
+function LatestNewsSection() {
+  const allPosts = useHomePosts();
 
   const currentPost = allPosts[0];
   const last5Posts = allPosts.slice(1, 6);
 
   return (
-    <section className="py-20" style={{ background: BG_CREAM }}>
-      <div className="mx-auto max-w-[1340px] px-6 md:px-10">
+    <section className="site-section-b">
+      <div className="site-wrap max-w-[1340px]">
         <Reveal>
           <SectionHeader
             title="Latest News & Events"
@@ -644,88 +645,86 @@ function LatestNewsSection() {
           />
         </Reveal>
 
-        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12 items-stretch">
+        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
           {/* First Big Position: Current Post */}
           {currentPost && (
-            <div className="lg:col-span-7 flex flex-col">
+            <div className="flex flex-col lg:col-span-7">
               <Link
                 to={`/events/${currentPost.slug || currentPost.id}`}
-                className="group flex flex-col h-full overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:border-amber-400"
-                style={{ borderColor: RULE }}
+                className="group soft-card flex h-full flex-col overflow-hidden p-6 transition-colors hover:border-site-green/35 sm:p-7"
               >
-                <div className="relative aspect-[4/3] sm:aspect-[16/9] w-full overflow-hidden bg-slate-100 flex-shrink-0">
+                <div className="img-zoom relative aspect-[16/9] w-full flex-shrink-0 overflow-hidden rounded-[16px]">
                   <img
                     src={currentPost.img}
                     alt={currentPost.title}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="h-full w-full object-cover"
                     onError={onImgErr}
                   />
-                  <div className="absolute left-4 top-4 flex items-center gap-2">
-                    <span className="rounded-full px-3 py-1 text-xs font-bold text-white shadow-md" style={{ background: BRAND }}>
+                  <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-site-yellow px-3.5 py-1.5 font-dmsans text-[11px] font-bold text-site-ink">
                       Featured Event
                     </span>
-                    <span className="rounded-full bg-black/60 backdrop-blur-md px-3 py-1 text-xs font-semibold text-white">
+                    <span className="rounded-full bg-site-green px-3.5 py-1.5 font-dmsans text-[11px] font-semibold text-white">
                       {currentPost.date}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex flex-1 flex-col justify-between p-6 sm:p-7">
+                <div className="flex flex-1 flex-col justify-between pt-6">
                   <div>
-                    <div className="flex items-center gap-2 text-xs font-bold tracking-wide uppercase text-amber-700">
-                      <FaRegCalendarDays className="h-3.5 w-3.5 text-[#c2410c]" />
+                    <div className="flex items-center gap-2 font-dmsans text-[11px] font-bold uppercase tracking-[0.14em] text-site-red">
+                      <FaRegCalendarDays className="h-3.5 w-3.5" />
                       <span>{currentPost.cat} • Narajole</span>
                     </div>
-                    <h3 className="mt-2.5 font-serif text-xl sm:text-2xl font-bold leading-tight text-slate-900 transition-colors group-hover:text-[#c2410c]">
+                    <h3 className="mt-3 font-archivo text-[22px] font-bold leading-[1.25] text-site-ink sm:text-[26px]">
                       {currentPost.title}
                     </h3>
-                    <p className="mt-2.5 font-sans text-sm sm:text-base leading-relaxed text-slate-600 line-clamp-3">
+                    <p className="mt-3 line-clamp-3 font-dmsans text-[15px] leading-[1.8] text-site-muted">
                       {currentPost.desc}
                     </p>
                   </div>
 
-                  <div className="mt-5 flex items-center gap-2 font-sans text-sm font-bold text-[#c2410c] group-hover:translate-x-1 transition-transform">
+                  <span className="btn-tertiary mt-6 gap-2 transition-transform group-hover:translate-x-1">
                     <span>Read full story</span>
-                    <FaArrowRight className="h-3.5 w-3.5" />
-                  </div>
+                    <FaArrowRight className="h-3 w-3" />
+                  </span>
                 </div>
               </Link>
             </div>
           )}
 
           {/* Right Column: Next 5 Posts */}
-          <div className="lg:col-span-5 flex flex-col justify-between space-y-3 lg:space-y-0 h-full">
+          <div className="flex h-full flex-col justify-between gap-3 lg:col-span-5">
             {last5Posts.map((item, idx) => (
               <Link
                 key={item.id || idx}
                 to={`/events/${item.slug || item.id}`}
-                className="group flex gap-3.5 rounded-xl border bg-white p-3 sm:p-3.5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-amber-400 hover:-translate-y-0.5"
-                style={{ borderColor: RULE }}
+                className="group soft-card-sm flex gap-4 p-3 transition-colors hover:border-site-green/35 sm:p-3.5"
               >
-                <div className="relative h-20 w-24 sm:h-24 sm:w-32 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                <div className="img-zoom relative h-20 w-24 flex-shrink-0 overflow-hidden rounded-[20px] sm:h-24 sm:w-32">
                   <img
                     src={item.img}
                     alt={item.title}
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="absolute inset-0 h-full w-full object-cover"
                     onError={onImgErr}
                   />
                 </div>
 
-                <div className="flex flex-1 flex-col justify-center min-w-0">
+                <div className="flex min-w-0 flex-1 flex-col justify-center">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="rounded bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 border border-amber-200/60 truncate">
+                    <span className="chip-static truncate py-1 text-[10px] font-bold uppercase tracking-[0.1em]">
                       {item.cat}
                     </span>
-                    <span className="text-[11px] font-medium text-slate-400 shrink-0">
+                    <span className="shrink-0 font-dmsans text-[11px] font-medium text-site-faint">
                       {item.date}
                     </span>
                   </div>
 
-                  <h4 className="mt-1 font-serif text-xs sm:text-sm font-bold leading-snug text-slate-900 line-clamp-1 transition-colors group-hover:text-[#c2410c]">
+                  <h4 className="mt-1.5 line-clamp-1 font-archivo text-[14px] font-bold leading-snug text-site-ink">
                     {item.title}
                   </h4>
 
-                  <p className="mt-0.5 font-sans text-[11px] sm:text-xs text-slate-500 line-clamp-1 leading-relaxed">
+                  <p className="mt-1 line-clamp-1 font-dmsans text-[12px] leading-relaxed text-site-muted">
                     {item.desc}
                   </p>
                 </div>
@@ -771,8 +770,8 @@ function TestimonialsSection() {
   ];
 
   return (
-    <section className="bg-white py-20">
-      <div className="mx-auto max-w-[1340px] px-6 md:px-10">
+    <section className="site-section-b">
+      <div className="site-wrap max-w-[1340px]">
         <Reveal>
           <SectionHeader
             title={bn ? 'আমাদের মানুষের অভিজ্ঞতা' : 'Voices of Our Community'}
@@ -784,29 +783,24 @@ function TestimonialsSection() {
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {testimonials.map((t, idx) => (
-            <div
-              key={idx}
-              className="flex flex-col justify-between rounded-2xl border p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-              style={{ background: BG_CREAM, borderColor: RULE }}
-            >
+            <div key={idx} className="soft-card flex flex-col justify-between p-8">
               <div>
-                <FaQuoteLeft className="h-8 w-8 opacity-80" style={{ color: BRAND }} />
-                <p className="mt-4 font-serif text-sm leading-relaxed italic text-stone-800">
+                <FaQuoteLeft className="h-7 w-7 text-site-yellow" />
+                <p className="mt-5 font-dmsans text-[14.5px] leading-[1.8] text-site-soft">
                   "{t.quote}"
                 </p>
               </div>
 
-              <div className="mt-6 flex items-center gap-3.5 border-t pt-5" style={{ borderColor: RULE }}>
+              <div className="mt-7 flex items-center gap-3.5 border-t border-site-line pt-5">
                 <img
                   src={t.avatar}
                   alt={t.author}
-                  className="h-11 w-11 rounded-full object-cover border-2"
-                  style={{ borderColor: BRAND }}
+                  className="h-12 w-12 rounded-full object-cover"
                   onError={onImgErr}
                 />
                 <div>
-                  <h4 className="font-serif text-base font-bold text-stone-900">{t.author}</h4>
-                  <span className="font-sans text-xs text-stone-500">{t.role}</span>
+                  <h4 className="font-archivo text-[16px] font-bold text-site-ink">{t.author}</h4>
+                  <span className="font-dmsans text-[12px] text-site-faint">{t.role}</span>
                 </div>
               </div>
             </div>
@@ -823,18 +817,18 @@ function CtaBannerSection() {
   const bn = lang === 'bn';
 
   return (
-    <div className="mx-auto max-w-[1340px] px-6 py-10 md:px-10">
-      <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 shadow-xl" style={{ background: `linear-gradient(135deg, ${BRAND} 0%, ${BRAND_LIGHT} 50%, ${BRAND} 100%)` }}>
-        <div className="flex flex-col items-center justify-between gap-8 md:flex-row text-white">
+    <div className="site-wrap max-w-[1340px] pb-14 md:pb-20">
+      <div className="rounded-panel bg-site-yellow p-8 md:p-[52px]">
+        <div className="flex flex-col items-start justify-between gap-8 text-site-ink md:flex-row md:items-center">
           <div className="flex items-center gap-6">
-            <div className="hidden h-16 w-16 items-center justify-center rounded-2xl bg-white/20 sm:flex">
-              <FaUserGroup className="h-8 w-8 text-white" />
-            </div>
+            <span className="hidden h-16 w-16 items-center justify-center rounded-full bg-site-ink/10 sm:flex">
+              <FaUserGroup className="h-7 w-7 text-site-ink" />
+            </span>
             <div>
-              <h2 className="font-serif text-3xl font-extrabold md:text-4xl">
+              <h2 className="font-archivo text-[clamp(26px,3vw,38px)] font-bold leading-[1.15] tracking-[-0.02em]">
                 {bn ? 'পরিবর্তনের অংশ হোন' : 'Be Part of the Change'}
               </h2>
-              <p className="mt-2 font-sans text-sm md:text-base opacity-90">
+              <p className="mt-3 max-w-xl font-dmsans text-[15.5px] leading-[1.7] text-[#3b3413]">
                 {bn
                   ? 'আপনার একটি ছোট সাহায্য কারো জীবনে বড় পরিবর্তন আনতে পারে।'
                   : 'Your small help can bring a big change in someone\'s life.'}
@@ -842,19 +836,12 @@ function CtaBannerSection() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-4">
-            <Link
-              to="/donate"
-              className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-sans text-sm font-bold text-white shadow-md transition-all hover:bg-black"
-              style={{ background: INK }}
-            >
-              {bn ? 'দান করুন ❤' : 'Donate Now ❤'}
+          <div className="flex flex-wrap gap-3">
+            <Link to="/donate" className="btn-green">
+              {bn ? 'দান করুন' : 'Donate Now'}
             </Link>
-            <Link
-              to="/volunteer"
-              className="inline-flex items-center gap-2 rounded-full border-2 border-white px-7 py-3.5 font-sans text-sm font-bold text-white transition-all hover:bg-white hover:text-[#c2410c]"
-            >
-              {bn ? 'আমাদের সাথে যুক্ত হোন 💛' : 'Volunteer with Us 💛'}
+            <Link to="/volunteer" className="btn-ghost-dark">
+              {bn ? 'আমাদের সাথে যুক্ত হোন' : 'Volunteer with Us'}
             </Link>
           </div>
         </div>
@@ -871,7 +858,7 @@ function GetInvolvedCardsSection() {
   const cards = [
     {
       icon: FaHeart,
-      iconBg: 'bg-orange-100 text-orange-700',
+      iconBg: 'bg-site-cream text-site-green',
       title: bn ? 'অনলাইনে দান করুন' : 'Donate',
       desc: bn
         ? 'আপনার আর্থিক সহায়তা আমাদের মিশন পরিচালনা ও অসহায় মানুষের পাশে দাঁড়াতে সাহায্য করে।'
@@ -881,7 +868,7 @@ function GetInvolvedCardsSection() {
     },
     {
       icon: FaUserGroup,
-      iconBg: 'bg-amber-100 text-amber-700',
+      iconBg: 'bg-site-cream text-site-green',
       title: bn ? 'স্বেচ্ছাসেবক হোন' : 'Volunteer',
       desc: bn
         ? 'আমাদের মেধা ও সময় দিয়ে সমাজে প্রত্যক্ষ প্রভাব ফেলতে দলে যোগ দিন।'
@@ -891,7 +878,7 @@ function GetInvolvedCardsSection() {
     },
     {
       icon: FaHandshake,
-      iconBg: 'bg-teal-100 text-teal-700',
+      iconBg: 'bg-site-cream text-site-green',
       title: bn ? 'অংশীদার হোন' : 'Partner With Us',
       desc: bn
         ? 'প্রতিষ্ঠান ও সংস্থার সাথে যৌথভাবে সমাজে দীর্ঘমেয়াদী কাজ গড়ে তুলুন।'
@@ -902,14 +889,14 @@ function GetInvolvedCardsSection() {
   ];
 
   return (
-    <section className="py-20" style={{ background: BG_CREAM }}>
-      <div className="mx-auto max-w-[1340px] px-6 md:px-10">
+    <section className="site-section-b">
+      <div className="site-wrap max-w-[1340px]">
         <Reveal>
           <div className="mb-10 text-left">
-            <h2 className="font-serif text-3xl font-bold md:text-4xl" style={{ color: INK }}>
+            <h2 className="h-section text-site-ink">
               {bn ? 'অংশগ্রহণ করুন' : 'Get Involved'}
             </h2>
-            <p className="mt-2 font-sans text-sm md:text-base text-stone-600">
+            <p className="body-text mt-3 max-w-xl">
               {bn ? 'আমাদের কাজে সহযাত্রী হওয়ার বিভিন্ন উপায় রয়েছে।' : 'There are many ways you can contribute.'}
             </p>
           </div>
@@ -919,28 +906,20 @@ function GetInvolvedCardsSection() {
           {cards.map((c, idx) => {
             const CIcon = c.icon;
             return (
-              <div
-                key={idx}
-                className="group flex flex-col justify-between rounded-2xl border bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl"
-                style={{ borderColor: RULE }}
-              >
+              <div key={idx} className="soft-card flex flex-col justify-between p-8">
                 <div>
-                  <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${c.iconBg}`}>
-                    <CIcon className="h-6 w-6" />
-                  </div>
-                  <h3 className="mt-5 font-serif text-xl font-bold transition-colors group-hover:text-[#c2410c]" style={{ color: INK }}>
+                  <span className={`inline-flex h-12 w-12 items-center justify-center rounded-full ${c.iconBg}`}>
+                    <CIcon className="h-5 w-5" />
+                  </span>
+                  <h3 className="h-card mt-5 text-site-ink">
                     {c.title}
                   </h3>
-                  <p className="mt-2 font-sans text-sm leading-relaxed text-stone-600">
+                  <p className="mt-3 font-dmsans text-[14px] leading-[1.75] text-site-muted">
                     {c.desc}
                   </p>
                 </div>
 
-                <Link
-                  to={c.to}
-                  className="mt-6 inline-flex items-center gap-1.5 font-sans text-sm font-bold transition-colors"
-                  style={{ color: BRAND }}
-                >
+                <Link to={c.to} className="btn-tertiary mt-7">
                   {c.linkText}
                 </Link>
               </div>
@@ -952,12 +931,78 @@ function GetInvolvedCardsSection() {
   );
 }
 
+// ─────────────────── 10. OUR RECENT BLOGS ───────────────────
+function RecentBlogsSection() {
+  const posts = useHomePosts();
+  const blogs = posts.slice(0, 3);
+
+  if (blogs.length === 0) return null;
+
+  return (
+    <section className="site-section-b">
+      <div className="site-wrap max-w-[1340px]">
+        <Reveal>
+          <div className="mx-auto max-w-2xl text-center">
+            <div className="eyebrow">Our Blogs</div>
+            <h2 className="h-section mt-3 text-site-ink">Our Recent Blogs</h2>
+          </div>
+        </Reveal>
+
+        <div className="mx-auto mt-11 grid max-w-[1120px] grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {blogs.map((b, idx) => (
+            <article key={b.id || idx} className="group soft-card-sm flex flex-col overflow-hidden">
+              <div className="img-zoom aspect-[16/10] w-full overflow-hidden">
+                <img
+                  src={b.img}
+                  alt={b.title}
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                  onError={onImgErr}
+                />
+              </div>
+
+              <div className="flex flex-1 flex-col items-center p-6 text-center">
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-dmsans text-[11px] text-site-faint">
+                  <span>Admin</span>
+                  <span>{b.date}</span>
+                  <span>{b.cat}</span>
+                </div>
+
+                <h3 className="mt-3.5 font-archivo text-[17px] font-bold leading-[1.3] text-site-ink">
+                  {b.title}
+                </h3>
+                <p className="mt-2.5 line-clamp-3 font-dmsans text-[13px] leading-[1.75] text-site-muted">
+                  {b.desc}
+                </p>
+
+                <Link
+                  to={`/events/${b.slug || b.id}`}
+                  className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-full bg-site-green px-7 font-dmsans text-[12.5px] font-bold text-white transition-colors hover:bg-site-green-2"
+                >
+                  Read More
+                </Link>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-10 text-center">
+          <Link to="/events" className="btn-ghost-dark">
+            View all posts
+            <FaArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════
 export default function Home() {
   useSEO(SEO['/']);
 
   return (
-    <div className="min-h-screen font-sans" style={{ background: BG_CREAM }}>
+    <div className="min-h-screen bg-site-cream font-dmsans">
       <Hero />
       <CoreValuesBar />
       <ImpactSection />
@@ -967,6 +1012,7 @@ export default function Home() {
       <TestimonialsSection />
       <CtaBannerSection />
       <GetInvolvedCardsSection />
+      <RecentBlogsSection />
     </div>
   );
 }

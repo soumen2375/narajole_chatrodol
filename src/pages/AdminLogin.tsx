@@ -7,14 +7,7 @@ import { SEO } from '@/data/seoConfig';
 
 import Breadcrumb from '@/components/ui/Breadcrumb';
 
-const SERIF_BN = { fontFamily: '"Noto Serif", "Noto Serif Bengali", Georgia, serif' };
-const INK    = '#1c1917';
-const CREAM  = '#faf6ef';
-const BRAND  = '#c2410c';
-const PAPER  = '#ffffff';
-const RULE   = '#e7e5e4';
-const MUTED  = '#78716c';
-const ADMIN_DARK = '#0f172a'; // dark navy for admin accent
+const SERIF_BN = { fontFamily: 'Archivo, "Noto Serif Bengali", "DM Sans", sans-serif' };
 
 export default function AdminLogin() {
   useSEO(SEO['/admin-login']);
@@ -46,78 +39,68 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: CREAM }}>
+    <div className="flex min-h-screen flex-col bg-site-cream">
       <Breadcrumb title="Admin Login" />
 
-      {/* Center card */}
-      <div className="flex flex-1 items-center justify-center px-4 py-12 md:py-16">
+      {/* Narrow centred green card */}
+      <div className="flex flex-1 items-center justify-center px-5 py-12 sm:px-8 md:py-16">
         <div className="w-full max-w-md">
-          <h1 className="font-bengali text-[36px] leading-tight" style={{ ...SERIF_BN, color: INK }}>
-            {lang === 'bn' ? 'অ্যাডমিন লগইন' : 'Admin Login'}
-          </h1>
-          <p className="mt-2 mb-8 font-bengali text-[14px]" style={{ color: MUTED }}>
-            {lang === 'bn' ? 'অ্যাডমিন প্যানেলে প্রবেশ করুন।' : 'Sign in to the admin panel.'}
-          </p>
+          <div className="rounded-panel bg-site-green p-8 text-white sm:p-10">
+            <h1 className="h-card font-bengali text-white" style={SERIF_BN}>
+              {lang === 'bn' ? 'অ্যাডমিন লগইন' : 'Admin Login'}
+            </h1>
+            <p className="mb-8 mt-3 font-bengali text-[14px] leading-[1.8] text-white/65">
+              {lang === 'bn' ? 'অ্যাডমিন প্যানেলে প্রবেশ করুন।' : 'Sign in to the admin panel.'}
+            </p>
 
-          <div
-            className="rounded-[4px] p-8"
-            style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 8px 30px -10px rgba(15,23,42,0.14)' }}
-          >
             {error && (
-              <div
-                className="mb-5 rounded-[4px] px-4 py-3 font-bengali text-[13px]"
-                style={{ background: 'rgba(15,23,42,0.06)', border: `1px solid rgba(15,23,42,0.14)`, color: ADMIN_DARK }}
-              >
+              <div className="mb-5 rounded-[18px] border border-white/20 bg-white/10 px-5 py-4 font-bengali text-[13.5px] leading-[1.7] text-white">
                 {error}
               </div>
             )}
 
             <form onSubmit={submit} className="space-y-5">
               <div>
-                <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[0.22em]" style={{ color: MUTED }}>
+                <label htmlFor="admin-email" className="mb-2 block font-dmsans text-[13px] font-bold text-white">
                   {t('common.email')}
                 </label>
                 <input
+                  id="admin-email"
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-[4px] border bg-transparent px-4 py-3 text-[14px] outline-none transition-colors"
-                  style={{ borderColor: RULE, color: INK }}
+                  className="block min-h-[48px] w-full rounded-full border border-white/25 bg-white/10 px-6 py-[15px] font-dmsans text-[14.5px] text-white transition-colors placeholder:text-white/40 focus:border-site-yellow"
                   placeholder="admin@example.com"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[0.22em]" style={{ color: MUTED }}>
+                <label htmlFor="admin-password" className="mb-2 block font-dmsans text-[13px] font-bold text-white">
                   {t('login.password')}
                 </label>
                 <input
+                  id="admin-password"
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-[4px] border bg-transparent px-4 py-3 text-[14px] outline-none transition-colors"
-                  style={{ borderColor: RULE, color: INK }}
+                  className="block min-h-[48px] w-full rounded-full border border-white/25 bg-white/10 px-6 py-[15px] font-dmsans text-[14.5px] text-white transition-colors placeholder:text-white/40 focus:border-site-yellow"
                   placeholder="••••••••"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-full py-3.5 font-bengali text-[14px] font-semibold text-white transition-all hover:-translate-y-[1px] disabled:opacity-60"
-                style={{ background: ADMIN_DARK, boxShadow: '0 8px 20px -8px rgba(15,23,42,0.45)' }}
+                className="btn-yellow w-full font-bengali"
               >
                 {loading ? t('login.loggingIn') : (lang === 'bn' ? 'অ্যাডমিন লগইন' : 'Sign in as Admin')}
               </button>
             </form>
           </div>
 
-          <div
-            className="mt-5 rounded-[4px] px-5 py-4 font-bengali text-[13px]"
-            style={{ background: 'rgba(15,23,42,0.05)', border: `1px solid rgba(15,23,42,0.10)`, color: '#374151' }}
-          >
+          <div className="mt-5 rounded-[18px] border border-site-line bg-white px-6 py-5 font-bengali text-[13.5px] leading-[1.8] text-site-soft">
             {lang === 'bn' ? 'সদস্য? ' : 'Not an admin? '}
-            <Link to="/login" className="font-semibold underline underline-offset-2" style={{ color: BRAND }}>
+            <Link to="/login" className="font-bold text-site-green underline decoration-site-yellow decoration-2 underline-offset-4">
               {lang === 'bn' ? 'সদস্য লগইন পেজে যান' : 'Go to Member Login'}
             </Link>
           </div>

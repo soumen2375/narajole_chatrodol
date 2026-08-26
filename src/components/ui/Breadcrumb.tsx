@@ -27,34 +27,34 @@ export default function Breadcrumb({ title, items = [] }: { title: string; items
   }, [title, items]);
 
   return (
-    <nav aria-label="Breadcrumb" className="w-full bg-[#faf6ef]/70 py-2.5 px-4 sm:px-8 border-b border-stone-200/50 opacity-90 hover:opacity-100 transition-opacity">
-      <div className="mx-auto flex max-w-[1340px] items-center gap-2 text-xs sm:text-sm font-sans">
+    <nav aria-label="Breadcrumb" className="w-full border-b border-site-line bg-site-cream px-5 py-3 sm:px-8">
+      <div className="mx-auto flex max-w-[1340px] items-center gap-2 font-dmsans text-[12.5px] sm:text-[13px]">
         {/* Soft Home icon button */}
         <Link
           to="/"
-          className="group inline-flex items-center gap-1.5 text-stone-600 hover:text-[#c2410c] font-medium transition-colors shrink-0"
+          className="group inline-flex shrink-0 items-center gap-2 font-medium text-site-muted transition-colors hover:text-site-green"
         >
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100/50 text-[#c2410c]/80 transition-all group-hover:scale-105 group-hover:bg-orange-100">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-site-green transition-colors group-hover:bg-site-yellow group-hover:text-site-ink">
             <FaHouse className="h-3 w-3" />
           </span>
-          <span className="text-stone-700 font-semibold group-hover:text-[#c2410c] transition-colors">Home</span>
+          <span className="font-semibold text-site-ink transition-colors group-hover:text-site-green">Home</span>
         </Link>
 
         {items.map((item, idx) => (
-          <div key={idx} className="flex items-center gap-2 shrink-0">
-            <FaChevronRight className="h-3 w-3 text-stone-400/80" />
+          <div key={idx} className="flex shrink-0 items-center gap-2">
+            <FaChevronRight className="h-2.5 w-2.5 text-site-faint" />
             {item.to ? (
-              <Link to={item.to} className="text-stone-600 hover:text-[#c2410c] transition-colors">
+              <Link to={item.to} className="text-site-muted transition-colors hover:text-site-green">
                 {item.label}
               </Link>
             ) : (
-              <span className="text-stone-800 font-semibold">{item.label}</span>
+              <span className="font-semibold text-site-ink">{item.label}</span>
             )}
           </div>
         ))}
 
-        <FaChevronRight className="h-3 w-3 text-stone-400/80 shrink-0" />
-        <span className="text-[#c2410c]/90 font-bold tracking-tight truncate">{title}</span>
+        <FaChevronRight className="h-2.5 w-2.5 shrink-0 text-site-faint" />
+        <span className="truncate font-bold tracking-tight text-site-red">{title}</span>
       </div>
     </nav>
   );

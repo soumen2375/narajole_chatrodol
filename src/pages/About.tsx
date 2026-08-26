@@ -10,8 +10,6 @@ import {
   FaPlay, FaArrowRight, FaHeart
 } from 'react-icons/fa6';
 
-const BRAND = '#c2410c';
-const BG_CREAM = '#faf6ef';
 const FALLBACK_IMG = '/assets/images/Chhatradol.jpg';
 
 const onImgErr = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -57,7 +55,7 @@ export default function About() {
       img: '/assets/images/about/members/soumen.jpg',
     },
     {
-      name: bn ? 'শুভদীপ ঘোড়াই' : 'Subhadip Ghorai',
+      name: bn ? 'শুভদীপ ঘোড়াই' : 'Subhadip Ghorai',
       role: bn ? 'সদস্য' : 'Member',
       img: '/assets/images/about/members/subhadip.jpg',
     },
@@ -68,68 +66,126 @@ export default function About() {
     },
   ];
 
+  const coreValues = [
+    {
+      icon: FaGraduationCap,
+      title: bn ? 'শিক্ষা' : 'Education',
+      desc: bn ? 'আমরা বিশ্বাস করি শিক্ষা হল উন্নতির চাবিকাঠি।' : 'We believe education is the key to progress.',
+    },
+    {
+      icon: FaUsers,
+      title: bn ? 'সেবা' : 'Service',
+      desc: bn ? 'আমরা নিঃস্বার্থভাবে সমাজের সেবা করি।' : 'We serve society selflessly.',
+    },
+    {
+      icon: FaShieldHalved,
+      title: bn ? 'সততা' : 'Integrity',
+      desc: bn ? 'আমাদের সকল কার্যক্রমে স্বচ্ছতা ও সততা বজায় রাখি।' : 'We maintain transparency and honesty in all we do.',
+    },
+    {
+      icon: FaHandHoldingHeart,
+      title: bn ? 'সহমর্মিতা' : 'Compassion',
+      desc: bn ? 'আমরা প্রতিটি মানুষের প্রতি সহানুভূতিশীল।' : 'We are compassionate towards everyone.',
+    },
+    {
+      icon: FaClipboardCheck,
+      title: bn ? 'দায়িত্বশীলতা' : 'Accountability',
+      desc: bn ? 'আমরা আমাদের প্রতিশ্রুতির প্রতি দায়বদ্ধ।' : 'We are accountable to our commitments.',
+    },
+  ];
+
+  const timeline = [
+    {
+      icon: FaFlag,
+      year: '2019',
+      title: bn ? 'যাত্রা শুরু' : 'Founded',
+      desc: bn
+        ? 'একদল ছাত্রছাত্রীর হাত ধরে প্রথম পরিচ্ছন্নতা অভিযান।'
+        : 'First cleanliness drive by a group of students.',
+    },
+    {
+      icon: FaHandHoldingHeart,
+      year: '2021',
+      title: bn ? 'করোনাকালীন তৎপরতা' : 'COVID Response',
+      desc: bn
+        ? 'মহামারির সময়ে ত্রাণ, মাস্ক, ও অক্সিজেন সিলিন্ডার সহায়তা।'
+        : 'Relief, masks and oxygen cylinder support during the pandemic.',
+    },
+    {
+      icon: FaUserGroup,
+      year: '2023',
+      title: bn ? 'বিকাশ' : 'Growth',
+      desc: bn
+        ? '৮+ কর্মসূচি, ৫০০+ শিক্ষার্থী, ২৫+ স্বাস্থ্য শিবির।'
+        : '8+ programmes, 500+ students supported, 25+ health camps.',
+    },
+    {
+      icon: FaAward,
+      year: '2026',
+      title: bn ? 'রেজিস্ট্রেশন' : 'Registration',
+      desc: bn
+        ? 'সরকারিভাবে পাবলিক চ্যারিটেবল ট্রাস্ট হিসেবে নিবন্ধিত।'
+        : 'Officially registered as a public charitable trust.',
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-site-cream">
       <Breadcrumb title={bn ? 'আমাদের কথা' : 'About Us'} />
 
       {/* ─────────────────── 1. HERO SECTION ─────────────────── */}
-      <section className="py-12 md:py-20" style={{ background: BG_CREAM }}>
-        <div className="mx-auto max-w-[1340px] px-6 md:px-10">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 items-center">
-            {/* Left Content */}
-            <div className="lg:col-span-6">
-              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-[1.18] text-slate-900">
-                {bn ? (
-                  <>
-                    সাত বছরের পথচলা <br />
-                    একটি ছোট ভাবনা থেকে <br />
-                    <span className="text-[#c2410c]">রেজিস্টার্ড ট্রাস্ট।</span>
-                  </>
-                ) : (
-                  <>
-                    Seven Years of Journey <br />
-                    From a Small Idea to a <br />
-                    <span className="text-[#c2410c]">Registered Trust.</span>
-                  </>
-                )}
-              </h1>
+      <section className="page-hero px-5 pb-16 pt-14 sm:px-8 md:pb-[86px] md:pt-[76px]">
+        <div className="mx-auto grid w-full max-w-site grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
+          {/* Left Content */}
+          <div className="lg:col-span-6">
+            <h1 className="h-display text-white">
+              {bn ? (
+                <>
+                  সাত বছরের পথচলা <br />
+                  একটি ছোট ভাবনা থেকে <br />
+                  <span className="text-site-yellow">রেজিস্টার্ড ট্রাস্ট।</span>
+                </>
+              ) : (
+                <>
+                  Seven Years of Journey <br />
+                  From a Small Idea to a <br />
+                  <span className="text-site-yellow">Registered Trust.</span>
+                </>
+              )}
+            </h1>
 
-              <p className="mt-5 font-sans text-base sm:text-lg leading-relaxed text-slate-600">
-                {bn
-                  ? '২০১৯ সালে একদল ছাত্রছাত্রীর ভাবনায় জন্ম নিয়েছিল এই ছাত্রদল। আজ আমরা একটি পাবলিক চ্যারিটেবল ট্রাস্ট — পশ্চিম মেদিনীপুরের প্রান্তিক মানুষের পাশে নিরলসভাবে দাঁড়াই।'
-                  : 'In 2019, Chhatradol was born from the vision of a group of students. Today we are a public charitable trust — standing steadfastly beside the marginalised people of Paschim Medinipur.'}
-              </p>
+            <p className="mt-5 max-w-xl font-dmsans text-[16px] leading-[1.8] text-white/70">
+              {bn
+                ? '২০১৯ সালে একদল ছাত্রছাত্রীর ভাবনায় জন্ম নিয়েছিল এই ছাত্রদল। আজ আমরা একটি পাবলিক চ্যারিটেবল ট্রাস্ট — পশ্চিম মেদিনীপুরের প্রান্তিক মানুষের পাশে নিরলসভাবে দাঁড়াই।'
+                : 'In 2019, Chhatradol was born from the vision of a group of students. Today we are a public charitable trust — standing steadfastly beside the marginalised people of Paschim Medinipur.'}
+            </p>
 
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <Link
-                  to="/events"
-                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-sans text-sm font-bold text-white shadow-md transition-all hover:bg-orange-700 hover:shadow-lg"
-                  style={{ background: BRAND }}
-                >
-                  <span>{bn ? 'আমাদের গল্প' : 'Our Story'}</span>
-                  <FaArrowRight className="h-3.5 w-3.5" />
-                </Link>
-                <Link
-                  to="/gallery"
-                  className="inline-flex items-center gap-2.5 rounded-full border border-slate-300 bg-white px-6 py-3.5 font-sans text-sm font-semibold text-slate-800 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-400"
-                >
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-[#c2410c]">
-                    <FaPlay className="h-2.5 w-2.5 translate-x-0.5" />
-                  </span>
-                  <span>{bn ? 'ভিডিও দেখুন' : 'Watch Our Journey'}</span>
-                </Link>
-              </div>
+            <div className="mt-9 flex flex-wrap items-center gap-4">
+              <Link to="/events" className="btn-yellow">
+                <span>{bn ? 'আমাদের গল্প' : 'Our Story'}</span>
+                <FaArrowRight className="h-3 w-3" />
+              </Link>
+              <Link to="/gallery" className="btn-ghost-light">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-site-yellow text-site-ink">
+                  <FaPlay className="h-2.5 w-2.5 translate-x-[1px]" />
+                </span>
+                <span>{bn ? 'ভিডিও দেখুন' : 'Watch Our Journey'}</span>
+              </Link>
             </div>
+          </div>
 
-            {/* Right Hero Image */}
-            <div className="lg:col-span-6">
-              <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xl">
-                <img
-                  src="/assets/images/about/about.jpg"
-                  alt="Chhatradol Students and Volunteers"
-                  className="h-full w-full object-cover max-h-[460px]"
-                  onError={onImgErr}
-                />
+          {/* Right Hero Image — concentric medallion */}
+          <div className="lg:col-span-6">
+            <div className="relative mx-auto w-full max-w-[440px] p-6">
+              <div className="about-ring flex aspect-square w-full rounded-full p-4">
+                <div className="flex-1 overflow-hidden rounded-full">
+                  <img
+                    src="/assets/images/about/about.jpg"
+                    alt="Chhatradol Students and Volunteers"
+                    className="h-full w-full rounded-full object-cover"
+                    onError={onImgErr}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -137,25 +193,24 @@ export default function About() {
       </section>
 
       {/* ─────────────────── 2. MISSION / VISION / VALUES ─────────────────── */}
-      <section className="py-16 md:py-20 bg-white">
-        <div className="mx-auto max-w-[1340px] px-6 md:px-10">
+      <section className="site-section">
+        <div className="site-wrap">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Mission */}
-            <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-7 sm:p-8 shadow-sm transition-all hover:shadow-md">
+            <div className="green-card flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-[#c2410c]">
-                    <FaBullseye className="h-6 w-6" />
-                  </div>
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-site-yellow">
+                    <FaBullseye className="h-5 w-5" />
+                  </span>
+                  <span className="font-dmmono text-[11px] font-medium uppercase tracking-[0.14em] text-white/50">
                     01 • {bn ? 'মিশন' : 'MISSION'}
                   </span>
                 </div>
-                <h3 className="mt-6 font-serif text-2xl font-bold text-slate-900">
+                <h3 className="h-card mt-6 text-white">
                   {bn ? 'মিশন' : 'Mission'}
                 </h3>
-                <div className="mt-2 h-0.5 w-8 bg-[#c2410c]" />
-                <p className="mt-4 font-sans text-sm sm:text-base leading-relaxed text-slate-600">
+                <p className="mt-4 font-dmsans text-[15px] leading-[1.8] text-white/75">
                   {bn
                     ? 'প্রান্তিক জনগোষ্ঠীর শিক্ষা, স্বাস্থ্য, পরিবেশ ও দৈনন্দিন জীবনের মৌলিক চাহিদা পূরণে নিরলসভাবে কাজ করে যাওয়া।'
                     : 'To tirelessly work in fulfilling the basic needs of marginalised communities in education, health, environment and daily life.'}
@@ -164,21 +219,20 @@ export default function About() {
             </div>
 
             {/* Vision */}
-            <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-7 sm:p-8 shadow-sm transition-all hover:shadow-md">
+            <div className="soft-card flex flex-col justify-between p-8 md:p-9">
               <div>
                 <div className="flex items-center justify-between gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-[#c2410c]">
-                    <FaEye className="h-6 w-6" />
-                  </div>
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-site-cream text-site-green">
+                    <FaEye className="h-5 w-5" />
+                  </span>
+                  <span className="font-dmmono text-[11px] font-medium uppercase tracking-[0.14em] text-site-faint">
                     02 • {bn ? 'ভিশন' : 'VISION'}
                   </span>
                 </div>
-                <h3 className="mt-6 font-serif text-2xl font-bold text-slate-900">
+                <h3 className="h-card mt-6 text-site-ink">
                   {bn ? 'ভিশন' : 'Vision'}
                 </h3>
-                <div className="mt-2 h-0.5 w-8 bg-[#c2410c]" />
-                <p className="mt-4 font-sans text-sm sm:text-base leading-relaxed text-slate-600">
+                <p className="mt-4 font-dmsans text-[15px] leading-[1.8] text-site-muted">
                   {bn
                     ? 'প্রতিটি মানুষের জীবনে শিক্ষা, সুস্বাস্থ্য ও পরিবেশগত সচেতনতা পৌঁছে দেওয়া।'
                     : 'To bring education, good health and environmental awareness to the life of every person.'}
@@ -187,21 +241,20 @@ export default function About() {
             </div>
 
             {/* Values */}
-            <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-7 sm:p-8 shadow-sm transition-all hover:shadow-md">
+            <div className="yellow-card flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-[#c2410c]">
-                    <FaGem className="h-6 w-6" />
-                  </div>
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-site-ink/10 text-site-ink">
+                    <FaGem className="h-5 w-5" />
+                  </span>
+                  <span className="font-dmmono text-[11px] font-medium uppercase tracking-[0.14em] text-[#3b3413]/60">
                     03 • {bn ? 'মূল্যবোধ' : 'VALUES'}
                   </span>
                 </div>
-                <h3 className="mt-6 font-serif text-2xl font-bold text-slate-900">
+                <h3 className="h-card mt-6 text-site-ink">
                   {bn ? 'মূল্যবোধ' : 'Values'}
                 </h3>
-                <div className="mt-2 h-0.5 w-8 bg-[#c2410c]" />
-                <p className="mt-4 font-sans text-sm sm:text-base leading-relaxed text-slate-600">
+                <p className="mt-4 font-dmsans text-[15px] leading-[1.8] text-[#3b3413]">
                   {bn
                     ? 'সততা, স্বচ্ছতা, সহমর্মিতা — এই তিন স্তম্ভের উপর ভর করে আমরা প্রতিটি কর্মসূচি পরিচালনা করি।'
                     : 'Integrity, transparency, compassion — these three pillars guide every programme we run.'}
@@ -213,223 +266,123 @@ export default function About() {
       </section>
 
       {/* ─────────────────── 3. CORE VALUES ─────────────────── */}
-      <section className="py-16 md:py-20" style={{ background: BG_CREAM }}>
-        <div className="mx-auto max-w-[1340px] px-6 md:px-10">
-          <div className="text-center max-w-2xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#c2410c]">
+      <section className="site-section-b">
+        <div className="site-wrap">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="eyebrow">
               {bn ? 'আমাদের স্তম্ভ' : 'WHAT WE STAND FOR'}
             </span>
-            <h2 className="mt-2 font-serif text-3xl sm:text-4xl font-extrabold text-slate-900">
+            <h2 className="h-section mt-3 text-site-ink">
               {bn ? 'আমাদের মূল্যবোধ' : 'Our Core Values'}
             </h2>
-            <div className="mx-auto mt-3 h-1 w-12 rounded-full bg-[#c2410c]" />
           </div>
 
           <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
-            {/* Education */}
-            <div className="flex flex-col items-center text-center rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-transform hover:-translate-y-1">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 text-[#c2410c]">
-                <FaGraduationCap className="h-7 w-7" />
-              </div>
-              <h4 className="mt-4 font-sans text-base font-bold text-slate-900">
-                {bn ? 'শিক্ষা' : 'Education'}
-              </h4>
-              <p className="mt-2 font-sans text-xs leading-relaxed text-slate-600">
-                {bn ? 'আমরা বিশ্বাস করি শিক্ষা হল উন্নতির চাবিকাঠি।' : 'We believe education is the key to progress.'}
-              </p>
-            </div>
-
-            {/* Service */}
-            <div className="flex flex-col items-center text-center rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-transform hover:-translate-y-1">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 text-[#c2410c]">
-                <FaUsers className="h-7 w-7" />
-              </div>
-              <h4 className="mt-4 font-sans text-base font-bold text-slate-900">
-                {bn ? 'সেবা' : 'Service'}
-              </h4>
-              <p className="mt-2 font-sans text-xs leading-relaxed text-slate-600">
-                {bn ? 'আমরা নিঃস্বার্থভাবে সমাজের সেবা করি।' : 'We serve society selflessly.'}
-              </p>
-            </div>
-
-            {/* Integrity */}
-            <div className="flex flex-col items-center text-center rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-transform hover:-translate-y-1">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 text-[#c2410c]">
-                <FaShieldHalved className="h-7 w-7" />
-              </div>
-              <h4 className="mt-4 font-sans text-base font-bold text-slate-900">
-                {bn ? 'সততা' : 'Integrity'}
-              </h4>
-              <p className="mt-2 font-sans text-xs leading-relaxed text-slate-600">
-                {bn ? 'আমাদের সকল কার্যক্রমে স্বচ্ছতা ও সততা বজায় রাখি।' : 'We maintain transparency and honesty in all we do.'}
-              </p>
-            </div>
-
-            {/* Compassion */}
-            <div className="flex flex-col items-center text-center rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-transform hover:-translate-y-1">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 text-[#c2410c]">
-                <FaHandHoldingHeart className="h-7 w-7" />
-              </div>
-              <h4 className="mt-4 font-sans text-base font-bold text-slate-900">
-                {bn ? 'সহমর্মিতা' : 'Compassion'}
-              </h4>
-              <p className="mt-2 font-sans text-xs leading-relaxed text-slate-600">
-                {bn ? 'আমরা প্রতিটি মানুষের প্রতি সহানুভূতিশীল।' : 'We are compassionate towards everyone.'}
-              </p>
-            </div>
-
-            {/* Accountability */}
-            <div className="flex flex-col items-center text-center rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm transition-transform hover:-translate-y-1">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 text-[#c2410c]">
-                <FaClipboardCheck className="h-7 w-7" />
-              </div>
-              <h4 className="mt-4 font-sans text-base font-bold text-slate-900">
-                {bn ? 'দায়িত্বশীলতা' : 'Accountability'}
-              </h4>
-              <p className="mt-2 font-sans text-xs leading-relaxed text-slate-600">
-                {bn ? 'আমরা আমাদের প্রতিশ্রুতির প্রতি দায়বদ্ধ।' : 'We are accountable to our commitments.'}
-              </p>
-            </div>
+            {coreValues.map((v, idx) => {
+              const VIcon = v.icon;
+              return (
+                <div key={idx} className="stat-capsule flex flex-col items-center">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-site-cream text-site-green">
+                    <VIcon className="h-6 w-6" />
+                  </span>
+                  <h4 className="mt-4 font-archivo text-[16px] font-bold text-site-ink">
+                    {v.title}
+                  </h4>
+                  <p className="mt-2.5 font-dmsans text-[13px] leading-[1.7] text-site-muted">
+                    {v.desc}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* ─────────────────── 4. BRIEF HISTORY / TIMELINE ─────────────────── */}
-      <section className="py-16 md:py-20 bg-white">
-        <div className="mx-auto max-w-[1340px] px-6 md:px-10">
-          <div className="text-center max-w-2xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#c2410c]">
+      <section className="site-section-b">
+        <div className="site-wrap">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="eyebrow">
               {bn ? 'আমাদের ইতিহাস' : 'OUR JOURNEY'}
             </span>
-            <h2 className="mt-2 font-serif text-3xl sm:text-4xl font-extrabold text-slate-900">
+            <h2 className="h-section mt-3 text-site-ink">
               {bn ? 'পথচলার সংক্ষিপ্ত ইতিহাস' : 'A Brief History'}
             </h2>
-            <div className="mx-auto mt-3 h-1 w-12 rounded-full bg-[#c2410c]" />
           </div>
 
           <div className="relative mt-14">
             {/* Connecting Horizontal Line (Desktop) */}
-            <div className="hidden md:block absolute top-1/2 left-10 right-10 h-0.5 -translate-y-6 bg-amber-200/80" />
+            <div className="absolute left-10 right-10 top-6 hidden h-px bg-site-line-2 md:block" />
 
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-4 relative z-10">
-              {/* 2019 */}
-              <div className="flex flex-col items-center text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#c2410c] bg-white text-[#c2410c] shadow-md">
-                  <FaFlag className="h-5 w-5" />
-                </div>
-                <span className="mt-4 font-serif text-2xl font-extrabold text-slate-900">
-                  2019
-                </span>
-                <h4 className="mt-1 font-sans text-sm font-bold text-[#c2410c]">
-                  {bn ? 'যাত্রা শুরু' : 'Founded'}
-                </h4>
-                <p className="mt-2 font-sans text-xs leading-relaxed text-slate-600 max-w-xs">
-                  {bn
-                    ? 'একদল ছাত্রছাত্রীর হাত ধরে প্রথম পরিচ্ছন্নতা অভিযান।'
-                    : 'First cleanliness drive by a group of students.'}
-                </p>
-              </div>
-
-              {/* 2021 */}
-              <div className="flex flex-col items-center text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#c2410c] bg-white text-[#c2410c] shadow-md">
-                  <FaHandHoldingHeart className="h-5 w-5" />
-                </div>
-                <span className="mt-4 font-serif text-2xl font-extrabold text-slate-900">
-                  2021
-                </span>
-                <h4 className="mt-1 font-sans text-sm font-bold text-[#c2410c]">
-                  {bn ? 'করোনাকালীন তৎপরতা' : 'COVID Response'}
-                </h4>
-                <p className="mt-2 font-sans text-xs leading-relaxed text-slate-600 max-w-xs">
-                  {bn
-                    ? 'মহামারির সময়ে ত্রাণ, মাস্ক, ও অক্সিজেন সিলিন্ডার সহায়তা।'
-                    : 'Relief, masks and oxygen cylinder support during the pandemic.'}
-                </p>
-              </div>
-
-              {/* 2023 */}
-              <div className="flex flex-col items-center text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#c2410c] bg-white text-[#c2410c] shadow-md">
-                  <FaUserGroup className="h-5 w-5" />
-                </div>
-                <span className="mt-4 font-serif text-2xl font-extrabold text-slate-900">
-                  2023
-                </span>
-                <h4 className="mt-1 font-sans text-sm font-bold text-[#c2410c]">
-                  {bn ? 'বিকাশ' : 'Growth'}
-                </h4>
-                <p className="mt-2 font-sans text-xs leading-relaxed text-slate-600 max-w-xs">
-                  {bn
-                    ? '৮+ কর্মসূচি, ৫০০+ শিক্ষার্থী, ২৫+ স্বাস্থ্য শিবির।'
-                    : '8+ programmes, 500+ students supported, 25+ health camps.'}
-                </p>
-              </div>
-
-              {/* 2026 */}
-              <div className="flex flex-col items-center text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#c2410c] bg-white text-[#c2410c] shadow-md">
-                  <FaAward className="h-5 w-5" />
-                </div>
-                <span className="mt-4 font-serif text-2xl font-extrabold text-slate-900">
-                  2026
-                </span>
-                <h4 className="mt-1 font-sans text-sm font-bold text-[#c2410c]">
-                  {bn ? 'রেজিস্ট্রেশন' : 'Registration'}
-                </h4>
-                <p className="mt-2 font-sans text-xs leading-relaxed text-slate-600 max-w-xs">
-                  {bn
-                    ? 'সরকারিভাবে পাবলিক চ্যারিটেবল ট্রাস্ট হিসেবে নিবন্ধিত।'
-                    : 'Officially registered as a public charitable trust.'}
-                </p>
-              </div>
+            <div className="relative z-10 grid grid-cols-1 gap-8 md:grid-cols-4">
+              {timeline.map((t, idx) => {
+                const TIcon = t.icon;
+                return (
+                  <div key={idx} className="flex flex-col items-center text-center">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-site-green text-site-yellow">
+                      <TIcon className="h-5 w-5" />
+                    </span>
+                    <span className="mt-4 font-archivo text-[26px] font-bold text-site-red">
+                      {t.year}
+                    </span>
+                    <h4 className="mt-1 font-archivo text-[15px] font-bold text-site-ink">
+                      {t.title}
+                    </h4>
+                    <p className="mt-2 max-w-xs font-dmsans text-[13px] leading-[1.7] text-site-muted">
+                      {t.desc}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       </section>
 
       {/* ─────────────────── 5. TRUSTEES / TEAM GRID ─────────────────── */}
-      <section className="py-16 md:py-20" style={{ background: BG_CREAM }}>
-        <div className="mx-auto max-w-[1340px] px-6 md:px-10">
-          <div className="text-center max-w-2xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#c2410c]">
+      <section className="site-section-b">
+        <div className="site-wrap">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="eyebrow">
               {bn ? 'আমাদের দল' : 'THE PEOPLE BEHIND US'}
             </span>
-            <h2 className="mt-2 font-serif text-3xl sm:text-4xl font-extrabold text-slate-900">
+            <h2 className="h-section mt-3 text-site-ink">
               {bn ? 'যাঁরা পথ দেখাচ্ছেন' : 'The Ones Leading the Way'}
             </h2>
-            <div className="mx-auto mt-3 h-1 w-12 rounded-full bg-[#c2410c]" />
           </div>
 
           <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {trustees.map((t, idx) => (
               <div
                 key={idx}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                className="capsule-card group flex h-full flex-col items-center px-7 py-10 transition-all duration-300 hover:-translate-y-1 hover:border-site-green/35"
               >
-                {/* Photo */}
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                {/* Photo — circular avatar on a cream ring */}
+                <div className="h-[92px] w-[92px] shrink-0 rounded-full bg-site-cream p-[3px] transition-transform duration-300 group-hover:scale-105">
                   <img
                     src={t.img}
                     alt={t.name}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="h-full w-full rounded-full object-cover"
                     onError={onImgErr}
                   />
                 </div>
 
                 {/* Content */}
-                <div className="flex flex-1 flex-col justify-between p-5">
-                  <div>
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-amber-700">
-                      TRUSTEE
-                    </span>
-                    <h3 className="mt-1 font-sans text-lg font-bold text-slate-900 transition-colors group-hover:text-[#c2410c]">
-                      {t.name}
-                    </h3>
-                    <p className="mt-0.5 font-sans text-xs font-semibold text-slate-500">
-                      {t.role}
-                    </p>
-                  </div>
+                <span className="mt-5 font-dmmono text-[10px] font-medium uppercase tracking-[0.16em] text-site-red">
+                  TRUSTEE
+                </span>
+                <h3 className="mt-2.5 font-archivo text-[17px] font-bold leading-tight text-site-ink">
+                  {t.name}
+                </h3>
+                <p className="mt-2 font-dmsans text-[12.5px] text-site-faint">
+                  {t.role}
+                </p>
+
+                {/* Decorative accent dots (reference capsule flourish) */}
+                <div className="mt-6 flex items-center justify-center gap-2" aria-hidden="true">
+                  <span className="h-[9px] w-[9px] rounded-full bg-site-red transition-transform duration-300 group-hover:scale-125" />
+                  <span className="h-[9px] w-[9px] rounded-full bg-site-red/70 transition-transform duration-300 group-hover:scale-125" />
+                  <span className="h-[9px] w-[9px] rounded-full bg-site-red/40 transition-transform duration-300 group-hover:scale-125" />
                 </div>
               </div>
             ))}
@@ -438,21 +391,18 @@ export default function About() {
       </section>
 
       {/* ─────────────────── 6. CTA BANNER ─────────────────── */}
-      <section className="py-12 bg-white">
-        <div className="mx-auto max-w-[1340px] px-6 md:px-10">
-          <div
-            className="flex flex-col md:flex-row items-center justify-between gap-6 rounded-2xl p-8 sm:p-10 text-white shadow-xl"
-            style={{ background: BRAND }}
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md">
-                <FaHeart className="h-7 w-7" />
-              </div>
+      <section className="site-section-b">
+        <div className="site-wrap">
+          <div className="flex flex-col items-start justify-between gap-6 rounded-panel bg-site-yellow p-8 text-site-ink sm:p-10 md:flex-row md:items-center">
+            <div className="flex items-center gap-5">
+              <span className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-site-ink/10 text-site-ink">
+                <FaHeart className="h-6 w-6" />
+              </span>
               <div>
-                <h3 className="font-serif text-2xl sm:text-3xl font-extrabold">
+                <h3 className="font-archivo text-[clamp(24px,3vw,34px)] font-bold leading-[1.15] tracking-[-0.02em]">
                   {bn ? 'পরিবর্তনের অংশ হন' : 'Be a Part of Change'}
                 </h3>
-                <p className="mt-1 font-sans text-sm sm:text-base text-white/90">
+                <p className="mt-2 font-dmsans text-[15.5px] leading-[1.7] text-[#3b3413]">
                   {bn
                     ? 'আপনার সহায়তা একটি সুন্দর আগামী উপহার দিতে পারে।'
                     : 'Your support can bring hope and create a better tomorrow.'}
@@ -460,18 +410,11 @@ export default function About() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <Link
-                to="/volunteer"
-                className="inline-flex items-center gap-2 rounded-full border-2 border-white px-6 py-3 font-sans text-sm font-bold text-white transition-all hover:bg-white/10"
-              >
+            <div className="flex shrink-0 flex-wrap items-center gap-3">
+              <Link to="/volunteer" className="btn-ghost-dark">
                 <span>{bn ? 'স্বেচ্ছাসেবক হিসেবে যোগ দিন' : 'Join as Volunteer'}</span>
               </Link>
-              <Link
-                to="/donate"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-sans text-sm font-bold shadow-md transition-all hover:bg-amber-50"
-                style={{ color: BRAND }}
-              >
+              <Link to="/donate" className="btn-green">
                 <span>{bn ? 'এখনই দান করুন' : 'Donate Now'}</span>
               </Link>
             </div>
