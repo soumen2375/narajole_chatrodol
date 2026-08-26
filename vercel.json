@@ -46,7 +46,7 @@
   "crons": [
     {
       "path": "/api/reconcile-stale-payments",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 2 * * *"
     }
   ]
 }
