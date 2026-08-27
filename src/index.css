@@ -620,6 +620,35 @@ input[type=number] {
     rgba(8, 50, 35, 0.95) 100%
   );
 }
+/* Taller copy leaves no clear photo above it on a phone, so the whole
+   column has to carry text. */
+.page-hero-scrim--strong {
+  background: linear-gradient(
+    180deg,
+    rgba(11, 66, 45, 0.4) 0%,
+    rgba(10, 60, 41, 0.52) 22%,
+    rgba(9, 56, 38, 0.78) 48%,
+    rgba(8, 52, 36, 0.9) 72%,
+    rgba(8, 50, 35, 0.95) 100%
+  );
+}
+/* Foot of the photo heroes: the deep green lifts toward white so the hero
+   resolves into the pale section under it instead of ending on a hard edge.
+   Kept off the copy — it only ramps up below the text block. */
+.page-hero-scrim::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 42%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(233, 243, 234, 0.13) 54%,
+    rgba(255, 255, 255, 0.34) 100%
+  );
+  pointer-events: none;
+}
+
 .page-hero-photo {
   object-position: 50% 22%;
 }

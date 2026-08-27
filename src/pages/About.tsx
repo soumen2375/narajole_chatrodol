@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useT } from '@/i18n';
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import { PageHero } from './_field-journal';
 import { useSEO } from '@/hooks/useSEO';
 import { SEO } from '@/data/seoConfig';
 import {
@@ -134,63 +135,49 @@ export default function About() {
       <Breadcrumb title={bn ? 'আমাদের কথা' : 'About Us'} />
 
       {/* ─────────────────── 1. HERO SECTION ─────────────────── */}
-      <section className="page-hero px-5 pb-16 pt-14 sm:px-8 md:pb-[86px] md:pt-[76px]">
-        <div className="mx-auto grid w-full max-w-site grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
-          {/* Left Content */}
-          <div className="lg:col-span-6">
-            <h1 className="h-display text-white">
-              {bn ? (
-                <>
-                  সাত বছরের পথচলা <br />
-                  একটি ছোট ভাবনা থেকে <br />
-                  <span className="text-site-yellow">রেজিস্টার্ড ট্রাস্ট।</span>
-                </>
-              ) : (
-                <>
-                  Seven Years of Journey <br />
-                  From a Small Idea to a <br />
-                  <span className="text-site-yellow">Registered Trust.</span>
-                </>
-              )}
-            </h1>
-
-            <p className="mt-5 max-w-xl font-dmsans text-[16px] leading-[1.8] text-white/70">
-              {bn
-                ? '২০১৯ সালে একদল ছাত্রছাত্রীর ভাবনায় জন্ম নিয়েছিল এই ছাত্রদল। আজ আমরা একটি পাবলিক চ্যারিটেবল ট্রাস্ট — পশ্চিম মেদিনীপুরের প্রান্তিক মানুষের পাশে নিরলসভাবে দাঁড়াই।'
-                : 'In 2019, Chhatradol was born from the vision of a group of students. Today we are a public charitable trust — standing steadfastly beside the marginalised people of Paschim Medinipur.'}
-            </p>
-
-            <div className="mt-9 flex flex-wrap items-center gap-4">
-              <Link to="/events" className="btn-yellow">
-                <span>{bn ? 'আমাদের গল্প' : 'Our Story'}</span>
-                <FaArrowRight className="h-3 w-3" />
-              </Link>
-              <Link to="/gallery" className="btn-ghost-light">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-site-yellow text-site-ink">
-                  <FaPlay className="h-2.5 w-2.5 translate-x-[1px]" />
-                </span>
-                <span>{bn ? 'ভিডিও দেখুন' : 'Watch Our Journey'}</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Right Hero Image — concentric medallion */}
-          <div className="lg:col-span-6">
-            <div className="relative mx-auto w-full max-w-[440px] p-6">
-              <div className="about-ring flex aspect-square w-full rounded-full p-4">
-                <div className="flex-1 overflow-hidden rounded-full">
-                  <img
-                    src="/assets/images/about/about.jpg"
-                    alt="Chhatradol Students and Volunteers"
-                    className="h-full w-full rounded-full object-cover"
-                    onError={onImgErr}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+      <PageHero
+        title={
+          bn ? (
+            <>
+              সাত বছরের পথচলা <br />
+              একটি ছোট ভাবনা থেকে <br />
+              <span className="text-site-yellow">রেজিস্টার্ড ট্রাস্ট।</span>
+            </>
+          ) : (
+            <>
+              Seven Years of Journey <br />
+              From a Small Idea to a <br />
+              <span className="text-site-yellow">Registered Trust.</span>
+            </>
+          )
+        }
+        lede={
+          bn
+            ? '২০১৯ সালে একদল ছাত্রছাত্রীর ভাবনায় জন্ম নিয়েছিল এই ছাত্রদল। আজ আমরা একটি পাবলিক চ্যারিটেবল ট্রাস্ট — পশ্চিম মেদিনীপুরের প্রান্তিক মানুষের পাশে নিরলসভাবে দাঁড়াই।'
+            : 'In 2019, Chhatradol was born from the vision of a group of students. Today we are a public charitable trust — standing steadfastly beside the marginalised people of Paschim Medinipur.'
+        }
+        titleClassName="text-[26px] sm:text-[clamp(36px,4.4vw,58px)]"
+        image="/assets/images/about/about-hero.jpg"
+        imageAlt={
+          bn
+            ? 'নাড়াজোল ছাত্রদলের স্বেচ্ছাসেবক ও গ্রামের শিশুরা'
+            : 'Chhatradol volunteers with children at a distribution drive'
+        }
+        scrim="strong"
+      >
+        <div className="mt-8 flex flex-wrap items-center gap-3 sm:mt-9 sm:gap-4">
+          <Link to="/events" className="btn-yellow">
+            <span>{bn ? 'আমাদের গল্প' : 'Our Story'}</span>
+            <FaArrowRight className="h-3 w-3" />
+          </Link>
+          <Link to="/gallery" className="btn-ghost-light">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-site-yellow text-site-ink">
+              <FaPlay className="h-2.5 w-2.5 translate-x-[1px]" />
+            </span>
+            <span>{bn ? 'ভিডিও দেখুন' : 'Watch Our Journey'}</span>
+          </Link>
         </div>
-      </section>
+      </PageHero>
 
       {/* ─────────────────── 2. MISSION / VISION / VALUES ─────────────────── */}
       <section className="site-section">

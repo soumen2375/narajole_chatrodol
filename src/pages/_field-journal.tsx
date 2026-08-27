@@ -128,6 +128,8 @@ export function PageHero({
   lede,
   image,
   imageAlt = '',
+  titleClassName = '',
+  scrim = 'soft',
   children,
 }: {
   eyebrow?: string;
@@ -136,12 +138,20 @@ export function PageHero({
   /** Optional photo behind the hero — a green scrim keeps the text readable. */
   image?: string;
   imageAlt?: string;
+  /** Extra classes on the h1 — for headlines that need a smaller phone size. */
+  titleClassName?: string;
+  /** 'strong' darkens the phone scrim, for heroes whose copy fills the frame. */
+  scrim?: 'soft' | 'strong';
   children?: React.ReactNode;
 }) {
   return (
     <section
       className={`page-hero relative overflow-hidden px-5 pb-14 pt-14 sm:px-8 md:pb-[86px] md:pt-[76px] ${
-        image ? 'flex min-h-[470px] items-end md:min-h-[500px] md:items-center' : ''
+        image
+          ? `flex items-end md:items-center md:min-h-[500px] ${
+              scrim === 'strong' ? 'min-h-[560px]' : 'min-h-[470px]'
+            }`
+          : ''
       }`}
     >
       {image && (
@@ -152,7 +162,10 @@ export function PageHero({
             className="page-hero-photo absolute inset-0 h-full w-full object-cover"
           />
           {/* Green scrim: near-solid over the copy, clearing towards the photo */}
-          <div className="page-hero-scrim absolute inset-0" aria-hidden="true" />
+          <div
+            className={`page-hero-scrim absolute inset-0 ${scrim === 'strong' ? 'page-hero-scrim--strong' : ''}`}
+            aria-hidden="true"
+          />
         </>
       )}
       <div className="relative mx-auto w-full max-w-site">
@@ -164,7 +177,7 @@ export function PageHero({
             <div className="eyebrow-light">{eyebrow}</div>
           </div>
         )}
-        <h1 className="h-display mt-4 max-w-4xl text-white" style={SERIF_BN}>{title}</h1>
+        <h1 className={`h-display mt-4 max-w-4xl text-white ${titleClassName}`} style={SERIF_BN}>{title}</h1>
         {lede && (
           <p
             className={`mt-4 font-dmsans text-[13.5px] leading-[1.7] text-white/85 sm:text-[15px] sm:leading-[1.75] md:text-[16px] md:leading-[1.8] ${

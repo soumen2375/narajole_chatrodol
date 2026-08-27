@@ -87,79 +87,48 @@ function Hero() {
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-site-green px-5 pb-16 pt-12 sm:px-8 md:pb-24 md:pt-16"
+      className="relative flex min-h-[560px] w-full items-end overflow-hidden bg-site-green px-5 pb-16 pt-12 sm:px-8 md:min-h-[520px] md:items-center md:pb-24 md:pt-16"
       style={{ borderRadius: '0 0 56px 56px' }}
     >
-      <div className="mx-auto grid w-full max-w-site items-center gap-12 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
-          <div>
+      {/* Photo background — same scrim system as the Donate and About heroes */}
+      <img
+        src="/assets/images/home-hero.jpg"
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover"
+        style={{ objectPosition: '60% 30%' }}
+      />
+      <div
+        className="page-hero-scrim page-hero-scrim--strong absolute inset-0"
+        aria-hidden="true"
+      />
+
+      <div className="relative mx-auto w-full max-w-site">
+          <div className="max-w-[620px]">
             {/* Eyebrow Tagline */}
             <div className="inline-flex items-center gap-2 font-dmsans text-[13px] font-bold uppercase tracking-[0.18em] text-site-yellow">
               <span>— Unity • Education • Progress</span>
             </div>
 
             {/* Main Headline */}
-            <h1 className="mt-5 font-archivo text-[clamp(40px,4.6vw,62px)] font-bold leading-[1.08] tracking-[-0.025em] text-white [text-wrap:balance]">
+            <h1 className="mt-5 font-archivo text-[clamp(34px,4.6vw,62px)] font-bold leading-[1.08] tracking-[-0.025em] text-white [text-wrap:balance]">
               {bn ? 'একসাথে, আমরা গড়ি এক সুন্দর আগামী।' : 'Together, we build a better tomorrow.'}
             </h1>
 
             {/* Subtitle */}
-            <p className="mt-6 max-w-[470px] font-dmsans text-[16px] leading-[1.8] text-white/70">
+            <p className="mt-5 max-w-[470px] font-dmsans text-[14px] leading-[1.75] text-white/85 sm:mt-6 sm:text-[16px] sm:leading-[1.8]">
               {bn
                 ? 'শিক্ষা, স্বাস্থ্যসেবা, পরিবেশ এবং সামাজিক উন্নয়নের মাধ্যমে সমাজকে আরও শক্তিশালী ও আলোকিত করে তোলাই ছাত্রদলের মূল লক্ষ্য।'
                 : 'Chhatradol SWO is dedicated to social welfare, education, healthcare, and community development for a stronger and brighter society.'}
             </p>
 
             {/* CTA Buttons */}
-            <div className="mt-9 flex flex-col items-stretch gap-3.5 sm:flex-row sm:items-center sm:gap-4">
+            <div className="mt-8 flex flex-col items-stretch gap-3.5 sm:mt-9 sm:flex-row sm:items-center sm:gap-4">
               <Link to="/donate" className="btn-yellow font-bengali">
                 {bn ? 'দান করুন' : 'Donate Now'}
               </Link>
               <Link to="/events" className="btn-ghost-light font-bengali">
                 {bn ? 'আমাদের কার্যক্রম ➔' : 'Explore Our Work ➔'}
               </Link>
-            </div>
-          </div>
-
-          {/* Concentric-circle photo medallion:
-              thin outline arc → sand ring → deeper sand ring → photo,
-              with sand circles orbiting behind it. */}
-          <div className="relative mx-auto flex aspect-square w-full max-w-[440px] items-center justify-center">
-            {/* Orbiting sand circles */}
-            <span
-              aria-hidden="true"
-              className="absolute right-[2%] top-[2%] h-[16%] w-[16%] rounded-full bg-site-sand-3 opacity-80"
-            />
-            <span
-              aria-hidden="true"
-              className="absolute bottom-[6%] right-[-2%] h-[19%] w-[19%] rounded-full bg-site-sand-3 opacity-70"
-            />
-            <span
-              aria-hidden="true"
-              className="absolute bottom-[10%] left-[-1%] h-[12%] w-[12%] rounded-full bg-site-sand-3 opacity-60"
-            />
-
-            {/* Thin outline arc */}
-            <span
-              aria-hidden="true"
-              className="absolute inset-0 rounded-full border-2 border-site-sand/45"
-            />
-            <span
-              aria-hidden="true"
-              className="absolute inset-[5%] rounded-full border border-site-sand/30"
-            />
-
-            {/* Solid concentric rings + photo */}
-            <div className="relative flex aspect-square w-[86%] rounded-full bg-site-sand p-[6%]">
-              <div className="flex flex-1 rounded-full bg-site-sand-2 p-[5%]">
-                <div className="flex-1 overflow-hidden rounded-full bg-[#eef4e7]">
-                  <img
-                    src="/assets/images/Chhatradol4.jpg"
-                    alt="Chhatradol SWO Team"
-                    className="h-full w-full rounded-full object-cover"
-                    onError={onImgErr}
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </div>
