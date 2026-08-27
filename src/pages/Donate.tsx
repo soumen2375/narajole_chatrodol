@@ -390,7 +390,10 @@ export default function Donate() {
       }
 
       // Online Gateway Flow — wrap in 90s timeout to prevent infinite processing
-      const PAYMENT_TIMEOUT_MS = 90_000;
+      // Must exceed the gateway polling window in src/lib/cashfree.ts (~3 min),
+      // or this race aborts a payment that is still legitimately being approved
+      // in the donor's UPI app.
+      const PAYMENT_TIMEOUT_MS = 200_000;
       const paymentPromise = startPayment({
         gateway,
         action: 'create_donation_order',

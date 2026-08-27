@@ -396,8 +396,12 @@ export async function startCashfreePayment(
   const cashfree = window.Cashfree({ mode });
 
   // ── Max polling constants ──────────────────────────────────────────────────
-  const MAX_VERIFY_ATTEMPTS = 10;
-  const VERIFY_POLL_MS = 3000;
+  // Real payments on this account settle in 42-49s because UPI *collect*
+  // waits for the donor to approve the request inside their UPI app. The old
+  // 10 x 3s window (~30s) expired first, so a payment that was about to
+  // succeed surfaced to the donor as a failure. Wait ~3 minutes instead.
+  const MAX_VERIFY_ATTEMPTS = 45;
+  const VERIFY_POLL_MS = 4000;
 
   // ── Open the Cashfree checkout (modal on desktop, full-page on mobile/webviews) ──
   const checkoutResult = await cashfree.checkout({

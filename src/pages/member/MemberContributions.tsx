@@ -574,7 +574,8 @@ export default function MemberContributions() {
       }
 
       // Online Gateway Flow — protected with 90s timeout guard to prevent infinite processing
-      const PAYMENT_TIMEOUT_MS = 90_000;
+      // Must exceed the gateway polling window in src/lib/cashfree.ts (~3 min).
+      const PAYMENT_TIMEOUT_MS = 200_000;
       const paymentPromise = startPayment({
         gateway,
         action: 'create_contribution_order',
@@ -628,7 +629,8 @@ export default function MemberContributions() {
     // Set all pending months as active/paying in local UI
     setPayingMonths(new Set(unpaidDueMonths));
     try {
-      const PAYMENT_TIMEOUT_MS = 90_000;
+      // Must exceed the gateway polling window in src/lib/cashfree.ts (~3 min).
+      const PAYMENT_TIMEOUT_MS = 200_000;
       const paymentPromise = startPayment({
         gateway,
         action: 'create_contribution_order',

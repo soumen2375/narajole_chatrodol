@@ -29,8 +29,25 @@ interface VerifiedOrderData {
   type?: 'donation' | 'contribution';
 }
 
-const MAX_POLL_ATTEMPTS = 10;
-const POLL_INTERVAL_MS = 3000;
+/**
+ * How long to keep waiting for the gateway to confirm.
+ *
+ * This used to be 10 tries at 3s — about 30 seconds. Real payments on this
+ * account settle in 42-49 seconds, because UPI *collect* sends a request to
+ * the donor's UPI app and waits for them to approve it there. So the page
+ * gave up before the money landed and showed "Verification Timed Out", while
+ * the webhook quietly marked the very same payment paid moments later. The
+ * donor was told their payment failed when it had in fact succeeded.
+ *
+ * Three minutes comfortably covers an approval done at human speed, and the
+ * abandoned-checkout case exits early via `payment_attempted` rather than
+ * sitting here, so nobody waits the full window without reason.
+ */
+const POLL_DEADLINE_MS = 180_000;
+/** Tight at first for card/netbanking, easing off for a slow UPI approval. */
+const FAST_PHASE_MS = 30_000;
+const FAST_INTERVAL_MS = 2000;
+const SLOW_INTERVAL_MS = 5000;
 
 /** Brand palette for the celebration — teal, green, gold, cream. */
 const CELEBRATION_COLORS = ['#0c756f', '#00a35c', '#f5c518', '#f8b400', '#fdfcf5'];
@@ -129,6 +146,10 @@ export default function PaymentReturn() {
     let attempts = 0;
     let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
     let stopCelebration: (() => void) | null = null;
+    const startedAt = Date.now();
+    const elapsed = () => Date.now() - startedAt;
+    const nextDelay = () =>
+      elapsed() < FAST_PHASE_MS ? FAST_INTERVAL_MS : SLOW_INTERVAL_MS;
 
     async function checkPayment(): Promise<void> {
       if (!isMounted) return;
@@ -197,23 +218,23 @@ export default function PaymentReturn() {
         }
 
         // Still pending — retry if within limit
-        if (attempts >= MAX_POLL_ATTEMPTS) {
+        if (elapsed() >= POLL_DEADLINE_MS) {
           setStatus('timeout');
           setErrorMessage(
             tr(
-              'আপনার পেমেন্ট স্বয়ংক্রিয়ভাবে নিশ্চিত করা সম্ভব হয়নি। পরবর্তীতে পেমেন্ট স্ট্যাটাস যাচাই করুন।',
-              'We could not automatically confirm your payment. Please check your payment status later.',
+              'আপনার পেমেন্ট স্বয়ংক্রিয়ভাবে নিশ্চিত করা সম্ভব হয়নি। টাকা কেটে থাকলে তা শীঘ্রই নিশ্চিত হয়ে যাবে এবং রসিদ ইমেলে পাঠানো হবে।',
+              'We could not confirm your payment automatically. If you were charged, it will still be confirmed shortly and your receipt will be emailed to you.',
             ),
           );
           return;
         }
 
         // Schedule next check
-        timeoutHandle = setTimeout(checkPayment, POLL_INTERVAL_MS);
+        timeoutHandle = setTimeout(checkPayment, nextDelay());
       } catch {
         if (!isMounted) return;
 
-        if (attempts >= MAX_POLL_ATTEMPTS) {
+        if (elapsed() >= POLL_DEADLINE_MS) {
           setStatus('timeout');
           setErrorMessage(
             tr(
@@ -225,7 +246,7 @@ export default function PaymentReturn() {
         }
 
         // Retry on network error
-        timeoutHandle = setTimeout(checkPayment, POLL_INTERVAL_MS);
+        timeoutHandle = setTimeout(checkPayment, nextDelay());
       }
     }
 
@@ -260,8 +281,8 @@ export default function PaymentReturn() {
               </p>
               <p className="text-[11px] text-site-faint">
                 {tr(
-                  `যাচাই চেষ্টা: ${Math.min(0, MAX_POLL_ATTEMPTS)}/10`,
-                  `Checking... (up to ${MAX_POLL_ATTEMPTS} attempts)`,
+                  'UPI অ্যাপে অনুমোদন করে থাকলে নিশ্চিত হতে এক মিনিট পর্যন্ত সময় লাগতে পারে। এই পেজটি বন্ধ করবেন না।',
+                  'If you are approving this in your UPI app, confirmation can take up to a minute. Please keep this page open.',
                 )}
               </p>
             </div>
