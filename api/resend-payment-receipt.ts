@@ -17,7 +17,7 @@
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import { createClient } from '@supabase/supabase-js';
-import { sendPaymentReceipt } from './_lib/payment-receipt';
+import { sendPaymentReceipt } from './_lib/payment-receipt.js';
 import fs from 'node:fs';
 import path from 'node:path';
 

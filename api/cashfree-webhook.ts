@@ -14,8 +14,8 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { finalizePayment } from './_lib/finalize-payment';
-import { sendPaymentReceipt } from './_lib/payment-receipt';
+import { finalizePayment } from './_lib/finalize-payment.js';
+import { sendPaymentReceipt } from './_lib/payment-receipt.js';
 
 function sendJson(res: ServerResponse, statusCode: number, data: unknown) {
   res.setHeader('Content-Type', 'application/json');

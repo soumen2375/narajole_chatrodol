@@ -18,7 +18,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { normalizePaymentStatus } from './payment-status';
+import { normalizePaymentStatus } from './payment-status.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';

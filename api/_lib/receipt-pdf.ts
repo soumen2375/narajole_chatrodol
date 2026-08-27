@@ -39,7 +39,7 @@ import {
   IMG_ICON_PHONE,
   IMG_ICON_MAIL,
   IMG_ICON_WEB,
-} from './receipt-assets';
+} from './receipt-assets.js';
 
 // ── Brand palette (from the approved design) ─────────────────────────────────
 

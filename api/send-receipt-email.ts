@@ -11,7 +11,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
 import path from 'node:path';
-import { generateReceiptPdfBase64, receiptFileName } from './_lib/receipt-pdf';
+import { generateReceiptPdfBase64, receiptFileName } from './_lib/receipt-pdf.js';
 
 // ── Optional Supabase client (for in-app notification logging) ────────────────
 function getSupabaseClient() {

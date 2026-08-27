@@ -10,8 +10,8 @@
  */
 
 import type { IncomingMessage, ServerResponse } from 'http';
-import { finalizePayment } from './_lib/finalize-payment';
-import { sendPaymentReceipt } from './_lib/payment-receipt';
+import { finalizePayment } from './_lib/finalize-payment.js';
+import { sendPaymentReceipt } from './_lib/payment-receipt.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -181,6 +181,8 @@ export default async function handler(
     let paymentId: string | undefined;
     let paymentMethod = 'Cashfree Payments';
     let rawStatus = orderData.order_status || 'PENDING';
+    /** Whether the donor ever actually attempted a payment on this order. */
+    let paymentAttempted = orderData.order_status === 'PAID';
 
     // ── Always resolve the real payment id from the payments list ──────────
     //
@@ -211,6 +213,15 @@ export default async function handler(
           cf_payment_id?: string;
           payment_group?: string;
         }>;
+
+        if (Array.isArray(pList)) {
+          // Distinguishes "the donor never got as far as paying" from "we
+          // could not confirm a payment". An order sits at ACTIVE with an
+          // empty payments list when checkout was opened but abandoned —
+          // telling that donor verification timed out wrongly implies our
+          // system lost their money, when in fact nothing was ever charged.
+          paymentAttempted = pList.length > 0;
+        }
 
         if (Array.isArray(pList) && pList.length > 0) {
           // An order can carry several attempts (e.g. one USER_DROPPED then
@@ -289,6 +300,7 @@ export default async function handler(
       payment_method: paymentMethod,
       order_amount: orderData.order_amount,
       order_currency: orderData.order_currency,
+      payment_attempted: paymentAttempted,
       // Include type and receipt_number so frontend can display them
       type: result.type,
       receipt_number:

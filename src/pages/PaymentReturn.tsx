@@ -151,6 +151,7 @@ export default function PaymentReturn() {
           order_currency?: string;
           receipt_number?: string;
           type?: 'donation' | 'contribution';
+          payment_attempted?: boolean;
         };
 
         if (!isMounted) return;
@@ -182,6 +183,16 @@ export default function PaymentReturn() {
 
         if (payStatus === 'cancelled' || payStatus === 'expired') {
           setStatus(payStatus === 'expired' ? 'cancelled' : 'cancelled');
+          return;
+        }
+
+        // The gateway recorded no payment attempt at all on this order — the
+        // donor opened checkout and left without paying. Nothing was charged,
+        // so stop polling and say that plainly instead of spending 30s
+        // implying we mislaid a payment. Confirmed over a few polls first, in
+        // case the gateway's payment list lags the redirect by a moment.
+        if (data.payment_attempted === false && attempts >= 3) {
+          setStatus('cancelled');
           return;
         }
 

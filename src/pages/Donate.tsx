@@ -493,7 +493,7 @@ export default function Donate() {
             </span>
           </>
         }
-        image="/assets/images/donate-hero.jpg"
+        image="/assets/images/service/donate-hero2.jpg"
         imageAlt={tr('ত্রাণ সামগ্রী হাতে একটি শিশু', 'A child holding a relief kit at a Chhatradol distribution')}
       >
         <p className="mt-5 flex items-center gap-2.5 font-dmsans text-[12px] font-medium text-white/80 sm:mt-6 sm:text-[13.5px]">
