@@ -144,7 +144,16 @@ export default function Footer() {
             © {year} Chhatradol SWO. All rights reserved.
           </span>
           <span className="flex items-center gap-1.5 font-dmsans text-[13px] font-medium text-white/60">
-            Powered By <FaHeart className="h-3 w-3 text-site-red" /> Riknova Technology
+            Powered By <FaHeart className="h-3 w-3 text-site-red" />
+            <a
+              href="https://wa.me/919749852865"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Chat with Riknova Technology on WhatsApp"
+              className="underline-offset-2 transition-colors hover:text-white hover:underline"
+            >
+              Riknova Technology
+            </a>
           </span>
         </div>
       </div>

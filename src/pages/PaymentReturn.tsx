@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { PageShell } from './_field-journal';
 import { useT } from '@/i18n';
@@ -126,9 +126,32 @@ export default function PaymentReturn() {
     searchParams.get('orderId') ||
     '';
 
+  const navigate = useNavigate();
   const [status, setStatus] = useState<PaymentStatus>('verifying');
   const [orderData, setOrderData] = useState<VerifiedOrderData | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  /**
+   * Whether this order was a member's monthly dues rather than a public
+   * donation. Tracked separately from `orderData` because that is only
+   * populated on success, and the retry destination matters most when the
+   * payment did NOT go through — a member who fails a dues payment was
+   * previously dropped on the public /donate page with no way back.
+   */
+  const [isContribution, setIsContribution] = useState(false);
+
+  // A failed / cancelled / abandoned dues payment sends the member straight
+  // back to /member/contributions, where their months and the retry button
+  // are. The short delay leaves time to read what went wrong first.
+  useEffect(() => {
+    if (!isContribution) return;
+    if (status !== 'failed' && status !== 'cancelled' && status !== 'timeout') return;
+
+    const timer = setTimeout(() => {
+      navigate('/member/contributions', { replace: true });
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [isContribution, status, navigate]);
 
   useEffect(() => {
     if (!orderId) {
@@ -178,6 +201,8 @@ export default function PaymentReturn() {
         if (!isMounted) return;
 
         const payStatus = data.status || (data.success ? 'paid' : 'pending');
+
+        if (data.type) setIsContribution(data.type === 'contribution');
 
         if (payStatus === 'paid') {
           setOrderData({
@@ -418,11 +443,18 @@ export default function PaymentReturn() {
               </div>
               <div className="pt-2">
                 <Link
-                  to="/donate"
+                  to={isContribution ? '/member/contributions' : '/donate'}
                   className="inline-flex items-center justify-center gap-2 rounded-soft bg-[#0c756f] text-white px-5 py-2.5 text-xs sm:text-sm font-bold hover:bg-[#095753] transition-all"
                 >
-                  {tr('আবার চেষ্টা করুন', 'Try Donating Again')}
+                  {isContribution
+                    ? tr('আমার মাসিক চাঁদায় ফিরুন', 'Back to My Monthly Donation')
+                    : tr('আবার চেষ্টা করুন', 'Try Donating Again')}
                 </Link>
+                {isContribution && (
+                  <p className="mt-2 text-[11px] text-site-faint">
+                    {tr('আপনাকে ফিরিয়ে নেওয়া হচ্ছে…', 'Taking you back…')}
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -447,11 +479,18 @@ export default function PaymentReturn() {
               </div>
               <div className="pt-2">
                 <Link
-                  to="/donate"
+                  to={isContribution ? '/member/contributions' : '/donate'}
                   className="inline-flex items-center justify-center gap-2 rounded-soft bg-[#0c756f] text-white px-5 py-2.5 text-xs sm:text-sm font-bold hover:bg-[#095753] transition-all"
                 >
-                  {tr('আবার চেষ্টা করুন', 'Try Again')}
+                  {isContribution
+                    ? tr('আমার মাসিক চাঁদায় ফিরুন', 'Back to My Monthly Donation')
+                    : tr('আবার চেষ্টা করুন', 'Try Again')}
                 </Link>
+                {isContribution && (
+                  <p className="mt-2 text-[11px] text-site-faint">
+                    {tr('আপনাকে ফিরিয়ে নেওয়া হচ্ছে…', 'Taking you back…')}
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -481,10 +520,12 @@ export default function PaymentReturn() {
               </div>
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                 <Link
-                  to="/donate"
+                  to={isContribution ? '/member/contributions' : '/donate'}
                   className="inline-flex items-center justify-center gap-2 rounded-soft bg-[#0c756f] text-white px-5 py-2.5 text-xs sm:text-sm font-bold hover:bg-[#095753] transition-all"
                 >
-                  {tr('হোমপেজে ফিরুন', 'Back to Home')}
+                  {isContribution
+                    ? tr('আমার মাসিক চাঁদায় ফিরুন', 'Back to My Monthly Donation')
+                    : tr('হোমপেজে ফিরুন', 'Back to Home')}
                 </Link>
               </div>
             </div>

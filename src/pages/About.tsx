@@ -56,6 +56,16 @@ export default function About() {
       img: '/assets/images/about/members/soumen.jpg',
     },
     {
+      name: bn ? 'বিশ্বজিৎ সাউ' : 'Biswajit Sou',
+      role: bn ? 'সদস্য' : 'Member',
+      img: '/assets/images/about/members/biswajit.jpg',
+    },
+    {
+      name: bn ? 'বিষ্ণুপদ দাস' : 'Bishnupada Das',
+      role: bn ? 'সদস্য' : 'Member',
+      img: '/assets/images/about/members/bishnupada.jpg',
+    },
+    {
       name: bn ? 'শুভদীপ ঘোড়াই' : 'Subhadip Ghorai',
       role: bn ? 'সদস্য' : 'Member',
       img: '/assets/images/about/members/subhadip.jpg',
