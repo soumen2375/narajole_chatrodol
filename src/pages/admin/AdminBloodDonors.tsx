@@ -1,24 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, Phone, MapPin, AlertTriangle } from 'lucide-react';
+import { Search, Phone, MapPin, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import DonorDetailModal from '@/components/blood/DonorDetailModal';
+import {
+  buildDonorProfiles, normalizeDonorRows, DONOR_SELECT, ELIGIBILITY_MONTHS,
+  type DonorProfile,
+} from '@/lib/bloodDonors';
 
 // ════════════════════════════════════════════════════════════════
-//  AdminBloodDonors — global registry across all blood camps
+//  AdminBloodDonors — one row per person across every blood camp.
+//  Urgent search narrows by group; the eligibility filter hides
+//  anyone who donated within the last 3 months. Click a row for the
+//  full record and the donor's camp-by-camp history.
 // ════════════════════════════════════════════════════════════════
-
-interface Donor {
-  id: string; donor_code: string; name: string; age: number | null;
-  gender: string; blood_group: string; phone: string; email: string;
-  address: string; status: string; units: number;
-  last_donation: string | null; created_at: string;
-  event?: { title: string; event_date: string } | null;
-}
 
 const TEAL   = '#0c756f';
 const RED    = '#b91c1c';
+const GREEN  = '#15803d';
 const INK    = '#1c1917';
 const INK2   = '#44403c';
 const MUTED  = '#78716c';
@@ -26,7 +27,7 @@ const RULE   = '#e7e5e4';
 const PAPER  = '#ffffff';
 const CREAM  = '#faf8f5';
 
-const BLOOD_GROUPS = ['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 const BG_COLORS: Record<string, string> = {
   'A+':'#dc2626','A-':'#b91c1c','B+':'#1d4ed8','B-':'#1e40af',
@@ -38,18 +39,21 @@ function BgBadge({ g }: { g: string }) {
   return <span className="rounded-full px-2 py-0.5 text-[11px] font-bold text-white" style={{ background: bg }}>{g || '?'}</span>;
 }
 
+type EligibilityFilter = 'all' | 'eligible' | 'waiting';
+
 export default function AdminBloodDonors() {
   const { lang } = useT();
   const fmt      = useFmt();
   const tr       = (en: string, bn: string) => (lang === 'en' ? en : bn);
 
-  const [donors,  setDonors]  = useState<Donor[]>([]);
+  const [donors,  setDonors]  = useState<DonorProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<DonorProfile | null>(null);
 
   /* filters */
   const [urgentGroup, setUrgentGroup] = useState('');
   const [filterGroup, setFilterGroup] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [eligFilter, setEligFilter]   = useState<EligibilityFilter>('all');
   const [search, setSearch]   = useState('');
   const [page, setPage]       = useState(0);
   const PER_PAGE = 25;
@@ -59,9 +63,9 @@ export default function AdminBloodDonors() {
       setLoading(true);
       const { data } = await supabase
         .from('cswo_blood_donors')
-        .select('*, event:cswo_events(title,event_date)')
+        .select(DONOR_SELECT)
         .order('created_at', { ascending: false });
-      setDonors((data ?? []) as Donor[]);
+      setDonors(buildDonorProfiles(normalizeDonorRows(data)));
       setLoading(false);
     })();
   }, []);
@@ -71,23 +75,30 @@ export default function AdminBloodDonors() {
     const grp = urgentGroup || filterGroup;
     return donors.filter((d) => {
       if (grp && d.blood_group !== grp) return false;
-      if (filterStatus && d.status !== filterStatus) return false;
-      if (q && !`${d.name} ${d.phone} ${d.address} ${d.donor_code}`.toLowerCase().includes(q)) return false;
+      if (eligFilter === 'eligible' && !d.eligible) return false;
+      if (eligFilter === 'waiting' && d.eligible) return false;
+      if (q && !`${d.name} ${d.phone} ${d.address} ${d.donor_code ?? ''} ${d.aadhar}`.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [donors, urgentGroup, filterGroup, filterStatus, search]);
+  }, [donors, urgentGroup, filterGroup, eligFilter, search]);
 
   const pages  = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const shown  = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
-  /* group counts (for urgent mode) */
+  /* group counts (for urgent mode) — total and eligible-right-now */
   const groupCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    donors.forEach((d) => { if (d.blood_group) counts[d.blood_group] = (counts[d.blood_group] ?? 0) + 1; });
+    const counts: Record<string, { total: number; eligible: number }> = {};
+    donors.forEach((d) => {
+      if (!d.blood_group) return;
+      const row = counts[d.blood_group] ?? (counts[d.blood_group] = { total: 0, eligible: 0 });
+      row.total += 1;
+      if (d.eligible) row.eligible += 1;
+    });
     return counts;
   }, [donors]);
 
-  const urgentMatches = urgentGroup ? filtered.length : 0;
+  const eligibleCount = useMemo(() => donors.filter((d) => d.eligible).length, [donors]);
+  const urgentEligible = urgentGroup ? filtered.filter((d) => d.eligible).length : 0;
 
   return (
     <div className="space-y-5">
@@ -100,7 +111,10 @@ export default function AdminBloodDonors() {
           {tr('Blood Donor Registry', 'রক্তদাতা তালিকা')}
         </h1>
         <p className="mt-1 text-[13px]" style={{ color: MUTED }}>
-          {tr('All donors across all blood donation camps. Use Urgent Search to find available donors by blood group.', 'সমস্ত রক্তদান শিবিরের সমস্ত দাতার তালিকা। জরুরি অনুসন্ধান ব্যবহার করে রক্তগ্রুপ অনুযায়ী দাতা খুঁজুন।')}
+          {tr(
+            `One entry per donor across all camps. Anyone who has not given blood in the last ${ELIGIBILITY_MONTHS} months counts as eligible. Click a row for the full record.`,
+            `সব শিবির মিলিয়ে প্রতি দাতার একটি এন্ট্রি। গত ${ELIGIBILITY_MONTHS} মাসে যিনি রক্ত দেননি তিনি যোগ্য। বিস্তারিত দেখতে সারিতে ক্লিক করুন।`,
+          )}
         </p>
       </div>
 
@@ -112,29 +126,34 @@ export default function AdminBloodDonors() {
             {tr('Urgent Blood Search', 'জরুরি রক্ত অনুসন্ধান')}
           </span>
           <span className="text-[12.5px]" style={{ color: MUTED }}>
-            {tr('Find available donors by blood group instantly', 'রক্তগ্রুপ দিয়ে উপলব্ধ দাতা খুঁজুন')}
+            {tr('Eligible donors first — the green number is who can donate today', 'যোগ্য দাতা আগে — সবুজ সংখ্যাটি আজ যারা দিতে পারবেন')}
           </span>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          {BLOOD_GROUPS.filter(Boolean).map((g) => {
-            const cnt = groupCounts[g] ?? 0;
+          {BLOOD_GROUPS.map((g) => {
+            const c = groupCounts[g] ?? { total: 0, eligible: 0 };
             const active = urgentGroup === g;
             return (
               <button key={g} onClick={() => { setUrgentGroup(active ? '' : g); setFilterGroup(''); setPage(0); }}
                 className="rounded-full px-3.5 py-2 text-[13px] font-bold transition-all"
                 style={{ background: active ? BG_COLORS[g] : '#fff', color: active ? '#fff' : BG_COLORS[g] ?? MUTED, border: `2px solid ${BG_COLORS[g] ?? MUTED}` }}>
-                {g} <span className="ml-1 font-mono text-[11px] opacity-80">({cnt})</span>
+                {g}{' '}
+                <span className="ml-1 font-mono text-[11px]" style={{ color: active ? '#bbf7d0' : GREEN }}>{fmt.num(c.eligible)}</span>
+                <span className="font-mono text-[11px] opacity-70">/{fmt.num(c.total)}</span>
               </button>
             );
           })}
         </div>
         {urgentGroup && (
           <div className="mt-3 rounded-[8px] p-3" style={{ background: '#fff', border: `1px solid #fecaca` }}>
-            <span className="font-semibold text-[14px]" style={{ color: RED }}>
-              {urgentMatches} {tr('donor(s) available with blood group', 'জন দাতা উপলব্ধ, রক্তগ্রুপ')} {urgentGroup}
+            <span className="font-semibold text-[14px]" style={{ color: GREEN }}>
+              {fmt.num(urgentEligible)} {tr('donor(s) can donate now', 'জন দাতা এখনই দিতে পারবেন')}
+            </span>
+            <span className="text-[13px]" style={{ color: MUTED }}>
+              {' '}({fmt.num(filtered.length)} {tr('total with group', 'জন মোট, গ্রুপ')} {urgentGroup})
             </span>
             <div className="mt-1 text-[12px]" style={{ color: MUTED }}>
-              {tr('Their contact details are listed in the table below.', 'নিচের তালিকায় তাদের যোগাযোগের তথ্য রয়েছে।')}
+              {tr('Switch the filter to “Eligible now” to hide donors still in their waiting period.', 'অপেক্ষমাণ দাতাদের লুকাতে ফিল্টার “এখন যোগ্য”-তে বদলান।')}
             </div>
           </div>
         )}
@@ -155,17 +174,18 @@ export default function AdminBloodDonors() {
           className="rounded-[8px] px-3 py-2 text-[13px] outline-none"
           style={{ border: `1px solid ${RULE}`, background: PAPER, color: INK2 }}>
           <option value="">{tr('All groups', 'সব গ্রুপ')}</option>
-          {BLOOD_GROUPS.filter(Boolean).map((g) => <option key={g} value={g}>{g}</option>)}
+          {BLOOD_GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
         </select>
-        {/* Status filter */}
-        <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}
-          className="rounded-[8px] px-3 py-2 text-[13px] outline-none"
-          style={{ border: `1px solid ${RULE}`, background: PAPER, color: INK2 }}>
-          <option value="">{tr('All statuses', 'সব অবস্থা')}</option>
-          {['registered','eligible','donated','rejected'].map((s) => <option key={s} value={s}>{s}</option>)}
+        {/* Eligibility filter */}
+        <select value={eligFilter} onChange={(e) => { setEligFilter(e.target.value as EligibilityFilter); setPage(0); }}
+          className="rounded-[8px] px-3 py-2 text-[13px] font-semibold outline-none"
+          style={{ border: `1px solid ${RULE}`, background: PAPER, color: eligFilter === 'eligible' ? GREEN : eligFilter === 'waiting' ? '#c2410c' : INK2 }}>
+          <option value="all">{tr('Everyone', 'সবাই')}</option>
+          <option value="eligible">{tr('Eligible now', 'এখন যোগ্য')}</option>
+          <option value="waiting">{tr('Waiting period', 'অপেক্ষমাণ')}</option>
         </select>
         <span className="font-mono text-[11px] ml-auto" style={{ color: MUTED }}>
-          {fmt.num(filtered.length)} {tr('donors', 'দাতা')}
+          {fmt.num(filtered.length)} {tr('donors', 'দাতা')} · <span style={{ color: GREEN }}>{fmt.num(eligibleCount)} {tr('eligible', 'যোগ্য')}</span>
         </span>
       </div>
 
@@ -178,8 +198,8 @@ export default function AdminBloodDonors() {
                 <tr style={{ background: CREAM }}>
                   {[
                     tr('Code', 'কোড'), tr('Name', 'নাম'), tr('Blood', 'রক্ত'),
-                    tr('Age', 'বয়স'), tr('Phone', 'ফোন'), tr('Address', 'ঠিকানা'),
-                    tr('Camp / Event', 'শিবির / অনুষ্ঠান'), tr('Status', 'অবস্থা'), tr('Times Donated', 'দানের সংখ্যা'),
+                    tr('Age/Sex', 'বয়স/লিঙ্গ'), tr('Mobile', 'মোবাইল'), tr('Address', 'ঠিকানা'),
+                    tr('Last donation', 'শেষ দান'), tr('Eligibility', 'যোগ্যতা'), tr('Camps', 'শিবির'),
                   ].map((h, i) => (
                     <th key={i} className="px-3 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: MUTED }}>{h}</th>
                   ))}
@@ -187,14 +207,18 @@ export default function AdminBloodDonors() {
               </thead>
               <tbody>
                 {shown.map((d) => (
-                  <tr key={d.id} className="hover:bg-stone-50 transition-colors" style={{ borderTop: `1px solid ${RULE}` }}>
+                  <tr key={d.key} onClick={() => setSelected(d)}
+                    className="cursor-pointer hover:bg-stone-50 transition-colors" style={{ borderTop: `1px solid ${RULE}` }}>
                     <td className="px-3 py-2.5 font-mono text-[11px]" style={{ color: MUTED }}>{d.donor_code || '—'}</td>
                     <td className="px-3 py-2.5 font-semibold" style={{ color: INK }}>{d.name}</td>
                     <td className="px-3 py-2.5"><BgBadge g={d.blood_group} /></td>
-                    <td className="px-3 py-2.5" style={{ color: INK2 }}>{d.age ?? '—'}</td>
+                    <td className="px-3 py-2.5" style={{ color: INK2 }}>
+                      {d.age != null ? fmt.num(d.age) : '—'}{d.gender ? ` / ${d.gender[0].toUpperCase()}` : ''}
+                    </td>
                     <td className="px-3 py-2.5">
                       {d.phone ? (
-                        <a href={`tel:${d.phone}`} className="inline-flex items-center gap-1 font-medium" style={{ color: TEAL }}>
+                        <a href={`tel:${d.phone}`} onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 font-medium" style={{ color: TEAL }}>
                           <Phone className="h-3 w-3" />{d.phone}
                         </a>
                       ) : '—'}
@@ -203,23 +227,28 @@ export default function AdminBloodDonors() {
                       {d.address ? <><MapPin className="mr-1 inline h-3 w-3" />{d.address}</> : '—'}
                     </td>
                     <td className="px-3 py-2.5 max-w-[160px]" style={{ color: INK2 }}>
-                      {d.event ? (
+                      {d.lastDonation ? (
                         <div>
-                          <div className="truncate font-medium" style={{ color: INK }}>{d.event.title}</div>
-                          <div className="font-mono text-[10px]" style={{ color: MUTED }}>{fmt.date(d.event.event_date)}</div>
+                          <div className="font-mono text-[11px]" style={{ color: INK }}>{fmt.date(d.lastDonation)}</div>
+                          <div className="truncate text-[11px]" style={{ color: MUTED }}>{d.donations[0]?.event_title || '—'}</div>
                         </div>
-                      ) : '—'}
+                      ) : <span style={{ color: MUTED }}>{tr('Never', 'কখনো নয়')}</span>}
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className="rounded-full px-2 py-0.5 text-[11px] capitalize"
+                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
                         style={{
-                          background: d.status === 'donated' ? '#dcfce7' : d.status === 'eligible' ? '#dbeafe' : d.status === 'rejected' ? '#fee2e2' : CREAM,
-                          color: d.status === 'donated' ? '#15803d' : d.status === 'eligible' ? '#1d4ed8' : d.status === 'rejected' ? RED : INK2,
+                          background: d.eligible ? '#dcfce7' : '#ffedd5',
+                          color: d.eligible ? GREEN : '#c2410c',
                         }}>
-                        {d.status}
+                        {d.eligible ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                        {d.eligible
+                          ? tr('Eligible', 'যোগ্য')
+                          : tr(`${d.daysToWait}d left`, `আর ${fmt.num(d.daysToWait)} দিন`)}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 text-center font-bold" style={{ color: d.units > 0 ? RED : MUTED }}>{d.units || '—'}</td>
+                    <td className="px-3 py-2.5 text-center font-bold" style={{ color: d.donationCount > 0 ? RED : MUTED }}>
+                      {d.donationCount > 0 ? fmt.num(d.donationCount) : '—'}
+                    </td>
                   </tr>
                 ))}
                 {shown.length === 0 && (
@@ -240,7 +269,7 @@ export default function AdminBloodDonors() {
                 ← {tr('Prev', 'আগে')}
               </button>
               <span className="font-mono text-[12px]" style={{ color: MUTED }}>
-                {tr('Page', 'পাতা')} {page + 1} / {pages}
+                {tr('Page', 'পাতা')} {fmt.num(page + 1)} / {fmt.num(pages)}
               </span>
               <button onClick={() => setPage((p) => Math.min(pages - 1, p + 1))} disabled={page === pages - 1}
                 className="rounded-full px-4 py-1.5 text-[12.5px] font-semibold disabled:opacity-40"
@@ -251,6 +280,8 @@ export default function AdminBloodDonors() {
           )}
         </>
       )}
+
+      {selected && <DonorDetailModal donor={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }

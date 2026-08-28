@@ -1,16 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Droplet, Search, Phone, MapPin, Calendar } from 'lucide-react';
+import { Droplet, Search, Phone, MapPin, Calendar, CheckCircle2, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
 import { useFmt } from '@/lib/format';
 import { ListSkeleton } from '@/components/ui/Skeleton';
+import DonorDetailModal from '@/components/blood/DonorDetailModal';
+import {
+  buildDonorProfiles, normalizeDonorRows, DONOR_SELECT, ELIGIBILITY_MONTHS,
+  type DonorProfile,
+} from '@/lib/bloodDonors';
 
 // ════════════════════════════════════════════════════════════════
-//  MemberBloodDonors — public blood donor registry (read-only)
+//  MemberBloodDonors — donor directory (read-only).
+//  One card per person, not per camp: rows from every camp are folded
+//  together so a donor's full history and their 3-month eligibility
+//  are visible at a glance. Tap a card for the full record.
 // ════════════════════════════════════════════════════════════════
 
 const BRAND  = '#0c756f';
 const RED    = '#b91c1c';
+const GREEN  = '#15803d';
 const INK    = '#1c1917';
 const INK2   = '#44403c';
 const MUTED  = '#78716c';
@@ -18,91 +27,60 @@ const RULE   = '#e5dec9';
 const CREAM  = '#faf8f5';
 const SERIF  = { fontFamily: '"Noto Serif Bengali", "Noto Sans Bengali", serif' };
 
-const BLOOD_GROUPS = ['', 'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] as const;
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] as const;
 
-interface BloodDonorPublic {
-  id: string;
-  name: string;
-  blood_group: string;
-  phone: string;
-  address: string;
-  last_donation: string | null;
-  status: string;
-  units: number;
-  event_id: string;
-  event_title?: string;
-  event_date?: string;
-  times_donated?: number;
-}
+type EligibilityFilter = 'all' | 'eligible' | 'waiting';
 
 export default function MemberBloodDonors() {
   const { lang } = useT();
   const fmt = useFmt();
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
 
-  const [donors, setDonors] = useState<BloodDonorPublic[]>([]);
+  const [donors, setDonors] = useState<DonorProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
+  const [eligFilter, setEligFilter] = useState<EligibilityFilter>('all');
+  const [selected, setSelected] = useState<DonorProfile | null>(null);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       const { data } = await supabase
         .from('cswo_blood_donors')
-        .select(`
-          id, name, blood_group, phone, address, last_donation, status, units, event_id,
-          event:cswo_events!event_id(title, event_date)
-        `)
-        .eq('status', 'donated')
-        .order('name');
-
-      type RawDonor = {
-        id: string; name: string; blood_group: string; phone: string; address: string;
-        last_donation: string | null; status: string; units: number; event_id: string;
-        event: { title: string; event_date: string }[] | null;
-      };
-
-      const raw = (data ?? []) as unknown as RawDonor[];
-
-      // Count times donated per name
-      const nameCount: Record<string, number> = {};
-      for (const d of raw) {
-        nameCount[d.name.toLowerCase()] = (nameCount[d.name.toLowerCase()] || 0) + 1;
-      }
-
-      const enriched: BloodDonorPublic[] = raw.map((d) => ({
-        ...d,
-        event_title: Array.isArray(d.event) && d.event[0] ? d.event[0].title : '—',
-        event_date:  Array.isArray(d.event) && d.event[0] ? d.event[0].event_date : '',
-        times_donated: nameCount[d.name.toLowerCase()] ?? 1,
-      }));
-
-      setDonors(enriched);
+        .select(DONOR_SELECT)
+        .order('created_at', { ascending: false });
+      setDonors(buildDonorProfiles(normalizeDonorRows(data)));
       setLoading(false);
     })();
   }, []);
-
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return donors.filter((d) => {
       if (groupFilter && d.blood_group !== groupFilter) return false;
-      if (q && !d.name.toLowerCase().includes(q) && !(d.address ?? '').toLowerCase().includes(q) && !(d.phone ?? '').includes(q)) return false;
+      if (eligFilter === 'eligible' && !d.eligible) return false;
+      if (eligFilter === 'waiting' && d.eligible) return false;
+      if (q && !`${d.name} ${d.phone} ${d.address}`.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [donors, search, groupFilter]);
+  }, [donors, search, groupFilter, eligFilter]);
 
-  // Blood group distribution
+  const eligibleCount = useMemo(() => donors.filter((d) => d.eligible).length, [donors]);
+
+  // Blood group distribution — eligible vs. waiting, per group.
   const groupCounts = useMemo(() => {
-    const map: Record<string, number> = {};
+    const map: Record<string, { total: number; eligible: number }> = {};
     for (const d of donors) {
-      if (d.blood_group) map[d.blood_group] = (map[d.blood_group] || 0) + 1;
+      if (!d.blood_group) continue;
+      const row = map[d.blood_group] ?? (map[d.blood_group] = { total: 0, eligible: 0 });
+      row.total += 1;
+      if (d.eligible) row.eligible += 1;
     }
-    return Object.entries(map).sort((a, b) => b[1] - a[1]);
+    return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
   }, [donors]);
 
-  const maxCount = groupCounts.length > 0 ? Math.max(...groupCounts.map(([, n]) => n)) : 1;
+  const maxCount = groupCounts.length > 0 ? Math.max(...groupCounts.map(([, v]) => v.total)) : 1;
 
   return (
     <div className="space-y-5">
@@ -115,36 +93,50 @@ export default function MemberBloodDonors() {
           {tr('Blood Donor Directory', 'রক্তদাতা পরিচিতি')}
         </h1>
         <p className="mt-1 text-[13px]" style={{ color: MUTED }}>
-          {tr('Members who have donated blood at our camps.', 'আমাদের শিবিরে রক্তদানকারী সদস্যগণ।')}
+          {tr(
+            `Everyone registered at our camps. A donor is eligible again ${ELIGIBILITY_MONTHS} months after their last donation — tap anyone for their full record.`,
+            `আমাদের শিবিরে নিবন্ধিত সবাই। শেষ রক্তদানের ${ELIGIBILITY_MONTHS} মাস পর একজন দাতা আবার যোগ্য হন — বিস্তারিত দেখতে যেকোনো দাতার উপর চাপ দিন।`,
+          )}
         </p>
       </div>
 
       {/* Blood group bar chart */}
       {groupCounts.length > 0 && (
         <div className="rounded-2xl border p-4" style={{ background: '#fff', borderColor: RULE }}>
-          <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: MUTED }}>
-            {tr('Donations by Blood Group', 'রক্তের গ্রুপ অনুযায়ী দান')}
-          </p>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest" style={{ color: MUTED }}>
+              {tr('Donors by Blood Group', 'রক্তের গ্রুপ অনুযায়ী দাতা')}
+            </p>
+            <p className="text-[11px]" style={{ color: MUTED }}>
+              <span className="inline-block h-2 w-2 rounded-full align-middle" style={{ background: GREEN }} />{' '}
+              {tr('eligible now', 'এখন যোগ্য')}
+            </p>
+          </div>
           <div className="space-y-2">
-            {groupCounts.map(([group, count]) => (
+            {groupCounts.map(([group, v]) => (
               <div key={group} className="flex items-center gap-3">
-                <span
-                  className="w-10 shrink-0 text-right font-mono text-[12px] font-bold"
-                  style={{ color: RED }}
-                >
+                <span className="w-10 shrink-0 text-right font-mono text-[12px] font-bold" style={{ color: RED }}>
                   {group}
                 </span>
-                <div className="flex-1 overflow-hidden rounded-full" style={{ background: CREAM, height: 14 }}>
+                <div className="relative flex-1 overflow-hidden rounded-full" style={{ background: CREAM, height: 14 }}>
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
-                      width: `${Math.round((count / maxCount) * 100)}%`,
+                      width: `${Math.round((v.total / maxCount) * 100)}%`,
                       background: `linear-gradient(90deg, ${RED}, #ef4444)`,
                     }}
                   />
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.round((v.eligible / maxCount) * 100)}%`,
+                      background: GREEN,
+                      opacity: 0.85,
+                    }}
+                  />
                 </div>
-                <span className="w-8 text-right font-mono text-[11px] font-semibold" style={{ color: INK2 }}>
-                  {count}
+                <span className="w-14 text-right font-mono text-[11px] font-semibold" style={{ color: INK2 }}>
+                  {fmt.num(v.eligible)}/{fmt.num(v.total)}
                 </span>
               </div>
             ))}
@@ -171,16 +163,42 @@ export default function MemberBloodDonors() {
           style={{ borderColor: RULE, color: INK2 }}
         >
           <option value="">{tr('All groups', 'সব গ্রুপ')}</option>
-          {BLOOD_GROUPS.filter(Boolean).map((g) => (
+          {BLOOD_GROUPS.map((g) => (
             <option key={g} value={g}>{g}</option>
           ))}
         </select>
+      </div>
+
+      {/* Eligibility toggle */}
+      <div className="flex flex-wrap gap-2">
+        {([
+          { k: 'all', label: tr('Everyone', 'সবাই'), color: INK2 },
+          { k: 'eligible', label: tr('Eligible now', 'এখন যোগ্য'), color: GREEN },
+          { k: 'waiting', label: tr('Waiting period', 'অপেক্ষমাণ'), color: '#c2410c' },
+        ] as const).map((o) => {
+          const active = eligFilter === o.k;
+          return (
+            <button
+              key={o.k}
+              onClick={() => setEligFilter(o.k)}
+              className="rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-all"
+              style={{
+                background: active ? o.color : '#fff',
+                color: active ? '#fff' : o.color,
+                border: `1.5px solid ${o.color}`,
+              }}
+            >
+              {o.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Stats row */}
       <div className="flex flex-wrap gap-4">
         {[
           { label: tr('Total donors', 'মোট দাতা'), value: donors.length, color: RED },
+          { label: tr('Eligible now', 'এখন যোগ্য'), value: eligibleCount, color: GREEN },
           { label: tr('Showing', 'দেখাচ্ছে'), value: filtered.length, color: BRAND },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border px-5 py-3" style={{ background: '#fff', borderColor: RULE }}>
@@ -203,10 +221,11 @@ export default function MemberBloodDonors() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((d) => (
-            <div
-              key={d.id}
-              className="rounded-2xl border p-4"
-              style={{ background: '#fff', borderColor: RULE }}
+            <button
+              key={d.key}
+              onClick={() => setSelected(d)}
+              className="rounded-2xl border p-4 text-left transition-shadow hover:shadow-md"
+              style={{ background: '#fff', borderColor: d.eligible ? 'rgba(21,128,61,0.35)' : RULE }}
             >
               <div className="flex items-start gap-3">
                 {/* Blood group badge */}
@@ -219,15 +238,28 @@ export default function MemberBloodDonors() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate font-bold" style={{ color: INK }}>{d.name}</p>
-                    {d.times_donated && d.times_donated > 1 && (
+                    {d.donationCount > 1 && (
                       <span
                         className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
                         style={{ background: 'rgba(185,28,28,0.08)', color: RED }}
                       >
-                        {fmt.num(d.times_donated)}×
+                        {fmt.num(d.donationCount)}×
                       </span>
                     )}
                   </div>
+
+                  {/* Eligibility line */}
+                  <div className="mt-1 flex items-center gap-1 text-[11.5px] font-semibold"
+                    style={{ color: d.eligible ? GREEN : '#c2410c' }}>
+                    {d.eligible ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                    {d.eligible
+                      ? tr('Eligible to donate', 'রক্তদানে যোগ্য')
+                      : tr(
+                          `Eligible in ${d.daysToWait} day(s)`,
+                          `আর ${fmt.num(d.daysToWait)} দিনে যোগ্য`,
+                        )}
+                  </div>
+
                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[12px]" style={{ color: MUTED }}>
                     {d.phone && (
                       <span className="flex items-center gap-1">
@@ -235,26 +267,28 @@ export default function MemberBloodDonors() {
                       </span>
                     )}
                     {d.address && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {d.address}
+                      <span className="flex min-w-0 items-center gap-1">
+                        <MapPin className="h-3 w-3 shrink-0" /> <span className="truncate">{d.address}</span>
                       </span>
                     )}
                   </div>
-                  {d.event_date && (
+                  {d.lastDonation && (
                     <div className="mt-1.5 flex items-center gap-1 text-[11px]" style={{ color: MUTED }}>
-                      <Calendar className="h-3 w-3" />
-                      <span>{fmt.date(d.event_date)}</span>
-                      {d.event_title && d.event_title !== '—' && (
-                        <span className="truncate">· {d.event_title}</span>
+                      <Calendar className="h-3 w-3 shrink-0" />
+                      <span className="shrink-0">{fmt.date(d.lastDonation)}</span>
+                      {d.donations[0]?.event_title && (
+                        <span className="truncate">· {d.donations[0].event_title}</span>
                       )}
                     </div>
                   )}
                 </div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}
+
+      {selected && <DonorDetailModal donor={selected} onClose={() => setSelected(null)} masked />}
     </div>
   );
 }

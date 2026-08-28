@@ -500,7 +500,7 @@ export interface CswoGrantTranche {
 }
 
 export type BloodGroup = '' | 'A+' | 'A-' | 'B+' | 'B-' | 'O+' | 'O-' | 'AB+' | 'AB-';
-export type DonorStatus = 'registered' | 'eligible' | 'rejected' | 'donated';
+export type DonorStatus = 'registered' | 'donated' | 'rejected';
 export interface CswoBloodDonor {
   id: string;
   event_id: string;
@@ -510,17 +510,13 @@ export interface CswoBloodDonor {
   gender: '' | 'male' | 'female' | 'other';
   blood_group: BloodGroup;
   phone: string;
-  email: string;
   address: string;
+  aadhar: string;
+  /** Generated in Postgres: aadhar -> phone -> name. Same person across camps. */
+  donor_key: string;
   member_id: string | null;
-  weight: number | null;
-  bp: string;
-  hemoglobin: number | null;
-  last_donation: string | null;
   status: DonorStatus;
   units: number;
-  consent: boolean;
-  note: string;
   created_at: string;
   updated_at: string;
 }

@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { CswoEvent, CswoBloodDonor, CswoBloodBank, DonorStatus, BloodGroup } from '@/types';
 import { useFmt } from '@/lib/format';
+import { formatAadhar } from '@/lib/bloodDonors';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 
@@ -19,13 +20,13 @@ const PAPER = '#ffffff';
 const CREAM = '#faf8f5';
 
 const GROUPS: Exclude<BloodGroup, ''>[] = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
-const DSTATUS: DonorStatus[] = ['registered', 'eligible', 'rejected', 'donated'];
-const STATUS_COLOR: Record<DonorStatus, string> = { registered: '#1d4ed8', eligible: TEAL, rejected: RED, donated: GREEN };
+const DSTATUS: DonorStatus[] = ['registered', 'donated', 'rejected'];
+const STATUS_COLOR: Record<DonorStatus, string> = { registered: '#1d4ed8', rejected: RED, donated: GREEN };
 
 const emptyDonor = {
-  name: '', age: '', gender: '' as '' | 'male' | 'female' | 'other', blood_group: '' as BloodGroup,
-  phone: '', email: '', address: '', weight: '', bp: '', hemoglobin: '', last_donation: '',
-  status: 'registered' as DonorStatus, units: '0', consent: false, note: '',
+  name: '', age: '', gender: '' as '' | 'male' | 'female' | 'other', phone: '',
+  address: '', blood_group: '' as BloodGroup, aadhar: '',
+  status: 'registered' as DonorStatus, units: '0',
 };
 const emptyBank = {
   name: '', contact_person: '', phone: '', email: '', license_no: '',
@@ -74,9 +75,8 @@ export default function AdminBloodCamp() {
     if (!dForm.name.trim()) return;
     const payload = {
       event_id: id, name: dForm.name.trim(), age: dForm.age ? Number(dForm.age) : null, gender: dForm.gender,
-      blood_group: dForm.blood_group, phone: dForm.phone.trim(), email: dForm.email.trim(), address: dForm.address.trim(),
-      weight: dForm.weight ? Number(dForm.weight) : null, bp: dForm.bp.trim(), hemoglobin: dForm.hemoglobin ? Number(dForm.hemoglobin) : null,
-      last_donation: dForm.last_donation || null, status: dForm.status, units: Number(dForm.units || 0), consent: dForm.consent, note: dForm.note.trim(),
+      phone: dForm.phone.trim(), address: dForm.address.trim(), blood_group: dForm.blood_group,
+      aadhar: dForm.aadhar.replace(/\D/g, ''), status: dForm.status, units: Number(dForm.units || 0),
     };
     if (dEditId) await supabase.from('cswo_blood_donors').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', dEditId);
     else await supabase.from('cswo_blood_donors').insert(payload);
@@ -86,9 +86,9 @@ export default function AdminBloodCamp() {
   const editDonor = (d: CswoBloodDonor) => {
     setDEditId(d.id);
     setDForm({
-      name: d.name, age: d.age != null ? String(d.age) : '', gender: d.gender, blood_group: d.blood_group, phone: d.phone, email: d.email, address: d.address,
-      weight: d.weight != null ? String(d.weight) : '', bp: d.bp, hemoglobin: d.hemoglobin != null ? String(d.hemoglobin) : '', last_donation: d.last_donation ?? '',
-      status: d.status, units: String(d.units), consent: d.consent, note: d.note,
+      name: d.name, age: d.age != null ? String(d.age) : '', gender: d.gender, phone: d.phone,
+      address: d.address, blood_group: d.blood_group, aadhar: d.aadhar ?? '',
+      status: d.status, units: String(d.units),
     });
     setShowDonor(true);
   };
@@ -198,7 +198,6 @@ export default function AdminBloodCamp() {
   );
 
   const registered = donors.length;
-  const eligible = donors.filter((d) => d.status === 'eligible').length;
   const rejected = donors.filter((d) => d.status === 'rejected').length;
   const donated = donors.filter((d) => d.status === 'donated').length;
   const totalUnits = donors.reduce((s, d) => s + Number(d.units), 0);
@@ -223,9 +222,8 @@ export default function AdminBloodCamp() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Stat label={tr('Registered', 'নিবন্ধিত')} value={fmt.num(registered)} color={INK} />
-        <Stat label={tr('Eligible', 'যোগ্য')} value={fmt.num(eligible)} color={TEAL} />
         <Stat label={tr('Rejected', 'বাতিল')} value={fmt.num(rejected)} color={RED} />
         <Stat label={tr('Donated', 'দান করেছেন')} value={fmt.num(donated)} color={GREEN} />
         <Stat label={tr('Units collected', 'সংগৃহীত ইউনিট')} value={fmt.num(totalUnits)} color={RED} />
@@ -297,24 +295,19 @@ export default function AdminBloodCamp() {
       {showDonor && (
         <Modal title={dEditId ? tr('Edit donor', 'দাতা সম্পাদনা') : tr('Register donor', 'দাতা নিবন্ধন')} onClose={() => setShowDonor(false)} onSave={saveDonor}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input className="input" placeholder={tr('Full name', 'পুরো নাম')} value={dForm.name} onChange={(e) => setDForm((f) => ({ ...f, name: e.target.value }))} />
-            <input className="input" placeholder={tr('Phone', 'ফোন')} value={dForm.phone} onChange={(e) => setDForm((f) => ({ ...f, phone: e.target.value }))} />
+            <input className="input sm:col-span-2" placeholder={tr('Full name', 'পুরো নাম')} value={dForm.name} onChange={(e) => setDForm((f) => ({ ...f, name: e.target.value }))} />
             <input className="input" type="number" placeholder={tr('Age', 'বয়স')} value={dForm.age} onChange={(e) => setDForm((f) => ({ ...f, age: e.target.value }))} />
             <select className="input" value={dForm.gender} onChange={(e) => setDForm((f) => ({ ...f, gender: e.target.value as typeof dForm.gender }))}>
               <option value="">{tr('Gender', 'লিঙ্গ')}</option><option value="male">{tr('Male', 'পুরুষ')}</option><option value="female">{tr('Female', 'মহিলা')}</option><option value="other">{tr('Other', 'অন্যান্য')}</option>
             </select>
+            <input className="input" type="tel" inputMode="numeric" placeholder={tr('Mobile number', 'মোবাইল নম্বর')} value={dForm.phone} onChange={(e) => setDForm((f) => ({ ...f, phone: e.target.value }))} />
             <select className="input" value={dForm.blood_group} onChange={(e) => setDForm((f) => ({ ...f, blood_group: e.target.value as BloodGroup }))}>
               <option value="">{tr('Blood group', 'রক্তের গ্রুপ')}</option>{GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
             </select>
-            <input className="input" placeholder={tr('Email', 'ইমেল')} value={dForm.email} onChange={(e) => setDForm((f) => ({ ...f, email: e.target.value }))} />
-            <input className="input" type="number" step="0.1" placeholder={tr('Weight (kg)', 'ওজন (কেজি)')} value={dForm.weight} onChange={(e) => setDForm((f) => ({ ...f, weight: e.target.value }))} />
-            <input className="input" placeholder={tr('Blood pressure', 'রক্তচাপ')} value={dForm.bp} onChange={(e) => setDForm((f) => ({ ...f, bp: e.target.value }))} />
-            <input className="input" type="number" step="0.1" placeholder={tr('Hemoglobin', 'হিমোগ্লোবিন')} value={dForm.hemoglobin} onChange={(e) => setDForm((f) => ({ ...f, hemoglobin: e.target.value }))} />
-            <div><label className="mb-1 block text-xs" style={{ color: MUTED }}>{tr('Last donation', 'শেষ দান')}</label><input className="input" type="date" value={dForm.last_donation} onChange={(e) => setDForm((f) => ({ ...f, last_donation: e.target.value }))} /></div>
+            <input className="input sm:col-span-2" placeholder={tr('Address', 'ঠিকানা')} value={dForm.address} onChange={(e) => setDForm((f) => ({ ...f, address: e.target.value }))} />
+            <input className="input sm:col-span-2" inputMode="numeric" maxLength={14} placeholder={tr('Aadhar number', 'আধার নম্বর')} value={formatAadhar(dForm.aadhar)} onChange={(e) => setDForm((f) => ({ ...f, aadhar: e.target.value.replace(/\D/g, '').slice(0, 12) }))} />
             <select className="input" value={dForm.status} onChange={(e) => setDForm((f) => ({ ...f, status: e.target.value as DonorStatus }))}>{DSTATUS.map((s) => <option key={s} value={s}>{s}</option>)}</select>
             <input className="input" type="number" placeholder={tr('Units', 'ইউনিট')} value={dForm.units} onChange={(e) => setDForm((f) => ({ ...f, units: e.target.value }))} />
-            <input className="input sm:col-span-2" placeholder={tr('Address', 'ঠিকানা')} value={dForm.address} onChange={(e) => setDForm((f) => ({ ...f, address: e.target.value }))} />
-            <label className="flex items-center gap-2 text-[13px] sm:col-span-2" style={{ color: INK2 }}><input type="checkbox" checked={dForm.consent} onChange={(e) => setDForm((f) => ({ ...f, consent: e.target.checked }))} /> {tr('Consent form signed', 'সম্মতিপত্র স্বাক্ষরিত')}</label>
           </div>
         </Modal>
       )}
