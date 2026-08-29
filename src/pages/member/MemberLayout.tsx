@@ -94,6 +94,7 @@ export default function MemberLayout() {
       { to: '/member/contributions-manage', label: 'Monthly Donation',    icon: BadgeIndianRupee } as NavItem,
       { to: '/member/donations-manage',     label: 'Donations',           icon: HeartHandshake } as NavItem,
       { to: '/member/expenses',             label: 'Expenses',            icon: ReceiptText } as NavItem,
+      { to: '/member/invoices',             label: 'Invoices',            icon: FileText } as NavItem,
       { to: '/member/ledger',               label: 'Ledger',              icon: BookOpenText } as NavItem,
       { to: '/member/approvals',            label: 'Approvals',           icon: ClipboardCheck } as NavItem,
       { to: '/member/grants',               label: 'Grants',              icon: HandCoins } as NavItem,

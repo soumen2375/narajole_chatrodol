@@ -9,6 +9,7 @@ const LABELS: Record<string, { bn: string; en: string; cls: string }> = {
   suspended: { bn: 'স্থগিত', en: 'Suspended', cls: 'bg-red-100 text-red-800' },
   paid: { bn: 'পরিশোধিত', en: 'Paid', cls: 'bg-green-100 text-green-800' },
   unpaid: { bn: 'বকেয়া', en: 'Unpaid', cls: 'bg-red-100 text-red-800' },
+  partial: { bn: 'আংশিক পরিশোধিত', en: 'Partly paid', cls: 'bg-amber-100 text-amber-800' },
   created: { bn: 'পেমেন্ট চলছে', en: 'Awaiting Payment', cls: 'bg-amber-100 text-amber-800' },
   failed: { bn: 'ব্যর্থ', en: 'Failed', cls: 'bg-red-100 text-red-800' },
   refunded: { bn: 'ফেরত', en: 'Refunded', cls: 'bg-gray-100 text-gray-700' },

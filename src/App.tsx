@@ -59,6 +59,7 @@ const AdminQRAttendance = lazy(() => import('@/pages/admin/AdminQRAttendance'));
 const AdminContributions = lazy(() => import('@/pages/admin/AdminContributions'));
 const AdminDonations = lazy(() => import('@/pages/admin/AdminDonations'));
 const AdminExpenses = lazy(() => import('@/pages/admin/AdminExpenses'));
+const AdminInvoices = lazy(() => import('@/pages/admin/AdminInvoices'));
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'));
 const AdminFinance = lazy(() => import('@/pages/admin/AdminFinance'));
 const AdminBudgets = lazy(() => import('@/pages/admin/AdminBudgets'));
@@ -165,6 +166,7 @@ export default function App() {
             <Route path="contributions-manage" element={<ProtectedRoute require="canManageFinance"><AdminContributions /></ProtectedRoute>} />
             <Route path="donations-manage" element={<ProtectedRoute require="canManageFinance"><AdminDonations /></ProtectedRoute>} />
             <Route path="expenses" element={<ProtectedRoute require="canManageFinance"><AdminExpenses /></ProtectedRoute>} />
+            <Route path="invoices" element={<ProtectedRoute require="canManageFinance"><AdminInvoices /></ProtectedRoute>} />
             <Route path="ledger" element={<ProtectedRoute require="canManageFinance"><AdminLedger /></ProtectedRoute>} />
             <Route path="approvals" element={<ProtectedRoute require="canManageFinance"><AdminApprovals /></ProtectedRoute>} />
             <Route path="grants" element={<ProtectedRoute require="canManageFinance"><AdminGrants /></ProtectedRoute>} />
@@ -211,6 +213,7 @@ export default function App() {
             <Route path="contributions" element={<AdminContributions />} />
             <Route path="donations" element={<AdminDonations />} />
             <Route path="expenses" element={<AdminExpenses />} />
+            <Route path="invoices" element={<AdminInvoices />} />
             <Route path="finance" element={<AdminFinance />} />
             <Route path="budgets" element={<AdminBudgets />} />
             <Route path="ledger" element={<AdminLedger />} />

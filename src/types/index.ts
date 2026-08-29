@@ -395,6 +395,47 @@ export interface CswoExpense {
   fund?: CswoFund;
 }
 
+export type InvoiceStatus = 'draft' | 'unpaid' | 'partial' | 'paid' | 'cancelled';
+
+export interface CswoInvoiceItem {
+  id: string;
+  invoice_id: string;
+  sort_order: number;
+  description: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+  created_at: string;
+}
+
+export interface CswoInvoice {
+  id: string;
+  invoice_number: string;
+  status: InvoiceStatus;
+  bill_to_name: string;
+  bill_to_email: string;
+  bill_to_phone: string;
+  bill_to_address: string;
+  issue_date: string;
+  due_date: string | null;
+  fund_id: string | null;
+  event_id: string | null;
+  payment_method: CswoPaymentMethod;
+  bank_account_id: string | null;
+  payment_ref: string;
+  subtotal: number;
+  discount: number;
+  round_off: number;
+  total: number;
+  amount_paid: number;
+  notes: string;
+  recorded_by: string | null;
+  created_at: string;
+  updated_at: string;
+  fund?: CswoFund | null;
+  items?: CswoInvoiceItem[];
+}
+
 export interface CswoBudget {
   id: string;
   fund_id: string;
