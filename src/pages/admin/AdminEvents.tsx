@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-import type { CswoEvent, CswoFund, EventType, EventStatus } from '@/types';
+import type { CswoEvent, EventType, EventStatus } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { ListSkeleton } from '@/components/ui/Skeleton';
@@ -24,7 +24,7 @@ const empty = {
   title: '', description: '', category: '', type: 'event' as EventType, status: 'planned' as EventStatus,
   event_date: new Date().toISOString().slice(0, 10), end_date: '', start_time: '', end_time: '',
   location: '', district: '', state: '', pincode: '', map_link: '', expected_participants: '', featured_image: '',
-  fund_id: '' as string, form_type: 'general' as FormType,
+  form_type: 'general' as FormType,
   attendance_enabled: false, attendance_start_time: '', attendance_end_time: '',
 };
 
@@ -37,7 +37,6 @@ export default function AdminEvents() {
   const statusLabel = (s: EventStatus) => ({ draft: tr('Draft', 'খসড়া'), planned: tr('Planned', 'পরিকল্পিত'), approved: tr('Approved', 'অনুমোদিত'), live: tr('Live', 'চলমান'), completed: tr('Completed', 'সম্পন্ন'), cancelled: tr('Cancelled', 'বাতিল') }[s]);
 
   const [events, setEvents] = useState<CswoEvent[]>([]);
-  const [funds, setFunds]   = useState<CswoFund[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(empty);
@@ -47,10 +46,9 @@ export default function AdminEvents() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [{ data }, { data: att }, { data: fundsData }] = await Promise.all([
+    const [{ data }, { data: att }] = await Promise.all([
       supabase.from('cswo_events').select('*').order('event_date', { ascending: false }),
       supabase.from('cswo_attendance').select('event_id'),
-      supabase.from('cswo_funds').select('*').eq('is_active', true).order('sort_order'),
     ]);
 
     const sorted = [...(data ?? [])].sort((a, b) => {
@@ -72,7 +70,6 @@ export default function AdminEvents() {
     });
 
     setEvents(sorted as CswoEvent[]);
-    setFunds((fundsData ?? []) as CswoFund[]);
     const c: Record<string, number> = {};
     for (const row of att ?? []) c[row.event_id] = (c[row.event_id] ?? 0) + 1;
     setCounts(c);
@@ -95,7 +92,6 @@ export default function AdminEvents() {
       location: form.location || null, district: form.district, state: form.state, pincode: form.pincode,
       map_link: form.map_link, expected_participants: Number(form.expected_participants || 0),
       featured_image: form.featured_image || null,
-      fund_id: form.fund_id || null,
       form_type: form.form_type,
       attendance_enabled: form.attendance_enabled,
       attendance_start_time: form.attendance_start_time || null,
@@ -125,7 +121,6 @@ export default function AdminEvents() {
       location: ev.location ?? '', district: ev.district ?? '', state: ev.state ?? '', pincode: ev.pincode ?? '',
       map_link: ev.map_link ?? '', expected_participants: ev.expected_participants ? String(ev.expected_participants) : '',
       featured_image: ev.featured_image ?? '',
-      fund_id: ev.fund_id ?? '',
       form_type: ev.form_type ?? 'general',
       attendance_enabled: ev.attendance_enabled ?? false,
       attendance_start_time: ev.attendance_start_time ? ev.attendance_start_time.slice(0, 16) : '',
@@ -176,24 +171,8 @@ export default function AdminEvents() {
             </div>
           </div>
 
-          {/* ── Fund + Form type ── */}
+          {/* ── Form type ── */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-500">
-                {tr('Linked Finance Fund', 'অর্থ তহবিল সংযুক্ত করুন')}
-              </label>
-              <select className="input" value={form.fund_id} onChange={set('fund_id')}>
-                <option value="">{tr('— No fund linked —', '— কোনো তহবিল নেই —')}</option>
-                {funds.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {lang === 'bn' ? f.name_bn : f.name_en}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-[11px] text-gray-400">
-                {tr('Budget expenses will be tracked under this fund.', 'বাজেট ব্যয় এই তহবিলের অধীনে ট্র্যাক হবে।')}
-              </p>
-            </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-500">
                 {tr('Event Form Type', 'অনুষ্ঠানের ফর্ম ধরন')}
@@ -298,11 +277,6 @@ export default function AdminEvents() {
                   {ev.form_type === 'relief_distribution' && (
                     <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: '#fef9c3', color: '#a16207' }}>
                       {tr('Relief & Distribution', 'ত্রাণ ও বিতরণ')}
-                    </span>
-                  )}
-                  {ev.fund_id && (
-                    <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{ background: '#dcfce7', color: '#15803d' }}>
-                      {funds.find((f) => f.id === ev.fund_id)?.[lang === 'bn' ? 'name_bn' : 'name_en'] ?? tr('Fund linked', 'তহবিল যুক্ত')}
                     </span>
                   )}
                 </div>

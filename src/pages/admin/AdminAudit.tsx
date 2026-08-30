@@ -82,8 +82,6 @@ export default function AdminAudit() {
     cswo_donations: tr('Donations', 'অনুদান'),
     cswo_monthly_contributions: tr('Contributions', 'চাঁদা'),
     cswo_expenses: tr('Expenses', 'ব্যয়'),
-    cswo_budgets: tr('Budgets', 'বাজেট'),
-    cswo_funds: tr('Funds', 'ফান্ড'),
     cswo_members: tr('Members', 'সদস্য'),
     cswo_posts: tr('Posts', 'পোস্ট'),
     cswo_events: tr('Events', 'অনুষ্ঠান'),

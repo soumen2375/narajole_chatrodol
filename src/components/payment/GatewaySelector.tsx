@@ -226,9 +226,11 @@ export default function GatewaySelector({
 
 export interface AdminGatewaySwitchProps {
   className?: string;
+  /** Horizontal card that sits alongside stat cards (Donations page). */
+  compact?: boolean;
 }
 
-export function AdminGatewaySwitch({ className = '' }: AdminGatewaySwitchProps) {
+export function AdminGatewaySwitch({ className = '', compact = false }: AdminGatewaySwitchProps) {
   const [mode, setMode] = useState<GatewayMode>(() => getGatewayMode());
   const [saved, setSaved] = useState(false);
 
@@ -259,6 +261,64 @@ export function AdminGatewaySwitch({ className = '' }: AdminGatewaySwitchProps) 
       color: '#0c2340',
     },
   ];
+
+  if (compact) {
+    const SHORT: Record<GatewayMode, { title: string; desc: string }> = {
+      both:     { title: 'User Choice',   desc: 'Show both to donors' },
+      cashfree: { title: 'Cashfree Only', desc: 'Route via Cashfree' },
+      razorpay: { title: 'Razorpay Only', desc: 'Route via Razorpay' },
+    };
+    return (
+      <div
+        className={`flex h-full min-w-0 flex-col gap-2 rounded-[14px] px-3.5 py-3 ${className}`}
+        style={{ background: '#fff', border: '1px solid #e6e0d0' }}
+      >
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="text-[13.5px] font-bold tracking-[-.01em]">Payment Gateway Routing</span>
+          <span className="text-[11px]" style={{ color: '#9a9080' }}>master switch · live sync</span>
+          {saved && (
+            <span className="ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold animate-fade-in" style={{ background: '#dcf5e8', color: '#0e6f4a' }}>
+              ✓ Active
+            </span>
+          )}
+        </div>
+        <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px,1fr))' }}>
+          {OPTIONS.map((opt) => {
+            const active = mode === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => handleChange(opt.value)}
+                className="flex items-start gap-2 rounded-[10px] px-2.5 py-2 text-left transition-colors"
+                style={{
+                  border: `1.5px solid ${active ? opt.color : '#e6e0d0'}`,
+                  background: active ? `${opt.color}0d` : '#fbf9f4',
+                }}
+              >
+                <span
+                  className="mt-0.5 flex h-[13px] w-[13px] shrink-0 items-center justify-center rounded-full"
+                  style={{
+                    border: `2px solid ${active ? opt.color : '#c8bfa9'}`,
+                    background: active ? opt.color : 'transparent',
+                    boxShadow: 'inset 0 0 0 2px #fff',
+                  }}
+                />
+                <span className="min-w-0">
+                  <span className="block text-[12.5px] font-semibold leading-[1.2]" style={{ color: active ? opt.color : '#33302a' }}>
+                    {SHORT[opt.value].title}
+                  </span>
+                  <span className="mt-px block text-[10.5px] leading-[1.3]" style={{ color: '#8b8272' }}>
+                    {SHORT[opt.value].desc}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

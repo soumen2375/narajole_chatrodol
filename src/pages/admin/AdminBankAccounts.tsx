@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FaPlus, FaBuildingColumns, FaTrash, FaCheck } from 'react-icons/fa6';
+import { FaPlus, FaBuildingColumns, FaWallet, FaTrash, FaCheck } from 'react-icons/fa6';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { CswoBankAccount, CswoBankTransaction, BankAccountType, LedgerDirection } from '@/types';
@@ -147,29 +147,41 @@ export default function AdminBankAccounts() {
         <div>
           <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Finance', 'অর্থ')} · {tr('Banking', 'ব্যাংকিং')}</div>
           <h1 className="mt-1.5 text-[28px] leading-tight" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>{tr('Bank Accounts & Reconciliation', 'ব্যাংক অ্যাকাউন্ট ও মিলকরণ')}</h1>
-          <p className="mt-1 text-[13.5px]" style={{ color: INK2 }}>{tr('Track each account, record statement lines, and tick off entries as you reconcile against the bank.', 'প্রতিটি অ্যাকাউন্ট ট্র্যাক করুন, স্টেটমেন্ট লাইন নথিভুক্ত করুন এবং ব্যাংকের সাথে মিলিয়ে এন্ট্রি চিহ্নিত করুন।')}</p>
+          <p className="mt-1 text-[13.5px]" style={{ color: INK2 }}>{tr('Online money sits in the bank accounts; offline cash sits in the wallet. Every donation and expense lands in one of them automatically.', 'অনলাইন টাকা ব্যাংক অ্যাকাউন্টে, অফলাইন নগদ ওয়ালেটে। প্রতিটি অনুদান ও ব্যয় স্বয়ংক্রিয়ভাবে এদের একটিতে যায়।')}</p>
         </div>
         <button onClick={openAddAcct} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90" style={{ background: BRAND }}><FaPlus className="h-3 w-3" /> {tr('Add account', 'অ্যাকাউন্ট যোগ')}</button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
         {/* Accounts list */}
-        <div className="space-y-3">
+        <div className="space-y-5">
           {accounts.length === 0 && <p className="text-[13px]" style={{ color: MUTED }}>{tr('No accounts yet.', 'এখনো কোনো অ্যাকাউন্ট নেই।')}</p>}
-          {accounts.map((a) => {
-            const active = a.id === selectedId;
-            return (
-              <button key={a.id} onClick={() => setSelectedId(a.id)} className="w-full rounded-[8px] p-4 text-left transition-shadow" style={{ background: active ? CREAM : PAPER, border: `1px solid ${active ? BRAND : RULE}` }}>
-                <div className="flex items-center gap-2">
-                  <FaBuildingColumns className="h-3.5 w-3.5" style={{ color: BRAND }} />
-                  <span className="font-semibold" style={{ color: INK }}>{a.label}</span>
-                  {!a.is_active && <span className="ml-auto font-mono text-[9px] uppercase" style={{ color: MUTED }}>{tr('inactive', 'নিষ্ক্রিয়')}</span>}
-                </div>
-                <div className="mt-1 font-mono text-[10px]" style={{ color: MUTED }}>{a.bank_name || '—'} · {mask(a.account_number)}</div>
-                <div className="mt-2 text-[17px] font-bold" style={{ color: balanceOf(a) < 0 ? BRAND : GREEN }}>{fmt.money(balanceOf(a))}</div>
-              </button>
-            );
-          })}
+
+          {([
+            { key: 'bank', label: tr('Bank · online', 'ব্যাংক · অনলাইন'), icon: FaBuildingColumns, list: accounts.filter((a) => a.account_type !== 'cash') },
+            { key: 'cash', label: tr('Wallet · offline cash', 'ওয়ালেট · অফলাইন নগদ'), icon: FaWallet, list: accounts.filter((a) => a.account_type === 'cash') },
+          ] as const).filter((g) => g.list.length > 0).map((g) => (
+            <div key={g.key} className="space-y-3">
+              <div className="font-mono text-[9.5px] uppercase tracking-[0.16em]" style={{ color: MUTED }}>{g.label}</div>
+              {g.list.map((a) => {
+                const active = a.id === selectedId;
+                const Icon = g.icon;
+                return (
+                  <button key={a.id} onClick={() => setSelectedId(a.id)} className="w-full rounded-[8px] p-4 text-left transition-shadow" style={{ background: active ? CREAM : PAPER, border: `1px solid ${active ? BRAND : RULE}` }}>
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-3.5 w-3.5" style={{ color: BRAND }} />
+                      <span className="font-semibold" style={{ color: INK }}>{a.label}</span>
+                      {!a.is_active && <span className="ml-auto font-mono text-[9px] uppercase" style={{ color: MUTED }}>{tr('inactive', 'নিষ্ক্রিয়')}</span>}
+                    </div>
+                    <div className="mt-1 font-mono text-[10px]" style={{ color: MUTED }}>
+                      {a.account_type === 'cash' ? tr('Cash in hand', 'হাতে থাকা নগদ') : `${a.bank_name || '—'} · ${mask(a.account_number)}`}
+                    </div>
+                    <div className="mt-2 text-[17px] font-bold" style={{ color: balanceOf(a) < 0 ? BRAND : GREEN }}>{fmt.money(balanceOf(a))}</div>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
         {/* Selected account */}

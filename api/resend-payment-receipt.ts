@@ -144,17 +144,30 @@ export default async function handler(
       user.app_metadata?.is_admin === true;
 
     if (!isAdminInMeta) {
-      // Check cswo_members table for role
-      const { data: memberRecord } = await supabase
+      // Check cswo_members for role. Only select columns that exist — asking
+      // for a missing one fails the whole query and silently looks like
+      // "not an admin", which is exactly how this used to reject real admins.
+      const { data: memberRecord, error: memberErr } = await supabase
         .from('cswo_members')
-        .select('role, is_active, status')
+        .select('role, status, can_manage_finance')
         .eq('id', user.id)
         .maybeSingle();
 
+      if (memberErr) {
+        return sendJson(res, 500, {
+          success: false,
+          error: `Could not verify your account: ${memberErr.message}`,
+        });
+      }
+
+      // Whoever may run Finance may resend a receipt — the same rule the
+      // Finance section itself uses.
       const isMemberAdmin =
-        memberRecord?.role === 'admin' ||
-        memberRecord?.role === 'super_admin' ||
-        memberRecord?.role === 'executive_admin';
+        memberRecord?.status === 'approved' &&
+        (memberRecord?.role === 'admin' ||
+          memberRecord?.role === 'super_admin' ||
+          memberRecord?.role === 'executive_admin' ||
+          memberRecord?.can_manage_finance === true);
 
       if (!isMemberAdmin) {
         return sendJson(res, 403, {

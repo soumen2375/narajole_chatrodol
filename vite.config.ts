@@ -16,7 +16,8 @@ function apiDevServerPlugin(): Plugin {
           url === '/api/cashfree-order' ||
           url === '/api/cashfree-verify' ||
           url === '/api/cashfree-webhook' ||
-          url === '/api/send-receipt-email'
+          url === '/api/send-receipt-email' ||
+          url === '/api/resend-payment-receipt'
         ) {
           // Always reload latest .env variables in dev
           const env = loadEnv('development', process.cwd(), '');
@@ -210,6 +211,38 @@ function apiDevServerPlugin(): Plugin {
             } catch (e: unknown) {
               console.error(
                 'Error in /api/cashfree-webhook dev middleware:',
+                e
+              );
+
+              res.statusCode = 500;
+              res.setHeader(
+                'Content-Type',
+                'application/json'
+              );
+
+              res.end(
+                JSON.stringify({
+                  error:
+                    e instanceof Error
+                      ? e.message
+                      : 'Internal Server Error',
+                })
+              );
+            }
+
+            return;
+          }
+
+          // RESEND A RECEIPT (admin action from the Donations page)
+          if (url === '/api/resend-payment-receipt') {
+            try {
+              const { default: handler } =
+                await import('./api/resend-payment-receipt');
+
+              await handler(req, res);
+            } catch (e: unknown) {
+              console.error(
+                'Error in /api/resend-payment-receipt dev middleware:',
                 e
               );
 

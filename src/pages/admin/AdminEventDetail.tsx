@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FaPlus, FaTrash, FaLocationDot, FaUpRightFromSquare } from 'react-icons/fa6';
-import { ArrowLeft, ArrowRight, Droplet, Package, Award, FileText, BarChart3, Search, Wallet } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Droplet, Package, Award, FileText, BarChart3, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { CswoEvent, CswoEventBudgetItem, CswoEventVolunteer, EventBudgetStatus } from '@/types';
 import { useFmt } from '@/lib/format';
@@ -48,7 +48,6 @@ export default function AdminEventDetail() {
   const [donSearch, setDonSearch] = useState('');
   const [expSearch, setExpSearch] = useState('');
   const [bloodDonors, setBloodDonors] = useState<{blood_group:string}[]>([]);
-  const [linkedFund, setLinkedFund] = useState<{ name_en: string; name_bn: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,17 +68,6 @@ export default function AdminEventDetail() {
     setDonations((dnR.data ?? []) as LinkedDonation[]);
     setAttendance(atR.count ?? 0);
     setBloodDonors((bdR.data ?? []) as {blood_group:string}[]);
-    // Load linked fund name if present
-    if (ev?.fund_id) {
-      const { data: fundData } = await supabase
-        .from('cswo_funds')
-        .select('name_en,name_bn')
-        .eq('id', ev.fund_id)
-        .maybeSingle();
-      setLinkedFund(fundData ?? null);
-    } else {
-      setLinkedFund(null);
-    }
     setLoading(false);
   }, [id]);
   useEffect(() => { load(); }, [load]);
@@ -294,12 +282,6 @@ export default function AdminEventDetail() {
             <span className="font-mono text-[11px]" style={{ color: MUTED }}>
               {tr('Planned', 'পরিকল্পিত')} {fmt.money(bPlanned)} · {tr('Approved', 'অনুমোদিত')} {fmt.money(bApproved)} · {tr('Spent', 'ব্যয়')} {fmt.money(bActual)}
             </span>
-            {linkedFund && (
-              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style={{ background: '#dcfce7', color: '#15803d' }}>
-                <Wallet className="h-3 w-3" />
-                {lang === 'bn' ? linkedFund.name_bn : linkedFund.name_en}
-              </span>
-            )}
           </div>
         }
       >

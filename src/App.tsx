@@ -62,17 +62,11 @@ const AdminExpenses = lazy(() => import('@/pages/admin/AdminExpenses'));
 const AdminInvoices = lazy(() => import('@/pages/admin/AdminInvoices'));
 const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'));
 const AdminFinance = lazy(() => import('@/pages/admin/AdminFinance'));
-const AdminBudgets = lazy(() => import('@/pages/admin/AdminBudgets'));
 const AdminLedger = lazy(() => import('@/pages/admin/AdminLedger'));
 const AdminAudit = lazy(() => import('@/pages/admin/AdminAudit'));
 const AdminCompliance = lazy(() => import('@/pages/admin/AdminCompliance'));
-const AdminRefunds = lazy(() => import('@/pages/admin/AdminRefunds'));
-const AdminCampaigns = lazy(() => import('@/pages/admin/AdminCampaigns'));
-const AdminPayroll = lazy(() => import('@/pages/admin/AdminPayroll'));
 const AdminBankAccounts = lazy(() => import('@/pages/admin/AdminBankAccounts'));
-const AdminApprovals = lazy(() => import('@/pages/admin/AdminApprovals'));
 const AdminReports = lazy(() => import('@/pages/admin/AdminReports'));
-const AdminGrants = lazy(() => import('@/pages/admin/AdminGrants'));
 const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'));
 const AdminBloodDonors = lazy(() => import('@/pages/admin/AdminBloodDonors'));
 const AdminMediaLibrary = lazy(() => import('@/pages/admin/AdminMediaLibrary'));
@@ -162,17 +156,11 @@ export default function App() {
             <Route path="blood-donors-manage" element={<ProtectedRoute require="canManageEvents"><AdminBloodDonors /></ProtectedRoute>} />
 
             <Route path="finance" element={<ProtectedRoute require="canManageFinance"><AdminFinance /></ProtectedRoute>} />
-            <Route path="budgets" element={<ProtectedRoute require="canManageFinance"><AdminBudgets /></ProtectedRoute>} />
             <Route path="contributions-manage" element={<ProtectedRoute require="canManageFinance"><AdminContributions /></ProtectedRoute>} />
             <Route path="donations-manage" element={<ProtectedRoute require="canManageFinance"><AdminDonations /></ProtectedRoute>} />
             <Route path="expenses" element={<ProtectedRoute require="canManageFinance"><AdminExpenses /></ProtectedRoute>} />
             <Route path="invoices" element={<ProtectedRoute require="canManageFinance"><AdminInvoices /></ProtectedRoute>} />
             <Route path="ledger" element={<ProtectedRoute require="canManageFinance"><AdminLedger /></ProtectedRoute>} />
-            <Route path="approvals" element={<ProtectedRoute require="canManageFinance"><AdminApprovals /></ProtectedRoute>} />
-            <Route path="grants" element={<ProtectedRoute require="canManageFinance"><AdminGrants /></ProtectedRoute>} />
-            <Route path="campaigns" element={<ProtectedRoute require="canManageFinance"><AdminCampaigns /></ProtectedRoute>} />
-            <Route path="refunds" element={<ProtectedRoute require="canManageFinance"><AdminRefunds /></ProtectedRoute>} />
-            <Route path="payroll" element={<ProtectedRoute require="canManageFinance"><AdminPayroll /></ProtectedRoute>} />
             <Route path="bank" element={<ProtectedRoute require="canManageFinance"><AdminBankAccounts /></ProtectedRoute>} />
             <Route path="reports" element={<ProtectedRoute require="canManageFinance"><AdminReports /></ProtectedRoute>} />
             <Route path="compliance" element={<ProtectedRoute require="canManageFinance"><AdminCompliance /></ProtectedRoute>} />
@@ -215,16 +203,10 @@ export default function App() {
             <Route path="expenses" element={<AdminExpenses />} />
             <Route path="invoices" element={<AdminInvoices />} />
             <Route path="finance" element={<AdminFinance />} />
-            <Route path="budgets" element={<AdminBudgets />} />
             <Route path="ledger" element={<AdminLedger />} />
             <Route path="compliance" element={<AdminCompliance />} />
-            <Route path="refunds" element={<AdminRefunds />} />
-            <Route path="campaigns" element={<AdminCampaigns />} />
-            <Route path="payroll" element={<AdminPayroll />} />
             <Route path="bank" element={<AdminBankAccounts />} />
-            <Route path="approvals" element={<AdminApprovals />} />
             <Route path="reports" element={<AdminReports />} />
-            <Route path="grants" element={<AdminGrants />} />
             <Route path="audit" element={<AdminAudit />} />
             <Route path="messages" element={<AdminMessages />} />
             <Route path="blood-donors" element={<AdminBloodDonors />} />

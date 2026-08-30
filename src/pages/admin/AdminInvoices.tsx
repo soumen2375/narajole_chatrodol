@@ -8,7 +8,6 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { printInvoice } from '@/lib/invoice';
 import type {
   CswoBankAccount,
-  CswoFund,
   CswoInvoice,
   CswoInvoiceItem,
   CswoPaymentMethod,
@@ -41,7 +40,6 @@ type Form = {
   bill_to_address: string;
   issue_date: string;
   due_date: string;
-  fund_id: string;
   event_id: string;
   payment_method: CswoPaymentMethod;
   bank_account_id: string;
@@ -63,7 +61,6 @@ const emptyForm = (): Form => ({
   bill_to_address: '',
   issue_date: new Date().toISOString().slice(0, 10),
   due_date: '',
-  fund_id: '',
   event_id: '',
   payment_method: 'upi',
   bank_account_id: '',
@@ -97,13 +94,11 @@ export default function AdminInvoices() {
 
   const [invoices, setInvoices] = useState<CswoInvoice[]>([]);
   const [items, setItems] = useState<CswoInvoiceItem[]>([]);
-  const [funds, setFunds] = useState<CswoFund[]>([]);
   const [events, setEvents] = useState<{ id: string; title: string; event_code: string | null }[]>([]);
   const [banks, setBanks] = useState<CswoBankAccount[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [filterStatus, setFilterStatus] = useState('');
-  const [filterFund, setFilterFund] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [search, setSearch] = useState('');
@@ -116,20 +111,18 @@ export default function AdminInvoices() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [inv, it, ff, ev, ba] = await Promise.all([
+    const [inv, it, ev, ba] = await Promise.all([
       supabase
         .from('cswo_invoices')
-        .select('*, fund:cswo_funds(id,name_bn,name_en,slug)')
+        .select('*')
         .order('issue_date', { ascending: false })
         .order('created_at', { ascending: false }),
       supabase.from('cswo_invoice_items').select('*').order('sort_order'),
-      supabase.from('cswo_funds').select('*').eq('is_active', true).order('sort_order'),
       supabase.from('cswo_events').select('id,title,event_code').order('event_date', { ascending: false }),
       supabase.from('cswo_bank_accounts').select('*').eq('is_active', true).order('sort_order'),
     ]);
     setInvoices((inv.data ?? []) as CswoInvoice[]);
     setItems((it.data ?? []) as CswoInvoiceItem[]);
-    setFunds((ff.data ?? []) as CswoFund[]);
     setEvents((ev.data ?? []) as { id: string; title: string; event_code: string | null }[]);
     setBanks((ba.data ?? []) as CswoBankAccount[]);
     setLoading(false);
@@ -169,7 +162,6 @@ export default function AdminInvoices() {
       bill_to_address: inv.bill_to_address,
       issue_date: inv.issue_date,
       due_date: inv.due_date ?? '',
-      fund_id: inv.fund_id ?? '',
       event_id: inv.event_id ?? '',
       payment_method: inv.payment_method,
       bank_account_id: inv.bank_account_id ?? '',
@@ -216,7 +208,6 @@ export default function AdminInvoices() {
       bill_to_address: form.bill_to_address.trim(),
       issue_date: form.issue_date,
       due_date: form.due_date || null,
-      fund_id: form.fund_id || null,
       event_id: form.event_id || null,
       payment_method: form.payment_method,
       bank_account_id: form.bank_account_id || null,
@@ -317,7 +308,6 @@ export default function AdminInvoices() {
     const q = search.trim().toLowerCase();
     return invoices.filter((inv) => {
       if (filterStatus && inv.status !== filterStatus) return false;
-      if (filterFund && inv.fund_id !== filterFund) return false;
       if (fromDate && inv.issue_date < fromDate) return false;
       if (toDate && inv.issue_date > toDate) return false;
       if (q) {
@@ -329,7 +319,7 @@ export default function AdminInvoices() {
       }
       return true;
     });
-  }, [invoices, filterStatus, filterFund, fromDate, toDate, search, itemsOf]);
+  }, [invoices, filterStatus, fromDate, toDate, search, itemsOf]);
 
   const stats = useMemo(() => {
     const live = filtered.filter((i) => i.status !== 'cancelled' && i.status !== 'draft');
@@ -338,8 +328,6 @@ export default function AdminInvoices() {
     return { billed, paid, due: billed - paid, count: filtered.length };
   }, [filtered]);
 
-  const fundLabel = (inv: CswoInvoice) =>
-    inv.fund ? (lang === 'bn' ? inv.fund.name_bn : inv.fund.name_en) : '—';
 
   // ── Excel-friendly exports ────────────────────────────────────────────────
   const downloadCsv = (rows: (string | number)[][], filename: string) => {
@@ -357,7 +345,7 @@ export default function AdminInvoices() {
 
   const exportRegister = () => {
     const header = [
-      'Bill No.', 'Date', 'Due date', 'Billed to', 'Email', 'Phone', 'Fund',
+      'Bill No.', 'Date', 'Due date', 'Billed to', 'Email', 'Phone',
       'Payment mode', 'Reference', 'Items', 'Subtotal', 'Discount', 'Round off',
       'Total', 'Paid', 'Balance', 'Status', 'Notes',
     ];
@@ -368,7 +356,6 @@ export default function AdminInvoices() {
       i.bill_to_name,
       i.bill_to_email,
       i.bill_to_phone,
-      i.fund ? i.fund.name_en : '',
       PM_LABELS[i.payment_method].en,
       i.payment_ref,
       itemsOf(i.id).length,
@@ -396,7 +383,7 @@ export default function AdminInvoices() {
 
   const exportItems = () => {
     const header = [
-      'Bill No.', 'Date', 'Billed to', 'Fund', 'Status', '#', 'Description', 'Qty', 'Rate', 'Amount',
+      'Bill No.', 'Date', 'Billed to', 'Status', '#', 'Description', 'Qty', 'Rate', 'Amount',
     ];
     const body: (string | number)[][] = [];
     filtered.forEach((i) => {
@@ -405,7 +392,6 @@ export default function AdminInvoices() {
           i.invoice_number,
           i.issue_date,
           i.bill_to_name,
-          i.fund ? i.fund.name_en : '',
           STATUS_LABELS[i.status].en,
           idx + 1,
           it.description,
@@ -469,12 +455,6 @@ export default function AdminInvoices() {
             <option key={s} value={s}>{lang === 'bn' ? STATUS_LABELS[s].bn : STATUS_LABELS[s].en}</option>
           ))}
         </select>
-        <select className="input text-sm" value={filterFund} onChange={(e) => setFilterFund(e.target.value)}>
-          <option value="">{tr('All funds', 'সব ফান্ড')}</option>
-          {funds.map((f) => (
-            <option key={f.id} value={f.id}>{lang === 'bn' ? f.name_bn : f.name_en}</option>
-          ))}
-        </select>
         <div>
           <label className="label text-[11px]">{tr('From', 'থেকে')}</label>
           <input type="date" className="input text-sm" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
@@ -505,7 +485,6 @@ export default function AdminInvoices() {
                 <th className="px-4 py-3">{tr('Bill no.', 'বিল নং')}</th>
                 <th className="px-4 py-3">{tr('Date', 'তারিখ')}</th>
                 <th className="px-4 py-3">{tr('Billed to', 'যার নামে')}</th>
-                <th className="px-4 py-3">{tr('Fund', 'ফান্ড')}</th>
                 <th className="px-4 py-3 text-right">{tr('Total', 'মোট')}</th>
                 <th className="px-4 py-3 text-right">{tr('Paid', 'পরিশোধ')}</th>
                 <th className="px-4 py-3 text-right">{tr('Balance', 'বকেয়া')}</th>
@@ -538,7 +517,6 @@ export default function AdminInvoices() {
                           : tr('No items', 'আইটেম নেই')}
                       </div>
                     </td>
-                    <td className="px-4 py-3">{fundLabel(inv)}</td>
                     <td className="px-4 py-3 text-right font-semibold">{fmt.money(Number(inv.total))}</td>
                     <td className="px-4 py-3 text-right text-green-700">{fmt.money(Number(inv.amount_paid))}</td>
                     <td className={`px-4 py-3 text-right font-semibold ${bal > 0 ? 'text-red-600' : 'text-gray-400'}`}>
@@ -641,19 +619,6 @@ export default function AdminInvoices() {
                     value={form.due_date}
                     onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))}
                   />
-                </div>
-                <div>
-                  <label className="label">{tr('Fund', 'ফান্ড')}</label>
-                  <select
-                    className="input"
-                    value={form.fund_id}
-                    onChange={(e) => setForm((f) => ({ ...f, fund_id: e.target.value }))}
-                  >
-                    <option value="">{tr('Not assigned', 'নির্ধারিত নয়')}</option>
-                    {funds.map((f) => (
-                      <option key={f.id} value={f.id}>{lang === 'bn' ? f.name_bn : f.name_en}</option>
-                    ))}
-                  </select>
                 </div>
                 <div>
                   <label className="label">{tr('Event', 'অনুষ্ঠান')}</label>

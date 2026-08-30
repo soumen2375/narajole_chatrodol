@@ -209,7 +209,6 @@ export interface CswoEvent {
   pincode: string;
   map_link: string;
   expected_participants: number;
-  fund_id: string | null;
   form_type: 'general' | 'blood_donation' | 'relief_distribution';
   latitude: number | null;
   longitude: number | null;
@@ -293,9 +292,8 @@ export interface Donation {
   currency: string;
   purpose: string | null;
   member_id: string | null;
-  fund_id: string | null;
-  campaign_id: string | null;
   event_id: string | null;
+  payment_method: CswoPaymentMethod;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
   razorpay_signature: string | null;
@@ -336,26 +334,14 @@ export interface MonthlyContribution {
 export type ExpenseStatus = 'draft' | 'approved' | 'rejected';
 export type CswoPaymentMethod = 'cash' | 'bank_transfer' | 'upi' | 'cheque' | 'online' | 'other';
 
-export interface CswoFund {
-  id: string;
-  name_bn: string;
-  name_en: string;
-  slug: string;
-  is_active: boolean;
-  is_restricted: boolean;
-  is_frozen: boolean;
-  sort_order: number;
-  created_at: string;
-}
-
-export type LedgerEntryType = 'donation' | 'contribution' | 'expense' | 'adjustment' | 'payroll' | 'grant';
+export type LedgerEntryType = 'donation' | 'contribution' | 'expense' | 'adjustment';
 export type LedgerDirection = 'credit' | 'debit';
 
 export interface CswoLedgerEntry {
   id: string;
   entry_type: LedgerEntryType;
   source_id: string | null;
-  fund_id: string | null;
+  event_id: string | null;
   direction: LedgerDirection;
   amount: number;
   occurred_at: string;
@@ -376,7 +362,6 @@ export interface CswoAuditLog {
 
 export interface CswoExpense {
   id: string;
-  fund_id: string;
   event_id: string | null;
   amount: number;
   currency: string;
@@ -392,7 +377,6 @@ export interface CswoExpense {
   bank_account_id: string | null;
   created_at: string;
   updated_at: string;
-  fund?: CswoFund;
 }
 
 export type InvoiceStatus = 'draft' | 'unpaid' | 'partial' | 'paid' | 'cancelled';
@@ -418,7 +402,6 @@ export interface CswoInvoice {
   bill_to_address: string;
   issue_date: string;
   due_date: string | null;
-  fund_id: string | null;
   event_id: string | null;
   payment_method: CswoPaymentMethod;
   bank_account_id: string | null;
@@ -432,18 +415,7 @@ export interface CswoInvoice {
   recorded_by: string | null;
   created_at: string;
   updated_at: string;
-  fund?: CswoFund | null;
   items?: CswoInvoiceItem[];
-}
-
-export interface CswoBudget {
-  id: string;
-  fund_id: string;
-  fiscal_year: string;
-  allocated_amount: number;
-  note: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface CswoCompliance {
@@ -503,39 +475,6 @@ export interface CswoBankTransaction {
   reconciled: boolean;
   note: string;
   created_by: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export type GrantStatus = 'pending' | 'active' | 'completed' | 'closed';
-export interface CswoGrant {
-  id: string;
-  grantor: string;
-  title: string;
-  reference: string;
-  fund_id: string | null;
-  sanctioned_amount: number;
-  start_date: string | null;
-  end_date: string | null;
-  status: GrantStatus;
-  contact_person: string;
-  contact_phone?: string | null;
-  note: string;
-  created_by: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export type TrancheStatus = 'expected' | 'received';
-export interface CswoGrantTranche {
-  id: string;
-  grant_id: string;
-  tranche_no: number;
-  amount: number;
-  received_on: string | null;
-  status: TrancheStatus;
-  reference: string;
-  note: string;
   created_at: string;
   updated_at: string;
 }
@@ -652,56 +591,6 @@ export interface CswoNotification {
   created_at: string;
 }
 
-export type PayrollKind = 'salary' | 'honorarium' | 'stipend' | 'reimbursement';
-export type PayrollStatus = 'pending' | 'paid' | 'cancelled';
-export interface CswoPayroll {
-  id: string;
-  member_id: string | null;
-  payee_name: string;
-  designation: string;
-  kind: PayrollKind;
-  period: string;
-  amount: number;
-  fund_id: string | null;
-  status: PayrollStatus;
-  note: string;
-  paid_on: string | null;
-  bank_account_id: string | null;
-  created_by: string | null;
-  approved_by: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export type RefundStatus = 'requested' | 'approved' | 'processed' | 'rejected';
-export interface CswoRefund {
-  id: string;
-  donation_id: string | null;
-  amount: number;
-  reason: string;
-  status: RefundStatus;
-  requested_by: string | null;
-  approved_by: string | null;
-  note: string;
-  created_at: string;
-  processed_at: string | null;
-}
-
-export interface CswoCampaign {
-  id: string;
-  name_bn: string;
-  name_en: string;
-  slug: string;
-  goal_amount: number;
-  fund_id: string | null;
-  starts_on: string | null;
-  ends_on: string | null;
-  is_active: boolean;
-  description: string;
-  cover_image: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface VolunteerApplication {
   id: string;

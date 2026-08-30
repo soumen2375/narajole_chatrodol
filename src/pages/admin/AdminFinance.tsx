@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ComponentType, SVGProps } from 'react';
-import { FaArrowTrendUp, FaHeart, FaCoins, FaReceipt, FaDownload } from 'react-icons/fa6';
+import { FaArrowTrendUp, FaHeart, FaCoins, FaReceipt, FaDownload, FaBuildingColumns, FaWallet } from 'react-icons/fa6';
 import { supabase } from '@/lib/supabase';
-import type { CswoBudget, CswoFund } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { Sparkline, BarLineChart } from '@/components/ui/charts';
+import RecordMoneyButton from '@/components/finance/RecordMoney';
 
 const INK = '#1c1917';
 const INK2 = '#44403c';
@@ -16,7 +16,7 @@ const BRAND = '#c2410c';
 const GREEN = '#4d7c0f';
 const PAPER = '#ffffff';
 const CREAM = '#faf6ef';
-const FUND_COLORS = ['#1d4ed8', '#c2410c', '#4d7c0f', '#b45309', '#0f766e', '#78716c'];
+const EVENT_COLORS = ['#1d4ed8', '#c2410c', '#4d7c0f', '#b45309', '#0f766e', '#78716c'];
 
 type IconType = ComponentType<SVGProps<SVGSVGElement>>;
 const FY_MONTH_ORDER = [3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2];
@@ -33,8 +33,9 @@ function fyMonthIndex(dateStr: string, sy: number) {
 }
 function inFy(dateStr: string, sy: number) { const i = fyMonthIndex(dateStr, sy); return i >= 0 && i < 12; }
 
-interface FundRow { fund: CswoFund; donations: number; expenses: number; budget: number | null; }
-interface Txn { at: string; label: string; fund: string; amount: number; dir: 'credit' | 'debit'; }
+interface EventRow { id: string | null; title: string; income: number; expenses: number; }
+interface Txn { at: string; label: string; event: string; amount: number; dir: 'credit' | 'debit'; }
+interface AccountBalance { id: string; label: string; type: string; balance: number; }
 
 export default function AdminFinance() {
   const { lang } = useT();
@@ -48,9 +49,10 @@ export default function AdminFinance() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<{
     income: number; donations: number; contributions: number; expenses: number;
-    recurringTotal: number; recurringCount: number; outstanding: number;
+    recurringTotal: number; recurringCount: number;
+    bankBalance: number; walletBalance: number; accounts: AccountBalance[];
     mDon: number[]; mCon: number[]; mExp: number[]; mInc: number[];
-    funds: FundRow[]; txns: Txn[]; unassignedDon: number; unassignedExp: number;
+    events: EventRow[]; txns: Txn[];
   } | null>(null);
 
   useEffect(() => {
@@ -58,28 +60,42 @@ export default function AdminFinance() {
     setLoading(true);
     const sy = fyStartYear(fy);
     Promise.all([
-      supabase.from('cswo_donations').select('amount,fund_id,created_at,donor_name,is_anonymous,is_recurring,purpose,status'),
+      supabase.from('cswo_donations').select('amount,event_id,created_at,donor_name,is_anonymous,is_recurring,purpose,status'),
       supabase.from('cswo_monthly_contributions').select('amount,paid_at,member_id,status,year'),
-      supabase.from('cswo_expenses').select('amount,fund_id,spent_on,created_at,vendor,description,status'),
-      supabase.from('cswo_funds').select('*').eq('is_active', true).order('sort_order'),
-      supabase.from('cswo_budgets').select('*').eq('fiscal_year', fy),
+      supabase.from('cswo_expenses').select('amount,event_id,spent_on,created_at,vendor,description,status'),
+      supabase.from('cswo_events').select('id,title').order('event_date', { ascending: false }),
       supabase.from('cswo_members').select('id,full_name,status'),
-    ]).then(([donR, conR, expR, fundR, budR, memR]) => {
+      supabase.from('cswo_bank_accounts').select('id,label,account_type,opening_balance').eq('is_active', true).order('sort_order'),
+      supabase.from('cswo_bank_transactions').select('account_id,direction,amount'),
+    ]).then(([donR, conR, expR, evR, memR, accR, txnR]) => {
       if (!active) return;
-      type D = { amount: number; fund_id: string | null; created_at: string; donor_name: string | null; is_anonymous: boolean; is_recurring: boolean; purpose: string | null; status: string };
+      type D = { amount: number; event_id: string | null; created_at: string; donor_name: string | null; is_anonymous: boolean; is_recurring: boolean; purpose: string | null; status: string };
       type C = { amount: number; paid_at: string | null; member_id: string; status: string; year: number };
-      type E = { amount: number; fund_id: string | null; spent_on: string; created_at: string; vendor: string; description: string; status: string };
+      type E = { amount: number; event_id: string | null; spent_on: string; created_at: string; vendor: string; description: string; status: string };
+      type A = { id: string; label: string; account_type: string; opening_balance: number };
+      type T = { account_id: string; direction: 'credit' | 'debit'; amount: number };
 
       const donations = ((donR.data ?? []) as D[]).filter((d) => d.status === 'paid');
       const contributions = ((conR.data ?? []) as C[]).filter((c) => c.status === 'paid');
       const expenses = ((expR.data ?? []) as E[]).filter((e) => e.status === 'approved');
-      const funds = (fundR.data ?? []) as CswoFund[];
-      const budgets = (budR.data ?? []) as CswoBudget[];
+      const events = (evR.data ?? []) as { id: string; title: string }[];
       const members = (memR.data ?? []) as { id: string; full_name: string; status: string }[];
+      const accounts = (accR.data ?? []) as A[];
+      const txns = (txnR.data ?? []) as T[];
       const memberName = new Map(members.map((m) => [m.id, m.full_name]));
-      const fundName = (id: string | null) => { const f = funds.find((x) => x.id === id); return f ? (lang === 'bn' ? f.name_bn : f.name_en) : tr('General', 'সাধারণ'); };
+      const eventTitle = (id: string | null) => events.find((e) => e.id === id)?.title ?? tr('Not allocated', 'অনির্ধারিত');
 
-      // FY-scoped slices
+      // ── Balances: where the money actually sits, all time ────────────────
+      const accBalances: AccountBalance[] = accounts.map((a) => {
+        const mine = txns.filter((t) => t.account_id === a.id);
+        const cr = mine.filter((t) => t.direction === 'credit').reduce((s, t) => s + Number(t.amount), 0);
+        const db = mine.filter((t) => t.direction === 'debit').reduce((s, t) => s + Number(t.amount), 0);
+        return { id: a.id, label: a.label, type: a.account_type, balance: Number(a.opening_balance) + cr - db };
+      });
+      const bankBalance = accBalances.filter((a) => a.type !== 'cash').reduce((s, a) => s + a.balance, 0);
+      const walletBalance = accBalances.filter((a) => a.type === 'cash').reduce((s, a) => s + a.balance, 0);
+
+      // ── FY-scoped activity ───────────────────────────────────────────────
       const donFy = donations.filter((d) => inFy(d.created_at, sy));
       const conFy = contributions.filter((c) => c.paid_at && inFy(c.paid_at, sy));
       const expFy = expenses.filter((e) => inFy(e.spent_on || e.created_at, sy));
@@ -89,40 +105,34 @@ export default function AdminFinance() {
       const tExp = expFy.reduce((s, e) => s + Number(e.amount), 0);
       const recurring = donFy.filter((d) => d.is_recurring);
 
-      // outstanding dues (estimate): approved members × elapsed months − paid (current FY only)
-      const approved = members.filter((m) => m.status === 'approved').length;
-      const elapsed = Math.min(12, Math.max(0, fyMonthIndex(new Date().toISOString(), sy) + 1));
-      const outstanding = fy === currentFiscalYear() ? Math.max(0, approved * elapsed * 100 - tCon) : 0;
-
-      // monthly buckets (FY order Apr..Mar)
       const mDon = Array(12).fill(0); const mCon = Array(12).fill(0); const mExp = Array(12).fill(0);
       donFy.forEach((d) => { mDon[fyMonthIndex(d.created_at, sy)] += Number(d.amount); });
       conFy.forEach((c) => { if (c.paid_at) mCon[fyMonthIndex(c.paid_at, sy)] += Number(c.amount); });
       expFy.forEach((e) => { mExp[fyMonthIndex(e.spent_on || e.created_at, sy)] += Number(e.amount); });
       const mInc = mDon.map((v, i) => v + mCon[i]);
 
-      const fundRows: FundRow[] = funds.map((f) => ({
-        fund: f,
-        donations: donFy.filter((d) => d.fund_id === f.id).reduce((s, d) => s + Number(d.amount), 0),
-        expenses: expFy.filter((e) => e.fund_id === f.id).reduce((s, e) => s + Number(e.amount), 0),
-        budget: (() => { const b = budgets.find((x) => x.fund_id === f.id); return b ? Number(b.allocated_amount) : null; })(),
-      }));
+      // ── Event allocation: only events that actually moved money ──────────
+      const ids = new Set<string | null>();
+      donFy.forEach((d) => ids.add(d.event_id));
+      expFy.forEach((e) => ids.add(e.event_id));
+      const eventRows: EventRow[] = [...ids].map((id) => ({
+        id,
+        title: eventTitle(id),
+        income: donFy.filter((d) => d.event_id === id).reduce((s, d) => s + Number(d.amount), 0),
+        expenses: expFy.filter((e) => e.event_id === id).reduce((s, e) => s + Number(e.amount), 0),
+      })).sort((a, b) => (b.income + b.expenses) - (a.income + a.expenses));
 
-      // latest transactions (recent overall, full timestamps)
-      const txns: Txn[] = [
-        ...donations.map<Txn>((d) => ({ at: d.created_at, label: (d.is_anonymous ? tr('Anonymous', 'নাম গোপন') : d.donor_name || tr('Donation', 'অনুদান')) + (d.is_recurring ? ' · ' + tr('monthly', 'মাসিক') : '') + ' — ' + (d.purpose || tr('Donation', 'অনুদান')), fund: fundName(d.fund_id), amount: Number(d.amount), dir: 'credit' })),
-        ...contributions.map<Txn>((c) => ({ at: c.paid_at || '', label: (memberName.get(c.member_id) || tr('Member', 'সদস্য')) + ' — ' + tr('monthly dues', 'মাসিক চাঁদা'), fund: tr('General', 'সাধারণ'), amount: Number(c.amount), dir: 'credit' })),
-        ...expenses.map<Txn>((e) => ({ at: e.created_at || e.spent_on, label: (e.vendor || e.description || tr('Expense', 'ব্যয়')), fund: fundName(e.fund_id), amount: Number(e.amount), dir: 'debit' })),
+      const latest: Txn[] = [
+        ...donations.map<Txn>((d) => ({ at: d.created_at, label: (d.is_anonymous ? tr('Anonymous', 'নাম গোপন') : d.donor_name || tr('Donation', 'অনুদান')) + (d.is_recurring ? ' · ' + tr('monthly', 'মাসিক') : '') + ' — ' + (d.purpose || tr('Donation', 'অনুদান')), event: eventTitle(d.event_id), amount: Number(d.amount), dir: 'credit' })),
+        ...contributions.map<Txn>((c) => ({ at: c.paid_at || '', label: (memberName.get(c.member_id) || tr('Member', 'সদস্য')) + ' — ' + tr('monthly donation', 'মাসিক অনুদান'), event: tr('Not allocated', 'অনির্ধারিত'), amount: Number(c.amount), dir: 'credit' })),
+        ...expenses.map<Txn>((e) => ({ at: e.created_at || e.spent_on, label: (e.vendor || e.description || tr('Expense', 'ব্যয়')), event: eventTitle(e.event_id), amount: Number(e.amount), dir: 'debit' })),
       ].filter((t) => t.at).sort((a, b) => +new Date(b.at) - +new Date(a.at)).slice(0, 10);
-
-      const activeIds = new Set(funds.map((f) => f.id));
-      const unassignedDon = donFy.filter((d) => !d.fund_id || !activeIds.has(d.fund_id)).reduce((s, d) => s + Number(d.amount), 0);
-      const unassignedExp = expFy.filter((e) => !e.fund_id || !activeIds.has(e.fund_id)).reduce((s, e) => s + Number(e.amount), 0);
 
       setData({
         income: tDon + tCon, donations: tDon, contributions: tCon, expenses: tExp,
         recurringTotal: recurring.reduce((s, d) => s + Number(d.amount), 0), recurringCount: recurring.length,
-        outstanding, mDon, mCon, mExp, mInc, funds: fundRows, txns, unassignedDon, unassignedExp,
+        bankBalance, walletBalance, accounts: accBalances,
+        mDon, mCon, mExp, mInc, events: eventRows, txns: latest,
       });
       setLoading(false);
     });
@@ -132,13 +142,7 @@ export default function AdminFinance() {
   const net = data ? data.income - data.expenses : 0;
   const expenseRatio = data && data.income > 0 ? Math.round((data.expenses / data.income) * 100) : 0;
   const savingsRate = data && data.income > 0 ? Math.round((net / data.income) * 100) : 0;
-  const restrictedDon = data ? data.funds.filter((r) => r.fund.is_restricted).reduce((s, r) => s + r.donations, 0) : 0;
-  const unrestrictedDon = data ? data.funds.filter((r) => !r.fund.is_restricted).reduce((s, r) => s + r.donations, 0) : 0;
-
-  const toggleFund = async (fund: CswoFund, field: 'is_restricted' | 'is_frozen') => {
-    await supabase.from('cswo_funds').update({ [field]: !fund[field] }).eq('id', fund.id);
-    setTick((t) => t + 1);
-  };
+  const totalHeld = data ? data.bankBalance + data.walletBalance : 0;
 
   const best = useMemo(() => {
     if (!data) return { inc: { i: 0, v: 0 }, exp: { i: 0, v: 0 }, avg: 0 };
@@ -154,9 +158,9 @@ export default function AdminFinance() {
 
   const exportCSV = () => {
     if (!data) return;
-    const header = [tr('Fund', 'ফান্ড'), tr('Donations', 'দান'), tr('Expenses', 'ব্যয়'), tr('Budget', 'বাজেট'), tr('Balance', 'ব্যালেন্স')];
-    const body = data.funds.map((r) => [lang === 'bn' ? r.fund.name_bn : r.fund.name_en, r.donations, r.expenses, r.budget ?? '', r.donations - r.expenses]);
-    const totals = [tr('TOTAL', 'মোট'), data.donations, data.expenses, '', net];
+    const header = [tr('Event', 'অনুষ্ঠান'), tr('Income', 'আয়'), tr('Expenses', 'ব্যয়'), tr('Balance', 'ব্যালেন্স')];
+    const body = data.events.map((r) => [r.title, r.income, r.expenses, r.income - r.expenses]);
+    const totals = [tr('TOTAL', 'মোট'), data.income, data.expenses, net];
     const csv = [header, ...body, totals].map((row) => row.map((c) => `"${c}"`).join(',')).join('\r\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -175,9 +179,10 @@ export default function AdminFinance() {
           <h1 className="mt-1.5 text-[28px] leading-tight" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>
             {tr('Finance Summary', 'আর্থিক সারসংক্ষেপ')} <span style={{ color: MUTED }}>· The Quarterly Ledger</span>
           </h1>
-          <p className="mt-1 max-w-2xl text-[13.5px]" style={{ color: INK2 }}>{tr('A complete picture of the trust’s finances — income, expenses and per-fund balances.', 'আর্থিক স্বাস্থের পূর্ণাঙ্গ চিত্র — আয়, ব্যয় ও ফান্ড ব্যালেন্স।')}</p>
+          <p className="mt-1 max-w-2xl text-[13.5px]" style={{ color: INK2 }}>{tr('What the trust holds right now, and everything that moved this year.', 'এই মুহূর্তে হাতে কত আছে, আর এই বছরে কী কী নড়াচড়া হয়েছে।')}</p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <RecordMoneyButton onSaved={() => setTick((t) => t + 1)} />
           <select value={fy} onChange={(e) => setFy(e.target.value)} className="rounded-full px-3.5 py-2 text-[12.5px] outline-none" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
             {fyList.map((y) => <option key={y} value={y}>FY {y}</option>)}
           </select>
@@ -189,42 +194,50 @@ export default function AdminFinance() {
 
       {loading || !data ? <TableSkeleton rows={8} /> : (
         <>
-          {/* Stat cards */}
-          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-            <StatCard icon={FaArrowTrendUp} eyebrow={tr('Total income', 'মোট আয়')} value={moneyShort(data.income)} sub={tr('Donations + Contributions', 'অনুদান + চাঁদা')} spark={data.mInc} color={GREEN} />
-            <StatCard icon={FaHeart} eyebrow={tr('Donations', 'অনুদান')} value={moneyShort(data.donations)} sub={tr('From donors', 'দাতাদের থেকে')} spark={data.mDon} color={BRAND} />
-            <StatCard icon={FaCoins} eyebrow={tr('Contributions', 'চাঁদা')} value={moneyShort(data.contributions)} sub={tr('From members', 'সদস্যদের থেকে')} spark={data.mCon} color="#1d4ed8" />
-            <StatCard icon={FaReceipt} eyebrow={tr('Expenses', 'ব্যয়')} value={moneyShort(data.expenses)} sub={tr('All categories', 'সব খাতে')} spark={data.mExp} color="#9a3412" />
+          {/* ── Where the money is, right now ────────────────────────────── */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <BalanceCard
+              icon={FaBuildingColumns}
+              eyebrow={tr('Bank balance', 'ব্যাংক ব্যালেন্স')}
+              value={moneyShort(data.bankBalance)}
+              sub={tr('Online — gateway, UPI, transfers', 'অনলাইন — গেটওয়ে, ইউপিআই, ট্রান্সফার')}
+              accent="#1d4ed8"
+              bg="linear-gradient(158deg,#eef4ff 0%,#ffffff 62%)"
+              border="#d3ddf2"
+              rows={data.accounts.filter((a) => a.type !== 'cash').map((a) => ({ label: a.label, value: fmt.money(a.balance) }))}
+              empty={tr('No bank accounts yet.', 'কোনো ব্যাংক অ্যাকাউন্ট নেই।')}
+            />
+            <BalanceCard
+              icon={FaWallet}
+              eyebrow={tr('Wallet balance', 'ওয়ালেট ব্যালেন্স')}
+              value={moneyShort(data.walletBalance)}
+              sub={tr('Offline cash in hand', 'হাতে থাকা নগদ')}
+              accent={GREEN}
+              bg="linear-gradient(158deg,#ecfaf3 0%,#ffffff 62%)"
+              border="#c8e7d8"
+              rows={data.accounts.filter((a) => a.type === 'cash').map((a) => ({ label: a.label, value: fmt.money(a.balance) }))}
+              empty={tr('No cash wallet yet.', 'কোনো নগদ ওয়ালেট নেই।')}
+            />
+            <div className="rounded-[8px] p-5" style={{ background: INK, color: CREAM }}>
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: '#a8a29e' }}>{tr('Total held', 'সর্বমোট')}</div>
+              <div className="mt-2 text-[34px] font-bold leading-none">{moneyShort(totalHeld)}</div>
+              <p className="mt-2 text-[12.5px]" style={{ color: '#d6d3d1' }}>
+                {tr('Bank + wallet, all time. This is money the trust can actually spend.', 'ব্যাংক + ওয়ালেট, সর্বকাল। এটাই প্রকৃত খরচযোগ্য অর্থ।')}
+              </p>
+              <div className="mt-4 space-y-1.5 border-t pt-3" style={{ borderColor: '#44403c' }}>
+                <DarkRow label={tr('This year’s income', 'এ বছরের আয়')} value={moneyShort(data.income)} />
+                <DarkRow label={tr('This year’s spend', 'এ বছরের ব্যয়')} value={moneyShort(data.expenses)} />
+                <DarkRow label={tr('Net this year', 'এ বছরের নিট')} value={moneyShort(net)} strong />
+              </div>
+            </div>
           </div>
 
-          {/* Net balance + cash position */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="rounded-[8px] p-6 lg:col-span-2" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Net balance', 'নিট ব্যালেন্স')}</div>
-              <div className="mt-2 flex items-end gap-2">
-                <span className="text-[40px] font-bold leading-none" style={{ color: net >= 0 ? GREEN : BRAND }}>{moneyShort(net)}</span>
-                <span className="mb-1.5 font-mono text-[11px] font-semibold" style={{ color: savingsRate >= 0 ? GREEN : BRAND }}>{tr('savings', 'সঞ্চয়')} {num(savingsRate)}%</span>
-              </div>
-              <p className="mt-2 text-[13px]" style={{ color: INK2 }}>{tr(`Of ₹${num(data.income)} income, ₹${num(data.expenses)} spent; ₹${num(net)} retained.`, `মোট ₹${num(data.income)} আয়ের মধ্যে ₹${num(data.expenses)} ব্যয়; অবশিষ্ট ₹${num(net)}।`)}</p>
-              <div className="mt-4">
-                <div className="flex justify-between font-mono text-[10px] uppercase tracking-[0.14em]" style={{ color: MUTED }}><span>{tr('Expense ratio', 'ব্যয়ের অনুপাত')}</span><span>{num(expenseRatio)}%</span></div>
-                <div className="mt-1.5 flex h-2.5 w-full overflow-hidden rounded-full" style={{ background: CREAM }}>
-                  <div style={{ width: `${Math.min(100, expenseRatio)}%`, background: BRAND }} />
-                  <div style={{ width: `${Math.max(0, 100 - expenseRatio)}%`, background: GREEN }} />
-                </div>
-              </div>
-            </div>
-            <div className="rounded-[8px] p-5" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Cash position', 'বর্তমান অবস্থা')}</div>
-              <div className="mt-3 space-y-2.5">
-                <CashRow label={tr('Funds in hand', 'হাতে থাকা তহবিল')} value={moneyShort(net)} strong />
-                <CashRow label={tr('Outstanding dues (est.)', 'বকেয়া চাঁদা (আনু.)')} value={moneyShort(data.outstanding)} />
-                <CashRow label={tr('Recurring donors', 'মাসিক দাতা')} value={num(data.recurringCount)} />
-                <div className="mt-1 border-t pt-2.5" style={{ borderColor: RULE }}>
-                  <CashRow label={tr('Projected total', 'সম্ভাব্য মোট')} value={moneyShort(net + data.outstanding)} strong accent />
-                </div>
-              </div>
-            </div>
+          {/* ── This year's activity ─────────────────────────────────────── */}
+          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+            <StatCard icon={FaArrowTrendUp} eyebrow={tr('Total income', 'মোট আয়')} value={moneyShort(data.income)} sub={tr('Donations + monthly', 'অনুদান + মাসিক')} spark={data.mInc} color={GREEN} />
+            <StatCard icon={FaHeart} eyebrow={tr('Donations', 'অনুদান')} value={moneyShort(data.donations)} sub={tr('From donors', 'দাতাদের থেকে')} spark={data.mDon} color={BRAND} />
+            <StatCard icon={FaCoins} eyebrow={tr('Monthly donation', 'মাসিক অনুদান')} value={moneyShort(data.contributions)} sub={tr('From members', 'সদস্যদের থেকে')} spark={data.mCon} color="#1d4ed8" />
+            <StatCard icon={FaReceipt} eyebrow={tr('Expenses', 'ব্যয়')} value={moneyShort(data.expenses)} sub={tr('All categories', 'সব খাতে')} spark={data.mExp} color="#9a3412" />
           </div>
 
           {/* Income vs Expense chart */}
@@ -250,107 +263,72 @@ export default function AdminFinance() {
               <Summary eyebrow={tr('Avg income / mo', 'গড় আয় / মাস')} value={moneyShort(best.avg)} />
               <Summary eyebrow={tr('Savings rate', 'সঞ্চয় হার')} value={`${num(savingsRate)}%`} />
             </div>
+            <div className="mt-4 border-t pt-4" style={{ borderColor: RULE }}>
+              <div className="flex justify-between font-mono text-[10px] uppercase tracking-[0.14em]" style={{ color: MUTED }}><span>{tr('Expense ratio', 'ব্যয়ের অনুপাত')}</span><span>{num(expenseRatio)}%</span></div>
+              <div className="mt-1.5 flex h-2.5 w-full overflow-hidden rounded-full" style={{ background: CREAM }}>
+                <div style={{ width: `${Math.min(100, expenseRatio)}%`, background: BRAND }} />
+                <div style={{ width: `${Math.max(0, 100 - expenseRatio)}%`, background: GREEN }} />
+              </div>
+            </div>
           </div>
 
-          {/* Per-fund breakdown */}
+          {/* ── Event allocation ─────────────────────────────────────────── */}
           <div className="rounded-[8px]" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
             <div className="px-5 pt-5">
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Per-fund breakdown', 'ফান্ড অনুযায়ী বিশ্লেষণ')}</div>
-              <h3 className="mt-1.5 text-[18px]" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>{tr('By designated fund', 'তহবিল অনুসারে')}</h3>
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Event allocation', 'অনুষ্ঠান-ভিত্তিক বরাদ্দ')}</div>
+              <h3 className="mt-1.5 text-[18px]" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>{tr('Income & expense by event', 'অনুষ্ঠান অনুসারে আয় ও ব্যয়')}</h3>
+              <p className="mt-1 text-[12.5px]" style={{ color: MUTED }}>{tr('Change an allocation on the Ledger page.', 'বরাদ্দ বদলাতে লেজার পাতায় যান।')}</p>
             </div>
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-[13px]">
                 <thead><tr style={{ borderTop: `1px solid ${RULE}`, borderBottom: `1px solid ${RULE}` }}>
-                  {[tr('Fund', 'ফান্ড'), tr('Donations', 'দান'), tr('Expenses', 'ব্যয়'), tr('Budget', 'বাজেট'), tr('Balance', 'ব্যালেন্স'), tr('Usage', 'ব্যবহার')].map((h, i) => (
+                  {[tr('Event', 'অনুষ্ঠান'), tr('Income', 'আয়'), tr('Expenses', 'ব্যয়'), tr('Balance', 'ব্যালেন্স')].map((h, i) => (
                     <th key={i} className={`px-5 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] ${i === 0 ? 'text-left' : 'text-right'}`} style={{ color: MUTED }}>{h}</th>
                   ))}
                 </tr></thead>
                 <tbody>
-                  {data.funds.map((r, i) => {
-                    const bal = r.donations - r.expenses;
-                    const usage = r.budget && r.budget > 0
-                      ? Math.min(100, Math.round((r.expenses / r.budget) * 100))
-                      : r.donations > 0 ? Math.min(100, Math.round((r.expenses / r.donations) * 100)) : 0;
+                  {data.events.map((r, i) => {
+                    const bal = r.income - r.expenses;
                     return (
-                      <tr key={r.fund.id} style={{ borderBottom: `1px solid ${RULE}` }}>
+                      <tr key={r.id ?? 'none'} style={{ borderBottom: `1px solid ${RULE}` }}>
                         <td className="px-5 py-3">
-                          <span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: FUND_COLORS[i % FUND_COLORS.length] }} /><span style={{ color: INK }}>{lang === 'bn' ? r.fund.name_bn : r.fund.name_en}</span></span>
+                          <span className="inline-flex items-center gap-2">
+                            <span className="h-2.5 w-2.5 rounded-sm" style={{ background: r.id ? EVENT_COLORS[i % EVENT_COLORS.length] : '#a8a29e' }} />
+                            <span style={{ color: r.id ? INK : INK2 }}>{r.title}</span>
+                          </span>
                         </td>
-                        <td className="px-5 py-3 text-right" style={{ color: GREEN }}>{fmt.money(r.donations)}</td>
+                        <td className="px-5 py-3 text-right" style={{ color: GREEN }}>{fmt.money(r.income)}</td>
                         <td className="px-5 py-3 text-right" style={{ color: BRAND }}>{fmt.money(r.expenses)}</td>
-                        <td className="px-5 py-3 text-right" style={{ color: MUTED }}>{r.budget != null ? fmt.money(r.budget) : '—'}</td>
                         <td className="px-5 py-3 text-right font-semibold" style={{ color: bal >= 0 ? GREEN : BRAND }}>{fmt.money(bal)}</td>
-                        <td className="px-5 py-3">
-                          <div className="ml-auto h-1.5 w-24 overflow-hidden rounded-full" style={{ background: CREAM }}><div className="h-full rounded-full" style={{ width: `${usage}%`, background: usage > 80 ? BRAND : GREEN }} /></div>
-                          <div className="mt-1 text-right font-mono text-[9px]" style={{ color: MUTED }}>{num(usage)}%</div>
-                        </td>
                       </tr>
                     );
                   })}
-                  {/* Monthly Donation Row */}
-                  <tr style={{ borderBottom: `1px solid ${RULE}` }}>
-                    <td className="px-5 py-3">
-                      <span className="inline-flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-sm" style={{ background: '#1d4ed8' }} />
-                        <span style={{ color: INK }}>{tr('Monthly Donation', 'মাসিক অনুদান')}</span>
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-right" style={{ color: GREEN }}>{fmt.money(data.contributions)}</td>
-                    <td className="px-5 py-3 text-right" style={{ color: MUTED }}>—</td>
-                    <td className="px-5 py-3 text-right" style={{ color: MUTED }}>—</td>
-                    <td className="px-5 py-3 text-right font-semibold" style={{ color: GREEN }}>{fmt.money(data.contributions)}</td>
-                    <td className="px-5 py-3" />
-                  </tr>
-                  {(data.unassignedDon > 0 || data.unassignedExp > 0) && (
+                  {data.contributions > 0 && (
                     <tr style={{ borderBottom: `1px solid ${RULE}` }}>
-                      <td className="px-5 py-3"><span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: '#a8a29e' }} /><span style={{ color: INK2 }}>{tr('Unassigned / General', 'অনির্ধারিত / সাধারণ')}</span></span></td>
-                      <td className="px-5 py-3 text-right" style={{ color: GREEN }}>{fmt.money(data.unassignedDon)}</td>
-                      <td className="px-5 py-3 text-right" style={{ color: BRAND }}>{fmt.money(data.unassignedExp)}</td>
+                      <td className="px-5 py-3">
+                        <span className="inline-flex items-center gap-2">
+                          <span className="h-2.5 w-2.5 rounded-sm" style={{ background: '#1d4ed8' }} />
+                          <span style={{ color: INK }}>{tr('Monthly Donation', 'মাসিক অনুদান')}</span>
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-right" style={{ color: GREEN }}>{fmt.money(data.contributions)}</td>
                       <td className="px-5 py-3 text-right" style={{ color: MUTED }}>—</td>
-                      <td className="px-5 py-3 text-right font-semibold" style={{ color: (data.unassignedDon - data.unassignedExp) >= 0 ? GREEN : BRAND }}>{fmt.money(data.unassignedDon - data.unassignedExp)}</td>
-                      <td className="px-5 py-3" />
+                      <td className="px-5 py-3 text-right font-semibold" style={{ color: GREEN }}>{fmt.money(data.contributions)}</td>
                     </tr>
+                  )}
+                  {data.events.length === 0 && data.contributions === 0 && (
+                    <tr><td colSpan={4} className="px-5 py-10 text-center text-[13px]" style={{ color: MUTED }}>{tr('Nothing recorded this year yet.', 'এ বছরে এখনো কিছু রেকর্ড হয়নি।')}</td></tr>
                   )}
                   <tr style={{ background: INK }}>
                     <td className="px-5 py-3 font-semibold" style={{ color: CREAM }}>{tr('Total', 'সর্বমোট')}</td>
                     <td className="px-5 py-3 text-right font-semibold" style={{ color: '#86efac' }}>{fmt.money(data.income)}</td>
                     <td className="px-5 py-3 text-right font-semibold" style={{ color: '#fca47e' }}>{fmt.money(data.expenses)}</td>
-                    <td className="px-5 py-3" />
                     <td className="px-5 py-3 text-right font-semibold" style={{ color: CREAM }}>{fmt.money(net)}</td>
-                    <td className="px-5 py-3" />
                   </tr>
                 </tbody>
               </table>
             </div>
-            <p className="px-5 py-3 text-[11px]" style={{ color: MUTED }}>* {tr('Monthly Donation is unrestricted and counted in Net Balance.', 'মাসিক অনুদান নির্দিষ্ট ফান্ডের আওতাভুক্ত নয় এবং নিট ব্যালেন্সে যুক্ত করা হয়েছে।')}</p>
-          </div>
-
-          {/* Fund controls + restricted split */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="rounded-[8px] p-5 lg:col-span-2" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Fund controls', 'ফান্ড নিয়ন্ত্রণ')}</div>
-              <h3 className="mt-1.5 text-[18px]" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>{tr('Restrict or freeze funds', 'ফান্ড সীমাবদ্ধ বা স্থগিত করুন')}</h3>
-              <div className="mt-3">
-                {data.funds.map((r) => (
-                  <div key={r.fund.id} className="flex items-center justify-between py-2.5" style={{ borderTop: `1px solid ${RULE}` }}>
-                    <span className="text-[13.5px]" style={{ color: INK }}>{lang === 'bn' ? r.fund.name_bn : r.fund.name_en}</span>
-                    <div className="flex gap-2">
-                      <button onClick={() => toggleFund(r.fund, 'is_restricted')} className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors" style={r.fund.is_restricted ? { background: '#b45309', color: '#fff' } : { background: CREAM, color: MUTED, border: `1px solid ${RULE}` }}>{tr('Restricted', 'সীমাবদ্ধ')}</button>
-                      <button onClick={() => toggleFund(r.fund, 'is_frozen')} className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors" style={r.fund.is_frozen ? { background: BRAND, color: '#fff' } : { background: CREAM, color: MUTED, border: `1px solid ${RULE}` }}>{tr('Frozen', 'স্থগিত')}</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-2 text-[11px]" style={{ color: MUTED }}>{tr('Frozen funds cannot receive new expenses. Restricted funds are earmarked and shown separately.', 'স্থগিত ফান্ডে নতুন ব্যয় যোগ করা যায় না। সীমাবদ্ধ ফান্ড আলাদাভাবে দেখানো হয়।')}</p>
-            </div>
-            <div className="rounded-[8px] p-5" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Restricted split', 'সীমাবদ্ধতার ভাগ')}</div>
-              <div className="mt-3 space-y-2.5">
-                <CashRow label={tr('Restricted donations', 'সীমাবদ্ধ অনুদান')} value={moneyShort(restrictedDon)} />
-                <CashRow label={tr('Unrestricted donations', 'অসীমাবদ্ধ অনুদান')} value={moneyShort(unrestrictedDon)} />
-                <CashRow label={tr('Contributions (unrestricted)', 'চাঁদা (অসীমাবদ্ধ)')} value={moneyShort(data.contributions)} />
-              </div>
-            </div>
+            <p className="px-5 py-3 text-[11px]" style={{ color: MUTED }}>* {tr('Monthly donation is org-wide and is not allocated to any single event.', 'মাসিক অনুদান সংস্থার সাধারণ তহবিল — কোনো নির্দিষ্ট অনুষ্ঠানে বরাদ্দ নয়।')}</p>
           </div>
 
           {/* Latest transactions */}
@@ -367,7 +345,7 @@ export default function AdminFinance() {
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full text-[13px]">
                   <thead><tr style={{ borderTop: `1px solid ${RULE}`, borderBottom: `1px solid ${RULE}` }}>
-                    {[tr('Date & time', 'তারিখ ও সময়'), tr('Description', 'বিবরণ'), tr('Fund', 'ফান্ড'), tr('Amount', 'পরিমাণ')].map((h, i) => (
+                    {[tr('Date & time', 'তারিখ ও সময়'), tr('Description', 'বিবরণ'), tr('Event', 'অনুষ্ঠান'), tr('Amount', 'পরিমাণ')].map((h, i) => (
                       <th key={i} className={`px-5 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] ${i === 3 ? 'text-right' : 'text-left'}`} style={{ color: MUTED }}>{h}</th>
                     ))}
                   </tr></thead>
@@ -376,7 +354,7 @@ export default function AdminFinance() {
                       <tr key={i} style={{ borderBottom: `1px solid ${RULE}` }}>
                         <td className="whitespace-nowrap px-5 py-3 font-mono text-[11px]" style={{ color: MUTED }}>{dtFull(tx.at)}</td>
                         <td className="px-5 py-3" style={{ color: INK }}>{tx.label}</td>
-                        <td className="px-5 py-3" style={{ color: INK2 }}>{tx.fund}</td>
+                        <td className="px-5 py-3" style={{ color: INK2 }}>{tx.event}</td>
                         <td className="px-5 py-3 text-right font-semibold" style={{ color: tx.dir === 'credit' ? GREEN : BRAND }}>{tx.dir === 'credit' ? '+' : '−'}{fmt.money(tx.amount)}</td>
                       </tr>
                     ))}
@@ -391,6 +369,47 @@ export default function AdminFinance() {
   );
 }
 
+function BalanceCard({
+  icon: Icon, eyebrow, value, sub, accent, bg, border, rows, empty,
+}: {
+  icon: IconType; eyebrow: string; value: string; sub: string;
+  accent: string; bg: string; border: string;
+  rows: { label: string; value: string }[]; empty: string;
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-[8px] p-5" style={{ background: bg, border: `1px solid ${border}` }}>
+      <div className="absolute bottom-0 left-0 top-0 w-[3px]" style={{ background: accent }} />
+      <div className="flex items-start justify-between">
+        <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: accent }}>{eyebrow}</div>
+        <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: PAPER }}>
+          <Icon className="h-3.5 w-3.5" style={{ color: accent }} />
+        </span>
+      </div>
+      <div className="mt-2 text-[34px] font-bold leading-none" style={{ color: accent }}>{value}</div>
+      <div className="mt-1.5 text-[12px]" style={{ color: MUTED }}>{sub}</div>
+      <div className="mt-3 space-y-1 border-t pt-2.5" style={{ borderColor: border }}>
+        {rows.length === 0
+          ? <div className="text-[12px]" style={{ color: MUTED }}>{empty}</div>
+          : rows.map((r) => (
+            <div key={r.label} className="flex items-center justify-between text-[12.5px]">
+              <span style={{ color: MUTED }}>{r.label}</span>
+              <span className="font-medium" style={{ color: INK }}>{r.value}</span>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+}
+
+function DarkRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-[12.5px]" style={{ color: '#a8a29e' }}>{label}</span>
+      <span style={{ color: CREAM, fontSize: strong ? 15 : 13, fontWeight: strong ? 700 : 500 }}>{value}</span>
+    </div>
+  );
+}
+
 function StatCard({ icon: Icon, eyebrow, value, sub, spark, color }: { icon: IconType; eyebrow: string; value: string; sub: string; spark: number[]; color: string }) {
   return (
     <div className="rounded-[8px] p-5" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
@@ -401,15 +420,6 @@ function StatCard({ icon: Icon, eyebrow, value, sub, spark, color }: { icon: Ico
       <div className="mt-3 text-[28px] font-bold leading-none" style={{ color: INK }}>{value}</div>
       <div className="mt-1.5 text-[12px]" style={{ color: MUTED }}>{sub}</div>
       <div className="mt-3"><Sparkline data={spark} color={color} className="h-8 w-full" /></div>
-    </div>
-  );
-}
-
-function CashRow({ label, value, strong, accent }: { label: string; value: string; strong?: boolean; accent?: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-[12.5px]" style={{ color: MUTED }}>{label}</span>
-      <span className={strong ? 'font-bold' : 'font-medium'} style={{ color: accent ? GREEN : INK, fontSize: strong ? 15 : 13 }}>{value}</span>
     </div>
   );
 }
