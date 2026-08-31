@@ -565,6 +565,46 @@ export interface CswoEventDocument {
   created_at: string;
 }
 
+/** draft — being written · issued — printed and signed · sent — posted by email */
+export type CswoLetterStatus = 'draft' | 'issued' | 'sent';
+
+/** An official letter written on the CSWO letterhead for an event. */
+export interface CswoEventLetter {
+  id: string;
+  event_id: string;
+  ref_no: string;
+  letter_date: string;
+  status: CswoLetterStatus;
+  to_name: string;
+  to_address: string;
+  to_email: string;
+  salutation: string;
+  subject: string;
+  body: string;
+  closing: string;
+  signatory_name: string;
+  signatory_role: string;
+  signatory_phone: string;
+  signature_url: string;
+  sent_at: string | null;
+  sent_to: string;
+  email_message_id: string;
+  /** The stamped copy that comes back from the addressee. */
+  signed_copy_url: string;
+  signed_copy_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** The register the ref numbers are drawn from: "3A/83", "3A/84", … */
+export interface CswoLetterSeries {
+  id: boolean;
+  prefix: string;
+  next_number: number;
+  updated_at: string;
+}
+
 export type CertRecipientType = 'participant' | 'winner' | 'volunteer' | 'donor' | 'custom';
 export interface CswoEventCertificate {
   id: string;

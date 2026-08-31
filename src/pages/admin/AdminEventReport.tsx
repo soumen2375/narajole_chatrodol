@@ -7,6 +7,7 @@ import type { CswoEvent } from '@/types';
 import { useFmt, formatDate } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { amountBand, detailTable, esc, printDocSheet, printedDate, section } from '@/lib/docsheet';
 
 const TEAL = '#0c756f';
 const INK = '#1c1917';
@@ -122,56 +123,56 @@ export default function AdminEventReport() {
     URL.revokeObjectURL(url);
   };
 
+  /**
+   * The event report, on the same sheet as the receipts and bills for the same
+   * event rather than a printout that looks like it came from another office.
+   */
   const printReport = () => {
-    const tr = (en: string, _bn: string) => en;
-    const row = (k: string, v: string) => `<tr><td class="k">${k}</td><td class="v">${v}</td></tr>`;
-    const budgetRows = budget.map((b) => `<tr><td>${b.category}</td><td class="r">${money(Number(b.planned))}</td><td class="r">${money(Number(b.approved))}</td><td class="r">${money(Number(b.actual))}</td></tr>`).join('');
-    const bloodRows = donors.length ? `<h3>${tr('Blood Donation', 'রক্তদান')}</h3><p>${tr('Donors', 'দাতা')}: ${donors.length} · ${tr('Units', 'ইউনিট')}: ${bloodUnits}</p>` : '';
-    const benRows = bens.length ? `<h3>${tr('Relief / Distribution', 'ত্রাণ / বিতরণ')}</h3><p>${tr('Beneficiaries', 'উপকারভোগী')}: ${bens.length} · ${tr('Items distributed', 'বিতরণকৃত আইটেম')}: ${distributed}</p>` : '';
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${event.title} — Report</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
-  body{color:#1c1917;padding:40px;max-width:780px;line-height:1.5}
-  .head{text-align:center;border-bottom:2px solid ${TEAL};padding-bottom:12px;margin-bottom:6px}
-  .org{font-size:18px;font-weight:800;color:${TEAL}}
-  .sub{font-size:12px;color:#666}
-  .title{margin-top:14px;font-size:16px;font-weight:700}
-  .meta{font-size:12px;color:#555;margin-top:2px}
-  h3{margin:20px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:${TEAL}}
-  table{width:100%;border-collapse:collapse;margin-top:4px}
-  td,th{padding:5px 8px;font-size:12.5px;border-bottom:1px solid #eee;text-align:left}
-  th{font-size:10px;text-transform:uppercase;color:#888}
-  .k{color:#666;width:55%}.v{font-weight:600}.r{text-align:right}
-  .net{margin-top:10px;padding:10px 12px;background:#f6f7f5;display:flex;justify-content:space-between;font-weight:800;font-size:14px}
-  .foot{margin-top:26px;text-align:center;font-size:10px;color:#aaa}
-  @media print{body{padding:14px}}
-</style></head><body>
-  <div class="head"><div class="org">Chhatradol Social Welfare Organization</div>
-    <div class="title">${tr('Event Report', 'অনুষ্ঠান প্রতিবেদন')} — ${event.title}</div>
-    <div class="meta">${event.event_code ?? ''} · ${dateStrEn}${venue ? ' · ' + venue : ''}</div>
-  </div>
-  <h3>${tr('Overview', 'সারসংক্ষেপ')}</h3>
-  <table>
-    ${row(tr('Category / status', 'বিভাগ / অবস্থা'), `${event.category || event.type} · ${event.status}`)}
-    ${row(tr('Attendance', 'উপস্থিতি'), String(attendance))}
-    ${row(tr('Volunteers (attended)', 'স্বেচ্ছাসেবক (উপস্থিত)'), `${vols.length} (${volAttended})`)}
-  </table>
-  <h3>${tr('Financial summary', 'আর্থিক সারসংক্ষেপ')}</h3>
-  <table>
-    ${row(tr('Donations received', 'প্রাপ্ত অনুদান'), money(donTotal))}
-    ${row(tr('Expenses (approved)', 'ব্যয় (অনুমোদিত)'), money(expTotal))}
-    ${row(tr('Budget planned / approved / spent', 'বাজেট পরিকল্পিত / অনুমোদিত / ব্যয়'), `${money(bPlanned)} / ${money(bApproved)} / ${money(bActual)}`)}
-  </table>
-  <div class="net"><span>${tr('Net (donations − expenses)', 'নিট (অনুদান − ব্যয়)')}</span><span>${money(net)}</span></div>
-  ${budget.length ? `<h3>${tr('Budget detail', 'বাজেট বিবরণ')}</h3><table><tr><th>${tr('Category', 'বিভাগ')}</th><th class="r">${tr('Planned', 'পরিকল্পিত')}</th><th class="r">${tr('Approved', 'অনুমোদিত')}</th><th class="r">${tr('Actual', 'প্রকৃত')}</th></tr>${budgetRows}</table>` : ''}
-  ${bloodRows}
-  ${benRows}
-  <div class="foot">${tr('Generated', 'তৈরি')} ${new Date().toLocaleString('en-US')} · narajole.org</div>
-</body></html>`;
-    const w = window.open('', '_blank', 'width=820,height=900');
-    if (!w) return;
-    w.document.write(html); w.document.close(); w.focus();
-    setTimeout(() => w.print(), 400);
+    const summary = detailTable([
+      ['Event code', esc(event.event_code ?? '—')],
+      ['Category / status', esc(`${event.category || event.type} · ${event.status}`)],
+      ['Date', esc(dateStrEn)],
+      ...(venue ? [['Venue', esc(venue)] as [string, string]] : []),
+      ['Attendance', esc(String(attendance))],
+      ['Volunteers (attended)', esc(`${vols.length} (${volAttended})`)],
+    ]);
+
+    const finance = detailTable([
+      ['Donations received', esc(money(donTotal))],
+      ['Expenses (approved)', esc(money(expTotal))],
+      ['Budget planned / approved / spent', esc(`${money(bPlanned)} / ${money(bApproved)} / ${money(bActual)}`)],
+    ]);
+
+    const budgetGrid = budget.length
+      ? section('Budget detail') + `
+         <table class="grid">
+           <thead><tr><th>Category</th><th class="num">Planned</th><th class="num">Approved</th><th class="num">Actual</th></tr></thead>
+           <tbody>${budget.map((b) => `<tr><td>${esc(b.category)}</td><td class="num">${esc(money(Number(b.planned)))}</td><td class="num">${esc(money(Number(b.approved)))}</td><td class="num">${esc(money(Number(b.actual)))}</td></tr>`).join('')}</tbody>
+         </table>`
+      : '';
+
+    const outcomes = [
+      donors.length ? ['Blood donation', `${donors.length} donors · ${bloodUnits} units`] as [string, string] : null,
+      bens.length ? ['Relief / distribution', `${bens.length} beneficiaries · ${distributed} items distributed`] as [string, string] : null,
+    ].filter(Boolean) as Array<[string, string]>;
+
+    printDocSheet({
+      title: `EVENT REPORT — ${event.title}`,
+      docTitle: 'EVENT REPORT',
+      refLabel: 'Event Code',
+      refValue: event.event_code ?? '—',
+      dateValue: printedDate(),
+      bodyHtml: [
+        section('Overview'),
+        summary,
+        section('Financial summary'),
+        finance,
+        amountBand('Net (donations − expenses)', money(net)),
+        budgetGrid,
+        outcomes.length ? section('Outcomes') + detailTable(outcomes) : '',
+      ].join(''),
+      note: `Generated ${new Date().toLocaleString('en-IN')} · www.chhatradol.org`,
+    });
   };
 
   return (

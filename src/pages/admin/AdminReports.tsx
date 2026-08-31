@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import type { CswoLedgerEntry, LedgerEntryType, CswoBankAccount, CswoBankTransaction, CswoCompliance } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
+import { amountBand, esc, printDocSheet, printedDate, section } from '@/lib/docsheet';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 
 const INK = '#1c1917';
@@ -103,51 +104,43 @@ export default function AdminReports() {
     URL.revokeObjectURL(url);
   };
 
+  /**
+   * The income and expenditure statement, on the house document sheet so it
+   * reads as an issued record rather than a screen dump.
+   */
   const printStatement = () => {
-    const L = (en: string, bn: string) => (lang === 'en' ? en : bn);
     const money = (n: number) => `₹${Number(n).toLocaleString('en-IN')}`;
-    const incRows = report.income.map((x) => `<tr><td>${typeLabel(x.k)}</td><td class="r">${money(x.v)}</td></tr>`).join('');
-    const expRows = report.expense.map((x) => `<tr><td>${typeLabel(x.k)}</td><td class="r">${money(x.v)}</td></tr>`).join('');
-    const eventRows = report.byEvent.map((f) => `<tr><td>${f.name}</td><td class="r">${money(f.cr)}</td><td class="r">${money(f.db)}</td><td class="r">${money(f.bal)}</td></tr>`).join('');
-    const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8"><title>${L('Income & Expenditure', 'আয় ও ব্যয়')}</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Segoe UI',Arial,sans-serif;color:#1c1917;padding:40px;max-width:760px}
-  .head{text-align:center;border-bottom:2px solid #c2410c;padding-bottom:14px;margin-bottom:8px}
-  .org{font-size:18px;font-weight:800;color:#c2410c}
-  .sub{font-size:13px;color:#555;margin-top:2px}
-  .title{margin-top:14px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
-  .period{font-size:12px;color:#78716c;margin-top:2px}
-  h3{margin:22px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#c2410c}
-  table{width:100%;border-collapse:collapse}
-  td,th{padding:6px 8px;font-size:13px;border-bottom:1px solid #eee;text-align:left}
-  th{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#78716c}
-  .r{text-align:right}
-  .tot td{font-weight:700;border-top:2px solid #1c1917;border-bottom:none}
-  .net{margin-top:18px;padding:12px;background:#faf6ef;display:flex;justify-content:space-between;font-weight:800;font-size:15px}
-  .foot{margin-top:26px;text-align:center;font-size:10.5px;color:#a8a29e}
-  @media print{body{padding:12px}}
-</style></head><body>
-  <div class="head">
-    <div class="org">Chhatradol Social Welfare Organization</div>
-    <div class="title">${L('Income & Expenditure Statement', 'আয় ও ব্যয় বিবরণী')}</div>
-    <div class="period">${periodLabel}</div>
-  </div>
-  <h3>${L('Income', 'আয়')}</h3>
-  <table>${incRows || `<tr><td colspan="2" style="color:#999">${L('No income', 'কোনো আয় নেই')}</td></tr>`}
-    <tr class="tot"><td>${L('Total income', 'মোট আয়')}</td><td class="r">${money(report.totalIncome)}</td></tr></table>
-  <h3>${L('Expenditure', 'ব্যয়')}</h3>
-  <table>${expRows || `<tr><td colspan="2" style="color:#999">${L('No expenditure', 'কোনো ব্যয় নেই')}</td></tr>`}
-    <tr class="tot"><td>${L('Total expenditure', 'মোট ব্যয়')}</td><td class="r">${money(report.totalExpense)}</td></tr></table>
-  <div class="net"><span>${L('Net surplus / (deficit)', 'নিট উদ্বৃত্ত / (ঘাটতি)')}</span><span>${money(report.net)}</span></div>
-  <h3>${L('Event-wise summary', 'অনুষ্ঠান-ভিত্তিক সারসংক্ষেপ')}</h3>
-  <table><tr><th>${L('Event', 'অনুষ্ঠান')}</th><th class="r">${L('Income', 'আয়')}</th><th class="r">${L('Expense', 'ব্যয়')}</th><th class="r">${L('Balance', 'ব্যালেন্স')}</th></tr>${eventRows}</table>
-  <div class="foot">${L('Computer-generated statement', 'কম্পিউটার-জেনারেটেড বিবরণী')} · ${new Date().toLocaleString('en-IN')} · narajole.org</div>
-</body></html>`;
-    const w = window.open('', '_blank', 'width=820,height=900');
-    if (!w) return;
-    w.document.write(html); w.document.close(); w.focus();
-    setTimeout(() => w.print(), 400);
+    const twoCol = (heading: string, items: { k: LedgerEntryType; v: number }[], totalLabel: string, total: number) => `
+      ${section(heading)}
+      <table class="grid">
+        <tbody>
+          ${items.length
+            ? items.map((x) => `<tr><td>${esc(typeLabel(x.k))}</td><td class="num">${esc(money(x.v))}</td></tr>`).join('')
+            : '<tr><td colspan="2" style="color:#9a9a9a">Nothing recorded in this period</td></tr>'}
+        </tbody>
+        <tfoot><tr><td>${esc(totalLabel)}</td><td class="num">${esc(money(total))}</td></tr></tfoot>
+      </table>`;
+
+    printDocSheet({
+      title: 'INCOME & EXPENDITURE STATEMENT',
+      docTitle: 'INCOME & EXPENDITURE',
+      refLabel: 'Statement Period',
+      refValue: periodLabel,
+      dateValue: printedDate(),
+      bodyHtml: [
+        twoCol('Income', report.income, 'Total income', report.totalIncome),
+        twoCol('Expenditure', report.expense, 'Total expenditure', report.totalExpense),
+        amountBand('Net surplus / (deficit)', money(report.net)),
+        `<div class="section">Event-wise summary</div>
+         <table class="grid">
+           <thead><tr><th>Event</th><th class="num">Income</th><th class="num">Expense</th><th class="num">Balance</th></tr></thead>
+           <tbody>${report.byEvent.length
+             ? report.byEvent.map((f) => `<tr><td>${esc(f.name)}</td><td class="num">${esc(money(f.cr))}</td><td class="num">${esc(money(f.db))}</td><td class="num">${esc(money(f.bal))}</td></tr>`).join('')
+             : '<tr><td colspan="4" style="color:#9a9a9a;text-align:center">No events in this period</td></tr>'}</tbody>
+         </table>`,
+      ].join(''),
+      note: `Computer-generated statement · ${new Date().toLocaleString('en-IN')} · www.chhatradol.org`,
+    });
   };
 
   const exportPDFAuditPack = () => {
@@ -212,88 +205,41 @@ export default function AdminReports() {
       </tr>
     `).join('');
 
-    const html = `<!DOCTYPE html><html lang="${lang}"><head><meta charset="utf-8">
-<title>${L('NGO Comprehensive Financial Audit Pack', 'এনজিও আর্থিক অডিট প্যাকেজ')}</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Segoe UI',Arial,sans-serif;color:#1c1917;padding:40px;max-width:960px;margin:auto}
-  .head{text-align:center;border-bottom:3px double #c2410c;padding-bottom:16px;margin-bottom:24px}
-  .org{font-size:24px;font-weight:800;color:#c2410c;text-transform:uppercase;letter-spacing:.03em}
-  .sub{font-size:15px;color:#555;margin-top:2px}
-  .title{margin-top:14px;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;background:#faf6ef;padding:6px 12px;display:inline-block;border:1px solid #e7e5e4}
-  .period{font-size:13px;color:#78716c;margin-top:6px;font-weight:600}
-  h3{margin:28px 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:#c2410c;border-left:4px solid #c2410c;padding-left:8px}
-  table{width:100%;border-collapse:collapse;margin-bottom:16px}
-  td,th{padding:8px 10px;font-size:12.5px;border-bottom:1px solid #e7e5e4;text-align:left}
-  th{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#78716c;background:#f5f5f4}
-  .r{text-align:right}
-  .mono{font-family:monospace}
-  .font-semibold{font-weight:600}
-  .whitespace-nowrap{white-space:nowrap}
-  .net-box{margin-top:20px;padding:16px;background:#faf6ef;border:1px solid #e7e5e4;display:flex;justify-content:space-between;font-weight:800;font-size:16px}
-  .badge{display:inline-block;padding:2px 6px;font-size:11px;font-weight:600;border-radius:4px;text-transform:uppercase}
-  .badge-green{background:#dcfce7;color:#15803d}
-  .badge-amber{background:#fef3c7;color:#b45309}
-  .badge-red{background:#fee2e2;color:#b91c1c}
-  .type-pill{background:#f4f4f5;padding:2px 6px;border-radius:12px;font-size:11px;font-weight:500;color:#3f3f46;border:1px solid #e4e4e7}
-  .foot{margin-top:40px;text-align:center;font-size:11px;color:#a8a29e;border-top:1px solid #e7e5e4;padding-top:16px}
-  @media print{body{padding:12px}}
-</style></head><body>
-  <div class="head">
-    <div class="org">Chhatradol Social Welfare Organization</div>
-    <div class="title">${L('Comprehensive Financial Audit Pack', 'আর্থিক অডিট ও বাধ্যবাধকতা প্যাকেজ')}</div>
-    <div class="period">${L('Statement Period', 'বিবরণীর সময়কাল')}: ${periodLabel}</div>
-  </div>
+    printDocSheet({
+      title: 'FINANCIAL AUDIT PACK',
+      docTitle: 'FINANCIAL AUDIT PACK',
+      refLabel: 'Statement Period',
+      refValue: periodLabel,
+      dateValue: printedDate(),
+      bodyHtml: [
+        section('1 · Cash registers & bank balances'),
+        `<table class="grid">
+          <thead><tr><th>Account / register</th><th>A/C number</th><th class="num">Opening</th><th class="num">Available balance</th></tr></thead>
+          <tbody>${bankRows || '<tr><td colspan="4" style="color:#9a9a9a;text-align:center">No accounts registered</td></tr>'}</tbody>
+        </table>`,
 
-  <h3>1. Cash Registers & Bank Account Balances</h3>
-  <table>
-    <thead><tr><th>${L('Account / Register', 'অ্যাকাউন্ট / রেজিস্টার')}</th><th>${L('A/C Number', 'অ্যাকাউন্ট নম্বর')}</th><th class="r">${L('Opening', 'প্রারম্ভিক')}</th><th class="r">${L('Available Balance', 'বর্তমান ব্যালেন্স')}</th></tr></thead>
-    <tbody>${bankRows || `<tr><td colspan="4" style="color:#999;text-align:center">${L('No accounts registered', 'কোনো অ্যাকাউন্ট নিবন্ধিত নেই')}</td></tr>`}</tbody>
-  </table>
+        section('2 · Event allocation summary'),
+        `<table class="grid">
+          <thead><tr><th>Event</th><th class="num">Inflow</th><th class="num">Outflow</th><th class="num">Balance</th></tr></thead>
+          <tbody>${eventSummaryRows}</tbody>
+          <tfoot><tr><td>Consolidated totals</td><td class="num">+${esc(money(report.totalIncome))}</td><td class="num">−${esc(money(report.totalExpense))}</td><td class="num">${esc(money(report.net))}</td></tr></tfoot>
+        </table>`,
+        amountBand('Consolidated net surplus / (deficit)', money(report.net)),
 
-  <h3>2. Event Allocation Summary</h3>
-  <table>
-    <thead><tr><th>${L('Event', 'অনুষ্ঠান')}</th><th class="r">${L('Inflow (Credits)', 'মোট জমা')}</th><th class="r">${L('Outflow (Debits)', 'মোট খরচ')}</th><th class="r">${L('Balance', 'ব্যালেন্স')}</th></tr></thead>
-    <tbody>
-      ${eventSummaryRows}
-      <tr style="background:#f5f5f4;font-weight:bold">
-        <td>${L('Consolidated Totals', 'একত্রিত মোট')}</td>
-        <td class="r mono text-green-700">+${money(report.totalIncome)}</td>
-        <td class="r mono text-red-700">-${money(report.totalExpense)}</td>
-        <td class="r mono">${money(report.net)}</td>
-      </tr>
-    </tbody>
-  </table>
+        section('3 · Statutory compliance & certifications'),
+        `<table class="grid">
+          <thead><tr><th>Compliance item</th><th>Reg. number</th><th>Issued</th><th>Expiry</th><th>Status</th></tr></thead>
+          <tbody>${compRows || '<tr><td colspan="5" style="color:#9a9a9a;text-align:center">No compliance documents registered</td></tr>'}</tbody>
+        </table>`,
 
-  <div class="net-box">
-    <span>${L('CONSOLIDATED NET SURPLUS / (DEFICIT)', 'একত্রিত নিট উদ্বৃত্ত / (ঘাটতি)')}</span>
-    <span style="color: ${report.net >= 0 ? '#15803d' : '#b91c1c'}">${money(report.net)}</span>
-  </div>
-
-  <h3>3. Statutory Compliance & Certifications Summary</h3>
-  <table>
-    <thead><tr><th>${L('Compliance Item', 'বিষয়')}</th><th>${L('Reg. Number', 'রেজিস্ট্রেশন নম্বর')}</th><th>${L('Issued On', 'ইস্যু')}</th><th>${L('Expiry Date', 'মেয়াদ উত্তীর্ণের তারিখ')}</th><th>${L('Status / Renewal Warning', 'অবস্থা')}</th></tr></thead>
-    <tbody>${compRows || `<tr><td colspan="5" style="color:#999;text-align:center">${L('No compliance documents registered', 'কোনো কমপ্লায়েন্স নথি নিবন্ধিত নেই')}</td></tr>`}</tbody>
-  </table>
-
-  <h3>4. Operational Ledger Entries List</h3>
-  <table>
-    <thead><tr><th>${L('Date & Time', 'তারিখ ও সময়')}</th><th>${L('Type', 'ধরন')}</th><th>${L('Event', 'অনুষ্ঠান')}</th><th>${L('Transaction Note', 'বিবরণ')}</th><th class="r">${L('Amount', 'পরিমাণ')}</th></tr></thead>
-    <tbody>${ledgerRows || `<tr><td colspan="5" style="color:#999;text-align:center">${L('No transactions recorded in this period', 'এই সময়কালে কোনো লেনদেন নথিভুক্ত হয়নি')}</td></tr>`}</tbody>
-  </table>
-
-  <div class="foot">
-    <strong>${L('Official NGO Audit Pack Document', 'অফিসিয়াল এনজিও অডিট প্যাকেজ নথি')}</strong><br/>
-    ${L('Computer assembled statement from NGO Ledger vaults', 'এনজিও লেজার ভল্ট থেকে কম্পিউটার-জেনারেটেড একত্রিত বিবরণী')} · 
-    ${L('Downloaded at', 'ডাউনলোড করা হয়েছে')} ${new Date().toLocaleString('en-IN')} · 
-    narajole.org
-  </div>
-</body></html>`;
-
-    const w = window.open('', '_blank', 'width=960,height=900');
-    if (!w) return;
-    w.document.write(html); w.document.close(); w.focus();
-    setTimeout(() => w.print(), 400);
+        section('4 · Operational ledger entries'),
+        `<table class="grid">
+          <thead><tr><th>Date &amp; time</th><th>Type</th><th>Event</th><th>Note</th><th class="num">Amount</th></tr></thead>
+          <tbody>${ledgerRows || '<tr><td colspan="5" style="color:#9a9a9a;text-align:center">No transactions recorded in this period</td></tr>'}</tbody>
+        </table>`,
+      ].join(''),
+      note: `Official audit pack · assembled ${new Date().toLocaleString('en-IN')} · www.chhatradol.org`,
+    });
   };
 
   return (

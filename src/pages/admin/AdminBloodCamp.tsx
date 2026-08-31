@@ -8,6 +8,7 @@ import { useFmt } from '@/lib/format';
 import { formatAadhar } from '@/lib/bloodDonors';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { detailTable, esc, printDocSheet, printedDate } from '@/lib/docsheet';
 
 const TEAL = '#0c756f';
 const RED = '#b91c1c';
@@ -129,58 +130,43 @@ export default function AdminBloodCamp() {
       body: `We, Chhatradol Social Welfare Organization, are organising a voluntary blood donation camp and request your blood bank's kind cooperation in collecting blood at the venue and date detailed below. We request the necessary team, beds and equipment for a smooth camp.`,
     });
   };
+  /**
+   * The request that goes to a blood bank: the house document sheet, with a To
+   * block and a subject line above the camp's particulars, rather than the
+   * masthead that used to be invented for this one screen.
+   */
   const printLetter = () => {
     if (!event) return;
     const dateStr = fmt.date(event.event_date) + (event.end_date ? ` – ${fmt.date(event.end_date)}` : '');
-    const timeStr = event.start_time ? `${event.start_time.slice(0, 5)}${event.end_time ? ` – ${event.end_time.slice(0, 5)}` : ''}` : '';
+    const timeStr = event.start_time
+      ? `${event.start_time.slice(0, 5)}${event.end_time ? ` – ${event.end_time.slice(0, 5)}` : ''}`
+      : '';
     const venue = [event.location, event.district, event.state, event.pincode].filter(Boolean).join(', ');
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Blood Camp Request</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Segoe UI',Arial,sans-serif;color:#1c1917;padding:48px;max-width:760px;line-height:1.6}
-  .head{text-align:center;border-bottom:2px solid ${TEAL};padding-bottom:14px;margin-bottom:24px}
-  .org{font-size:19px;font-weight:800;color:${TEAL}}
-  .sub{font-size:13px;color:#555;margin-top:2px}
-  .addr{font-size:11px;color:#777;margin-top:4px}
-  .meta{font-size:12px;color:#555;margin:18px 0}
-  .to{margin:16px 0;font-size:13px}
-  .subj{font-weight:700;margin:16px 0;font-size:13.5px}
-  p{font-size:13.5px;margin:12px 0}
-  table{width:100%;border-collapse:collapse;margin:16px 0}
-  td{padding:6px 8px;font-size:13px;border:1px solid #e5e5e5}
-  td.k{width:38%;color:#666;background:#fafafa}
-  .sign{margin-top:48px;display:flex;justify-content:space-between}
-  .sign .b{text-align:center;font-size:12.5px}
-  .line{border-top:1px solid #1c1917;padding-top:5px;width:200px;margin-top:40px}
-  @media print{body{padding:16px}}
-</style></head><body>
-  <div class="head">
-    <div class="org">Chhatradol Social Welfare Organization</div>
-    <div class="addr">Nij Narajole, P.S. Daspur, Paschim Medinipur, West Bengal — 721211</div>
-  </div>
-  <div class="meta">Date: ${new Date().toLocaleDateString('en-IN')}</div>
-  <div class="to">To,<br><strong>${letter.to || '________________'}</strong><br>(Blood Bank)</div>
-  <div class="subj">Subject: ${letter.subject}</div>
-  <p>Respected Sir/Madam,</p>
-  <p>${letter.body}</p>
-  <table>
-    <tr><td class="k">Camp / Event</td><td>${event.title}${event.event_code ? ` (${event.event_code})` : ''}</td></tr>
-    <tr><td class="k">Date</td><td>${dateStr}</td></tr>
-    ${timeStr ? `<tr><td class="k">Time</td><td>${timeStr}</td></tr>` : ''}
-    <tr><td class="k">Venue</td><td>${venue || '________________'}</td></tr>
-    <tr><td class="k">Expected donors</td><td>${letter.expected || '—'}</td></tr>
-  </table>
-  <p>We shall remain grateful for your support in this noble cause. Kindly confirm your team's availability.</p>
-  <p>Thanking you,<br>Yours faithfully,</p>
-  <div class="sign">
-    <div class="b"><div class="line">${letter.organizer || 'Organiser'}</div>Organiser</div>
-    <div class="b"><div class="line">${letter.secretary || 'Secretary'}</div>Secretary, CSWO</div>
-  </div>
-</body></html>`;
-    const w = window.open('', '_blank', 'width=820,height=900');
-    if (!w) return;
-    w.document.write(html); w.document.close(); w.focus();
-    setTimeout(() => w.print(), 400);
+
+    printDocSheet({
+      title: `BLOOD CAMP REQUEST — ${event.title}`,
+      docTitle: 'REQUEST FOR BLOOD DONATION CAMP',
+      refLabel: 'Event Code',
+      refValue: event.event_code ?? '—',
+      dateValue: printedDate(),
+      bodyHtml: [
+        `<div class="to">To,<br><strong>${esc(letter.to || '________________')}</strong><br>(Blood Bank)</div>`,
+        `<div class="subject"><span>Subject:</span> ${esc(letter.subject)}</div>`,
+        `<p class="para">Respected Sir / Madam,</p>`,
+        `<p class="para">${esc(letter.body)}</p>`,
+        detailTable([
+          ['Camp / event', esc(event.title + (event.event_code ? ` (${event.event_code})` : ''))],
+          ['Date', esc(dateStr)],
+          ...(timeStr ? [['Time', esc(timeStr)] as [string, string]] : []),
+          ['Venue', esc(venue || '________________')],
+          ['Expected donors', esc(letter.expected || '—')],
+        ]),
+        `<p class="para">We shall remain grateful for your support in this noble cause. Kindly confirm your team's availability.</p>`,
+        `<p class="para">Thanking you,</p>`,
+      ].join(''),
+      signature: { name: letter.secretary || undefined },
+      note: letter.organizer ? `Organiser: ${letter.organizer}` : null,
+    });
   };
 
   if (loading) return <TableSkeleton rows={6} />;

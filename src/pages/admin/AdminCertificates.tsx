@@ -7,8 +7,17 @@ import type { CswoEvent, CswoEventCertificate, CertRecipientType } from '@/types
 import { useFmt, formatDate } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { DOC, DOC_ASSETS, DOC_FONTS_HREF, docAsset } from '@/lib/docsheet';
 
 const TEAL = '#0c756f';
+/**
+ * The award keeps its landscape frame with the double border and the seal — it
+ * is a certificate, not a record — but takes the receipt sheet's maroon, gold
+ * and masthead so it is recognisably from the same organisation. It used to be
+ * teal, a colour that appears nowhere else in the brand.
+ */
+const CERT_RED = DOC.maroon;
+const CERT_GOLD = DOC.gold;
 const GOLD = '#b8860b';
 const INK = '#1c1917';
 const INK2 = '#44403c';
@@ -103,7 +112,13 @@ export default function AdminCertificates() {
     };
     const pages = list.map((c) => `
       <div class="cert"><div class="frame">
-        <div class="hdr"><div class="org">Chhatradol Social Welfare Organization</div></div>
+        <div class="hdr">
+          <img src="${docAsset(DOC_ASSETS.logo)}" alt="">
+          <div>
+            <div class="org">Chhatradol Social Welfare Organization</div>
+            <div class="orgreg">Reg. No.: IV-100200047/2026 &middot; DARPAN ID: WB/2026/1138665</div>
+          </div>
+        </div>
         <div class="title">${titleOf(c.recipient_type)}</div>
         <div class="pre">This is proudly presented to</div>
         <div class="name">${c.recipient_name}</div>
@@ -124,22 +139,24 @@ export default function AdminCertificates() {
         <div class="code">${c.cert_code ?? ''}</div>
       </div></div>`).join('');
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Certificates</title>
+<link href="${DOC_FONTS_HREF}" rel="stylesheet">
 <style>
   @page { size: A4 landscape; margin: 0; }
   *{box-sizing:border-box;margin:0;padding:0;font-family:'Georgia','Segoe UI',serif}
   .cert{width:297mm;height:209mm;padding:14mm;page-break-after:always;display:flex}
-  .frame{flex:1;border:3px double ${GOLD};outline:1px solid ${TEAL};outline-offset:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18mm 24mm;position:relative}
-  .hdr{position:absolute;top:14mm;left:0;right:0}
-  .org{font-size:20px;font-weight:800;color:${TEAL}}
-  .orgbn{font-size:13px;color:#666;margin-top:2px}
-  .title{font-size:30px;font-weight:800;letter-spacing:2px;color:${GOLD};text-transform:uppercase;margin-bottom:8px}
+  .frame{flex:1;border:3px double ${CERT_GOLD};outline:1px solid ${CERT_RED};outline-offset:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18mm 24mm;position:relative}
+  .hdr{position:absolute;top:12mm;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:10px}
+  .hdr img{width:16mm;height:16mm;object-fit:contain;border-radius:50%;background:#fff}
+  .org{font-family:'Bebas Neue',Impact,sans-serif;font-size:26px;letter-spacing:.02em;color:${CERT_RED};text-transform:uppercase}
+  .orgreg{font-size:10px;color:#6b6b6b;margin-top:1px}
+  .title{font-size:30px;font-weight:800;letter-spacing:2px;color:${CERT_GOLD};text-transform:uppercase;margin-bottom:8px}
   .pre{font-size:13px;color:#555;margin-top:6px}
   .name{font-size:40px;color:${INK};margin:10px 0;font-style:italic;border-bottom:2px solid ${RULE};padding:0 30px 8px}
   .body{font-size:15px;color:#333;max-width:620px;line-height:1.6;margin-top:6px}
   .sign{position:absolute;bottom:16mm;left:24mm;right:24mm;display:flex;justify-content:space-between;align-items:flex-end}
   .sign .b{font-size:12px;color:#444}
   .line{border-top:1.5px solid #1c1917;padding-top:5px;width:170px}
-  .seal{font-size:34px;color:${GOLD};opacity:.8}
+  .seal{font-size:34px;color:${CERT_GOLD};opacity:.85}
   .code{position:absolute;bottom:8mm;left:0;right:0;font-size:9px;color:#aaa;letter-spacing:1px}
 </style></head><body>${pages}</body></html>`;
     const w = window.open('', '_blank', 'width=1000,height=720');

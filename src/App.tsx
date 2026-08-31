@@ -54,6 +54,7 @@ const AdminBloodCamp = lazy(() => import('@/pages/admin/AdminBloodCamp'));
 const AdminBeneficiaries = lazy(() => import('@/pages/admin/AdminBeneficiaries'));
 const AdminCertificates = lazy(() => import('@/pages/admin/AdminCertificates'));
 const AdminEventDocuments = lazy(() => import('@/pages/admin/AdminEventDocuments'));
+const AdminEventLetters = lazy(() => import('@/pages/admin/AdminEventLetters'));
 const AdminEventReport = lazy(() => import('@/pages/admin/AdminEventReport'));
 const AdminQRAttendance = lazy(() => import('@/pages/admin/AdminQRAttendance'));
 const AdminContributions = lazy(() => import('@/pages/admin/AdminContributions'));
@@ -151,6 +152,7 @@ export default function App() {
             <Route path="events/:id/relief" element={<ProtectedRoute require="canManageEvents"><AdminBeneficiaries /></ProtectedRoute>} />
             <Route path="events/:id/certificates" element={<ProtectedRoute require="canManageEvents"><AdminCertificates /></ProtectedRoute>} />
             <Route path="events/:id/documents" element={<ProtectedRoute require="canManageEvents"><AdminEventDocuments /></ProtectedRoute>} />
+            <Route path="events/:id/letters" element={<ProtectedRoute require="canManageEvents"><AdminEventLetters /></ProtectedRoute>} />
             <Route path="events/:id/report" element={<ProtectedRoute require="canManageEvents"><AdminEventReport /></ProtectedRoute>} />
             <Route path="attendance-manage" element={<ProtectedRoute require="canManageEvents"><AdminQRAttendance /></ProtectedRoute>} />
             <Route path="blood-donors-manage" element={<ProtectedRoute require="canManageEvents"><AdminBloodDonors /></ProtectedRoute>} />
@@ -196,6 +198,7 @@ export default function App() {
             <Route path="events/:id/relief" element={<AdminBeneficiaries />} />
             <Route path="events/:id/certificates" element={<AdminCertificates />} />
             <Route path="events/:id/documents" element={<AdminEventDocuments />} />
+            <Route path="events/:id/letters" element={<AdminEventLetters />} />
             <Route path="events/:id/report" element={<AdminEventReport />} />
             <Route path="attendance" element={<AdminQRAttendance />} />
             <Route path="contributions" element={<AdminContributions />} />

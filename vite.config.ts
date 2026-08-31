@@ -17,7 +17,9 @@ function apiDevServerPlugin(): Plugin {
           url === '/api/cashfree-verify' ||
           url === '/api/cashfree-webhook' ||
           url === '/api/send-receipt-email' ||
-          url === '/api/resend-payment-receipt'
+          url === '/api/resend-payment-receipt' ||
+          url === '/api/letter-pdf' ||
+          url === '/api/send-letter-email'
         ) {
           // Always reload latest .env variables in dev
           const env = loadEnv('development', process.cwd(), '');
@@ -55,6 +57,10 @@ function apiDevServerPlugin(): Plugin {
           if (env.RESEND_REPLY_TO)
             process.env.RESEND_REPLY_TO =
               env.RESEND_REPLY_TO;
+
+          if (env.LETTER_FROM_EMAIL)
+            process.env.LETTER_FROM_EMAIL =
+              env.LETTER_FROM_EMAIL;
 
           if (env.INTERNAL_API_SECRET)
             process.env.INTERNAL_API_SECRET =
@@ -265,6 +271,70 @@ function apiDevServerPlugin(): Plugin {
             return;
           }
 
+          // RENDER A SECRETARY LETTER AS A PDF
+          if (url === '/api/letter-pdf') {
+            try {
+              const { default: handler } =
+                await import('./api/letter-pdf');
+
+              await handler(req, res);
+            } catch (e: unknown) {
+              console.error(
+                'Error in /api/letter-pdf dev middleware:',
+                e
+              );
+
+              res.statusCode = 500;
+              res.setHeader(
+                'Content-Type',
+                'application/json'
+              );
+
+              res.end(
+                JSON.stringify({
+                  error:
+                    e instanceof Error
+                      ? e.message
+                      : 'Internal Server Error',
+                })
+              );
+            }
+
+            return;
+          }
+
+          // POST A SECRETARY LETTER TO ITS ADDRESSEE
+          if (url === '/api/send-letter-email') {
+            try {
+              const { default: handler } =
+                await import('./api/send-letter-email');
+
+              await handler(req, res);
+            } catch (e: unknown) {
+              console.error(
+                'Error in /api/send-letter-email dev middleware:',
+                e
+              );
+
+              res.statusCode = 500;
+              res.setHeader(
+                'Content-Type',
+                'application/json'
+              );
+
+              res.end(
+                JSON.stringify({
+                  error:
+                    e instanceof Error
+                      ? e.message
+                      : 'Internal Server Error',
+                })
+              );
+            }
+
+            return;
+          }
+
           // SEND RECEIPT EMAIL
           if (url === '/api/send-receipt-email') {
             try {
@@ -341,6 +411,10 @@ export default defineConfig(({ mode }) => {
   if (env.RESEND_REPLY_TO)
     process.env.RESEND_REPLY_TO =
       env.RESEND_REPLY_TO;
+
+  if (env.LETTER_FROM_EMAIL)
+    process.env.LETTER_FROM_EMAIL =
+      env.LETTER_FROM_EMAIL;
 
   if (env.INTERNAL_API_SECRET)
     process.env.INTERNAL_API_SECRET =

@@ -108,6 +108,8 @@ export default function AdminDonations() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [gatewayFilter, setGatewayFilter] = useState<string>('all');
   const [kindFilter, setKindFilter] = useState<'all' | 'donation' | 'dues'>('all');
+  /** 'all', 'none' for money not tied to an event, or an event id. */
+  const [eventFilter, setEventFilter] = useState<string>('all');
   const [onlyRecurring, setOnlyRecurring] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -285,7 +287,10 @@ export default function AdminDonations() {
 
   // Filter donations in memory by search query
   const filteredDonations = useMemo(() => {
-    const base = kindFilter === 'all' ? donations : donations.filter((d) => d.source === kindFilter);
+    let base = kindFilter === 'all' ? donations : donations.filter((d) => d.source === kindFilter);
+    // Monthly dues are never event-allocated, so picking an event drops them.
+    if (eventFilter === 'none') base = base.filter((d) => !d.event_id);
+    else if (eventFilter !== 'all') base = base.filter((d) => d.event_id === eventFilter);
     if (!searchQuery.trim()) return base;
     const q = searchQuery.toLowerCase();
     return base.filter((d) =>
@@ -295,7 +300,7 @@ export default function AdminDonations() {
       (d.receipt_number && d.receipt_number.toLowerCase().includes(q)) ||
       (d.purpose && d.purpose.toLowerCase().includes(q))
     );
-  }, [donations, searchQuery, kindFilter]);
+  }, [donations, searchQuery, kindFilter, eventFilter]);
 
   const paidRows = filteredDonations.filter((d) => d.status === 'paid');
   const total = paidRows.reduce((s, d) => s + Number(d.amount), 0);
@@ -303,7 +308,7 @@ export default function AdminDonations() {
   const recurringCount = filteredDonations.filter((d) => d.is_recurring).length;
 
   // Reset to page 1 whenever the result set changes shape
-  useEffect(() => { setPage(1); }, [searchQuery, statusFilter, gatewayFilter, kindFilter, onlyRecurring, dateFrom, dateTo]);
+  useEffect(() => { setPage(1); }, [searchQuery, statusFilter, gatewayFilter, kindFilter, eventFilter, onlyRecurring, dateFrom, dateTo]);
 
   const pageCount = Math.max(1, Math.ceil(filteredDonations.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
@@ -594,6 +599,19 @@ export default function AdminDonations() {
           <option value="all">{tr('All money in', 'সব আয়')}</option>
           <option value="donation">{tr('Donations', 'অনুদান')}</option>
           <option value="dues">{tr('Monthly donation', 'মাসিক অনুদান')}</option>
+        </select>
+
+        <select
+          value={eventFilter}
+          onChange={(e) => setEventFilter(e.target.value)}
+          className="flex-[1_1_150px] cursor-pointer px-2.5"
+          style={fieldStyle}
+        >
+          <option value="all">{tr('All events', 'সব অনুষ্ঠান')}</option>
+          <option value="none">{tr('Not allocated', 'অনির্ধারিত')}</option>
+          {events.map((ev) => (
+            <option key={ev.id} value={ev.id}>{ev.title}</option>
+          ))}
         </select>
 
         <select

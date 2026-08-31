@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FaPlus, FaTrash, FaLocationDot, FaUpRightFromSquare } from 'react-icons/fa6';
-import { ArrowLeft, ArrowRight, Droplet, Package, Award, FileText, BarChart3, Search } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Droplet, Package, Award, FileSignature, FileText, BarChart3, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { CswoEvent, CswoEventBudgetItem, CswoEventVolunteer, EventBudgetStatus } from '@/types';
 import { useFmt } from '@/lib/format';
@@ -219,6 +219,9 @@ export default function AdminEventDetail() {
                 <Package className="h-4 w-4 shrink-0" /> {tr('Relief / Distribution', 'ত্রাণ / বিতরণ')} <ArrowRight className="h-3.5 w-3.5 shrink-0" />
               </Link>
             )}
+            <Link to="letters" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90" style={{ background: '#8b0000' }}>
+              <FileSignature className="h-4 w-4 shrink-0" /> {tr('Letterpad', 'লেটারপ্যাড')} <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+            </Link>
             <Link to="certificates" className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-orange-50" style={{ background: '#fff7ed', color: '#b8860b', border: '1px solid #f0d090' }}>
               <Award className="h-4 w-4 shrink-0" /> {tr('Certificates', 'সার্টিফিকেট')} <ArrowRight className="h-3.5 w-3.5 shrink-0" />
             </Link>
