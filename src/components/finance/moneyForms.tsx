@@ -21,6 +21,8 @@ export const MUTED = '#8a8171';
 export const FIELD = '#f8f6f0';
 export const GREEN = '#0e6f4a';
 export const BRAND = '#c2410c';
+// Expenses/debits read red; donations/credits read green (sign-free amounts).
+export const RED = '#b91c1c';
 export const SERIF = '"Noto Serif Bengali", "Noto Serif", Georgia, serif';
 export const MONO = '"DM Mono", "Roboto Mono", ui-monospace, monospace';
 

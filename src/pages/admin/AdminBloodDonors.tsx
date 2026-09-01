@@ -193,7 +193,7 @@ export default function AdminBloodDonors() {
       {loading ? <TableSkeleton rows={8} /> : (
         <>
           <div className="overflow-x-auto rounded-[10px]" style={{ border: `1px solid ${RULE}` }}>
-            <table className="w-full text-[13px]">
+            <table className="w-full min-w-[1100px] text-[13px]">
               <thead>
                 <tr style={{ background: CREAM }}>
                   {[

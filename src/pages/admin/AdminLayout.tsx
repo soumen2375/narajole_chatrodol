@@ -66,13 +66,13 @@ export default function AdminLayout() {
     ...(isAdmin || canManageFinance ? [
       { to: '/admin/finance',        label: 'Finance',        icon: Wallet,
         sectionLabel: isAdmin ? 'Finance' : 'Treasurer' } as NavItem,
-      { to: '/admin/contributions',  label: 'Monthly Donation',  icon: BadgeIndianRupee } as NavItem,
+      { to: '/admin/contributions',  label: 'Monthly',        icon: BadgeIndianRupee } as NavItem,
       { to: '/admin/donations',      label: 'Donations',      icon: HeartHandshake } as NavItem,
       { to: '/admin/expenses',       label: 'Expenses',       icon: ReceiptText } as NavItem,
-      { to: '/admin/invoices',       label: 'Invoices',       icon: FileText } as NavItem,
-      { to: '/admin/bank',           label: 'Bank',           icon: Landmark } as NavItem,
       { to: '/admin/ledger',         label: 'Ledger',         icon: BookOpenText } as NavItem,
+      { to: '/admin/bank',           label: 'Bank',           icon: Landmark } as NavItem,
       { to: '/admin/reports',        label: 'Reports',        icon: BarChart3 } as NavItem,
+      { to: '/admin/invoices',       label: 'Invoices',       icon: FileText } as NavItem,
       { to: '/admin/compliance',     label: 'Compliance',     icon: FileCheck } as NavItem,
     ] : []),
 

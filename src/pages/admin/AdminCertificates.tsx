@@ -272,7 +272,7 @@ export default function AdminCertificates() {
 
       {/* Table */}
       <div className="overflow-x-auto rounded-[10px]" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
-        <table className="w-full text-[13px]">
+        <table className="w-full min-w-[760px] text-[13px]">
           <thead><tr style={{ borderBottom: `1px solid ${RULE}` }}>
             {[tr('Code', 'কোড'), tr('Recipient', 'প্রাপক'), tr('Type', 'ধরন'), tr('Category / Position', 'বিভাগ / স্থান'), tr('Actions', 'কার্যক্রম')].map((h, i) => (
               <th key={i} className={`px-4 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] ${i === 4 ? 'text-right' : 'text-left'}`} style={{ color: MUTED }}>{h}</th>

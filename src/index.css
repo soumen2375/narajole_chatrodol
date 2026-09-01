@@ -699,3 +699,28 @@ input[type=number] {
   border-top-color: transparent;
   border-bottom-color: transparent;
 }
+
+/* Admin events list — the canvas card lift. Base and hover both live here so
+   the hover shadow is not out-argued by an inline style on the element. */
+.ev-card {
+  background: #FFFDF8;
+  border: 1px solid #F0E9D9;
+  box-shadow: 0 1px 2px rgba(28, 26, 21, .04), 0 18px 34px -30px rgba(28, 26, 21, .55);
+  transition: transform .26s cubic-bezier(.2, .8, .3, 1), box-shadow .28s ease, border-color .28s ease;
+  will-change: transform;
+}
+.ev-card:hover {
+  transform: translateY(-3px);
+  border-color: #E3D9C2;
+  box-shadow: 0 1px 2px rgba(28, 26, 21, .04), 0 28px 48px -28px rgba(28, 26, 21, .5);
+}
+/* Touch screens have no hover — give the press itself the feedback instead,
+   and drop the lift so a tap does not leave a card stuck in the raised state. */
+.ev-card:active { transform: scale(.994); }
+@media (hover: none) {
+  .ev-card:hover { transform: none; box-shadow: 0 1px 2px rgba(28, 26, 21, .04), 0 18px 34px -30px rgba(28, 26, 21, .55); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ev-card { transition: none; }
+  .ev-card:hover, .ev-card:active { transform: none; }
+}

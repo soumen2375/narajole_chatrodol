@@ -13,6 +13,7 @@ const MUTED = '#78716c';
 const RULE = '#e7e5e4';
 const BRAND = '#c2410c';
 const GREEN = '#4d7c0f';
+const RED = '#b91c1c';
 const PAPER = '#ffffff';
 
 const fyStart = (d: Date) => (d.getMonth() + 1 >= 4 ? d.getFullYear() : d.getFullYear() - 1);
@@ -109,7 +110,7 @@ export default function AdminReports() {
    * reads as an issued record rather than a screen dump.
    */
   const printStatement = () => {
-    const money = (n: number) => `₹${Number(n).toLocaleString('en-IN')}`;
+    const money = (n: number) => `${n < 0 ? '-' : ''}₹${Math.abs(Number(n)).toLocaleString('en-IN')}`;
     const twoCol = (heading: string, items: { k: LedgerEntryType; v: number }[], totalLabel: string, total: number) => `
       ${section(heading)}
       <table class="grid">
@@ -145,7 +146,7 @@ export default function AdminReports() {
 
   const exportPDFAuditPack = () => {
     const L = (en: string, bn: string) => (lang === 'en' ? en : bn);
-    const money = (n: number) => `₹${Number(n).toLocaleString('en-IN')}`;
+    const money = (n: number) => `${n < 0 ? '-' : ''}₹${Math.abs(Number(n)).toLocaleString('en-IN')}`;
 
     const pad = (n: number) => String(n).padStart(2, '0');
     const dtFull = (s: string) => { const d = new Date(s); return `${fmt.date(s)} · ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
@@ -168,9 +169,9 @@ export default function AdminReports() {
     const eventSummaryRows = report.byEvent.map((f) => `
       <tr>
         <td><strong>${f.name}</strong></td>
-        <td class="r mono text-green-700">+${money(f.cr)}</td>
-        <td class="r mono text-red-700">-${money(f.db)}</td>
-        <td class="r mono font-semibold">${money(f.bal)}</td>
+        <td class="r mono" style="color:#15803d">${money(f.cr)}</td>
+        <td class="r mono" style="color:#b91c1c">${money(f.db)}</td>
+        <td class="r mono font-semibold" style="color:${f.bal < 0 ? '#b91c1c' : '#15803d'}">${money(f.bal)}</td>
       </tr>
     `).join('');
 
@@ -200,7 +201,7 @@ export default function AdminReports() {
         <td>${eventName(r.event_id)}</td>
         <td>${r.note}</td>
         <td class="r mono font-semibold" style="color: ${r.direction === 'credit' ? '#15803d' : '#b91c1c'}">
-          ${r.direction === 'credit' ? '+' : '−'}${money(r.amount)}
+          ${money(r.amount)}
         </td>
       </tr>
     `).join('');
@@ -222,7 +223,7 @@ export default function AdminReports() {
         `<table class="grid">
           <thead><tr><th>Event</th><th class="num">Inflow</th><th class="num">Outflow</th><th class="num">Balance</th></tr></thead>
           <tbody>${eventSummaryRows}</tbody>
-          <tfoot><tr><td>Consolidated totals</td><td class="num">+${esc(money(report.totalIncome))}</td><td class="num">−${esc(money(report.totalExpense))}</td><td class="num">${esc(money(report.net))}</td></tr></tfoot>
+          <tfoot><tr><td>Consolidated totals</td><td class="num" style="color:#15803d">${esc(money(report.totalIncome))}</td><td class="num" style="color:#b91c1c">${esc(money(report.totalExpense))}</td><td class="num" style="color:${report.net < 0 ? '#b91c1c' : '#15803d'}">${esc(money(report.net))}</td></tr></tfoot>
         </table>`,
         amountBand('Consolidated net surplus / (deficit)', money(report.net)),
 
@@ -270,18 +271,18 @@ export default function AdminReports() {
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Stat label={tr('Total income', 'মোট আয়')} value={fmt.money(report.totalIncome)} color={GREEN} />
-            <Stat label={tr('Total expenditure', 'মোট ব্যয়')} value={fmt.money(report.totalExpense)} color={BRAND} />
-            <Stat label={tr('Net surplus / (deficit)', 'নিট উদ্বৃত্ত / (ঘাটতি)')} value={fmt.money(report.net)} color={report.net >= 0 ? GREEN : BRAND} />
+            <Stat label={tr('Total expenditure', 'মোট ব্যয়')} value={fmt.money(report.totalExpense)} color={RED} />
+            <Stat label={tr('Net surplus / (deficit)', 'নিট উদ্বৃত্ত / (ঘাটতি)')} value={fmt.money(report.net)} color={report.net >= 0 ? GREEN : RED} />
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Section title={tr('Income', 'আয়')} rows={report.income.map((x) => ({ label: typeLabel(x.k), value: x.v }))} total={report.totalIncome} totalLabel={tr('Total income', 'মোট আয়')} color={GREEN} fmt={fmt} empty={tr('No income in this period.', 'এই সময়ে কোনো আয় নেই।')} />
-            <Section title={tr('Expenditure', 'ব্যয়')} rows={report.expense.map((x) => ({ label: typeLabel(x.k), value: x.v }))} total={report.totalExpense} totalLabel={tr('Total expenditure', 'মোট ব্যয়')} color={BRAND} fmt={fmt} empty={tr('No expenditure in this period.', 'এই সময়ে কোনো ব্যয় নেই।')} />
+            <Section title={tr('Expenditure', 'ব্যয়')} rows={report.expense.map((x) => ({ label: typeLabel(x.k), value: x.v }))} total={report.totalExpense} totalLabel={tr('Total expenditure', 'মোট ব্যয়')} color={RED} fmt={fmt} empty={tr('No expenditure in this period.', 'এই সময়ে কোনো ব্যয় নেই।')} />
           </div>
 
           <div className="overflow-x-auto rounded-[8px]" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
             <div className="px-5 pt-4 font-mono text-[10px] uppercase tracking-[0.18em]" style={{ color: MUTED }}>{tr('Event-wise summary', 'অনুষ্ঠান-ভিত্তিক সারসংক্ষেপ')}</div>
-            <table className="mt-2 w-full text-[13px]">
+            <table className="mt-2 w-full min-w-[620px] text-[13px]">
               <thead><tr style={{ borderTop: `1px solid ${RULE}`, borderBottom: `1px solid ${RULE}` }}>
                 {[tr('Event', 'অনুষ্ঠান'), tr('Income', 'আয়'), tr('Expense', 'ব্যয়'), tr('Balance', 'ব্যালেন্স')].map((h, i) => (
                   <th key={i} className={`px-4 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] ${i === 0 ? 'text-left' : 'text-right'}`} style={{ color: MUTED }}>{h}</th>
@@ -292,8 +293,8 @@ export default function AdminReports() {
                   <tr key={f.id ?? 'none'} style={{ borderBottom: `1px solid ${RULE}` }}>
                     <td className="px-4 py-2.5" style={{ color: INK }}>{f.name}</td>
                     <td className="px-4 py-2.5 text-right" style={{ color: GREEN }}>{fmt.money(f.cr)}</td>
-                    <td className="px-4 py-2.5 text-right" style={{ color: BRAND }}>{fmt.money(f.db)}</td>
-                    <td className="px-4 py-2.5 text-right font-semibold" style={{ color: f.bal >= 0 ? INK : BRAND }}>{fmt.money(f.bal)}</td>
+                    <td className="px-4 py-2.5 text-right" style={{ color: RED }}>{fmt.money(f.db)}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold" style={{ color: f.bal >= 0 ? GREEN : RED }}>{fmt.money(f.bal)}</td>
                   </tr>
                 ))}
                 {report.byEvent.length === 0 && <tr><td colSpan={4} className="px-4 py-8 text-center text-[13px]" style={{ color: MUTED }}>{tr('No data for this period.', 'এই সময়ের কোনো তথ্য নেই।')}</td></tr>}

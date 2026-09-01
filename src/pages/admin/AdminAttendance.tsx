@@ -36,16 +36,16 @@ function StatCard({
   label: string; value: string | number; sub?: string; color: string; icon: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-sm"
+    <div className="flex h-full flex-col gap-2 rounded-2xl bg-white p-3.5 shadow-sm sm:flex-row sm:items-start sm:gap-3 sm:p-4"
       style={{ border: `1px solid ${RULE}` }}>
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-10 sm:w-10"
         style={{ background: `${color}18`, color }}>
         {icon}
       </div>
-      <div>
+      <div className="min-w-0">
         <p className="text-[12px] font-medium" style={{ color: MUTED }}>{label}</p>
-        <p className="text-2xl font-bold" style={{ color: INK }}>{value}</p>
-        {sub && <p className="text-[11px] mt-0.5" style={{ color }}>{sub}</p>}
+        <p className="text-xl font-bold sm:text-2xl" style={{ color: INK }}>{value}</p>
+        {sub && <p className="mt-0.5 text-[11px]" style={{ color }}>{sub}</p>}
       </div>
     </div>
   );
@@ -332,9 +332,9 @@ export default function AdminAttendance() {
     <div style={{ background: PAPER, minHeight: '100vh' }} className="-m-4 sm:-m-6 p-4 sm:p-6">
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <div className="mb-6 flex flex-col items-start justify-between gap-4 lg:flex-row lg:flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: INK }}>
+          <h1 className="text-xl font-bold sm:text-2xl" style={{ color: INK }}>
             {tr('Attendance Management', 'উপস্থিতি ব্যবস্থাপনা')}
           </h1>
           <p className="mt-0.5 text-[13px]" style={{ color: MUTED }}>
@@ -407,7 +407,7 @@ export default function AdminAttendance() {
       </div>
 
       {/* ── Stat Cards ──────────────────────────────────────────────────── */}
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 items-stretch gap-3 sm:grid-cols-4">
         <StatCard label={tr('Attendance Rate', 'উপস্থিতির হার')} value={`${rate}%`}
           sub={`+3% ${tr('vs last event', 'আগের অনুষ্ঠান থেকে')}`}
           color={TEAL} icon={<Users className="h-5 w-5" />} />
@@ -721,7 +721,7 @@ export default function AdminAttendance() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          <table className="w-full min-w-[900px] text-[13px]">
             <thead style={{ background: PAPER }}>
               <tr>
                 <th className="px-4 py-3 text-left">

@@ -255,7 +255,7 @@ function Card({ title, action, children }: { title: string; action?: React.React
 function Table({ head, children }: { head: string[]; children: React.ReactNode }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-[13px]">
+      <table className="w-full min-w-[720px] text-[13px]">
         <thead><tr>{head.map((h, i) => <th key={i} className={`px-3 py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] ${i === head.length - 1 ? 'text-right' : 'text-left'}`} style={{ color: MUTED }}>{h}</th>)}</tr></thead>
         <tbody>{children}</tbody>
       </table>

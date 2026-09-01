@@ -35,6 +35,9 @@ export default function AdminBankAccounts() {
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
 
   const [accounts, setAccounts] = useState<CswoBankAccount[]>([]);
+  // `is_default` arrives with migration 0063. Until it does, hide the control
+  // rather than offering a button whose only outcome is an error.
+  const defaultsSupported = accounts.some((a) => a.is_default !== undefined);
   const [txns, setTxns] = useState<CswoBankTransaction[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,6 +90,25 @@ export default function AdminBankAccounts() {
 
   const mask = (n: string) => (n && n.length > 4 ? `•••• ${n.slice(-4)}` : n || '—');
   const typeLabel = (t: BankAccountType) => ({ savings: tr('Savings', 'সঞ্চয়'), current: tr('Current', 'চলতি'), cash: tr('Cash', 'নগদ'), other: tr('Other', 'অন্যান্য') }[t]);
+
+  // Nominates which account unallocated money lands in. Cash and bank are
+  // separate families, so a cash wallet and a bank account are each default in
+  // their own lane — admin cash entries keep going to the wallet either way.
+  const makeDefault = async (a: CswoBankAccount) => {
+    const isCash = a.account_type === 'cash';
+    const family = accounts.filter((x) => (x.account_type === 'cash') === isCash);
+    const { error } = await supabase.from('cswo_bank_accounts').update({ is_default: false })
+      .in('id', family.map((x) => x.id));
+    if (!error) await supabase.from('cswo_bank_accounts').update({ is_default: true }).eq('id', a.id);
+    if (error) {
+      alert(tr(
+        'Could not set the default account. If this says the column does not exist, migration 0063 has not been applied yet.',
+        'ডিফল্ট অ্যাকাউন্ট সেট করা যায়নি। কলাম না থাকলে মাইগ্রেশন ০০৬৩ এখনো প্রয়োগ হয়নি।',
+      ) + '\n\n' + error.message);
+      return;
+    }
+    await load();
+  };
 
   const openAddAcct = () => { setEditingAcct(null); setAcctForm(EMPTY_ACCT); setAcctErr(''); setShowAcct(true); };
   const openEditAcct = (a: CswoBankAccount) => {
@@ -197,7 +219,22 @@ export default function AdminBankAccounts() {
                   </div>
                   <div className="mt-0.5 font-mono text-[11px]" style={{ color: MUTED }}>{tr('A/C', 'অ্যাকাউন্ট')} {mask(selected.account_number)}</div>
                 </div>
-                <div className="flex gap-2 text-[12px] font-medium">
+                <div className="flex flex-wrap items-center gap-2 text-[12px] font-medium">
+                  {!defaultsSupported ? null : selected.is_default ? (
+                    <span
+                      className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em]"
+                      style={{ background: 'rgba(77,124,15,0.12)', color: GREEN }}
+                      title={selected.account_type === 'cash'
+                        ? tr('Cash entries land here', 'নগদ এন্ট্রি এখানে যাবে')
+                        : tr('Online money lands here', 'অনলাইন অর্থ এখানে যাবে')}
+                    >
+                      {tr('Default', 'ডিফল্ট')}
+                    </span>
+                  ) : (
+                    <button onClick={() => makeDefault(selected)} className="hover:underline" style={{ color: INK2 }}>
+                      {tr('Make default', 'ডিফল্ট করুন')}
+                    </button>
+                  )}
                   <button onClick={() => openEditAcct(selected)} style={{ color: BRAND }} className="hover:underline">{tr('Edit', 'সম্পাদনা')}</button>
                   <button onClick={() => removeAcct(selected.id)} className="text-red-600 hover:underline">{tr('Delete', 'মুছুন')}</button>
                 </div>
@@ -254,7 +291,7 @@ export default function AdminBankAccounts() {
                 </label>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-[13px]">
+                <table className="w-full min-w-[760px] text-[13px]">
                   <thead><tr style={{ borderBottom: `1px solid ${RULE}` }}>
                     {[tr('Date', 'তারিখ'), tr('Description', 'বিবরণ'), tr('Ref', 'রেফ'), tr('Debit', 'খরচ'), tr('Credit', 'জমা'), tr('Reconciled', 'মিলিত'), ''].map((h, i) => (
                       <th key={i} className="px-3 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: MUTED }}>{h}</th>

@@ -457,6 +457,7 @@ export interface CswoBankAccount {
   account_type: BankAccountType;
   opening_balance: number;
   statement_balance: number;
+  is_default?: boolean;
   is_active: boolean;
   note: string;
   sort_order: number;

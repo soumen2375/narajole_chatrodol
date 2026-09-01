@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { ComponentType, SVGProps } from 'react';
 import { FaArrowTrendUp, FaHeart, FaCoins, FaReceipt, FaDownload, FaBuildingColumns, FaWallet } from 'react-icons/fa6';
 import { supabase } from '@/lib/supabase';
@@ -14,6 +15,7 @@ const MUTED = '#78716c';
 const RULE = '#e7e5e4';
 const BRAND = '#c2410c';
 const GREEN = '#4d7c0f';
+const RED = '#b91c1c';
 const PAPER = '#ffffff';
 const CREAM = '#faf6ef';
 const EVENT_COLORS = ['#1d4ed8', '#c2410c', '#4d7c0f', '#b45309', '#0f766e', '#78716c'];
@@ -33,7 +35,7 @@ function fyMonthIndex(dateStr: string, sy: number) {
 }
 function inFy(dateStr: string, sy: number) { const i = fyMonthIndex(dateStr, sy); return i >= 0 && i < 12; }
 
-interface EventRow { id: string | null; title: string; income: number; expenses: number; }
+interface EventRow { id: string | null; title: string; date: string | null; income: number; expenses: number; }
 interface Txn { at: string; label: string; event: string; amount: number; dir: 'credit' | 'debit'; }
 interface AccountBalance { id: string; label: string; type: string; balance: number; }
 
@@ -45,6 +47,9 @@ export default function AdminFinance() {
   const months = fmt.months();
 
   const [fy, setFy] = useState(currentFiscalYear());
+  // Event-allocation table controls
+  const [evYear, setEvYear] = useState('all');
+  const [evSort, setEvSort] = useState<'desc' | 'asc'>('desc');
   const [tick, setTick] = useState(0);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<{
@@ -63,7 +68,7 @@ export default function AdminFinance() {
       supabase.from('cswo_donations').select('amount,event_id,created_at,donor_name,is_anonymous,is_recurring,purpose,status'),
       supabase.from('cswo_monthly_contributions').select('amount,paid_at,member_id,status,year'),
       supabase.from('cswo_expenses').select('amount,event_id,spent_on,created_at,vendor,description,status'),
-      supabase.from('cswo_events').select('id,title').order('event_date', { ascending: false }),
+      supabase.from('cswo_events').select('id,title,event_date').order('event_date', { ascending: false }),
       supabase.from('cswo_members').select('id,full_name,status'),
       supabase.from('cswo_bank_accounts').select('id,label,account_type,opening_balance').eq('is_active', true).order('sort_order'),
       supabase.from('cswo_bank_transactions').select('account_id,direction,amount'),
@@ -78,7 +83,7 @@ export default function AdminFinance() {
       const donations = ((donR.data ?? []) as D[]).filter((d) => d.status === 'paid');
       const contributions = ((conR.data ?? []) as C[]).filter((c) => c.status === 'paid');
       const expenses = ((expR.data ?? []) as E[]).filter((e) => e.status === 'approved');
-      const events = (evR.data ?? []) as { id: string; title: string }[];
+      const events = (evR.data ?? []) as { id: string; title: string; event_date: string }[];
       const members = (memR.data ?? []) as { id: string; full_name: string; status: string }[];
       const accounts = (accR.data ?? []) as A[];
       const txns = (txnR.data ?? []) as T[];
@@ -118,6 +123,7 @@ export default function AdminFinance() {
       const eventRows: EventRow[] = [...ids].map((id) => ({
         id,
         title: eventTitle(id),
+        date: events.find((e) => e.id === id)?.event_date ?? null,
         income: donFy.filter((d) => d.event_id === id).reduce((s, d) => s + Number(d.amount), 0),
         expenses: expFy.filter((e) => e.event_id === id).reduce((s, e) => s + Number(e.amount), 0),
       })).sort((a, b) => (b.income + b.expenses) - (a.income + a.expenses));
@@ -144,6 +150,17 @@ export default function AdminFinance() {
   const savingsRate = data && data.income > 0 ? Math.round((net / data.income) * 100) : 0;
   const totalHeld = data ? data.bankBalance + data.walletBalance : 0;
 
+  // Years present in the allocation rows, so the filter never offers a dead year.
+  const evYears = useMemo(
+    () => [...new Set((data?.events ?? []).map((r) => r.date?.slice(0, 4)).filter(Boolean) as string[])].sort((a, b) => b.localeCompare(a)),
+    [data],
+  );
+  const eventRows = useMemo(() => {
+    const rows = (data?.events ?? []).filter((r) => evYear === 'all' || r.date?.startsWith(evYear));
+    const total = (r: EventRow) => r.income + r.expenses;
+    return [...rows].sort((a, b) => (evSort === 'desc' ? total(b) - total(a) : total(a) - total(b)));
+  }, [data, evYear, evSort]);
+
   const best = useMemo(() => {
     if (!data) return { inc: { i: 0, v: 0 }, exp: { i: 0, v: 0 }, avg: 0 };
     const incI = data.mInc.reduce((b, v, i, a) => (v > a[b] ? i : b), 0);
@@ -159,7 +176,7 @@ export default function AdminFinance() {
   const exportCSV = () => {
     if (!data) return;
     const header = [tr('Event', 'অনুষ্ঠান'), tr('Income', 'আয়'), tr('Expenses', 'ব্যয়'), tr('Balance', 'ব্যালেন্স')];
-    const body = data.events.map((r) => [r.title, r.income, r.expenses, r.income - r.expenses]);
+    const body = eventRows.map((r) => [r.title, r.income, r.expenses, r.income - r.expenses]);
     const totals = [tr('TOTAL', 'মোট'), data.income, data.expenses, net];
     const csv = [header, ...body, totals].map((row) => row.map((c) => `"${c}"`).join(',')).join('\r\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -274,20 +291,42 @@ export default function AdminFinance() {
 
           {/* ── Event allocation ─────────────────────────────────────────── */}
           <div className="rounded-[8px]" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
-            <div className="px-5 pt-5">
+            <div className="flex flex-col gap-3 px-5 pt-5 sm:flex-row sm:items-start sm:justify-between">
+              <div>
               <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Event allocation', 'অনুষ্ঠান-ভিত্তিক বরাদ্দ')}</div>
               <h3 className="mt-1.5 text-[18px]" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>{tr('Income & expense by event', 'অনুষ্ঠান অনুসারে আয় ও ব্যয়')}</h3>
               <p className="mt-1 text-[12.5px]" style={{ color: MUTED }}>{tr('Change an allocation on the Ledger page.', 'বরাদ্দ বদলাতে লেজার পাতায় যান।')}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={evYear}
+                  onChange={(e) => setEvYear(e.target.value)}
+                  className="rounded-full px-3 py-1.5 text-[12.5px] font-semibold outline-none"
+                  style={{ border: `1px solid ${RULE}`, color: INK2, background: PAPER }}
+                >
+                  <option value="all">{tr('All years', 'সব বছর')}</option>
+                  {evYears.map((y) => <option key={y} value={y}>{y}</option>)}
+                </select>
+                <select
+                  value={evSort}
+                  onChange={(e) => setEvSort(e.target.value as 'desc' | 'asc')}
+                  className="rounded-full px-3 py-1.5 text-[12.5px] font-semibold outline-none"
+                  style={{ border: `1px solid ${RULE}`, color: INK2, background: PAPER }}
+                >
+                  <option value="desc">{tr('Highest first', 'বেশি আগে')}</option>
+                  <option value="asc">{tr('Lowest first', 'কম আগে')}</option>
+                </select>
+              </div>
             </div>
             <div className="mt-3 overflow-x-auto">
-              <table className="w-full text-[13px]">
+              <table className="w-full min-w-[620px] text-[13px]">
                 <thead><tr style={{ borderTop: `1px solid ${RULE}`, borderBottom: `1px solid ${RULE}` }}>
                   {[tr('Event', 'অনুষ্ঠান'), tr('Income', 'আয়'), tr('Expenses', 'ব্যয়'), tr('Balance', 'ব্যালেন্স')].map((h, i) => (
                     <th key={i} className={`px-5 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] ${i === 0 ? 'text-left' : 'text-right'}`} style={{ color: MUTED }}>{h}</th>
                   ))}
                 </tr></thead>
                 <tbody>
-                  {data.events.map((r, i) => {
+                  {eventRows.map((r, i) => {
                     const bal = r.income - r.expenses;
                     return (
                       <tr key={r.id ?? 'none'} style={{ borderBottom: `1px solid ${RULE}` }}>
@@ -316,7 +355,7 @@ export default function AdminFinance() {
                       <td className="px-5 py-3 text-right font-semibold" style={{ color: GREEN }}>{fmt.money(data.contributions)}</td>
                     </tr>
                   )}
-                  {data.events.length === 0 && data.contributions === 0 && (
+                  {eventRows.length === 0 && data.contributions === 0 && (
                     <tr><td colSpan={4} className="px-5 py-10 text-center text-[13px]" style={{ color: MUTED }}>{tr('Nothing recorded this year yet.', 'এ বছরে এখনো কিছু রেকর্ড হয়নি।')}</td></tr>
                   )}
                   <tr style={{ background: INK }}>
@@ -338,12 +377,19 @@ export default function AdminFinance() {
                 <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>{tr('Latest transactions', 'সাম্প্রতিক লেনদেন')}</div>
                 <h3 className="mt-1.5 text-[18px]" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>{tr('Last 10 movements', 'শেষ ১০টি লেনদেন')}</h3>
               </div>
+              <Link
+                to="/admin/ledger"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors hover:bg-black/[0.03]"
+                style={{ border: `1px solid ${RULE}`, color: INK2 }}
+              >
+                {tr('View all', 'সব দেখুন')} <span aria-hidden="true">→</span>
+              </Link>
             </div>
             {data.txns.length === 0 ? (
               <p className="px-5 py-8 text-center text-[13px]" style={{ color: MUTED }}>{tr('No transactions yet.', 'এখনো কোনো লেনদেন নেই।')}</p>
             ) : (
               <div className="mt-3 overflow-x-auto">
-                <table className="w-full text-[13px]">
+                <table className="w-full min-w-[680px] text-[13px]">
                   <thead><tr style={{ borderTop: `1px solid ${RULE}`, borderBottom: `1px solid ${RULE}` }}>
                     {[tr('Date & time', 'তারিখ ও সময়'), tr('Description', 'বিবরণ'), tr('Event', 'অনুষ্ঠান'), tr('Amount', 'পরিমাণ')].map((h, i) => (
                       <th key={i} className={`px-5 py-2.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] ${i === 3 ? 'text-right' : 'text-left'}`} style={{ color: MUTED }}>{h}</th>
@@ -355,7 +401,7 @@ export default function AdminFinance() {
                         <td className="whitespace-nowrap px-5 py-3 font-mono text-[11px]" style={{ color: MUTED }}>{dtFull(tx.at)}</td>
                         <td className="px-5 py-3" style={{ color: INK }}>{tx.label}</td>
                         <td className="px-5 py-3" style={{ color: INK2 }}>{tx.event}</td>
-                        <td className="px-5 py-3 text-right font-semibold" style={{ color: tx.dir === 'credit' ? GREEN : BRAND }}>{tx.dir === 'credit' ? '+' : '−'}{fmt.money(tx.amount)}</td>
+                        <td className="px-5 py-3 text-right font-semibold" style={{ color: tx.dir === 'credit' ? GREEN : RED }}>{fmt.money(tx.amount)}</td>
                       </tr>
                     ))}
                   </tbody>

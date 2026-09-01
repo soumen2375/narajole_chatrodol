@@ -213,6 +213,23 @@ function styles(): string {
   .grid td { padding: 8px; font-size: 12px; border-bottom: 1px solid ${DOC.hair}; vertical-align: top; }
   .grid tr { break-inside: avoid; }
   .grid .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* Utility marks the finance packs tag cells with. Without these the audit
+     pack's data rows fell back to left-aligned proportional figures while its
+     headers and totals row stayed right-aligned. */
+  .grid .r { text-align: right; white-space: nowrap; }
+  .mono { font-variant-numeric: tabular-nums; }
+  .whitespace-nowrap { white-space: nowrap; }
+  .font-semibold { font-weight: 700; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 10px; font-weight: 700; letter-spacing: .04em; white-space: nowrap; }
+  .badge-green { background: #e8f5ee; color: #15803d; }
+  .badge-amber { background: #fdf3e3; color: #b45309; }
+  .badge-red { background: #fdecec; color: #b91c1c; }
+  .type-pill { display: inline-block; padding: 2px 7px; border-radius: 4px;
+    background: ${DOC.cream}; color: ${DOC.maroon}; font-size: 10px; font-weight: 700;
+    letter-spacing: .04em; white-space: nowrap; }
   .grid tfoot td { font-weight: 700; border-bottom: none; }
   .grid tfoot tr:first-child td { border-top: 2px solid ${DOC.maroon}; }
   .grid tfoot tr:last-child td { color: ${DOC.maroon}; }

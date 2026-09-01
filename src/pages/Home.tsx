@@ -87,15 +87,15 @@ function Hero() {
 
   return (
     <section
-      className="relative flex min-h-[560px] w-full items-end overflow-hidden bg-site-green px-5 pb-16 pt-12 sm:px-8 md:min-h-[520px] md:items-center md:pb-24 md:pt-16"
+      className="relative flex min-h-[560px] w-full items-end overflow-hidden bg-site-green px-5 pb-16 pt-12 sm:px-8 md:min-h-[640px] md:h-[46vw] md:max-h-[820px] md:items-center md:pb-24 md:pt-16"
       style={{ borderRadius: '0 0 56px 56px' }}
     >
       {/* Photo background — same scrim system as the Donate and About heroes */}
       <img
-        src="/assets/images/home-hero.jpg"
+        src="/assets/images/Chhatradol2.jpg"
         alt=""
         className="absolute inset-0 h-full w-full object-cover"
-        style={{ objectPosition: '60% 30%' }}
+        style={{ objectPosition: '60% 38%' }}
       />
       <div
         className="page-hero-scrim page-hero-scrim--strong absolute inset-0"

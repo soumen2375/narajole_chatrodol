@@ -41,7 +41,9 @@ export function formatDate(dateStr: string | null | undefined, lang: Lang): stri
 }
 
 export function formatCurrency(amount: number, lang: Lang): string {
-  return `₹${digits(amount.toLocaleString('en-IN'), lang)}`;
+  // The sign belongs outside the symbol — `toLocaleString` alone yields "₹-14,613".
+  const sign = amount < 0 ? '-' : '';
+  return `${sign}₹${digits(Math.abs(amount).toLocaleString('en-IN'), lang)}`;
 }
 
 export function excerpt(text: string, length = 150): string {

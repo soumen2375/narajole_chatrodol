@@ -6,7 +6,7 @@ import { printReceipt } from '@/lib/receipt';
 import {
   DonationFields, ExpenseFields, emptyDonationDraft, emptyExpenseDraft,
   saveDonation, saveExpense, validateDonation, validateExpense, useMoneyRefs,
-  PAPER, RULE, INK, INK2, MUTED, GREEN, BRAND, SERIF, MONO,
+  PAPER, RULE, INK, INK2, MUTED, GREEN, BRAND, RED, SERIF, MONO,
   type DonationDraft, type ExpenseDraft,
 } from './moneyForms';
 import { Plus, X, ArrowDownLeft, ArrowUpRight, Check, ChevronLeft, Loader2, Printer } from 'lucide-react';
@@ -176,13 +176,13 @@ function RecordMoneySheet({ onClose, onSaved }: { onClose: () => void; onSaved?:
             <div className="flex flex-col items-center gap-3 py-4 text-center">
               <span
                 className="flex h-14 w-14 items-center justify-center rounded-full"
-                style={{ background: saved.direction === 'in' ? '#ecfaf3' : '#fff5ec', color: saved.direction === 'in' ? GREEN : BRAND }}
+                style={{ background: saved.direction === 'in' ? '#ecfaf3' : '#fef2f2', color: saved.direction === 'in' ? GREEN : RED }}
               >
                 <Check className="h-7 w-7" />
               </span>
               <div>
-                <div className="text-[28px] font-bold" style={{ fontFamily: SERIF, color: saved.direction === 'in' ? GREEN : BRAND }}>
-                  {saved.direction === 'in' ? '+' : '−'}{fmt.money(saved.amount)}
+                <div className="text-[28px] font-bold" style={{ fontFamily: SERIF, color: saved.direction === 'in' ? GREEN : RED }}>
+                  {fmt.money(saved.amount)}
                 </div>
                 <div className="mt-0.5 text-[13.5px]" style={{ color: INK2 }}>{saved.who}</div>
                 {saved.receiptNumber && (

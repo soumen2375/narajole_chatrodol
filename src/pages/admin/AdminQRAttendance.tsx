@@ -521,7 +521,7 @@ export default function AdminQRAttendance() {
             </div>
 
             <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
-              <table className="w-full text-[13px]">
+              <table className="w-full min-w-[700px] text-[13px]">
                 <thead style={{ background: PAPER, position: 'sticky', top: 0 }}>
                   <tr>
                     <th className="px-4 py-3 text-left font-semibold" style={{ color: MUTED }}>{tr('Member', 'সদস্য')}</th>

@@ -213,7 +213,7 @@ export default function AdminEventReport() {
       {budget.length > 0 && (
         <div className="overflow-x-auto rounded-[10px] p-5" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
           <h2 className="mb-3 text-[15px] font-semibold" style={{ color: INK }}>{tr('Budget detail', 'বাজেট বিবরণ')}</h2>
-          <table className="w-full text-[13px]">
+          <table className="w-full min-w-[620px] text-[13px]">
             <thead><tr style={{ borderBottom: `1px solid ${RULE}` }}>{[tr('Category', 'বিভাগ'), tr('Planned', 'পরিকল্পিত'), tr('Approved', 'অনুমোদিত'), tr('Actual', 'প্রকৃত')].map((h, i) => <th key={i} className={`px-3 py-2 text-[11px] font-semibold uppercase ${i === 0 ? 'text-left' : 'text-right'}`} style={{ color: MUTED }}>{h}</th>)}</tr></thead>
             <tbody>
               {budget.map((b, i) => (

@@ -479,7 +479,7 @@ export default function AdminInvoices() {
         <p className="text-gray-600">{tr('No bills recorded yet.', 'এখনও কোনো বিল নেই।')}</p>
       ) : (
         <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[680px] text-sm">
             <thead className="bg-gray-50 text-left text-gray-600">
               <tr>
                 <th className="px-4 py-3">{tr('Bill no.', 'বিল নং')}</th>
@@ -646,7 +646,7 @@ export default function AdminInvoices() {
                   </button>
                 </div>
                 <div className="overflow-x-auto rounded-lg ring-1 ring-gray-200">
-                  <table className="w-full text-sm">
+                  <table className="w-full min-w-[460px] text-sm">
                     <thead className="bg-gray-50 text-left text-[11px] uppercase tracking-wide text-gray-500">
                       <tr>
                         <th className="px-3 py-2">{tr('Description', 'বিবরণ')}</th>

@@ -150,7 +150,7 @@ export default function AdminExpenses() {
         </p>
       ) : (
         <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[780px] text-sm">
             <thead className="bg-gray-50 text-left text-gray-600">
               <tr>
                 <th className="px-4 py-3">{tr('Date', 'তারিখ')}</th>
