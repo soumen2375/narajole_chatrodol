@@ -5,6 +5,7 @@ import Footer from './Footer';
 import CtaBand from '@/components/site/CtaBand';
 import ScrollToTopBtn from '@/components/ui/ScrollToTopBtn';
 import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
+import WelcomePopup from '@/components/site/WelcomePopup';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 
 export default function PublicLayout() {
@@ -20,6 +21,7 @@ export default function PublicLayout() {
       <Footer />
       <ScrollToTopBtn />
       <FloatingWhatsApp />
+      <WelcomePopup />
     </div>
   );
 }

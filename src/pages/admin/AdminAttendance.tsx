@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { Attendance, CswoEvent, Member, QrSession } from '@/types';
+import { memberDisplayId } from '@/types';
 import { formatDate } from '@/lib/format';
 import { useT } from '@/i18n';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -262,7 +263,7 @@ export default function AdminAttendance() {
       const a = att[m.id];
       return [
         m.full_name,
-        m.member_serial ? `CSWO-${String(m.member_serial).padStart(4, '0')}` : '',
+        memberDisplayId(m),
         a ? a.status : 'absent',
         a?.check_in_time ? formatDate(a.check_in_time, 'en') : '',
         a?.marked_type ?? '',
@@ -291,7 +292,7 @@ export default function AdminAttendance() {
 
   const filtered = members.filter(m =>
     m.full_name.toLowerCase().includes(search.toLowerCase()) ||
-    (m.member_serial ? `CSWO-${String(m.member_serial).padStart(4, '0')}` : '').includes(search),
+    (memberDisplayId(m)).includes(search),
   );
 
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -560,7 +561,7 @@ export default function AdminAttendance() {
                 {recentCheckIns.map(a => {
                   const m = members.find(mem => mem.id === a.member_id);
                   if (!m) return null;
-                  const serial = m.member_serial ? `CSWO-${String(m.member_serial).padStart(4, '0')}` : '';
+                  const serial = memberDisplayId(m);
                   return (
                     <div key={a.id} className="flex items-center gap-3 rounded-xl p-2.5"
                       style={{ background: PAPER }}>
@@ -752,7 +753,7 @@ export default function AdminAttendance() {
             <tbody>
               {filtered.map((m, idx) => {
                 const a = att[m.id];
-                const serial = m.member_serial ? `CSWO-${String(m.member_serial).padStart(4, '0')}` : '—';
+                const serial = memberDisplayId(m);
                 const isPresentLike = a?.status === 'present' || a?.status === 'volunteered';
                 const isAbsent = a?.status === 'absent';
 

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#0d0b0b; font-family:'Barlow',Helvetica,Arial,sans-serif; }
+  input, select, textarea, button { box-sizing:border-box; min-width:0; max-width:100%; font-family:inherit; }
+  a { color:#0f4436; text-decoration:none; }
+  a:hover { color:#1a6b53; }
+  @keyframes popIn { from { opacity:0; transform:translateY(20px) scale(.97) } to { opacity:1; transform:none } }
+  @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+  @keyframes riseIn { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
+  input::placeholder { color:#a8ab9f; }
+  input:focus, select:focus { outline:none; border-color:#0f4436 !important; }
+  [data-poster] { height:auto; aspect-ratio:1200/1599; object-fit:contain; background:#f8f8f2; }
+  @media (max-width:860px) {
+    [data-card] { grid-template-columns:1fr !important; }
+    [data-poster] { height:180px; aspect-ratio:auto; object-fit:cover; object-position:center 20%; }
+  }
+</style>
+</helmet>
+
+<div style="position:relative;min-height:100vh;width:100%;overflow-x:hidden;overflow-y:auto;background:#141010">
+
+  <div style="position:absolute;inset:0;filter:blur(6px);opacity:.5;transform:scale(1.04)">
+    <div style="height:72px;background:#1d1717;display:flex;align-items:center;justify-content:space-between;padding:0 48px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:42px;height:42px;border-radius:50%;background:#0f4436"></div>
+        <div style="width:150px;height:16px;background:#3a2f2f;border-radius:4px"></div>
+      </div>
+      <div style="display:flex;gap:24px;align-items:center">
+        <div style="width:64px;height:11px;background:#3a2f2f;border-radius:3px"></div>
+        <div style="width:64px;height:11px;background:#3a2f2f;border-radius:3px"></div>
+        <div style="width:110px;height:36px;background:#FFC800;border-radius:999px"></div>
+      </div>
+    </div>
+    <div style="height:460px;background:linear-gradient(160deg,#22271f,#2f3a2c 60%,#161a15)"></div>
+  </div>
+
+  <div onClick="{{ close }}" style="position:absolute;inset:0;background:rgba(10,7,7,.84);animation:fadeIn .3s ease both"></div>
+
+  <sc-if value="{{ open }}" hint-placeholder-val="{{ true }}">
+  <div style="position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 18px">
+    <div style="position:relative;width:100%;max-width:900px;animation:popIn .35s cubic-bezier(.2,.9,.25,1) both">
+
+      <button onClick="{{ close }}" aria-label="Close" style="position:absolute;top:-14px;right:-14px;z-index:5;width:44px;height:44px;border:3px solid #fff;border-radius:50%;background:#0f4436;color:#fff;font-size:19px;line-height:1;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.35);transition:transform .18s ease,background .18s ease" style-hover="background:#14563f;transform:rotate(90deg)">✕</button>
+
+      <div data-card style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));align-items:start;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.5)">
+
+        <img data-poster src="uploads/WhatsApp%20Image%20202601%20at%204.20.00%20PM.jpeg" alt="আনন্দধারা ২০২৬ campaign poster" style="display:block;width:100%;object-fit:cover;object-position:center top">
+
+        <div style="padding:26px 28px 24px">
+
+          <sc-if value="{{ formOpen }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <div style="font-family:'Hind Siliguri',sans-serif;font-size:13.5px;font-weight:600;color:#0f4436;letter-spacing:.04em;margin-bottom:6px">আনন্দধারা – ২০২৬</div>
+            <h2 style="margin:0 0 4px;font-family:'Hind Siliguri',sans-serif;font-size:25px;line-height:1.25;font-weight:700;color:#14231d">একটি পোশাকের দায়িত্ব নিন</h2>
+            <p style="margin:0 0 16px;font-family:'Hind Siliguri',sans-serif;font-size:14.5px;line-height:1.45;color:#5d6b62">মেদিনীপুর ও ঝাড়গ্রামের দুঃস্থ শিশুদের নতুন পোশাক, পঠন সামগ্রী ও খাবার।</p>
+
+            <div style="font-size:13.5px;font-weight:700;color:#14231d;margin-bottom:8px">Or choose an amount</div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:9px">
+              <sc-for list="{{ amounts }}" as="a" hint-placeholder-count="6">
+                <button onClick="{{ a.pick }}" style="{{ a.style }}" style-hover="border-color:#0f4436">{{ a.label }}</button>
+              </sc-for>
+            </div>
+
+            <div style="display:grid;gap:9px">
+              <input value="{{ custom }}" onChange="{{ setCustom }}" inputMode="numeric" placeholder="Other amount (₹)" style="{{ inputStyle }}">
+              <input value="{{ name }}" onChange="{{ setName }}" placeholder="Full name *" style="{{ nameStyle }}">
+              <input value="{{ phone }}" onChange="{{ setPhone }}" inputMode="numeric" placeholder="Mobile number *" style="{{ phoneStyle }}">
+              <input value="{{ email }}" onChange="{{ setEmail }}" placeholder="Email (optional — for 80G receipt)" style="{{ inputStyle }}">
+            </div>
+
+            <button onClick="{{ submit }}" disabled="{{ blocked }}" style="{{ ctaStyle }}">{{ ctaLabel }}</button>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;min-height:18px">
+              <span style="font-family:'Hind Siliguri',sans-serif;font-size:12.5px;color:{{ hintColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ hint }}</span>
+              <button onClick="{{ close }}" style="background:none;border:none;padding:0;white-space:nowrap;font-family:'Hind Siliguri',sans-serif;font-size:13px;color:#8d9990;cursor:pointer;text-decoration:underline">পরে দেখব</button>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ done }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;min-height:360px;animation:riseIn .35s ease both">
+            <div style="width:66px;height:66px;border-radius:50%;background:#0f4436;color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px">✓</div>
+            <h2 style="margin:6px 0 0;font-family:'Hind Siliguri',sans-serif;font-size:24px;font-weight:700;color:#14231d">ধন্যবাদ, {{ thanksName }}!</h2>
+            <p style="margin:0;font-family:'Hind Siliguri',sans-serif;font-size:15px;line-height:1.5;color:#5d6b62;max-width:320px">আপনার <strong style="color:#0f4436">₹{{ chosenAmount }}</strong> অনুদানে {{ impactShort }}। {{ phoneMask }} নম্বরে শীঘ্রই যোগাযোগ করা হবে।</p>
+            <div style="display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:6px">
+              <a href="https://chhatradol.org/donate" style="padding:13px 22px;border-radius:999px;background:#FFC800;color:#14231d;font-size:15px;font-weight:700">Complete payment</a>
+              <button onClick="{{ reset }}" style="padding:13px 20px;border-radius:999px;border:1.5px solid #e6e6dc;background:#fff;font-family:'Hind Siliguri',sans-serif;font-size:14px;color:#5d6b62;cursor:pointer" style-hover="border-color:#0f4436;color:#0f4436">আরও একজনের দায়িত্ব নিন</button>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ closed }}" hint-placeholder-val="{{ false }}">
+  <div style="position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center">
+    <button onClick="{{ reopen }}" style="padding:15px 26px;border:none;border-radius:999px;background:#FFC800;color:#14231d;font-size:15px;font-weight:700;cursor:pointer">Show the popup again</button>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1100,&quot;height&quot;:720}}">
+class Component extends DCLogic {
+  state = { open: true, sel: 2, custom: "", name: "", phone: "", email: "", stage: "form" };
+
+  presets = [300, 500, 1000, 2000, 5000, 10000];
+
+  componentDidMount() {
+    this.onKey = e => { if (e.key === "Escape") this.setState({ open: false }); };
+    window.addEventListener("keydown", this.onKey);
+  }
+  componentWillUnmount() { window.removeEventListener("keydown", this.onKey); }
+
+  inr(n) { return n.toLocaleString("en-IN"); }
+
+  amount() {
+    const c = parseInt(String(this.state.custom).replace(/\D/g, "") || "0", 10);
+    if (c > 0) return c;
+    return this.state.sel === null ? 0 : this.presets[this.state.sel];
+  }
+
+  chips() {
+    const custom = parseInt(String(this.state.custom).replace(/\D/g, "") || "0", 10) > 0;
+    return this.presets.map((v, i) => {
+      const on = !custom && this.state.sel === i;
+      return {
+        label: "₹" + this.inr(v),
+        pick: () => this.setState({ sel: i, custom: "" }),
+        style: [
+          "padding:15px 8px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:background .16s ease,border-color .16s ease,color .16s ease",
+          on ? "background:#0f4436;border:1.5px solid #0f4436;color:#fff" : "background:#fff;border:1.5px solid #e6e6dc;color:#14231d"
+        ].join(";")
+      };
+    });
+  }
+
+  field(bad) {
+    return "font-size:15px;padding:15px 18px;border-radius:12px;background:#f8f8f2;color:#14231d;transition:border-color .18s ease;border:1.5px solid " + (bad ? "#d9a5a5" : "#ecece2");
+  }
+
+  renderVals() {
+    const s = this.state, a = this.amount();
+    const set = k => e => this.setState({ [k]: e.target.value });
+    const digits = s.phone.replace(/\D/g, "");
+    const nameOk = s.name.trim().length > 1, phoneOk = digits.length === 10, amountOk = a >= 100;
+    const ready = nameOk && phoneOk && amountOk;
+    const sending = s.stage === "sending";
+
+    let hint = "", hintColor = "#8d9990";
+    if (s.phone && !phoneOk) { hint = "১০ ডিজিটের মোবাইল নম্বর দিন"; hintColor = "#b4534a"; }
+    else if (!amountOk && (s.name || s.phone)) { hint = "সর্বনিম্ন ₹১০০"; hintColor = "#b4534a"; }
+    else if (ready) { hint = "পেমেন্ট সুরক্ষিত · 80G রসিদ পাবেন"; }
+
+    return {
+      open: s.open, closed: !s.open,
+      formOpen: s.stage !== "done", done: s.stage === "done",
+      amounts: this.chips(),
+      custom: s.custom, setCustom: set("custom"),
+      name: s.name, phone: s.phone, email: s.email,
+      setName: set("name"), setPhone: set("phone"), setEmail: set("email"),
+      inputStyle: this.field(false),
+      nameStyle: this.field(s.name.length > 0 && !nameOk),
+      phoneStyle: this.field(s.phone.length > 0 && !phoneOk),
+      blocked: !ready || sending,
+      hint, hintColor,
+      ctaLabel: sending ? "Processing…" : (a ? "Donate ₹" + this.inr(a) : "Donate"),
+      ctaStyle: [
+        "width:100%;margin-top:12px;padding:17px;border:none;border-radius:14px;font-size:17px;font-weight:800;transition:background .18s ease,box-shadow .18s ease",
+        ready && !sending
+          ? "background:#FFC800;color:#14231d;cursor:pointer;box-shadow:0 10px 22px rgba(255,200,0,.35)"
+          : "background:#f2ecc9;color:#a49b6d;cursor:not-allowed;box-shadow:none"
+      ].join(";"),
+      chosenAmount: this.inr(a),
+      impactShort: a ? Math.max(1, Math.round(a / 500)) + " জন শিশু নতুন পোশাক পাবে" : "শিশুরা নতুন পোশাক পাবে",
+      thanksName: s.name.trim().split(" ")[0] || "বন্ধু",
+      phoneMask: digits ? digits.slice(0, 2) + "•••••" + digits.slice(-3) : "আপনার",
+      submit: () => {
+        if (!ready) return;
+        this.setState({ stage: "sending" });
+        setTimeout(() => this.setState({ stage: "done" }), 800);
+      },
+      reset: () => this.setState({ stage: "form", name: "", phone: "", email: "", custom: "", sel: 2 }),
+      close: () => this.setState({ open: false }),
+      reopen: () => this.setState({ open: true, stage: "form" })
+    };
+  }
+}
+</script>
+</body>
+</html>

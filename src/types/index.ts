@@ -62,9 +62,32 @@ export interface Member {
   can_manage_finance: boolean;
 }
 
-export function memberDisplayId(m: Pick<Member, 'member_serial'>): string {
-  if (!m.member_serial) return 'CSWO-????';
-  return 'CSWO-' + String(m.member_serial).padStart(4, '0');
+const BLOOD_RE = /^(AB|A|B|O)\s*([+-])?$/i;
+
+/**
+ * `CSWO-<serial><first initial><blood group><1 positive|0 negative><last initial>`
+ * — e.g. Soumen Maity, serial 1, O+ → `CSWO-001SO1M`.
+ *
+ * Computed on every render rather than stored, so the id corrects itself the
+ * moment a member fills in their blood group. Until then the blood section
+ * holds its shape as `X0`.
+ */
+export function memberDisplayId(
+  m: { member_serial: number | null; full_name?: string | null; blood_group?: string | null },
+): string {
+  if (!m.member_serial) return 'CSWO-???';
+  const serial = String(m.member_serial).padStart(3, '0');
+
+  // A single-word name is its own last word, so both initials come out the same.
+  const words = (m.full_name ?? '').trim().split(/\s+/).filter(Boolean);
+  const first = words.length ? words[0][0].toUpperCase() : '';
+  const last = words.length ? words[words.length - 1][0].toUpperCase() : '';
+
+  const bg = BLOOD_RE.exec((m.blood_group ?? '').trim());
+  const group = bg ? bg[1].toUpperCase() : 'X';
+  const rh = bg?.[2] === '+' ? '1' : '0';
+
+  return `CSWO-${serial}${first}${group}${rh}${last}`;
 }
 
 export interface CswoPost {

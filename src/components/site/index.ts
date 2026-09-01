@@ -8,3 +8,4 @@ export { default as FormCard } from './FormCard';
 export { default as Placeholder } from './Placeholder';
 export { default as Photo } from './Photo';
 export { default as CtaBand } from './CtaBand';
+export { default as WelcomePopup } from './WelcomePopup';

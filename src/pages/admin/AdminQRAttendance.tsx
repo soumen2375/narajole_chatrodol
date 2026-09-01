@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import type { Attendance, CswoEvent, Member } from '@/types';
+import { memberDisplayId } from '@/types';
 import { useT } from '@/i18n';
 import { QRCodeCanvas } from 'qrcode.react';
 import {
@@ -249,7 +250,7 @@ export default function AdminQRAttendance() {
         const a = att[m.id];
         return [
           m.full_name,
-          m.member_serial ? `CSWO-${String(m.member_serial).padStart(4, '0')}` : '',
+          memberDisplayId(m),
           m.phone ?? '',
           a?.check_in_time ? new Date(a.check_in_time).toLocaleString('en-IN') : '',
           a?.attendance_method ?? 'qr',
@@ -272,7 +273,7 @@ export default function AdminQRAttendance() {
 
   const filtered = members.filter(m =>
     m.full_name.toLowerCase().includes(search.toLowerCase()) ||
-    (m.member_serial ? `CSWO-${String(m.member_serial).padStart(4, '0')}` : '').toLowerCase().includes(search.toLowerCase()),
+    (memberDisplayId(m)).toLowerCase().includes(search.toLowerCase()),
   );
 
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -535,7 +536,7 @@ export default function AdminQRAttendance() {
                 <tbody>
                   {filtered.map((m, idx) => {
                     const a = att[m.id];
-                    const serial = m.member_serial ? `CSWO-${String(m.member_serial).padStart(4, '0')}` : '—';
+                    const serial = memberDisplayId(m);
                     const isPresent = a?.status === 'present' || a?.status === 'volunteered';
 
                     return (
@@ -625,7 +626,7 @@ export default function AdminQRAttendance() {
             <div className="rounded-xl p-3 mb-4" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
               <p className="font-semibold text-[13px]" style={{ color: INK }}>{manualModal.full_name}</p>
               <p className="text-[12px] mt-0.5" style={{ color: MUTED }}>
-                {manualModal.member_serial ? `CSWO-${String(manualModal.member_serial).padStart(4, '0')}` : ''} · {manualModal.phone ?? ''}
+                {memberDisplayId(manualModal)} · {manualModal.phone ?? ''}
               </p>
             </div>
 

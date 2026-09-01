@@ -155,7 +155,7 @@ export default function Donate() {
   const [frequency, setFrequency] = useState<Frequency>('once');
   // The reference form has no anonymity/receipt toggles; the payload still reads this.
   const [anonymous] = useState(false);
-  const [donor, setDonor] = useState({ name: '', email: '', phone: '', pan: '' });
+  const [donor, setDonor] = useState({ name: '', email: '', phone: '' });
   const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
   const [formNotice, setFormNotice] = useState<string>('');
   const [status, setStatus] = useState<Status>('idle');
@@ -304,15 +304,15 @@ export default function Donate() {
     if (!donor.name.trim()) {
       errors.name = tr('অনুগ্রহ করে আপনার পুরো নাম লিখুন।', 'Please enter your full name.');
     }
-    if (!donor.email.trim()) {
-      errors.email = tr('অনুগ্রহ করে আপনার ইমেল ঠিকানা লিখুন।', 'Please enter your email address.');
-    } else if (!emailOk) {
-      errors.email = tr('অনুগ্রহ করে একটি সঠিক ইমেল লিখুন।', 'Please enter a valid email address.');
-    }
     if (!donor.phone.trim()) {
-      errors.phone = tr('অনুগ্রহ করে আপনার ফোন নম্বর লিখুন।', 'Please enter your phone number.');
+      errors.phone = tr('অনুগ্রহ করে আপনার মোবাইল নম্বর লিখুন।', 'Please enter your mobile number.');
     } else if (!phoneOk) {
-      errors.phone = tr('অনুগ্রহ করে একটি সঠিক ফোন নম্বর লিখুন।', 'Please enter a valid phone number.');
+      errors.phone = tr('অনুগ্রহ করে একটি সঠিক মোবাইল নম্বর লিখুন।', 'Please enter a valid mobile number.');
+    }
+    // Email is optional — only validated when the donor actually fills it in,
+    // since it is used solely to email the 80G receipt.
+    if (donor.email.trim() && !emailOk) {
+      errors.email = tr('অনুগ্রহ করে একটি সঠিক ইমেল লিখুন।', 'Please enter a valid email address.');
     }
     if (!amount || amount <= 0) {
       errors.amount = tr('অনুগ্রহ করে অনুদানের পরিমাণ বাছুন।', 'Please choose a donation amount.');
@@ -330,10 +330,10 @@ export default function Donate() {
       // Focus first missing field
       if (errors.name) {
         document.getElementById('donor-name')?.focus();
-      } else if (errors.email) {
-        document.getElementById('donor-email')?.focus();
       } else if (errors.phone) {
         document.getElementById('donor-phone')?.focus();
+      } else if (errors.email) {
+        document.getElementById('donor-email')?.focus();
       }
       return;
     }
@@ -534,7 +534,7 @@ export default function Donate() {
             {/* Step 2 */}
             <div className="flex items-center gap-1 sm:gap-2.5 shrink min-w-0">
               <div className={`flex h-6 w-6 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full font-bold text-[10px] sm:text-sm transition-all ${
-                donor.name.trim() && emailOk && phoneOk && amount > 0 ? 'bg-site-green text-white' : 'bg-site-cream text-site-soft border border-site-line'
+                donor.name.trim() && phoneOk && amount > 0 ? 'bg-site-green text-white' : 'bg-site-cream text-site-soft border border-site-line'
               }`}>
                 2
               </div>
@@ -775,7 +775,7 @@ export default function Donate() {
                   <input
                     id="donor-name"
                     type="text"
-                    placeholder={tr('পুরো নাম', 'Full name')}
+                    placeholder={tr('পুরো নাম *', 'Full name *')}
                     value={donor.name}
                     onChange={setField('name')}
                     className={`site-input min-h-0 px-[22px] py-[13px] text-[14px] ${formErrors.name ? 'border-site-blood' : ''}`}
@@ -784,24 +784,12 @@ export default function Donate() {
                 </div>
 
                 <div>
-                  <label htmlFor="donor-email" className="sr-only">{tr('ইমেল ঠিকানা', 'Email address')}</label>
-                  <input
-                    id="donor-email"
-                    type="email"
-                    placeholder={tr('৮০জি রসিদের জন্য ইমেল', 'Email for the 80G receipt')}
-                    value={donor.email}
-                    onChange={setField('email')}
-                    className={`site-input min-h-0 px-[22px] py-[13px] text-[14px] ${formErrors.email ? 'border-site-blood' : ''}`}
-                  />
-                  {formErrors.email && <p className="field-error">{formErrors.email}</p>}
-                </div>
-
-                <div>
-                  <label htmlFor="donor-phone" className="sr-only">{tr('ফোন নম্বর', 'Phone number')}</label>
+                  <label htmlFor="donor-phone" className="sr-only">{tr('মোবাইল নম্বর', 'Mobile number')}</label>
                   <input
                     id="donor-phone"
                     type="tel"
-                    placeholder={tr('ফোন নম্বর', 'Phone number')}
+                    inputMode="numeric"
+                    placeholder={tr('মোবাইল নম্বর *', 'Mobile number *')}
                     value={donor.phone}
                     onChange={setField('phone')}
                     className={`site-input min-h-0 px-[22px] py-[13px] text-[14px] ${formErrors.phone ? 'border-site-blood' : ''}`}
@@ -810,16 +798,16 @@ export default function Donate() {
                 </div>
 
                 <div>
-                  <label htmlFor="donor-pan" className="sr-only">{tr('প্যান (৮০জি-র জন্য)', 'PAN (for 80G)')}</label>
+                  <label htmlFor="donor-email" className="sr-only">{tr('ইমেল ঠিকানা', 'Email address')}</label>
                   <input
-                    id="donor-pan"
-                    type="text"
-                    placeholder={tr('প্যান (৮০জি-র জন্য)', 'PAN (for 80G)')}
-                    value={donor.pan}
-                    onChange={setField('pan')}
-                    className={`site-input min-h-0 px-[22px] py-[13px] text-[14px] ${formErrors.pan ? 'border-site-blood' : ''}`}
+                    id="donor-email"
+                    type="email"
+                    placeholder={tr('ইমেল (ঐচ্ছিক — ৮০জি রসিদের জন্য)', 'Email (optional — for 80G receipt)')}
+                    value={donor.email}
+                    onChange={setField('email')}
+                    className={`site-input min-h-0 px-[22px] py-[13px] text-[14px] ${formErrors.email ? 'border-site-blood' : ''}`}
                   />
-                  {formErrors.pan && <p className="field-error">{formErrors.pan}</p>}
+                  {formErrors.email && <p className="field-error">{formErrors.email}</p>}
                 </div>
 
                 {formNotice && (

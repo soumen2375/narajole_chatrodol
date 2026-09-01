@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, Fragment } from 'react';
 import { supabase } from '@/lib/supabase';
+import { memberDisplayId } from '@/types';
 import type { CswoAuditLog } from '@/types';
 import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
@@ -48,7 +49,7 @@ export default function AdminAudit() {
   const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
 
   const [dbRows, setDbRows] = useState<CswoAuditLog[]>([]);
-  const [actors, setActors] = useState<Record<string, { full_name: string; member_serial: number; email: string; role: string }>>({});
+  const [actors, setActors] = useState<Record<string, { full_name: string; member_serial: number; email: string; role: string; blood_group: string | null }>>({});
   const [loading, setLoading] = useState(true);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [diffModalRow, setDiffModalRow] = useState<AuditRow | null>(null);
@@ -107,16 +108,17 @@ export default function AdminAudit() {
     if (actorIds.length) {
       const { data: membersData } = await supabase
         .from('cswo_members')
-        .select('id, full_name, member_serial, email, role')
+        .select('id, full_name, member_serial, email, role, blood_group')
         .in('id', actorIds);
       
-      const actorMap: Record<string, { full_name: string; member_serial: number; email: string; role: string }> = {};
+      const actorMap: Record<string, { full_name: string; member_serial: number; email: string; role: string; blood_group: string | null }> = {};
       for (const m of membersData ?? []) {
         actorMap[m.id] = {
           full_name: m.full_name,
           member_serial: m.member_serial,
           email: m.email,
-          role: m.role
+          role: m.role,
+          blood_group: m.blood_group
         };
       }
       setActors(actorMap);
@@ -319,7 +321,7 @@ export default function AdminAudit() {
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const actorName = row.actor?.full_name?.toLowerCase() || 'system';
-        const serialStr = row.actor?.member_serial ? `cswo-${String(row.actor.member_serial).padStart(4, '0')}` : 'sys';
+        const serialStr = row.actor ? memberDisplayId(row.actor).toLowerCase() : 'sys';
         const actionStr = row.action.toLowerCase();
         const entityStr = row.entity.toLowerCase();
         const summaryStr = row.summary.toLowerCase();
@@ -417,7 +419,7 @@ export default function AdminAudit() {
     try {
       const headers = ['Date & Time', 'Actor ID/Serial', 'Actor Name', 'Role', 'Category', 'Severity', 'Action', 'Entity', 'Summary'];
       const rowsData = filteredRows.map((r) => {
-        const serial = r.actor?.member_serial ? `CSWO-${String(r.actor.member_serial).padStart(4, '0')}` : 'SYS';
+        const serial = r.actor ? memberDisplayId(r.actor) : 'SYS';
         return [
           new Date(r.created_at).toLocaleString('en-US'),
           serial,
@@ -967,8 +969,8 @@ export default function AdminAudit() {
                     ? r.actor.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
                     : 'SYS';
 
-                  const serialStr = r.actor?.member_serial
-                    ? `CSWO-${String(r.actor.member_serial).padStart(4, '0')}`
+                  const serialStr = r.actor
+                    ? memberDisplayId(r.actor)
                     : r.actor_id
                       ? `ID: ${r.actor_id.slice(0, 8)}`
                       : r.role === 'System' ? 'SYSTEM' : 'SYS';
