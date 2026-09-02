@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { PageShell, PageHero } from './_field-journal';
 import { startPayment, type UnifiedPaymentResult } from '@/lib/payments';
@@ -144,6 +145,7 @@ type PaymentOption = 'gateway' | 'qr' | 'bank';
 
 export default function Donate() {
   const { lang } = useT();
+  const routerLocation = useLocation();
   useSEO(SEO['/donate']);
   const tr = (bn: string, en: string) => (lang === 'en' ? en : bn);
 
@@ -187,6 +189,45 @@ export default function Donate() {
   useEffect(() => {
     void loadRazorpayScript();
     void loadCashfreeScript();
+  }, []);
+
+  // Payment completed inside the entry popup (WelcomePopup): it hands the
+  // verified receipt over in router state so the donor gets this page's real
+  // success modal — confetti, printable receipt, "email me a copy" — instead
+  // of a second, thinner copy of it living in the popup. Consumed once; the
+  // history entry is scrubbed so a refresh does not replay it.
+  useEffect(() => {
+    const handed = (routerLocation.state as { cswoReceipt?: typeof completedReceipt } | null)?.cswoReceipt;
+    if (!handed) return;
+    setCompletedReceipt(handed);
+    setStatus('done');
+    setShowSuccessModal(true);
+    window.history.replaceState({}, '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Prefill from ?amount/&name/&phone/&email — the entry popup (WelcomePopup)
+  // collects these on the poster card and hands them over so the donor never
+  // types the same thing twice. An amount that matches a tier selects that
+  // tier; anything else lands in the custom field.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const rawAmount = parseInt((q.get('amount') || '').replace(/\D/g, ''), 10);
+    if (rawAmount > 0) {
+      const tier = TIERS.find((t) => t.v === rawAmount);
+      if (tier) { setPicked(tier.v); setCustom(''); setCauseKey(tier.causeKey); }
+      else { setCustom(String(rawAmount)); }
+    }
+    const name = (q.get('name') || '').trim();
+    const phone = (q.get('phone') || '').trim();
+    const email = (q.get('email') || '').trim();
+    if (name || phone || email) {
+      setDonor((prev) => ({
+        name: name || prev.name,
+        phone: phone || prev.phone,
+        email: email || prev.email,
+      }));
+    }
   }, []);
 
   const timedOutRef = useRef(false);
