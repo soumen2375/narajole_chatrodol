@@ -57,94 +57,108 @@ export async function updateDonationGatewayLink(
   }
 }
 
+/**
+ * Builds the gateway receipt/order-id prefix for a monthly-dues batch.
+ *
+ * Same reasoning as donationReceiptTag(): api/cashfree-order.ts appends
+ * `_${Date.now()}` and caps the result at 50 chars, so the old
+ * `con_cf_<uuid>` form (43 chars) was sliced to 40 and lost the tail of the
+ * member's UUID — leaving an order id nothing could be matched back to.
+ * Stripping the dashes fits the whole UUID (2 + 32 + 1 + 13 = 48), so the
+ * server can recover the payer from the order id alone if the link write is
+ * ever lost. Keep in sync with parseMemberIdFromOrderId() in
+ * api/_lib/finalize-payment.ts.
+ */
+export function contributionReceiptTag(memberId: string): string {
+  return `c_${memberId.replace(/-/g, '')}`;
+}
+
 export interface ContributionBatch {
   memberId: string;
   year: number;
   months: number[];
 }
 
-export interface PreCreateContributionArgs {
+export interface StageContributionArgs {
   memberId: string;
   year: number;
   months: number[];
   totalAmount: number;
   gateway: 'cashfree' | 'razorpay';
+  /** Attach the gateway order id in the same write, once it exists. */
+  orderId?: string | null;
+  status?: 'created' | 'failed' | 'cancelled';
 }
 
 /**
- * Upserts one 'created' row per month being paid. Never touches a month
- * that's already 'paid'. Returns the batch descriptor to pass to
- * linkContributionOrderId(), or null if there was nothing left to charge.
+ * Creates (or restages) one row per month being paid and, when an order id is
+ * supplied, attaches it in the same statement.
+ *
+ * Goes through the cswo_stage_contribution_batch RPC rather than a client
+ * upsert. The upsert could not work: a due month normally already has a row in
+ * the 'unpaid' state, and the member UPDATE policy's USING clause matched only
+ * created/failed/cancelled, so the write was rejected for exactly the months
+ * members actually pay. Nothing then carried the order id, and finalizePayment()
+ * had no record to mark paid — the gateway collected the money and Monthly
+ * still showed the month as due. The RPC is SECURITY DEFINER but strictly
+ * narrower than table UPDATE: it only touches its own member's rows, refuses
+ * any status other than created/failed/cancelled, and skips months already paid.
+ *
+ * Throws on failure. Callers must let that propagate rather than opening a
+ * checkout there would be no row to reconcile against.
  */
-export async function preCreateContributionRows(
-  args: PreCreateContributionArgs,
+export async function stageContributionBatch(
+  args: StageContributionArgs,
 ): Promise<ContributionBatch | null> {
   if (args.months.length === 0) return null;
 
-  const perMonthAmount = args.totalAmount / args.months.length;
+  const { data, error } = await supabase.rpc('cswo_stage_contribution_batch', {
+    p_member_id: args.memberId,
+    p_year: args.year,
+    p_months: args.months,
+    p_amount: args.totalAmount / args.months.length,
+    p_gateway: args.gateway,
+    p_order_id: args.orderId ?? null,
+    p_status: args.status ?? 'created',
+  });
 
-  let monthsToCreate = args.months;
-  try {
-    const { data: existing } = await supabase
-      .from('cswo_monthly_contributions')
-      .select('month, status')
-      .eq('member_id', args.memberId)
-      .eq('year', args.year)
-      .in('month', args.months);
-
-    const alreadyPaid = new Set(
-      (existing || []).filter((r) => r.status === 'paid').map((r) => r.month),
+  if (error) {
+    console.error('[payment] Failed to stage contribution batch:', error);
+    throw new Error(
+      'Could not prepare your monthly dues for payment. Please try again, or contact the treasurer if this keeps happening.',
     );
-    monthsToCreate = args.months.filter((m) => !alreadyPaid.has(m));
-  } catch {
-    // If the pre-check fails, fall through and attempt the full batch —
-    // the unique (member_id, year, month) constraint + upsert still protects
-    // against duplicates, worst case is a benign no-op update below.
   }
 
-  if (monthsToCreate.length === 0) return null;
+  const months = (data as number[] | null) ?? [];
+  if (months.length === 0) return null;
 
-  const rows = monthsToCreate.map((m) => ({
-    member_id: args.memberId,
-    year: args.year,
-    month: m,
-    amount: perMonthAmount,
-    status: 'created' as const,
-    payment_gateway: args.gateway,
-  }));
-
-  try {
-    await supabase
-      .from('cswo_monthly_contributions')
-      .upsert(rows, { onConflict: 'member_id,year,month' });
-  } catch {
-    return null;
-  }
-
-  return { memberId: args.memberId, year: args.year, months: monthsToCreate };
+  return { memberId: args.memberId, year: args.year, months };
 }
 
 /**
- * Attaches the gateway order id (or marks the batch failed/cancelled) on all
- * rows in the batch. Safe to call even if preCreateContributionRows()
- * returned null-equivalent for some months — it only ever touches rows still
- * in 'created' state via RLS, so an already-paid row can't be clobbered.
+ * Attaches the gateway order id, or moves the batch to failed/cancelled.
+ *
+ * Best-effort by design: it runs on paths where the payment is already over
+ * (checkout dismissed, order creation threw), so a failure here must not mask
+ * the original error. The webhook and the reconciler still settle the row.
  */
 export async function linkContributionOrderId(
   batch: ContributionBatch,
   gateway: 'cashfree' | 'razorpay',
   orderId: string | null,
   status: 'created' | 'failed' | 'cancelled',
+  perMonthAmount: number,
 ): Promise<void> {
-  const orderColumn = gateway === 'cashfree' ? 'cashfree_order_id' : 'razorpay_order_id';
-  try {
-    await supabase
-      .from('cswo_monthly_contributions')
-      .update({ [orderColumn]: orderId, status })
-      .eq('member_id', batch.memberId)
-      .eq('year', batch.year)
-      .in('month', batch.months);
-  } catch {
-    // ignore — server-side reconciliation will still pick this up later
+  const { error } = await supabase.rpc('cswo_stage_contribution_batch', {
+    p_member_id: batch.memberId,
+    p_year: batch.year,
+    p_months: batch.months,
+    p_amount: perMonthAmount,
+    p_gateway: gateway,
+    p_order_id: orderId,
+    p_status: status,
+  });
+  if (error) {
+    console.error('[payment] Failed to link contribution batch to gateway order:', error);
   }
 }

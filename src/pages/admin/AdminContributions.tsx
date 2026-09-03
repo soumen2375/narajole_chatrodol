@@ -8,11 +8,27 @@ import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import {
   Search, Download, Check, Mail, User, MoreVertical, CheckCircle2, ChevronDown, ListFilter,
+  Wallet, Landmark,
 } from 'lucide-react';
 import MemberAvatar from '@/components/ui/MemberAvatar';
 
 type Grid = Record<string, Record<number, MonthlyContribution>>;
 type CellState = 'paid' | 'advance' | 'due' | 'upcoming';
+
+/** Where the money physically landed. Cash goes to the wallet; online goes to
+ *  the bank account the treasurer names on the way in. */
+type PaidBy = 'cash' | 'online';
+
+interface BankOpt { id: string; label: string; account_number: string; is_default: boolean }
+
+/** What the picker resolved to, and what gets written onto every row it covers. */
+interface PaymentSource { paidBy: PaidBy; bankAccountId: string | null }
+
+/** The action a confirmed payment source should be applied to. */
+type PendingMark =
+  | { kind: 'cell'; memberId: string; month: number; label: string }
+  | { kind: 'member'; member: Member; months: number[]; label: string }
+  | { kind: 'month'; month: number; memberIds: string[]; label: string };
 
 // ─── Design tokens (from the Monthly Contributions canvas) ───────────────────
 const C = {
@@ -118,6 +134,115 @@ function RowMenu({ memberId, onMarkAllPaid, label }: { memberId: string; onMarkA
   );
 }
 
+/**
+ * Asks where the money came in before a month is marked paid.
+ *
+ * The destination used to be implicit: every admin-marked month was written as
+ * 'cash', so dues collected by bank transfer still landed in the cash wallet
+ * and the wallet never reconciled. Cash goes to the wallet; Online goes to the
+ * chosen bank account, which is carried on the row itself so the ledger and
+ * bank-transaction mirrors both agree with what actually happened.
+ */
+function PaymentSourceModal({
+  title, subtitle, banks, initial, onConfirm, onCancel, label,
+}: {
+  title: string;
+  subtitle: string;
+  banks: BankOpt[];
+  initial: PaymentSource;
+  onConfirm: (src: PaymentSource) => void;
+  onCancel: () => void;
+  label: (en: string, bn: string) => string;
+}) {
+  const [paidBy, setPaidBy] = useState<PaidBy>(initial.paidBy);
+  const [bankId, setBankId] = useState<string>(
+    initial.bankAccountId || banks.find((b) => b.is_default)?.id || banks[0]?.id || '',
+  );
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [onCancel]);
+
+  const canConfirm = paidBy === 'cash' || !!bankId;
+
+  const option = (v: PaidBy, Icon: typeof Wallet, name: string, hint: string) => {
+    const on = paidBy === v;
+    return (
+      <button
+        key={v}
+        type="button"
+        onClick={() => setPaidBy(v)}
+        className="flex min-h-[64px] flex-1 flex-col items-center justify-center gap-1 rounded-xl px-3 py-2.5 transition-colors"
+        style={{
+          border: `1.5px solid ${on ? C.accent : C.fieldLine}`,
+          background: on ? C.accentSoft : '#fff',
+          color: on ? C.accent : C.sub,
+        }}
+        aria-pressed={on}
+      >
+        <Icon className="h-[18px] w-[18px]" />
+        <span className="text-[13.5px] font-bold">{name}</span>
+        <span className="text-[10.5px]" style={{ color: on ? C.accent : C.muted }}>{hint}</span>
+      </button>
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(15,35,27,.5)' }}>
+      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
+        <h3 className="text-[17px] font-extrabold tracking-[-.01em]">{title}</h3>
+        <p className="mt-1 text-[13px]" style={{ color: C.sub }}>{subtitle}</p>
+
+        <div className="mt-4 flex gap-2.5">
+          {option('cash', Wallet, label('Cash', 'নগদ'), label('to wallet', 'ওয়ালেটে'))}
+          {option('online', Landmark, label('Online', 'অনলাইন'), label('to bank', 'ব্যাংকে'))}
+        </div>
+
+        {paidBy === 'online' && (
+          <label className="mt-3.5 block">
+            <span className="text-[11px] font-bold uppercase tracking-[.08em]" style={{ color: C.label }}>
+              {label('Which account received it', 'কোন অ্যাকাউন্টে এসেছে')}
+            </span>
+            <select
+              value={bankId}
+              onChange={(e) => setBankId(e.target.value)}
+              className="mt-1.5 h-11 w-full rounded-xl px-3 text-sm"
+              style={{ border: `1px solid ${C.fieldLine}`, background: C.field }}
+            >
+              {banks.length === 0 && <option value="">{label('No bank account on file', 'কোনো ব্যাংক অ্যাকাউন্ট নেই')}</option>}
+              {banks.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.label}{b.account_number ? ` (…${b.account_number.slice(-4)})` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        <div className="mt-5 flex gap-2.5">
+          <button
+            onClick={onCancel}
+            className="min-h-[44px] flex-1 rounded-xl py-2.5 text-sm font-bold"
+            style={{ border: `1px solid ${C.fieldLine}`, background: '#fff', color: '#20302a' }}
+          >
+            {label('Cancel', 'বাতিল')}
+          </button>
+          <button
+            onClick={() => onConfirm({ paidBy, bankAccountId: paidBy === 'online' ? bankId : null })}
+            disabled={!canConfirm}
+            className="min-h-[44px] flex-1 rounded-xl py-2.5 text-sm font-bold text-white disabled:opacity-50"
+            style={{ background: C.accent }}
+          >
+            {label('Mark paid', 'পরিশোধিত করুন')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminContributions() {
   const { member: me } = useAuth();
   const { lang } = useT();
@@ -144,6 +269,12 @@ export default function AdminContributions() {
 
   // Focus month — drives the month chips, the stats band and the bulk action.
   const [focus, setFocus] = useState<number>(currentMonth);
+
+  // Cash-or-online, asked once per marking action and remembered as the
+  // default for the next one so a long collection session stays quick.
+  const [banks, setBanks] = useState<BankOpt[]>([]);
+  const [pendingMark, setPendingMark] = useState<PendingMark | null>(null);
+  const [lastSource, setLastSource] = useState<PaymentSource>({ paidBy: 'cash', bankAccountId: null });
 
   const [showRemindersModal, setShowRemindersModal] = useState(false);
   const [remindersMessage, setRemindersMessage] = useState('');
@@ -195,23 +326,47 @@ export default function AdminContributions() {
 
   useEffect(() => { load(); }, [load]);
 
-  // ─── Toggle a single cell (optimistic, rolls back on error) ───────────────
-  const toggle = async (memberId: string, month: number) => {
+  // The cash wallet is not a destination you pick — 'cash' routes there itself.
+  useEffect(() => {
+    supabase
+      .from('cswo_bank_accounts')
+      .select('id,label,account_number,is_default')
+      .eq('is_active', true)
+      .neq('account_type', 'cash')
+      .order('sort_order')
+      .then(({ data }) => setBanks((data ?? []) as BankOpt[]));
+  }, []);
+
+  // ─── Marking a month paid ─────────────────────────────────────────────────
+  //
+  // Every path that sets 'paid' first asks where the money came from, then
+  // applies the same answer to the whole batch. Un-marking needs no answer, so
+  // it goes straight through.
+
+  /** One row's worth of the write, given the confirmed source. */
+  const paidRow = (memberId: string, month: number, src: PaymentSource, nowIso: string) => ({
+    member_id: memberId,
+    year,
+    month,
+    amount: defaultAmount,
+    status: 'paid' as const,
+    paid_at: nowIso,
+    payment_method: src.paidBy,
+    bank_account_id: src.bankAccountId,
+    recorded_by: me?.id,
+  });
+
+  const clearMonth = async (memberId: string, month: number) => {
     const cellKey = `${memberId}-${month}`;
-    if (busyCells.has(cellKey)) return;
     const existing = grid[memberId]?.[month];
-    const wasPaid = existing?.status === 'paid';
-    const amount = defaultAmount;
-    const newStatus = wasPaid ? 'unpaid' : 'paid';
-    const nowIso = new Date().toISOString();
     setGrid((prev) => {
       const mr = { ...(prev[memberId] ?? {}) };
-      mr[month] = { ...(existing ?? ({} as MonthlyContribution)), member_id: memberId, year, month, amount, status: newStatus, paid_at: newStatus === 'paid' ? nowIso : null, payment_method: newStatus === 'paid' ? 'cash' : null, recorded_by: me?.id ?? null } as MonthlyContribution;
+      mr[month] = { ...(existing ?? ({} as MonthlyContribution)), member_id: memberId, year, month, amount: defaultAmount, status: 'unpaid', paid_at: null, payment_method: null, bank_account_id: null, recorded_by: me?.id ?? null } as MonthlyContribution;
       return { ...prev, [memberId]: mr };
     });
     setBusyCells((prev) => new Set(prev).add(cellKey));
     const { error } = await supabase.from('cswo_monthly_contributions').upsert(
-      { member_id: memberId, year, month, amount, status: newStatus, paid_at: newStatus === 'paid' ? nowIso : null, payment_method: newStatus === 'paid' ? 'cash' : null, recorded_by: me?.id },
+      { member_id: memberId, year, month, amount: defaultAmount, status: 'unpaid', paid_at: null, payment_method: null, bank_account_id: null, recorded_by: me?.id },
       { onConflict: 'member_id,year,month' },
     );
     if (error) {
@@ -228,60 +383,101 @@ export default function AdminContributions() {
     setBusyCells((prev) => { const n = new Set(prev); n.delete(cellKey); return n; });
   };
 
-  // ─── Mark every month paid for one member ─────────────────────────────────
-  const markAllForMember = async (member: Member) => {
-    const nowIso = new Date().toISOString();
-    const toMark = Array.from({ length: 12 }, (_, i) => i + 1).filter((mo) => grid[member.id]?.[mo]?.status !== 'paid');
-    if (toMark.length === 0) return;
-    setGrid((prev) => {
-      const mr = { ...(prev[member.id] ?? {}) };
-      toMark.forEach((mo) => {
-        mr[mo] = { ...(mr[mo] ?? ({} as MonthlyContribution)), member_id: member.id, year, month: mo, amount: defaultAmount, status: 'paid', paid_at: nowIso, payment_method: 'cash', recorded_by: me?.id ?? null } as MonthlyContribution;
-      });
-      return { ...prev, [member.id]: mr };
-    });
-    const results = await Promise.all(
-      toMark.map((mo) => supabase.from('cswo_monthly_contributions').upsert(
-        { member_id: member.id, year, month: mo, amount: defaultAmount, status: 'paid', paid_at: nowIso, payment_method: 'cash', recorded_by: me?.id },
-        { onConflict: 'member_id,year,month' },
-      )),
-    );
-    const failed = results.find((r) => r.error);
-    if (failed?.error) {
-      console.error('[contributions] mark-all failed', { member: member.id, error: failed.error });
-      setWriteError(`${member.full_name} — ${failed.error.message}`);
-      await load();
+  const toggle = (memberId: string, month: number) => {
+    const cellKey = `${memberId}-${month}`;
+    if (busyCells.has(cellKey)) return;
+    if (grid[memberId]?.[month]?.status === 'paid') {
+      void clearMonth(memberId, month);
+      return;
     }
+    const who = members.find((m) => m.id === memberId)?.full_name ?? '';
+    setPendingMark({
+      kind: 'cell',
+      memberId,
+      month,
+      label: `${who} · ${months[month - 1]} ${year}`,
+    });
   };
 
-  // ─── Bulk mark one month paid for everyone ────────────────────────────────
-  const bulkMarkPaid = async (mo: number) => {
-    if (!window.confirm(tr(`Mark all members paid for ${months[mo - 1]} ${year}?`, `${months[mo - 1]} ${fmt.num(year)} সব সদস্যকে পরিশোধিত করবেন?`))) return;
-    setBulkBusy(true);
-    const nowIso = new Date().toISOString();
+  const markAllForMember = (member: Member) => {
+    const toMark = Array.from({ length: 12 }, (_, i) => i + 1).filter((mo) => grid[member.id]?.[mo]?.status !== 'paid');
+    if (toMark.length === 0) return;
+    setPendingMark({
+      kind: 'member',
+      member,
+      months: toMark,
+      label: tr(
+        `${member.full_name} · ${toMark.length} month${toMark.length > 1 ? 's' : ''} · ₹${toMark.length * defaultAmount}`,
+        `${member.full_name} · ${fmt.num(toMark.length)} মাস · ₹${fmt.num(toMark.length * defaultAmount)}`,
+      ),
+    });
+  };
+
+  const bulkMarkPaid = (mo: number) => {
     const unpaid = members.filter((m) => grid[m.id]?.[mo]?.status !== 'paid');
+    if (unpaid.length === 0) return;
+    setPendingMark({
+      kind: 'month',
+      month: mo,
+      memberIds: unpaid.map((m) => m.id),
+      label: tr(
+        `${months[mo - 1]} ${year} · ${unpaid.length} member${unpaid.length > 1 ? 's' : ''} · ₹${unpaid.length * defaultAmount}`,
+        `${months[mo - 1]} ${fmt.num(year)} · ${fmt.num(unpaid.length)} জন · ₹${fmt.num(unpaid.length * defaultAmount)}`,
+      ),
+    });
+  };
+
+  /** Applies the confirmed source to whichever action opened the picker. */
+  const applyMark = async (src: PaymentSource) => {
+    const target = pendingMark;
+    setPendingMark(null);
+    if (!target) return;
+    setLastSource(src);
+
+    const nowIso = new Date().toISOString();
+    const pairs: Array<{ memberId: string; month: number }> =
+      target.kind === 'cell'
+        ? [{ memberId: target.memberId, month: target.month }]
+        : target.kind === 'member'
+          ? target.months.map((mo) => ({ memberId: target.member.id, month: mo }))
+          : target.memberIds.map((id) => ({ memberId: id, month: target.month }));
+
+    if (target.kind === 'cell') setBusyCells((prev) => new Set(prev).add(`${target.memberId}-${target.month}`));
+    else setBulkBusy(true);
+
     setGrid((prev) => {
       const next = { ...prev };
-      unpaid.forEach((m) => {
-        const mr = { ...(next[m.id] ?? {}) };
-        mr[mo] = { ...(mr[mo] ?? ({} as MonthlyContribution)), member_id: m.id, year, month: mo, amount: defaultAmount, status: 'paid', paid_at: nowIso, payment_method: 'cash', recorded_by: me?.id ?? null } as MonthlyContribution;
-        next[m.id] = mr;
-      });
+      for (const { memberId, month } of pairs) {
+        const mr = { ...(next[memberId] ?? {}) };
+        mr[month] = { ...(mr[month] ?? ({} as MonthlyContribution)), ...paidRow(memberId, month, src, nowIso), recorded_by: me?.id ?? null } as MonthlyContribution;
+        next[memberId] = mr;
+      }
       return next;
     });
+
     const results = await Promise.all(
-      unpaid.map((m) => supabase.from('cswo_monthly_contributions').upsert(
-        { member_id: m.id, year, month: mo, amount: defaultAmount, status: 'paid', paid_at: nowIso, payment_method: 'cash', recorded_by: me?.id },
-        { onConflict: 'member_id,year,month' },
-      )),
+      pairs.map(({ memberId, month }) =>
+        supabase.from('cswo_monthly_contributions').upsert(
+          paidRow(memberId, month, src, nowIso),
+          { onConflict: 'member_id,year,month' },
+        ),
+      ),
     );
+
     const failed = results.find((r) => r.error);
     if (failed?.error) {
-      console.error('[contributions] bulk mark failed', { month: mo, error: failed.error });
-      setWriteError(`${months[mo - 1]} ${year} — ${failed.error.message}`);
+      console.error('[contributions] mark paid failed', { target, error: failed.error });
+      setWriteError(`${target.label} — ${failed.error.message}`);
       await load();
+    } else {
+      setWriteError(null);
     }
-    setBulkBusy(false);
+
+    if (target.kind === 'cell') {
+      setBusyCells((prev) => { const n = new Set(prev); n.delete(`${target.memberId}-${target.month}`); return n; });
+    } else {
+      setBulkBusy(false);
+    }
   };
 
   // ─── Export CSV ───────────────────────────────────────────────────────────
@@ -412,6 +608,19 @@ export default function AdminContributions() {
           </div>
         );
       })()}
+
+      {/* ── Cash or online, asked before anything is marked paid ── */}
+      {pendingMark && (
+        <PaymentSourceModal
+          title={tr('How was this received?', 'কীভাবে পাওয়া গেল?')}
+          subtitle={pendingMark.label}
+          banks={banks}
+          initial={lastSource}
+          onConfirm={applyMark}
+          onCancel={() => setPendingMark(null)}
+          label={tr}
+        />
+      )}
 
       {/* ── Reminders modal ── */}
       {showRemindersModal && (

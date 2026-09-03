@@ -1,9 +1,10 @@
 import { supabase } from './supabase';
 import {
-  preCreateContributionRows,
+  stageContributionBatch,
   linkContributionOrderId,
   updateDonationGatewayLink,
   donationReceiptTag,
+  contributionReceiptTag,
   type ContributionBatch,
 } from './contributions';
 
@@ -326,20 +327,31 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
   }
 
   if (args.action === 'create_contribution_order' && args.memberId && args.year) {
-    contributionBatch = await preCreateContributionRows({
+    // Throws if the rows could not be staged — deliberately not caught, because
+    // opening a checkout with no row to reconcile against is how a member ends
+    // up paying for a month that still shows as due.
+    contributionBatch = await stageContributionBatch({
       memberId: args.memberId,
       year: args.year,
       months: args.months && args.months.length > 0 ? args.months : (args.month ? [args.month] : []),
       totalAmount: args.amount,
       gateway: 'razorpay',
     });
+
+    if (!contributionBatch) {
+      throw new Error('These months are already paid. Refresh the page to see the latest status.');
+    }
   }
+
+  const perMonthAmount = contributionBatch
+    ? args.amount / contributionBatch.months.length
+    : args.amount;
 
   const amountPaise = Math.round(args.amount * 100);
   const receipt = donationRecordId
     ? donationReceiptTag(donationRecordId)
     : contributionBatch
-      ? `con_${contributionBatch.memberId}_${Date.now()}`.slice(0, 40)
+      ? contributionReceiptTag(contributionBatch.memberId)
       : `cswo_${Date.now()}`;
 
   const orderData = await createOrder(
@@ -359,7 +371,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
   }
 
   if (contributionBatch) {
-    await linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'created');
+    await linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'created', perMonthAmount);
   }
 
   const key = orderData.key_id || ENV_KEY_ID || '';
@@ -404,7 +416,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
             );
           }
           if (contributionBatch) {
-            await linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'failed');
+            await linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'failed', perMonthAmount);
           }
           reject(err);
         }
@@ -421,7 +433,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
             );
           }
           if (contributionBatch) {
-            void linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'cancelled');
+            void linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'cancelled', perMonthAmount);
           }
           reject(new Error('CANCELLED'));
         },
@@ -431,7 +443,7 @@ export async function startRazorpayPayment(args: StartPaymentArgs): Promise<Razo
     rzp.on('payment.failed', (failData: unknown) => {
       const errorDetail = (failData as { error?: { description?: string } })?.error?.description || 'Payment Failed';
       if (contributionBatch) {
-        void linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'failed');
+        void linkContributionOrderId(contributionBatch, 'razorpay', orderData.order_id, 'failed', perMonthAmount);
       }
       if (donationRecordId) {
         void updateDonationGatewayLink(

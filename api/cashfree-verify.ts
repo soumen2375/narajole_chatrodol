@@ -265,6 +265,7 @@ export default async function handler(
       paymentId,
       gatewayStatus: rawStatus,
       paymentMethod,
+      orderAmount: orderData.order_amount,
     });
 
     if (!result.success) {

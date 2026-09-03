@@ -341,6 +341,9 @@ export interface MonthlyContribution {
   status: ContributionStatus;
   paid_at: string | null;
   payment_method: string | null;
+  /** Account the money landed in. NULL means "the default for payment_method"
+   *  — cash wallet for cash, the nominated bank account for anything online. */
+  bank_account_id: string | null;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
   cashfree_order_id: string | null;

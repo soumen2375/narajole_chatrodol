@@ -215,6 +215,8 @@ export default async function handler(
     );
 
     // ── 3. Central payment update ──────────────────────────────────────────
+    const orderAmount = Number(order.order_amount ?? payment.payment_amount);
+
     const result = await finalizePayment({
       gateway: 'cashfree',
       orderId,
@@ -222,6 +224,7 @@ export default async function handler(
       gatewayStatus: paymentStatus,
       eventType,
       paymentMethod,
+      orderAmount: Number.isFinite(orderAmount) ? orderAmount : undefined,
     });
 
     // ── 4. Await receipt email dispatch before serverless exit ─────────────

@@ -80,6 +80,9 @@ export interface FinalizePaymentInput {
   eventType?: string;
   /** Human-readable payment method label */
   paymentMethod?: string;
+  /** Amount the gateway actually charged, in rupees. Used to guard the
+   *  order-id recovery path so a batch is only settled when its total matches. */
+  orderAmount?: number;
 }
 
 export interface FinalizePaymentResult {
@@ -126,7 +129,24 @@ const MONTH_NAMES = [
  * scheme or isn't a donation order.
  */
 function parseDonationIdFromOrderId(orderId: string): string | null {
-  const match = /^d_([0-9a-f]{32})(?:_|$)/i.exec(orderId);
+  return parseUuidFromOrderId(orderId, 'd');
+}
+
+/**
+ * Recovers the member id embedded in a monthly-dues order id.
+ *
+ * Contribution orders are built client-side as `c_<uuid-without-dashes>_<ts>`
+ * (see contributionReceiptTag() in src/lib/contributions.ts). The predecessor
+ * form, `con_cf_<uuid>_<ts>`, overran Cashfree's 50-char order_id cap and was
+ * truncated mid-UUID, so a payment whose order id never made it onto the rows
+ * could not be traced back to anyone. Returns null for those older ids.
+ */
+function parseMemberIdFromOrderId(orderId: string): string | null {
+  return parseUuidFromOrderId(orderId, 'c');
+}
+
+function parseUuidFromOrderId(orderId: string, prefix: string): string | null {
+  const match = new RegExp(`^${prefix}_([0-9a-f]{32})(?:_|$)`, 'i').exec(orderId);
   if (!match) return null;
   const hex = match[1].toLowerCase();
   return [
@@ -143,7 +163,7 @@ function parseDonationIdFromOrderId(orderId: string): string | null {
 export async function finalizePayment(
   input: FinalizePaymentInput,
 ): Promise<FinalizePaymentResult> {
-  const { gateway, orderId, paymentId, gatewayStatus, eventType, paymentMethod } = input;
+  const { gateway, orderId, paymentId, gatewayStatus, eventType, paymentMethod, orderAmount } = input;
 
   const status = normalizePaymentStatus(gatewayStatus, eventType);
 
@@ -254,13 +274,49 @@ export async function finalizePayment(
   // A single gateway order can cover multiple months at once ("Pay All"), so
   // several rows may share the same order id — fetch all of them, not just one.
 
-  const { data: contributions, error: conFetchError } = await supabase
+  let { data: contributions, error: conFetchError } = await supabase
     .from('cswo_monthly_contributions')
     .select('*, member:cswo_members(id, full_name, email, phone)')
     .eq(orderColumn, orderId);
 
   if (conFetchError) {
     console.error('[finalizePayment] Error fetching contribution:', conFetchError);
+  }
+
+  // Fallback: the order id carries the payer's UUID, so a batch can still be
+  // matched when the client-side "attach the order id" write was lost — the
+  // same recovery donations already have. Deliberately narrow: only that
+  // member's freshly staged rows that carry no order id yet, and only when
+  // their total matches what the gateway actually charged, so an older
+  // abandoned attempt can never be settled by someone else's payment.
+  if (!contributions || contributions.length === 0) {
+    const embeddedMemberId = parseMemberIdFromOrderId(orderId);
+    if (embeddedMemberId) {
+      const stagedSince = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+      const { data: orphans } = await supabase
+        .from('cswo_monthly_contributions')
+        .select('*, member:cswo_members(id, full_name, email, phone)')
+        .eq('member_id', embeddedMemberId)
+        .eq('status', 'created')
+        .is(orderColumn, null)
+        .gte('created_at', stagedSince);
+
+      const total = (orphans || []).reduce((sum, r) => sum + Number(r.amount || 0), 0);
+      const amountMatches =
+        orderAmount === undefined || Math.abs(total - orderAmount) < 0.01;
+
+      if (orphans && orphans.length > 0 && amountMatches) {
+        console.warn(
+          `[finalizePayment] Contribution batch for member ${embeddedMemberId} was not linked to order ${orderId}; recovered via embedded id and backfilling.`,
+        );
+        await supabase
+          .from('cswo_monthly_contributions')
+          .update({ [orderColumn]: orderId })
+          .in('id', orphans.map((r) => r.id));
+
+        contributions = orphans.map((r) => ({ ...r, [orderColumn]: orderId }));
+      }
+    }
   }
 
   if (contributions && contributions.length > 0) {

@@ -1,9 +1,10 @@
 import { supabase } from './supabase';
 import {
-  preCreateContributionRows,
+  stageContributionBatch,
   linkContributionOrderId,
   updateDonationGatewayLink,
   donationReceiptTag,
+  contributionReceiptTag,
   type ContributionBatch,
 } from './contributions';
 
@@ -347,19 +348,30 @@ export async function startCashfreePayment(
   }
 
   if (args.action === 'create_contribution_order' && args.memberId && args.year) {
-    contributionBatch = await preCreateContributionRows({
+    // Throws if the rows could not be staged — deliberately not caught, because
+    // opening a checkout with no row to reconcile against is how a member ends
+    // up paying for a month that still shows as due.
+    contributionBatch = await stageContributionBatch({
       memberId: args.memberId,
       year: args.year,
       months: args.months && args.months.length > 0 ? args.months : (args.month ? [args.month] : []),
       totalAmount: args.amount,
       gateway: 'cashfree',
     });
+
+    if (!contributionBatch) {
+      throw new Error('These months are already paid. Refresh the page to see the latest status.');
+    }
   }
+
+  const perMonthAmount = contributionBatch
+    ? args.amount / contributionBatch.months.length
+    : args.amount;
 
   const receipt = donationRecordId
     ? donationReceiptTag(donationRecordId)
     : contributionBatch
-      ? `con_cf_${contributionBatch.memberId}_${Date.now()}`.slice(0, 40)
+      ? contributionReceiptTag(contributionBatch.memberId)
       : `cswo_cf_${Date.now()}`;
 
   let orderData: CashfreeOrderResponse;
@@ -377,7 +389,7 @@ export async function startCashfreePayment(
       await updateDonationGatewayLink(donationRecordId, null, 'failed');
     }
     if (contributionBatch) {
-      await linkContributionOrderId(contributionBatch, 'cashfree', null, 'failed');
+      await linkContributionOrderId(contributionBatch, 'cashfree', null, 'failed', perMonthAmount);
     }
     throw orderErr;
   }
@@ -387,7 +399,7 @@ export async function startCashfreePayment(
   }
 
   if (contributionBatch) {
-    await linkContributionOrderId(contributionBatch, 'cashfree', orderData.order_id, 'created');
+    await linkContributionOrderId(contributionBatch, 'cashfree', orderData.order_id, 'created', perMonthAmount);
   }
 
   const mode =
@@ -436,6 +448,7 @@ export async function startCashfreePayment(
         'cashfree',
         orderData.order_id,
         isCancelled ? 'cancelled' : 'failed',
+        perMonthAmount,
       );
     }
 
