@@ -2,10 +2,18 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "//": "Attaches to a dev server already running on 5173 instead of starting a second one. Port 5173 is fixed in vite.config.ts and is the target of the ngrok tunnel used for Cashfree webhooks, so it must not move.",
+      "name": "chhatradol-attach",
+      "url": "http://localhost:5173",
+      "port": 5173
+    },
+    {
+      "//": "Use this only when nothing is serving 5173 yet.",
       "name": "chhatradol-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "port": 5173
+      "port": 5173,
+      "autoPort": false
     }
   ]
 }
