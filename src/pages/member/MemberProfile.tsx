@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
 import { compressImage, validateImageUpload } from '@/lib/imageCompression';
 import { getMemberAvatarUrl } from '@/lib/avatar';
+import MemberQrPanel from '@/components/ui/MemberQrPanel';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -167,6 +168,9 @@ export default function MemberProfile() {
           )}
         </div>
       </div>
+
+      {/* ── ID card QR ───────────────────────────────────────── */}
+      <MemberQrPanel member={member} />
 
       {/* ── Profile form ─────────────────────────────────────── */}
       <form onSubmit={save} className="space-y-4 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">

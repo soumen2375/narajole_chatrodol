@@ -23,6 +23,7 @@ const InteractiveForms = lazy(() => import('@/pages/InteractiveForms'));
 const Login = lazy(() => import('@/pages/Login'));
 const AdminLogin = lazy(() => import('@/pages/AdminLogin'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
+const MemberVerify = lazy(() => import('@/pages/MemberVerify'));
 
 const Terms = lazy(() => import('@/pages/admin/legal/Terms'));
 const Privacy = lazy(() => import('@/pages/admin/legal/Privacy'));
@@ -45,6 +46,7 @@ const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
 const AdminMembers = lazy(() => import('@/pages/admin/AdminMembers'));
 const AdminMemberDetail = lazy(() => import('@/pages/admin/AdminMemberDetail'));
+const AdminMemberCards = lazy(() => import('@/pages/admin/AdminMemberCards'));
 const AdminPosts = lazy(() => import('@/pages/admin/AdminPosts'));
 const AdminGallery = lazy(() => import('@/pages/admin/AdminGallery'));
 const AdminEvents = lazy(() => import('@/pages/admin/AdminEvents'));
@@ -88,6 +90,10 @@ export default function App() {
       <ScrollToTop />
       <Suspense fallback={<PageSkeleton />}>
         <Routes>
+          {/* Landing page for the QR printed on member ID cards - deliberately
+              outside PublicLayout so a scan opens the verification card alone. */}
+          <Route path="/verify/:token" element={<MemberVerify />} />
+
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
@@ -181,6 +187,7 @@ export default function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="members" element={<AdminMembers />} />
             <Route path="members/:id" element={<AdminMemberDetail />} />
+            <Route path="member-cards" element={<AdminMemberCards />} />
             <Route path="posts" element={<AdminPosts />} />
             <Route path="cms" element={<AdminCMSDashboard />} />
             <Route path="cms/new" element={<AdminCMSEditor />} />

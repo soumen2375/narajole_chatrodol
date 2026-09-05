@@ -10,6 +10,7 @@ import { DashboardSkeleton } from '@/components/ui/Skeleton';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { compressImage } from '@/lib/imageCompression';
 import { getMemberAvatarUrl } from '@/lib/avatar';
+import MemberQrPanel from '@/components/ui/MemberQrPanel';
 
 type AttendanceWithEvent = Attendance & { event?: CswoEvent | null };
 
@@ -364,6 +365,9 @@ export default function AdminMemberDetail() {
           </div>
         )}
       </div>
+
+      {/* ID card QR */}
+      <MemberQrPanel member={m} />
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

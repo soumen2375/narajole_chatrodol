@@ -57,6 +57,8 @@ export interface Member {
   created_at: string;
   updated_at: string;
   member_serial: number | null;
+  /** Random token behind the ID-card QR - see lib/memberQr.ts. */
+  verify_token: string;
   can_manage_posts: boolean;
   can_manage_events: boolean;
   can_manage_finance: boolean;

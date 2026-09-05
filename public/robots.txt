@@ -8,6 +8,7 @@ Disallow: /member/
 Disallow: /login
 Disallow: /interactive-forms
 Disallow: /404
+Disallow: /verify/
 
 # Sitemap Index
 Sitemap: https://www.chhatradol.org/sitemap.xml

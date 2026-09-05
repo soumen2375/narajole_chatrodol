@@ -21,6 +21,7 @@ import {
   Layers,
   CheckCircle2,
   Tag,
+  QrCode,
 } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -39,6 +40,7 @@ export default function AdminLayout() {
     ...(isAdmin ? [
       { to: '/admin/members', label: t('a.members'), icon: Users,
         sectionLabel: tr('Members', 'সদস্য') } as NavItem,
+      { to: '/admin/member-cards', label: tr('ID Cards', 'পরিচয়পত্র'), icon: QrCode } as NavItem,
     ] : []),
 
     // ── Digital Media ─────────────────────────────────────────────────
