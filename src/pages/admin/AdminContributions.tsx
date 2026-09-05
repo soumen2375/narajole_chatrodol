@@ -927,12 +927,12 @@ export default function AdminContributions() {
         </div>
 
         {/* ── Desktop / tablet: 12-month grid ── */}
-        <div className="hidden overflow-x-auto md:block">
+        <div className="hidden max-h-[calc(100vh-200px)] overflow-auto overscroll-contain md:block">
           <div style={{ minWidth: GRID_MIN }}>
 
             {/* Column heads */}
             <div
-              className="grid h-[42px] items-center pr-5"
+              className="sticky top-0 z-[6] grid h-[42px] items-center pr-5"
               style={{ gridTemplateColumns: GRID_COLS, background: C.head, borderBottom: `1px solid ${C.lineSoft}` }}
             >
               <span className="sticky left-0 z-[2] pl-5 text-[10.5px] font-extrabold tracking-[.12em]" style={{ color: C.label, background: C.head }}>
@@ -960,7 +960,7 @@ export default function AdminContributions() {
 
             {/* Month totals */}
             <div
-              className="grid h-[52px] items-center pr-5"
+              className="sticky top-[42px] z-[5] grid h-[52px] items-center pr-5"
               style={{ gridTemplateColumns: GRID_COLS, background: C.totalRow, borderBottom: `1px solid ${C.line}` }}
             >
               <span className="sticky left-0 z-[2] pl-5 text-[11px] font-extrabold tracking-[.12em]" style={{ color: '#4a5b53', background: C.totalRow }}>
