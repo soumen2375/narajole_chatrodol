@@ -38,10 +38,19 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Pass-through fetch for full web app support & Chrome PWA installability criteria
+  // Pass-through fetch for full web app support & Chrome PWA installability criteria.
   if (event.request.method !== 'GET') return;
+
+  // Nothing is ever put in a cache here, so caches.match() resolves to
+  // undefined — and respondWith(undefined) throws "Failed to convert value to
+  // 'Response'", turning any blip into a hard network error for the page.
+  // Fall back to the network result itself and let the browser handle failures.
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request).catch(async (err) => {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      throw err;
+    })
   );
 });
 

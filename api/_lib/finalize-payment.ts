@@ -276,9 +276,12 @@ export async function finalizePayment(
 
   let { data: contributions, error: conFetchError } = await supabase
     .from('cswo_monthly_contributions')
-    .select('*, member:cswo_members(id, full_name, email, phone)')
+    .select('*, member:cswo_members!cswo_monthly_contributions_member_id_fkey(id, full_name, email, phone)')
     .eq(orderColumn, orderId);
 
+  // A failed lookup is NOT the same as "no such payment". It used to fall
+  // through to the not-found return, which told a member who had just paid
+  // that nothing was charged, so keep the error and report it below.
   if (conFetchError) {
     console.error('[finalizePayment] Error fetching contribution:', conFetchError);
   }
@@ -295,7 +298,7 @@ export async function finalizePayment(
       const stagedSince = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
       const { data: orphans } = await supabase
         .from('cswo_monthly_contributions')
-        .select('*, member:cswo_members(id, full_name, email, phone)')
+        .select('*, member:cswo_members!cswo_monthly_contributions_member_id_fkey(id, full_name, email, phone)')
         .eq('member_id', embeddedMemberId)
         .eq('status', 'created')
         .is(orderColumn, null)
@@ -376,7 +379,7 @@ export async function finalizePayment(
       .from('cswo_monthly_contributions')
       .update(updateData)
       .in('id', unpaid.map((c) => c.id))
-      .select('*, member:cswo_members(id, full_name, email, phone)');
+      .select('*, member:cswo_members!cswo_monthly_contributions_member_id_fkey(id, full_name, email, phone)');
 
     if (error) throw error;
 
@@ -406,7 +409,9 @@ export async function finalizePayment(
 
   return {
     success: false,
-    error: 'Payment record not found in donations or monthly contributions',
+    error: conFetchError
+      ? `Contribution lookup failed: ${conFetchError.message}`
+      : 'Payment record not found in donations or monthly contributions',
     orderId,
   };
 }

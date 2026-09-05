@@ -162,3 +162,50 @@ export async function linkContributionOrderId(
     console.error('[payment] Failed to link contribution batch to gateway order:', error);
   }
 }
+
+/**
+ * Re-asks the server about dues rows that carry a gateway order id but never
+ * reached a terminal state.
+ *
+ * A member whose browser closed, lost signal, or timed out mid-checkout leaves
+ * a row sitting at `created` while the gateway holds a real payment. Nothing
+ * used to revisit those except a once-a-day reconcile cron, so the month showed
+ * "processing" indefinitely. Verify is idempotent and service-role, so calling
+ * it again is safe: an already-settled order simply comes back `paid`.
+ *
+ * Cashfree only — a Razorpay order needs the signature the checkout handler
+ * returns, which is gone once that page is closed.
+ *
+ * @returns how many orders came back settled, so the caller can refresh.
+ */
+export async function settleStrandedContributionOrders(
+  rows: Array<{ status?: string | null; cashfree_order_id?: string | null }>,
+): Promise<number> {
+  const orderIds = [
+    ...new Set(
+      rows
+        .filter((r) => r.cashfree_order_id && (r.status === 'created' || r.status === 'pending'))
+        .map((r) => r.cashfree_order_id as string),
+    ),
+  ];
+  if (orderIds.length === 0) return 0;
+
+  const results = await Promise.all(
+    orderIds.map(async (orderId) => {
+      try {
+        const res = await fetch('/api/cashfree-verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_id: orderId }),
+        });
+        if (!res.ok) return false;
+        const data = (await res.json()) as { status?: string };
+        return data.status === 'paid';
+      } catch {
+        return false;
+      }
+    }),
+  );
+
+  return results.filter(Boolean).length;
+}

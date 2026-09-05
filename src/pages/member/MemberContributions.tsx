@@ -8,6 +8,7 @@ import { startPayment, getGatewayMode, gatewayLabel } from '@/lib/payments';
 import { loadRazorpayScript } from '@/lib/razorpay';
 import { loadCashfreeScript } from '@/lib/cashfree';
 import { printReceipt } from '@/lib/receipt';
+import { settleStrandedContributionOrders } from '@/lib/contributions';
 import GatewaySelector from '@/components/payment/GatewaySelector';
 import {
   Check,
@@ -283,6 +284,10 @@ export default function MemberContributions() {
   const [amount, setAmount] = useState(DEFAULT_AMOUNT);
   const [customAmount, setCustomAmount] = useState('');
   const [rows, setRows] = useState<Record<number, MonthlyContribution>>({});
+  // A timeout is not proof the money stayed put — the gateway may have taken it
+  // and only our confirmation was lost. Telling that member "nothing was
+  // charged" is the one thing we must not do.
+  const [maybeCharged, setMaybeCharged] = useState(false);
   const [loading, setLoading] = useState(true);
   const [earlierPayments, setEarlierPayments] = useState<MonthlyContribution[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -328,8 +333,24 @@ export default function MemberContributions() {
       .eq('member_id', member.id)
       .eq('year', year);
 
+    let contribRows = (contribData ?? []) as MonthlyContribution[];
+
+    // A checkout that was interrupted leaves the month at 'created' while the
+    // gateway may already hold the money. Ask the server about those orders
+    // once per load, so a stranded payment settles itself here instead of
+    // showing "processing" until someone notices.
+    const settled = await settleStrandedContributionOrders(contribRows);
+    if (settled > 0) {
+      const { data: refreshed } = await supabase
+        .from('cswo_monthly_contributions')
+        .select('*')
+        .eq('member_id', member.id)
+        .eq('year', year);
+      if (refreshed) contribRows = refreshed as MonthlyContribution[];
+    }
+
     const map: Record<number, MonthlyContribution> = {};
-    for (const r of (contribData ?? []) as MonthlyContribution[]) map[r.month] = r;
+    for (const r of contribRows) map[r.month] = r;
     setRows(map);
 
     // Latest payments from other years, for the "earlier years" strip in history
@@ -490,6 +511,10 @@ export default function MemberContributions() {
       setSelected([]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Payment error';
+      // Only an explicit cancel or a gateway-declared failure proves no money
+      // moved. Anything else — a verification timeout, a dropped connection —
+      // leaves the charge genuinely unknown.
+      setMaybeCharged(msg !== 'CANCELLED' && msg !== 'PAYMENT_FAILED');
       setError(msg === 'CANCELLED' ? t('pay.cancelled') : msg);
     } finally {
       setPayingMonths(new Set());
@@ -1204,16 +1229,21 @@ export default function MemberContributions() {
             )}
 
             <p className="mt-3 px-2 text-[13px] font-medium leading-relaxed" style={{ color: MUTED }}>
-              {tr(
-                'Nothing was charged. You can try again whenever you are ready.',
-                'কোনো টাকা কাটা হয়নি। আপনি যেকোনো সময় আবার চেষ্টা করতে পারেন।',
-              )}
+              {maybeCharged
+                ? tr(
+                    'If money did leave your account, it is safe — we confirm it automatically. Reopen this page in a minute and the month will show as paid. Do not pay twice.',
+                    'যদি আপনার অ্যাকাউন্ট থেকে টাকা কেটে থাকে, তা নিরাপদ — আমরা স্বয়ংক্রিয়ভাবে নিশ্চিত করি। এক মিনিট পরে এই পাতাটি আবার খুলুন, মাসটি পরিশোধিত দেখাবে। দুবার পেমেন্ট করবেন না।',
+                  )
+                : tr(
+                    'Nothing was charged. You can try again whenever you are ready.',
+                    'কোনো টাকা কাটা হয়নি। আপনি যেকোনো সময় আবার চেষ্টা করতে পারেন।',
+                  )}
             </p>
 
             <div className="mt-6 flex items-center justify-center gap-3">
               <button
                 type="button"
-                onClick={() => setError('')}
+                onClick={() => { setError(''); setMaybeCharged(false); }}
                 className="flex flex-1 items-center justify-center gap-2 rounded-full py-3 text-[13.5px] font-bold transition-transform active:scale-[0.98]"
                 style={{ background: AMBER, color: ON_AMBER }}
               >
@@ -1222,7 +1252,7 @@ export default function MemberContributions() {
               </button>
               <button
                 type="button"
-                onClick={() => setError('')}
+                onClick={() => { setError(''); setMaybeCharged(false); }}
                 className="flex-1 rounded-full border py-3 text-[13.5px] font-bold transition-colors hover:bg-gray-50"
                 style={{ borderColor: LINE, color: '#6E7A62' }}
               >

@@ -208,7 +208,7 @@ export default async function handler(
     } else {
       const { data, error: fetchErr } = await supabase
         .from('cswo_monthly_contributions')
-        .select('*, member:cswo_members(full_name, email)')
+        .select('*, member:cswo_members!cswo_monthly_contributions_member_id_fkey(full_name, email)')
         .eq('id', id)
         .maybeSingle();
 

@@ -193,9 +193,12 @@ export default function AdminDonations() {
 
     // Monthly dues are money in too, so they belong in this list. They live in
     // their own table, so they are mapped onto the same row shape.
+    // The FK hint is required: this table has two foreign keys to cswo_members
+    // (member_id and recorded_by), and a bare embed makes PostgREST reject the
+    // whole query - which is why dues silently vanished from this list.
     let cq = supabase
       .from('cswo_monthly_contributions')
-      .select('*, member:cswo_members(full_name,email)')
+      .select('*, member:cswo_members!cswo_monthly_contributions_member_id_fkey(full_name,email)')
       .eq('status', 'paid')
       .order('paid_at', { ascending: false });
     if (dateFrom) cq = cq.gte('paid_at', dateFrom);
