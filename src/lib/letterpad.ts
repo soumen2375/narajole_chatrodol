@@ -115,11 +115,18 @@ export const ART = {
 /**
  * The typefaces the preview needs, none of which the app loads globally.
  * Bebas Neue and Solway carry the masthead, Tinos is the metric-compatible
- * Times New Roman the body is set in, and Cormorant Garamond bold italic
- * stands in for the master's Monotype Corsiva.
+ * Times New Roman the body is set in — in all four cuts, since the body may
+ * now be bolded and italicised — and Cormorant Garamond bold italic stands in
+ * for the master's Monotype Corsiva.
+ *
+ * Arimo, Carlito, Caladea, Gelasio and Cousine are the other faces the body
+ * editor offers, under the Microsoft names the office knows them by (Arial,
+ * Calibri, Cambria, Georgia, Courier New). Naming them here costs one
+ * stylesheet; the font files themselves are only fetched by a letter that
+ * actually uses one.
  */
 export const LETTERPAD_FONTS_HREF =
-  'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@1,700&family=Solway:wght@400;700&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap';
+  'https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400;0,700;1,400;1,700&family=Bebas+Neue&family=Caladea:ital,wght@0,400;0,700;1,400;1,700&family=Carlito:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@1,700&family=Cousine:ital,wght@0,400;0,700;1,400;1,700&family=Gelasio:ital,wght@0,400;0,700;1,400;1,700&family=Solway:wght@400;700&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap';
 
 export const FONT_STACK = {
   display: "'Bebas Neue', Impact, sans-serif",
@@ -143,6 +150,14 @@ export interface LetterDraft {
   to_email: string;
   salutation: string;
   subject: string;
+  /**
+   * The formatted body, as the editor writes it. This is what prints.
+   *
+   * `body` is the plain-text reading of it, kept in step by the compose
+   * screen so that everything which only needs the words — the "a letter
+   * needs a body" check, the Latin-script warning — is spared the markup.
+   */
+  body_html: string;
   body: string;
   closing: string;
   signatory_name: string;
@@ -158,6 +173,7 @@ export function emptyDraft(): LetterDraft {
     to_email: '',
     salutation: 'Respected Sir,',
     subject: '',
+    body_html: '',
     body: '',
     closing: 'Yours faithfully,',
     signatory_name: DEFAULT_SIGNATORY.name,

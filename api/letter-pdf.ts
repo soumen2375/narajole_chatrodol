@@ -14,6 +14,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { generateLetterPdf, letterFileName } from './_lib/letter-pdf.js';
 import {
   authenticateSecretary,
+  fetchLetterImage,
   fetchSignature,
   handledPreflight,
   loadLetter,
@@ -48,6 +49,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       salutation: letter.salutation,
       subject: letter.subject,
       body: letter.body,
+      bodyHtml: letter.body_html,
+      fetchImage: fetchLetterImage,
       closing: letter.closing,
       signatoryName: letter.signatory_name,
       signatoryRole: letter.signatory_role,

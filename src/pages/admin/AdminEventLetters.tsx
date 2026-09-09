@@ -7,10 +7,10 @@
  * attached. The stamped copy that comes back is filed against the same number.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  ArrowLeft, Download, FileSignature, Mail, Paperclip, Plus, Printer, Save, Trash2,
+  ArrowLeft, Download, FileSignature, Mail, Plus, Printer, Save, Trash2,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
@@ -18,10 +18,14 @@ import { useFmt } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import LetterpadSheet from '@/components/admin/LetterpadSheet';
+import LetterBodyEditor from '@/components/admin/LetterBodyEditor';
 import {
   LETTER_TEMPLATES, emptyDraft, fetchLetterPdfUrl, fillTemplate, letterFileName,
   sendLetterEmail, unsupportedCharacters, type LetterDraft,
 } from '@/lib/letterpad';
+import {
+  htmlToPlainText, letterBodyHtml, plainToHtml, sanitizeLetterHtml,
+} from '@/lib/letter-body';
 import type { CswoEvent, CswoEventLetter } from '@/types';
 
 const TEAL = '#0c756f';
@@ -47,6 +51,9 @@ function draftOf(letter: CswoEventLetter): LetterDraft {
     to_email: letter.to_email,
     salutation: letter.salutation,
     subject: letter.subject,
+    // A letter filed before the editor arrived opens as the paragraphs it
+    // was written as, and is saved back in the editor's own form.
+    body_html: letterBodyHtml(letter),
     body: letter.body,
     closing: letter.closing,
     signatory_name: letter.signatory_name,
@@ -76,9 +83,6 @@ export default function AdminEventLetters() {
   const [confirmSend, setConfirmSend] = useState(false);
   /** Which pane the narrow layout is showing. Ignored from xl up. */
   const [tab, setTab] = useState<'write' | 'preview'>('write');
-
-  const scanRef = useRef<HTMLInputElement>(null);
-  const signRef = useRef<HTMLInputElement>(null);
 
   const selected = letters.find((l) => l.id === selectedId) ?? null;
 
@@ -124,6 +128,7 @@ export default function AdminEventLetters() {
       event_id: id,
       subject: template ? fillTemplate(template.subject, event) : '',
       body: template ? fillTemplate(template.body, event) : '',
+      body_html: template ? plainToHtml(fillTemplate(template.body, event)) : '',
       created_by: member?.id ?? null,
     };
     const { data, error } = await supabase
@@ -144,9 +149,17 @@ export default function AdminEventLetters() {
   const save = async () => {
     if (!selected) return;
     setBusy('save'); setMsg(null);
+    // What is filed is the sanitised body and the plain reading of that same
+    // body, so the row can never hold markup the renderers would not print.
+    const body_html = sanitizeLetterHtml(draft.body_html);
     const { data, error } = await supabase
       .from('cswo_event_letters')
-      .update({ ...draft, status: selected.status === 'sent' ? 'sent' : 'issued' })
+      .update({
+        ...draft,
+        body_html,
+        body: htmlToPlainText(body_html),
+        status: selected.status === 'sent' ? 'sent' : 'issued',
+      })
       .eq('id', selected.id)
       .select('*')
       .single();
@@ -218,21 +231,21 @@ export default function AdminEventLetters() {
     setBusy(null);
   };
 
-  const uploadTo = async (file: File, field: 'signed_copy_url' | 'signature_url') => {
-    if (!selected) return;
-    setBusy(field); setMsg(null);
+  /**
+   * Uploads a picture the secretary dropped into the body.
+   *
+   * It goes to the same bucket as the rest of the letter's files and comes
+   * back as a public URL, because the PDF renderer has to be able to fetch it
+   * when the letter is printed or posted — which is also why the endpoint
+   * will only fetch images from this project's own storage.
+   */
+  const uploadBodyImage = useCallback(async (file: File): Promise<string> => {
     const ext = file.name.split('.').pop() ?? 'png';
-    const path = `event-letters/${id}/${selected.id}-${field}-${Date.now()}.${ext}`;
+    const path = `event-letters/${id}/body/${selectedId ?? 'draft'}-${Date.now()}.${ext}`;
     const { data, error } = await supabase.storage.from('cswo-media').upload(path, file);
-    if (error) { setMsg({ kind: 'err', text: error.message }); setBusy(null); return; }
-    const { data: { publicUrl } } = supabase.storage.from('cswo-media').getPublicUrl(data.path);
-    const patch = field === 'signed_copy_url'
-      ? { signed_copy_url: publicUrl, signed_copy_at: new Date().toISOString() }
-      : { signature_url: publicUrl };
-    await supabase.from('cswo_event_letters').update(patch).eq('id', selected.id);
-    setBusy(null);
-    await load();
-  };
+    if (error) throw new Error(error.message);
+    return supabase.storage.from('cswo-media').getPublicUrl(data.path).data.publicUrl;
+  }, [id, selectedId]);
 
   if (loading) return <TableSkeleton rows={5} />;
   if (!event) return (
@@ -331,11 +344,6 @@ export default function AdminEventLetters() {
                     </div>
                   </button>
                   <div className="flex shrink-0 items-center gap-2">
-                    {l.signed_copy_url && (
-                      <a href={l.signed_copy_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[12px] font-semibold" style={{ color: TEAL }} aria-label={tr('Signed copy', 'স্বাক্ষরিত কপি')}>
-                        <Paperclip className="h-3 w-3 shrink-0" /> <span className="hidden sm:inline">{tr('Signed copy', 'স্বাক্ষরিত কপি')}</span>
-                      </a>
-                    )}
                     <button onClick={() => remove(l)} className="rounded-full p-1.5 transition-colors hover:bg-black/5" style={{ color: MUTED }} aria-label={tr('Delete letter', 'চিঠি মুছুন')}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -413,8 +421,20 @@ export default function AdminEventLetters() {
               <textarea rows={2} value={draft.subject} onChange={(e) => edit({ subject: e.target.value })} className="w-full rounded-[6px] px-3 py-2 text-[13px] outline-none" style={{ border: `1px solid ${RULE}`, color: INK }} />
             </Field>
 
-            <Field label={tr('Body', 'মূল অংশ')} hint={tr('Leave a blank line between paragraphs.', 'অনুচ্ছেদের মাঝে একটি ফাঁকা লাইন রাখুন।')}>
-              <textarea rows={14} value={draft.body} onChange={(e) => edit({ body: e.target.value })} className="w-full rounded-[6px] px-3 py-2 text-[13px] leading-relaxed outline-none" style={{ border: `1px solid ${RULE}`, color: INK, fontFamily: '"Tinos", "Times New Roman", serif' }} />
+            <Field
+              label={tr('Body', 'মূল অংশ')}
+              hint={tr(
+                'Headings, lists, links and pictures all print on the letterhead. Select a picture to set its size or to add a paragraph above or below it.',
+                'শিরোনাম, তালিকা, লিংক ও ছবি সবই লেটারহেডে ছাপা হয়। ছবির মাপ বদলাতে বা তার উপরে-নিচে অনুচ্ছেদ যোগ করতে ছবিটি সিলেক্ট করুন।',
+              )}
+            >
+              <LetterBodyEditor
+                value={draft.body_html}
+                onChange={(html) => edit({ body_html: html, body: htmlToPlainText(html) })}
+                onUploadImage={uploadBodyImage}
+                placeholder={tr('Write the letter…', 'চিঠি লিখুন…')}
+                tr={tr}
+              />
             </Field>
 
             <div className="grid gap-4 sm:grid-cols-3">
@@ -468,32 +488,6 @@ export default function AdminEventLetters() {
               </p>
             )}
 
-            {/* Attachments */}
-            <div className="space-y-2 rounded-[8px] p-4" style={{ background: CREAM }}>
-              <div className="font-mono text-[10px] uppercase tracking-[0.16em]" style={{ color: MUTED }}>{tr('Attachments', 'সংযুক্তি')}</div>
-
-              <input ref={scanRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo(f, 'signed_copy_url'); e.target.value = ''; }} />
-              <div className="flex flex-wrap items-center gap-2">
-                <button onClick={() => scanRef.current?.click()} disabled={!!busy} className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors hover:bg-white disabled:opacity-50" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
-                  <Paperclip className="h-3 w-3" /> {busy === 'signed_copy_url' ? tr('Uploading…', 'আপলোড…') : tr('Upload signed / received copy', 'স্বাক্ষরিত কপি আপলোড')}
-                </button>
-                {selected.signed_copy_url && (
-                  <a href={selected.signed_copy_url} target="_blank" rel="noreferrer" className="text-[12px] font-semibold" style={{ color: TEAL }}>
-                    {tr('View', 'দেখুন')} · {selected.signed_copy_at ? fmt.date(selected.signed_copy_at) : ''}
-                  </a>
-                )}
-              </div>
-
-              <input ref={signRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo(f, 'signature_url'); e.target.value = ''; }} />
-              <div className="flex flex-wrap items-center gap-2">
-                <button onClick={() => signRef.current?.click()} disabled={!!busy} className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors hover:bg-white disabled:opacity-50" style={{ border: `1px solid ${RULE}`, color: INK2 }}>
-                  <FileSignature className="h-3 w-3" /> {busy === 'signature_url' ? tr('Uploading…', 'আপলোড…') : tr('Replace signature image', 'স্বাক্ষরের ছবি বদলান')}
-                </button>
-                <span className="text-[12px]" style={{ color: MUTED }}>
-                  {selected.signature_url ? tr('Custom signature in use.', 'কাস্টম স্বাক্ষর ব্যবহৃত হচ্ছে।') : tr("The secretary's signature is used by default.", 'সাধারণভাবে সম্পাদকের স্বাক্ষর ব্যবহার হয়।')}
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* Live preview.

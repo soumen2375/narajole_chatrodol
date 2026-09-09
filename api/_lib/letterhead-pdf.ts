@@ -21,6 +21,9 @@ import { FONT_BEBAS, FONT_BODY, FONT_BODY_BOLD } from './receipt-assets.js';
 import {
   FONT_CHANCERY,
   FONT_SERIF,
+  FONT_SERIF_BOLD,
+  FONT_SERIF_BOLD_ITALIC,
+  FONT_SERIF_ITALIC,
   IMG_BAND_TOP,
   IMG_SWOOSH,
   IMG_BAND_FOOTER,
@@ -219,7 +222,11 @@ export interface Fonts {
   solway: PDFFont;
   solwayBold: PDFFont;
   chancery: PDFFont;
+  /** Tinos, the body face — with the cuts a formatted letter body needs. */
   serif: PDFFont;
+  serifBold: PDFFont;
+  serifItalic: PDFFont;
+  serifBoldItalic: PDFFont;
 }
 
 /** Places an image by its top-left corner, in millimetres from the page's top-left. */
@@ -395,6 +402,9 @@ export async function loadLetterheadKit(
     solwayBold: await pdf.embedFont(dec(FONT_BODY_BOLD), { subset: true }),
     chancery: await pdf.embedFont(dec(FONT_CHANCERY), { subset: true }),
     serif: await pdf.embedFont(dec(FONT_SERIF), { subset: true }),
+    serifBold: await pdf.embedFont(dec(FONT_SERIF_BOLD), { subset: true }),
+    serifItalic: await pdf.embedFont(dec(FONT_SERIF_ITALIC), { subset: true }),
+    serifBoldItalic: await pdf.embedFont(dec(FONT_SERIF_BOLD_ITALIC), { subset: true }),
   };
 
   const art: Art = {

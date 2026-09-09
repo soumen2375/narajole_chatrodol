@@ -609,6 +609,8 @@ export interface CswoEventLetter {
   to_email: string;
   salutation: string;
   subject: string;
+  /** The formatted body (editor HTML); empty on letters written before it. */
+  body_html: string;
   body: string;
   closing: string;
   signatory_name: string;

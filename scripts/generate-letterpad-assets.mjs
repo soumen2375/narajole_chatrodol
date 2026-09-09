@@ -26,6 +26,7 @@ import path from 'node:path';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(ROOT, 'api/_lib/letterpad-assets.ts');
+const FAMILY_OUT = path.join(ROOT, 'api/_lib/letter-font-assets.ts');
 const IMG_DIR = path.join(ROOT, 'public/assets/letterpad');
 
 const LEGACY_UA = 'Mozilla/4.0';
@@ -43,7 +44,29 @@ const LEGACY_UA = 'Mozilla/4.0';
 const FONT_SPECS = [
   ['FONT_CHANCERY', 'Cormorant+Garamond:700italic', ''],
   ['FONT_SERIF', 'Tinos', ''],
+  ['FONT_SERIF_BOLD', 'Tinos:700', ''],
+  ['FONT_SERIF_ITALIC', 'Tinos:italic', ''],
+  ['FONT_SERIF_BOLD_ITALIC', 'Tinos:700italic', ''],
 ];
+
+/**
+ * The faces the secretary can choose from in the body editor, beyond the
+ * letterhead's own Times New Roman.
+ *
+ * Each is a metric-compatible clone of the Microsoft font the office knows by
+ * name, so a letter set in "Calibri" here occupies the same space as one set
+ * in Calibri in Word — and the browser preview loads the very same families
+ * from Google Fonts, so what is composed is what is posted.
+ */
+const FAMILY_SPECS = [
+  ['arial', 'Arimo', 'Arial'],
+  ['calibri', 'Carlito', 'Calibri'],
+  ['cambria', 'Caladea', 'Cambria'],
+  ['georgia', 'Gelasio', 'Georgia'],
+  ['courier', 'Cousine', 'Courier New'],
+];
+
+const CUTS = [['regular', ''], ['bold', ':700'], ['italic', ':italic'], ['boldItalic', ':700italic']];
 
 const IMAGE_SPECS = [
   ['IMG_BAND_TOP', 'band-top.png'],
@@ -91,6 +114,9 @@ const header = `/**
  * FONT_SERIF is Tinos, which is metrically identical to Times New Roman (the
  * letterhead's body face) and Apache licensed, so a letter drafted in Word on
  * the office machine and one generated here break lines in the same places.
+ * Its bold, italic and bold-italic cuts ship alongside it because the letter
+ * body is written in a rich-text editor: a bolded word has to print bold, not
+ * merely wider-spaced.
  */
 
 `;
@@ -111,3 +137,52 @@ for (const [name, file] of IMAGE_SPECS) {
 
 fs.writeFileSync(OUT, chunks.join(''));
 console.log(`\nwrote ${path.relative(ROOT, OUT)} (${(fs.statSync(OUT).size / 1024).toFixed(0)}KB)`);
+
+// ── The body editor's other faces ────────────────────────────────────────────
+
+const familyHeader = `/**
+ * api/_lib/letter-font-assets.ts
+ *
+ * The faces a letter body can be set in besides the letterhead's own Times
+ * New Roman, inlined as base64.
+ *
+ * GENERATED FILE — do not edit by hand.
+ * Regenerate with: node scripts/generate-letterpad-assets.mjs
+ *
+ * Every one is a metric-compatible clone of the Microsoft font the office
+ * names it by, and freely licensed where the original is not:
+ * ${FAMILY_SPECS.map(([, clone, ms]) => `${clone} for ${ms}`).join(', ')}.
+ * The browser preview loads those same families from Google Fonts, so a
+ * letter looks in the editor the way it will print.
+ *
+ * letter-pdf.ts imports this file dynamically, and only when a letter
+ * actually uses one of these faces — most letters are set in Times New Roman
+ * and never pay for it.
+ */
+
+export interface FontCutsBase64 {
+  regular: string;
+  bold: string;
+  italic: string;
+  boldItalic: string;
+}
+
+export const EXTRA_FONTS: Record<string, FontCutsBase64> = {
+`;
+
+const familyChunks = [familyHeader];
+
+for (const [key, clone] of FAMILY_SPECS) {
+  familyChunks.push(`  ${key}: {\n`);
+  for (const [cut, extra] of CUTS) {
+    const buf = await fetchFontTtf(clone.replace(/ /g, '+'), extra);
+    console.log(`${`${key}.${cut}`.padEnd(26)} ${(clone + extra).padEnd(30)} ${(buf.length / 1024).toFixed(1)}KB`);
+    familyChunks.push(`    ${cut}: '${buf.toString('base64')}',\n`);
+  }
+  familyChunks.push('  },\n');
+}
+
+familyChunks.push('};\n');
+
+fs.writeFileSync(FAMILY_OUT, familyChunks.join(''));
+console.log(`wrote ${path.relative(ROOT, FAMILY_OUT)} (${(fs.statSync(FAMILY_OUT).size / 1024).toFixed(0)}KB)`);

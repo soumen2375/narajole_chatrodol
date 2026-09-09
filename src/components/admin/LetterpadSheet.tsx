@@ -3,25 +3,34 @@
  *
  * This is the compose-time preview, not the artifact: what gets printed,
  * downloaded and emailed is rendered on the server by api/_lib/letter-pdf.ts.
- * Both work off the same layout table in src/lib/letterpad.ts and the same
- * fonts, so what the secretary sees here is what the addressee receives.
+ * Both work off the same layout table in src/lib/letterpad.ts, the same
+ * proportions in src/lib/letter-body.ts and the same fonts, so what the
+ * secretary sees here is what the addressee receives.
  *
- * The body flows across sheets exactly as the PDF paginates it: the text is
- * laid out once, then each sheet shows a window onto it whose height is a
- * whole number of lines — the same rule the renderer applies.
+ * The body is a formatted document — headings, lists, links, pictures — laid
+ * out once and then shown through a window on each sheet. Where those windows
+ * end is measured from the laid-out document itself: a sheet may end at any
+ * line of a paragraph, never inside a picture, and always at a page break the
+ * secretary asked for. That is the rule the PDF renderer applies too.
+ *
+ * A full-page picture is not part of that flow at all. It is a sheet — bare
+ * paper, no letterhead — exactly as slide 2 of the office master deck is, so
+ * the text before it and the text after it are laid out independently and the
+ * poster sits between them.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   ART,
   COLORS,
   FONT_STACK,
   LAYOUT,
-  LETTERPAD_FONTS_HREF,
   ORG,
   PAGE,
   type LetterDraft,
 } from '@/lib/letterpad';
+import { letterBodyCss, letterBodyHtml, sanitizeLetterHtml, splitLetterSegments } from '@/lib/letter-body';
+import { useInjectedCss, useLetterpadFonts } from '@/components/admin/letterpad-styles';
 
 /** pdf-lib works in points; CSS is happy with millimetres, so mm it is. */
 const mm = (v: number) => `${v}mm`;
@@ -53,18 +62,6 @@ const textStyle = (
   margin: 0,
   ...extra,
 });
-
-/** Loads the letterhead's four faces once, only for the screens that show it. */
-function useLetterpadFonts() {
-  useEffect(() => {
-    const existing = document.querySelector(`link[href="${LETTERPAD_FONTS_HREF}"]`);
-    if (existing) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = LETTERPAD_FONTS_HREF;
-    document.head.appendChild(link);
-  }, []);
-}
 
 /** dd/mm/yyyy, as the master prints it. */
 function printedDate(iso: string): string {
@@ -175,10 +172,131 @@ function Letterhead() {
   );
 }
 
-// ── Where the body may run to, in whole lines, exactly as the renderer flows it
+// ── Where the body may run to, exactly as the renderer flows it ──────────────
 
-const BODY_BOTTOM = 240;
-const linesPerWindow = (top: number) => Math.floor((BODY_BOTTOM - top) / (LAYOUT.body.lineH * PT_TO_MM));
+const BODY_BOTTOM = 240;      // the closing block begins at 245.83
+const BODY_TOP_CONT = 55;     // a continuation sheet starts under the rules
+
+/** The body's typography, plus the one rule that only the sheet needs. */
+const SHEET_CSS = [
+  letterBodyCss('.lp-sheet-body'),
+  // A picture taller than a whole sheet is scaled down to one rather than
+  // clipped — the same thing letter-body-pdf.ts does with an oversized image.
+  // The width follows, because a replaced element keeps its aspect ratio.
+  `.lp-sheet-body img{max-height:${BODY_BOTTOM - BODY_TOP_CONT}mm;}`,
+].join('\n');
+
+/** Blocks that hold other blocks rather than lines of their own. */
+const BLOCKISH = /^(P|H[1-3]|LI|HR|IMG|DIV|UL|OL|BLOCKQUOTE)$/;
+const WRAPPERS = new Set(['BLOCKQUOTE', 'UL', 'OL', 'LI']);
+const TEXTISH = /^(P|H1|H2|H3|LI)$/;
+
+interface Leaf {
+  top: number;
+  bottom: number;
+  lineH: number;
+  lines: number;
+  /** A picture, a rule or a page break: it goes on one sheet or the next. */
+  atomic: boolean;
+  forced: boolean;
+}
+
+/**
+ * Reads the laid-out body back out of the DOM, in millimetres.
+ *
+ * Positions are accumulated up the offset chain rather than taken from
+ * getBoundingClientRect, because the sheet sits inside a scale() transform:
+ * rectangles would come back shrunk while computed line heights would not,
+ * and the two cannot be mixed.
+ */
+function leavesOf(flow: HTMLElement, mmPerPx: number): Leaf[] {
+  const leaves: Leaf[] = [];
+
+  const topOf = (el: HTMLElement) => {
+    let y = 0;
+    let node: HTMLElement | null = el;
+    while (node && node !== flow) {
+      y += node.offsetTop;
+      node = node.offsetParent as HTMLElement | null;
+    }
+    return y;
+  };
+
+  const walk = (parent: Element) => {
+    for (const child of Array.from(parent.children)) {
+      if (!(child instanceof HTMLElement)) continue;
+
+      const holdsBlocks = Array.from(child.children).some((c) => BLOCKISH.test(c.tagName));
+      if (WRAPPERS.has(child.tagName) && holdsBlocks) { walk(child); continue; }
+
+      const top = topOf(child) * mmPerPx;
+      const textish = TEXTISH.test(child.tagName);
+      const lineHpx = textish ? parseFloat(getComputedStyle(child).lineHeight) : 0;
+      const lines = textish && lineHpx > 0 ? Math.max(1, Math.round(child.clientHeight / lineHpx)) : 1;
+
+      leaves.push({
+        top,
+        bottom: top + child.offsetHeight * mmPerPx,
+        lineH: lineHpx * mmPerPx,
+        lines,
+        atomic: !textish,
+        forced: child.hasAttribute('data-page-break'),
+      });
+    }
+  };
+
+  walk(flow);
+  return leaves;
+}
+
+/**
+ * Where each sheet's window onto the body starts, in millimetres.
+ *
+ * A sheet is filled to the last place a break is allowed: the end of a line
+ * inside a paragraph, or the start of the next block — never the middle of a
+ * picture. A page break the secretary inserted wins over both.
+ */
+function pageOffsets(leaves: Leaf[], firstTop: number): { offsets: number[]; total: number } {
+  const total = leaves.reduce((max, leaf) => Math.max(max, leaf.bottom), 0);
+  if (total <= 0) return { offsets: [0], total: 0 };
+
+  const candidates: number[] = [];
+  const forced: number[] = [];
+
+  leaves.forEach((leaf, i) => {
+    if (leaf.forced) forced.push(leaf.top);
+    if (!leaf.atomic && leaf.lineH > 0) {
+      for (let line = 1; line < leaf.lines; line += 1) candidates.push(leaf.top + line * leaf.lineH);
+    }
+    // Breaking at the *next* block's top rather than this one's bottom leaves
+    // the margin between them on the sheet that is ending, so a continuation
+    // sheet never opens with a blank strip.
+    candidates.push(leaves[i + 1] ? leaves[i + 1].top : leaf.bottom);
+  });
+
+  const offsets = [0];
+  let start = 0;
+
+  // Nothing sane runs past a hundred sheets; the bound is only here so a
+  // measurement that comes back nonsense cannot spin.
+  for (let guard = 0; guard < 100; guard += 1) {
+    const limit = start + BODY_BOTTOM - (offsets.length === 1 ? firstTop : BODY_TOP_CONT);
+
+    // A page break the secretary asked for is honoured even when everything
+    // after it would have fitted on this sheet — that is the whole point of
+    // having asked.
+    const asked = forced.find((f) => f > start + 0.01 && f <= limit + 0.01);
+    if (!asked && total <= limit + 0.01) break;
+
+    const fits = asked ?? [...candidates].reverse().find((c) => c > start + 0.01 && c <= limit + 0.01);
+    const breakAt = fits ?? limit;
+
+    offsets.push(breakAt);
+    start = breakAt;
+  }
+
+  return { offsets, total };
+}
 
 export interface LetterpadSheetProps {
   draft: LetterDraft;
@@ -203,12 +321,24 @@ export default function LetterpadSheet({
   onPageCount,
 }: LetterpadSheetProps) {
   useLetterpadFonts();
+  useInjectedCss('letter-body-sheet', SHEET_CSS);
 
-  const bodyRef = useRef<HTMLDivElement>(null);
+  const flowEls = useRef(new Map<number, HTMLDivElement>());
   const hostRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
-  const [bodyLines, setBodyLines] = useState(0);
+  const [flows, setFlows] = useState<Record<number, { offsets: number[]; total: number }>>({});
   const [scale, setScale] = useState(maxScale);
+
+  const bodyHtml = useMemo(
+    () => sanitizeLetterHtml(letterBodyHtml({ body_html: draft.body_html, body: draft.body })),
+    [draft.body_html, draft.body],
+  );
+
+  /**
+   * The runs of text between the letter's full-page pictures. Each run
+   * paginates on its own, because a poster page is a sheet, not a paragraph.
+   */
+  const segments = useMemo(() => splitLetterSegments(bodyHtml), [bodyHtml]);
 
   /**
    * An A4 sheet is 794 CSS pixels wide, which overflows every phone and most
@@ -238,61 +368,106 @@ export default function LetterpadSheet({
     return () => ro.disconnect();
   }, [maxScale]);
 
-  const lineHmm = LAYOUT.body.lineH * PT_TO_MM;
-  const firstWindow = linesPerWindow(LAYOUT.body.y);
-  const contWindow = linesPerWindow(55);
-
-  // Measure the laid-out body once the fonts and the text have settled, so the
-  // sheet count follows what the reader will actually see.
+  // Measure each run of text once the fonts, the words and any pictures have
+  // settled, so the sheet count follows what the reader will actually see.
   useLayoutEffect(() => {
-    const el = bodyRef.current;
-    if (!el) return;
     const measure = () => {
-      // offsetWidth, not getBoundingClientRect: the sheet sits inside a
-      // scale() transform, and the rect would be the shrunken width while
-      // scrollHeight stays in layout pixels — enough of a mismatch to invent
-      // a second sheet for a letter that fits on one.
-      if (!el.offsetWidth) return;
-      const mmPerPx = LAYOUT.body.w / el.offsetWidth;
-      setBodyLines(Math.round((el.scrollHeight * mmPerPx) / lineHmm));
+      const next: Record<number, { offsets: number[]; total: number }> = {};
+      flowEls.current.forEach((el, index) => {
+        if (!el.offsetWidth) return;
+        next[index] = pageOffsets(
+          leavesOf(el, LAYOUT.body.w / el.offsetWidth),
+          // Only the letter's own first sheet starts below the salutation; a
+          // run of text that follows a poster page opens under the rules.
+          index === 0 ? LAYOUT.body.y : BODY_TOP_CONT,
+        );
+      });
+
+      setFlows((prev) => {
+        const keys = Object.keys(next);
+        const unchanged = keys.length === Object.keys(prev).length
+          && keys.every((key) => {
+            const before = prev[Number(key)];
+            const after = next[Number(key)];
+            return before && before.total === after.total && before.offsets.join() === after.offsets.join();
+          });
+        return unchanged ? prev : next;
+      });
     };
+
     measure();
     if (document.fonts?.ready) document.fonts.ready.then(measure).catch(() => {});
+
+    const observed = [...flowEls.current.values()];
     const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [draft.body, lineHmm]);
+    // A picture that has only just arrived changes every offset below it.
+    observed.forEach((el) => { ro.observe(el); el.addEventListener('load', measure, true); });
+    return () => {
+      ro.disconnect();
+      observed.forEach((el) => el.removeEventListener('load', measure, true));
+    };
+  }, [bodyHtml, segments]);
 
-  const overflowLines = Math.max(0, bodyLines - firstWindow);
-  const pageCount = 1 + Math.ceil(overflowLines / contWindow);
+  /** Every sheet the letter runs to, in order. */
+  const sheets = useMemo(() => {
+    const list: ({ kind: 'flow'; segment: number; window: number } | { kind: 'picture'; segment: number })[] = [];
+    segments.forEach((segment, index) => {
+      if (segment.kind === 'picture') { list.push({ kind: 'picture', segment: index }); return; }
+      const windows = flows[index]?.offsets.length ?? 1;
+      for (let window = 0; window < windows; window += 1) list.push({ kind: 'flow', segment: index, window });
+    });
+    return list;
+  }, [segments, flows]);
 
+  const pageCount = sheets.length;
   useEffect(() => { onPageCount?.(pageCount); }, [pageCount, onPageCount]);
+
+  /** The signature goes on the last sheet that carried words, not on a poster. */
+  const lastFlowSheet = sheets.reduce((found, sheet, index) => (sheet.kind === 'flow' ? index : found), 0);
 
   const toLines = ['To', draft.to_name, ...draft.to_address.split('\n')]
     .map((l) => l.trim())
     .filter((l, i) => i < 2 || l.length > 0);
 
-  /** One sheet: the letterhead, plus its window onto the body. */
-  const sheet = (pageIndex: number) => {
-    const isFirst = pageIndex === 0;
-    const windowTop = isFirst ? LAYOUT.body.y : 55;
-    const windowLines = isFirst ? firstWindow : contWindow;
-    const skipped = isFirst ? 0 : firstWindow + (pageIndex - 1) * contWindow;
+  const paper: CSSProperties = {
+    position: 'relative',
+    width: mm(PAGE.w),
+    height: mm(PAGE.h),
+    background: '#ffffff',
+    overflow: 'hidden',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08)',
+    flex: 'none',
+  };
+
+  /** A picture on a sheet of its own — no letterhead, as the master deck has it. */
+  const pictureSheet = (index: number, segment: { src: string; alt: string; fill: boolean }) => (
+    <div key={index} style={paper}>
+      <img
+        src={segment.src}
+        alt={segment.alt}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: segment.fill ? 'cover' : 'contain',
+        }}
+      />
+    </div>
+  );
+
+  /** One letterhead sheet, showing its window onto a run of the body. */
+  const flowSheet = (index: number, spec: { segment: number; window: number }) => {
+    const isFirst = index === 0;
+    const windowTop = spec.segment === 0 && spec.window === 0 ? LAYOUT.body.y : BODY_TOP_CONT;
+    const measured = flows[spec.segment];
+    const start = measured?.offsets[spec.window] ?? 0;
+    const end = measured
+      ? measured.offsets[spec.window + 1] ?? Math.max(measured.total, start)
+      : start + (BODY_BOTTOM - windowTop);
 
     return (
-      <div
-        key={pageIndex}
-        ref={isFirst ? sheetRef : undefined}
-        style={{
-          position: 'relative',
-          width: mm(PAGE.w),
-          height: mm(PAGE.h),
-          background: '#ffffff',
-          overflow: 'hidden',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08)',
-          flex: 'none',
-        }}
-      >
+      <div key={index} ref={isFirst ? sheetRef : undefined} style={paper}>
         <Letterhead />
 
         {isFirst && (
@@ -320,35 +495,41 @@ export default function LetterpadSheet({
           </>
         )}
 
-        {/* The body window. The full text is laid out once inside every sheet
-            and shifted up by the lines already shown, so line breaks and the
-            page boundaries match the PDF's. */}
+        {/* The body window. The whole run is laid out inside every sheet that
+            shows part of it and shifted up by the millimetres already shown,
+            so line breaks and page boundaries match the PDF's. */}
         <div
           style={{
             position: 'absolute',
             left: mm(LAYOUT.body.x),
             top: mm(windowTop),
             width: mm(LAYOUT.body.w),
-            height: mm(windowLines * lineHmm),
+            height: mm(Math.max(0, end - start)),
             overflow: 'hidden',
           }}
         >
           <div
-            ref={pageIndex === 0 ? bodyRef : undefined}
-            style={textStyle(LAYOUT.body.size, LAYOUT.body.lineH, FONT_STACK.serif, {
+            ref={spec.window === 0
+              ? (el) => {
+                  if (el) flowEls.current.set(spec.segment, el);
+                  else flowEls.current.delete(spec.segment);
+                }
+              : undefined}
+            className="lp-sheet-body"
+            style={{
               position: 'relative',
-              top: mm(-skipped * lineHmm),
+              top: mm(-start),
               width: mm(LAYOUT.body.w),
-              textAlign: 'justify',
-              textAlignLast: 'left',
-            })}
-          >
-            {draft.body}
-          </div>
+              fontFamily: FONT_STACK.serif,
+              fontSize: mm(LAYOUT.body.size * PT_TO_MM),
+              color: COLORS.ink,
+            }}
+            dangerouslySetInnerHTML={{ __html: (segments[spec.segment] as { html: string }).html }}
+          />
         </div>
 
-        {/* Signature block, on the last sheet only */}
-        {pageIndex === pageCount - 1 && (
+        {/* Signature block, on the last sheet the letter's words reach */}
+        {index === lastFlowSheet && (
           <>
             <img
               src={signatureUrl || ART.signature}
@@ -389,7 +570,9 @@ export default function LetterpadSheet({
             width: mm(PAGE.w),
           }}
         >
-          {Array.from({ length: pageCount }, (_, i) => sheet(i))}
+          {sheets.map((sheet, index) => (sheet.kind === 'picture'
+            ? pictureSheet(index, segments[sheet.segment] as { src: string; alt: string; fill: boolean })
+            : flowSheet(index, sheet)))}
         </div>
       </div>
     </div>

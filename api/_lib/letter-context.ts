@@ -145,6 +145,7 @@ export interface LetterRow {
   salutation: string;
   subject: string;
   body: string;
+  body_html: string;
   closing: string;
   signatory_name: string;
   signatory_role: string;
@@ -176,6 +177,52 @@ export async function fetchSignature(url: string): Promise<Uint8Array | null> {
     const res = await fetch(url);
     if (!res.ok) return null;
     return new Uint8Array(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetches an image the letter body refers to, so it can be embedded.
+ *
+ * Only files the organisation itself uploaded are fetched: the source has to
+ * live on the project's own Supabase storage. The letter body is HTML written
+ * in a browser, and an endpoint that will download whatever URL appears in it
+ * is an open proxy sitting behind the service role — worth closing off even
+ * though only the secretary can write a letter.
+ *
+ * A picture that will not download is a null; letter-pdf.ts prints a marked
+ * gap in its place rather than losing the letter.
+ */
+export async function fetchLetterImage(src: string): Promise<Uint8Array | null> {
+  let url: URL;
+  try {
+    url = new URL(src);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'https:') return null;
+
+  const storage = readEnv('SUPABASE_URL') || readEnv('VITE_SUPABASE_URL');
+  if (!storage) return null;
+  try {
+    if (url.host !== new URL(storage).host) return null;
+  } catch {
+    return null;
+  }
+
+  try {
+    const res = await fetch(url.toString());
+    if (!res.ok) return null;
+    const type = (res.headers.get('content-type') ?? '').toLowerCase();
+    // pdf-lib embeds PNG and JPEG and nothing else.
+    if (!type.startsWith('image/png') && !type.startsWith('image/jpeg') && !type.startsWith('image/jpg')) {
+      return null;
+    }
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    // 12 MB is far more than a scanned poster needs and well under what the
+    // function can hold while it also builds the PDF.
+    return bytes.byteLength > 12 * 1024 * 1024 ? null : bytes;
   } catch {
     return null;
   }
