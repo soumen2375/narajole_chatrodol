@@ -24,7 +24,7 @@ import {
   sendLetterEmail, unsupportedCharacters, type LetterDraft,
 } from '@/lib/letterpad';
 import {
-  htmlToPlainText, letterBodyHtml, plainToHtml, sanitizeLetterHtml,
+  escapeHtml, htmlToPlainText, letterBodyHtml, plainToHtml, sanitizeLetterHtml,
 } from '@/lib/letter-body';
 import type { CswoEvent, CswoEventLetter } from '@/types';
 
@@ -123,12 +123,23 @@ export default function AdminEventLetters() {
     setBusy('create'); setMsg(null);
     const template = LETTER_TEMPLATES.find((t) => t.id === templateId);
     const base = emptyDraft();
+
+    // A template that carries its own layout opens as that document; the rest
+    // are paragraphs, and become one. Either way the plain copy is read back
+    // off the HTML, so the two can never start out disagreeing.
+    const body_html = template
+      ? sanitizeLetterHtml(template.bodyHtml
+        // The values go into markup here, so they are escaped on the way in.
+        ? fillTemplate(template.bodyHtml, event, escapeHtml)
+        : plainToHtml(fillTemplate(template.body, event)))
+      : '';
+
     const payload = {
       ...base,
       event_id: id,
       subject: template ? fillTemplate(template.subject, event) : '',
-      body: template ? fillTemplate(template.body, event) : '',
-      body_html: template ? plainToHtml(fillTemplate(template.body, event)) : '',
+      body: htmlToPlainText(body_html),
+      body_html,
       created_by: member?.id ?? null,
     };
     const { data, error } = await supabase

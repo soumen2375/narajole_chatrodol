@@ -231,7 +231,8 @@ export function letterBodyCss(selector: string): string {
 
 // ── Plain text ↔ HTML ────────────────────────────────────────────────────────
 
-const escapeHtml = (value: string) =>
+/** Text that is about to be dropped into markup. */
+export const escapeHtml = (value: string) =>
   value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

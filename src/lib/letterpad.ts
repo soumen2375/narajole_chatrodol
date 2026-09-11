@@ -191,10 +191,48 @@ export interface LetterTemplate {
   id: string;
   label: string;
   subject: string;
+  /** The body as paragraphs, for the templates that are only words. */
   body: string;
+  /**
+   * The body as a formatted document, for a template that carries its own
+   * layout — headings, highlighted bullets, links, a poster page. Used in
+   * preference to `body`, which is then the plain reading of it.
+   */
+  bodyHtml?: string;
 }
 
 export const LETTER_TEMPLATES: LetterTemplate[] = [
+  {
+    id: 'anandadhara',
+    label: 'Anandadhara – 2026',
+    subject: 'An Invitation to Support Anandadhara – 2026',
+    // The letter the office actually sends for the campaign, kept as it was
+    // written for 3A/102 — the highlighted bullets, the two links and the
+    // poster page included. The poster is a picture like any other: select
+    // it in the editor and delete it if a particular letter should not
+    // carry it.
+    bodyHtml: [
+      `<p>Greetings from CHHATRADOL SOCIAL WELFARE ORGANIZATION.</p>`,
+      `<p>We are reaching out with a humble request for your support for our 7th-year initiative, “Anandadhara – 2026,” through which we aim to bring the joy of the festive season to underprivileged children in <strong>Paschim Medinipur</strong> and <strong>Jhargram</strong> by providing new clothes, educational materials and food.</p>`,
+      `<p>Your support whether through a donation, sponsoring a few children's clothes, or simply sharing our campaign can help us reach more children and make their celebrations brighter.</p>`,
+      `<p><strong><span data-size="12">HOW YOU CAN HELP</span></strong></p>`,
+      `<ul>`,
+      `<li><p><strong><span data-size="10"><span data-highlight="yellow">Glimpse of last year's Anandadhara: </span></span></strong>`,
+      `<a target="_blank" rel="noreferrer" href="https://youtu.be/gF6ErpbRXJo"><strong><u><span data-size="10"><span data-highlight="yellow">View the gallery</span></span></u></strong></a></p></li>`,
+      `<li><p><strong><span data-size="10"><span data-highlight="yellow">Donate online: </span></span></strong>`,
+      `<a target="_blank" rel="noreferrer" href="https://www.chhatradol.org/donate"><strong><u><span data-size="10"><span data-highlight="yellow">www.chhatradol.org/donate</span></span></u></strong></a></p></li>`,
+      `<li><p><strong><span data-size="10"><span data-highlight="yellow">Or simply scan the QR code below to contribute instantly.</span></span></strong></p></li>`,
+      `</ul>`,
+      `<p>We sincerely hope you will consider becoming a part of this journey. Together, we can make the festive season a little brighter, a little warmer and a little more joyful for children who need it most.</p>`,
+      `<p>With regards,</p>`,
+      `<img src="https://wzquszbmbpkbhyythdrj.supabase.co/storage/v1/object/public/cswo-media/event-letters/95d2ef1c-5598-4293-a141-c02ba2728559/body/b283e60a-38c2-421f-a730-174b7148c54a-1788930715107.jpg" alt="Anandadhara 2026 poster" data-page="full" data-fit="fit">`,
+    ].join(''),
+    body: [
+      'Greetings from CHHATRADOL SOCIAL WELFARE ORGANIZATION.',
+      'We are reaching out with a humble request for your support for our 7th-year initiative, “Anandadhara – 2026,” through which we aim to bring the joy of the festive season to underprivileged children in Paschim Medinipur and Jhargram by providing new clothes, educational materials and food.',
+      'With regards,',
+    ].join('\n\n'),
+  },
   {
     id: 'permission',
     label: 'Permission request',
@@ -246,6 +284,12 @@ export const LETTER_TEMPLATES: LetterTemplate[] = [
 export function fillTemplate(
   text: string,
   event: { title?: string | null; event_date?: string | null; location?: string | null; district?: string | null },
+  /**
+   * Applied to each value before it goes in. A template that is HTML passes
+   * an escaper here, so an event called "Food & Clothes < 12s" cannot arrive
+   * as broken markup.
+   */
+  transform: (value: string) => string = (value) => value,
 ): string {
   const date = event.event_date
     ? new Date(`${event.event_date}T00:00:00`).toLocaleDateString('en-IN', {
@@ -254,9 +298,9 @@ export function fillTemplate(
     : '__________';
   const venue = [event.location, event.district].filter(Boolean).join(', ') || '__________';
   return text
-    .replace(/\{event\}/g, event.title || '__________')
-    .replace(/\{date\}/g, date)
-    .replace(/\{venue\}/g, venue);
+    .replace(/\{event\}/g, transform(event.title || '__________'))
+    .replace(/\{date\}/g, transform(date))
+    .replace(/\{venue\}/g, transform(venue));
 }
 
 /**
