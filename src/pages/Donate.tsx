@@ -44,6 +44,9 @@ const CAUSES: Cause[] = [
   { key: 'general', icon: Heart, bn: 'সাধারণ তহবিল', en: 'General Fund', purpose: 'General Fund', desc: 'Where help is needed most' },
 ];
 
+/** What the page opens on, and the tier it lights up. */
+const DEFAULT_AMOUNT = 5000;
+
 // Each tier doubles as an amount picker: tapping a card fills the form in.
 const TIERS = [
   {
@@ -149,8 +152,10 @@ export default function Donate() {
   useSEO(SEO['/donate']);
   const tr = (bn: string, en: string) => (lang === 'en' ? en : bn);
 
-  // Start on a real tier so the summary panel and the pre-selected amount agree.
-  const DEFAULT_TIER = TIERS.find((t) => t.v === 1000) || TIERS[0];
+  // Start on a real tier so the summary panel and the pre-selected amount
+  // agree. The cause card that lights up is whichever tier carries the
+  // default amount, which is why the two move together.
+  const DEFAULT_TIER = TIERS.find((t) => t.v === DEFAULT_AMOUNT) || TIERS[0];
   const [causeKey, setCauseKey] = useState(DEFAULT_TIER.causeKey);
   const [picked, setPicked] = useState<number>(DEFAULT_TIER.v);
   const [custom, setCustom] = useState('');

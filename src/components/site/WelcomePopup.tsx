@@ -39,7 +39,10 @@ const OPEN_DELAY  = 900;
 const HIDE_ON     = ['/donate', '/payment-return'];
 
 const PRESETS    = [300, 500, 1000, 2000, 5000, 10000];
-const DEFAULT_IX = 2;          // ₹1,000
+/** The chip the popup opens on. Found by value, so editing PRESETS cannot
+ *  quietly move it to a different amount. */
+const DEFAULT_AMOUNT = 5000;
+const DEFAULT_IX = Math.max(0, PRESETS.indexOf(DEFAULT_AMOUNT));
 const MIN_AMOUNT = 100;
 const DESKTOP_MQ = '(min-width: 861px)';
 
