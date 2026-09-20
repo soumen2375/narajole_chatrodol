@@ -201,37 +201,63 @@ export interface LetterTemplate {
   bodyHtml?: string;
 }
 
+/**
+ * The Anandadhara poster, in the two languages the office prints it in.
+ *
+ * They live on the project's own storage because the PDF renderer fetches a
+ * letter's pictures server-side and will not go anywhere else for them.
+ */
+const ANANDADHARA_POSTER = {
+  bengali: 'https://wzquszbmbpkbhyythdrj.supabase.co/storage/v1/object/public/cswo-media/event-letters/95d2ef1c-5598-4293-a141-c02ba2728559/body/b283e60a-38c2-421f-a730-174b7148c54a-1788930715107.jpg',
+  english: 'https://wzquszbmbpkbhyythdrj.supabase.co/storage/v1/object/public/cswo-media/letter-templates/anandadhara-2026-en.jpg',
+} as const;
+
+/**
+ * The campaign letter the office actually sends, kept as it was written for
+ * 3A/102 — the highlighted bullets, the two links and a poster page.
+ *
+ * The wording is one copy for both templates so the two cannot drift apart;
+ * only the poster differs. The poster is a picture like any other: select it
+ * in the editor and delete it if a particular letter should not carry one.
+ */
+const anandadharaBody = (poster: string) => [
+  `<p>Greetings from CHHATRADOL SOCIAL WELFARE ORGANIZATION.</p>`,
+  `<p>We are reaching out with a humble request for your support for our 7th-year initiative, “Anandadhara – 2026,” through which we aim to bring the joy of the festive season to underprivileged children in <strong>Paschim Medinipur</strong> and <strong>Jhargram</strong> by providing new clothes, educational materials and food.</p>`,
+  `<p>Your support whether through a donation, sponsoring a few children's clothes, or simply sharing our campaign can help us reach more children and make their celebrations brighter.</p>`,
+  `<p><strong><span data-size="12">HOW YOU CAN HELP</span></strong></p>`,
+  `<ul>`,
+  `<li><p><strong><span data-size="10"><span data-highlight="yellow">Glimpse of last year's Anandadhara: </span></span></strong>`,
+  `<a target="_blank" rel="noreferrer" href="https://youtu.be/gF6ErpbRXJo"><strong><u><span data-size="10"><span data-highlight="yellow">View the gallery</span></span></u></strong></a></p></li>`,
+  `<li><p><strong><span data-size="10"><span data-highlight="yellow">Donate online: </span></span></strong>`,
+  `<a target="_blank" rel="noreferrer" href="https://www.chhatradol.org/donate"><strong><u><span data-size="10"><span data-highlight="yellow">www.chhatradol.org/donate</span></span></u></strong></a></p></li>`,
+  `<li><p><strong><span data-size="10"><span data-highlight="yellow">Or simply scan the QR code below to contribute instantly.</span></span></strong></p></li>`,
+  `</ul>`,
+  `<p>We sincerely hope you will consider becoming a part of this journey. Together, we can make the festive season a little brighter, a little warmer and a little more joyful for children who need it most.</p>`,
+  `<p>With regards,</p>`,
+  `<img src="${poster}" alt="Anandadhara 2026 poster" data-page="full" data-fit="fit">`,
+].join('');
+
+/** The plain reading of that letter, for the templates' `body` field. */
+const ANANDADHARA_PLAIN = [
+  'Greetings from CHHATRADOL SOCIAL WELFARE ORGANIZATION.',
+  'We are reaching out with a humble request for your support for our 7th-year initiative, “Anandadhara – 2026,” through which we aim to bring the joy of the festive season to underprivileged children in Paschim Medinipur and Jhargram by providing new clothes, educational materials and food.',
+  'With regards,',
+].join('\n\n');
+
 export const LETTER_TEMPLATES: LetterTemplate[] = [
   {
     id: 'anandadhara',
-    label: 'Anandadhara – 2026',
+    label: 'Anandadhara – 2026 (Bengali poster)',
     subject: 'An Invitation to Support Anandadhara – 2026',
-    // The letter the office actually sends for the campaign, kept as it was
-    // written for 3A/102 — the highlighted bullets, the two links and the
-    // poster page included. The poster is a picture like any other: select
-    // it in the editor and delete it if a particular letter should not
-    // carry it.
-    bodyHtml: [
-      `<p>Greetings from CHHATRADOL SOCIAL WELFARE ORGANIZATION.</p>`,
-      `<p>We are reaching out with a humble request for your support for our 7th-year initiative, “Anandadhara – 2026,” through which we aim to bring the joy of the festive season to underprivileged children in <strong>Paschim Medinipur</strong> and <strong>Jhargram</strong> by providing new clothes, educational materials and food.</p>`,
-      `<p>Your support whether through a donation, sponsoring a few children's clothes, or simply sharing our campaign can help us reach more children and make their celebrations brighter.</p>`,
-      `<p><strong><span data-size="12">HOW YOU CAN HELP</span></strong></p>`,
-      `<ul>`,
-      `<li><p><strong><span data-size="10"><span data-highlight="yellow">Glimpse of last year's Anandadhara: </span></span></strong>`,
-      `<a target="_blank" rel="noreferrer" href="https://youtu.be/gF6ErpbRXJo"><strong><u><span data-size="10"><span data-highlight="yellow">View the gallery</span></span></u></strong></a></p></li>`,
-      `<li><p><strong><span data-size="10"><span data-highlight="yellow">Donate online: </span></span></strong>`,
-      `<a target="_blank" rel="noreferrer" href="https://www.chhatradol.org/donate"><strong><u><span data-size="10"><span data-highlight="yellow">www.chhatradol.org/donate</span></span></u></strong></a></p></li>`,
-      `<li><p><strong><span data-size="10"><span data-highlight="yellow">Or simply scan the QR code below to contribute instantly.</span></span></strong></p></li>`,
-      `</ul>`,
-      `<p>We sincerely hope you will consider becoming a part of this journey. Together, we can make the festive season a little brighter, a little warmer and a little more joyful for children who need it most.</p>`,
-      `<p>With regards,</p>`,
-      `<img src="https://wzquszbmbpkbhyythdrj.supabase.co/storage/v1/object/public/cswo-media/event-letters/95d2ef1c-5598-4293-a141-c02ba2728559/body/b283e60a-38c2-421f-a730-174b7148c54a-1788930715107.jpg" alt="Anandadhara 2026 poster" data-page="full" data-fit="fit">`,
-    ].join(''),
-    body: [
-      'Greetings from CHHATRADOL SOCIAL WELFARE ORGANIZATION.',
-      'We are reaching out with a humble request for your support for our 7th-year initiative, “Anandadhara – 2026,” through which we aim to bring the joy of the festive season to underprivileged children in Paschim Medinipur and Jhargram by providing new clothes, educational materials and food.',
-      'With regards,',
-    ].join('\n\n'),
+    bodyHtml: anandadharaBody(ANANDADHARA_POSTER.bengali),
+    body: ANANDADHARA_PLAIN,
+  },
+  {
+    id: 'anandadhara-en',
+    label: 'Anandadhara – 2026 (English poster)',
+    subject: 'An Invitation to Support Anandadhara – 2026',
+    bodyHtml: anandadharaBody(ANANDADHARA_POSTER.english),
+    body: ANANDADHARA_PLAIN,
   },
   {
     id: 'permission',
