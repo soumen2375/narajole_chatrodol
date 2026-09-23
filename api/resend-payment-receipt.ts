@@ -7,7 +7,8 @@
  * Headers:
  *   Authorization: Bearer <supabase_access_token>
  * Body:
- *   { id: string; type: 'donation' | 'contribution' }
+ *   { id: string; type: 'donation' | 'contribution';
+ *     document?: 'receipt' | 'certificate' }   // certificate = 80G, donations only
  *
  * Security:
  *   - Verifies Supabase auth JWT from Authorization header.
@@ -18,6 +19,7 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import { createClient } from '@supabase/supabase-js';
 import { sendPaymentReceipt } from './_lib/payment-receipt.js';
+import { dispatchCertificateEmail } from './send-receipt-email.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -185,6 +187,8 @@ export default async function handler(
       | 'contribution'
       | undefined;
 
+    const docKind = body.document === 'certificate' ? 'certificate' : 'receipt';
+
     if (!id || !type || !['donation', 'contribution'].includes(type)) {
       return sendJson(res, 400, {
         success: false,
@@ -230,6 +234,60 @@ export default async function handler(
         success: false,
         error: `Cannot send receipt for a payment that is not 'paid' (current status: ${record.status})`,
       });
+    }
+
+    // ── 3a. 80G certificate instead of the receipt ─────────────────────────
+    // Sent on its own and deliberately leaves receipt_email_status alone:
+    // that column tracks the receipt, which is a different document.
+    if (docKind === 'certificate') {
+      if (type !== 'donation') {
+        return sendJson(res, 400, {
+          success: false,
+          error: '80G certificates are issued for donations only',
+        });
+      }
+      const email = String(record.donor_email || '');
+      if (!email.includes('@')) {
+        return sendJson(res, 400, { success: false, error: 'No email address on this donation' });
+      }
+
+      const { data: compliance } = await supabase
+        .from('cswo_compliance')
+        .select('ckey, reg_number');
+      const regs = Object.fromEntries(
+        ((compliance ?? []) as { ckey: string; reg_number: string | null }[])
+          .map((r) => [r.ckey, r.reg_number ?? '']),
+      );
+
+      const created = new Date(String(record.created_at || Date.now()));
+      const y = created.getFullYear();
+      const fy = created.getMonth() + 1 >= 4
+        ? `${y}-${String(y + 1).slice(-2)}`
+        : `${y - 1}-${String(y).slice(-2)}`;
+
+      const result = await dispatchCertificateEmail({
+        recipientEmail: email,
+        receiptNumber: String(record.receipt_number || `DON-${String(record.id).slice(0, 8).toUpperCase()}`),
+        donorName: record.is_anonymous ? 'Anonymous' : String(record.donor_name || 'Valued Supporter'),
+        amount: Number(record.amount),
+        fy,
+        date: created.toLocaleDateString('en-IN', {
+          day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata',
+        }),
+        purpose: (record.purpose as string) || undefined,
+        paymentRef: (record.cashfree_payment_id as string) || (record.razorpay_payment_id as string) || undefined,
+        reg80g: regs['80g'] || undefined,
+        reg12a: regs['12a'] || undefined,
+        orgPan: regs['pan'] || undefined,
+      });
+
+      if (!result.success) {
+        return sendJson(res, 500, {
+          success: false,
+          error: result.error || 'Failed to send 80G certificate',
+        });
+      }
+      return sendJson(res, 200, { success: true, messageId: result.messageId });
     }
 
     const paymentMethod =

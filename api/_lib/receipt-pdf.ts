@@ -264,9 +264,21 @@ function drawAmount(ctx: Ctx, amount: number, rightX: number, y: number, size: n
   });
 }
 
-// ── Main renderer ────────────────────────────────────────────────────────────
+// ── Sheet parts ──────────────────────────────────────────────────────────────
+//
+// The receipt and the 80G certificate are the same sheet with different
+// contents, so the masthead, strip, rows, band, signature and footer are drawn
+// by shared helpers and each document only decides what goes between them.
 
-export async function generateReceiptPdf(input: ReceiptPdfInput): Promise<Uint8Array> {
+interface Sheet extends Ctx {
+  pdf: PDFDocument;
+  signature: PDFImage;
+  icons: [PDFImage, PDFImage, PDFImage];
+}
+
+const HEADER_H = 104;
+
+async function openSheet(meta: { title: string; subject: string }): Promise<Sheet> {
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
 
@@ -284,40 +296,32 @@ export async function generateReceiptPdf(input: ReceiptPdfInput): Promise<Uint8A
   const iconWeb = await pdf.embedPng(dec(IMG_ICON_WEB));
 
   const page = pdf.addPage([PAGE_W, PAGE_H]);
-  const ctx: Ctx = { page, bebas, body, bodyBold, rupee };
 
-  pdf.setTitle(`Donation Receipt ${input.receiptNumber}`);
+  pdf.setTitle(meta.title);
   pdf.setAuthor('Chhatradol Social Welfare Organization');
-  pdf.setSubject('Official payment receipt');
+  pdf.setSubject(meta.subject);
   pdf.setProducer('CSWO Digital Platform');
   pdf.setCreator('chhatradol.org');
 
-  const isContribution = input.type === 'contribution';
-  const dateStr =
-    input.date ||
-    new Date().toLocaleString('en-IN', {
-      dateStyle: 'long',
-      timeStyle: 'short',
-      timeZone: 'Asia/Kolkata',
-    });
+  const sheet: Sheet = {
+    pdf, page, bebas, body, bodyBold, rupee, signature,
+    icons: [iconPhone, iconMail, iconWeb],
+  };
+  drawMasthead(sheet, logo);
+  drawFooter(sheet);
+  return sheet;
+}
 
-  // ── Masthead ───────────────────────────────────────────────────────────────
-  const headerH = 104;
-  let y = PAGE_H;
-  page.drawRectangle({ x: 0, y: y - headerH, width: PAGE_W, height: headerH, color: MAROON });
+function drawMasthead(s: Sheet, logo: PDFImage) {
+  const { page, bebas, body } = s;
+  const y = PAGE_H;
+  page.drawRectangle({ x: 0, y: y - HEADER_H, width: PAGE_W, height: HEADER_H, color: MAROON });
 
   const logoSize = 66;
   const logoX = MARGIN;
   const logoRadius = logoSize / 2;
   // Round white badge with the artwork clipped inside it, matching the design.
-  drawCircularImage(
-    page,
-    logo,
-    logoX + logoRadius,
-    y - headerH / 2,
-    logoRadius,
-    3,
-  );
+  drawCircularImage(page, logo, logoX + logoRadius, y - HEADER_H / 2, logoRadius, 3);
 
   const titleX = logoX + logoSize + 18;
   const titleW = PAGE_W - titleX - MARGIN;
@@ -325,27 +329,34 @@ export async function generateReceiptPdf(input: ReceiptPdfInput): Promise<Uint8A
   let orgSize = 25;
   const orgName = 'CHHATRADOL SOCIAL WELFARE ORGANIZATION';
   while (orgSize > 14 && bebas.widthOfTextAtSize(orgName, orgSize) > titleW) orgSize -= 0.5;
-  text(ctx, orgName, titleX, y - 52, { font: bebas, size: orgSize, color: WHITE });
+  text(s, orgName, titleX, y - 52, { font: bebas, size: orgSize, color: WHITE });
   text(
-    ctx,
+    s,
     'Reg. No.: IV-100200047/2026  ·  DARPAN ID: WB/2026/1138665',
     titleX,
     y - 72,
     { font: body, size: 8.6, color: GOLD_LIGHT, maxWidth: titleW },
   );
 
-  y -= headerH;
-  page.drawRectangle({ x: 0, y: y - 6, width: PAGE_W, height: 6, color: GOLD });
-  y -= 6;
+  page.drawRectangle({ x: 0, y: y - HEADER_H - 6, width: PAGE_W, height: 6, color: GOLD });
+}
 
-  // ── Document title ─────────────────────────────────────────────────────────
+/** Centred document title and the cream reference/date strip. Returns the y below it. */
+function drawTitleAndStrip(
+  s: Sheet,
+  docTitle: string,
+  refLabel: string,
+  refValue: string,
+  dateStr: string,
+): number {
+  const { bebas, body, bodyBold, page } = s;
+  let y = PAGE_H - HEADER_H - 6;
+
   y -= 40;
-  const docTitle = isContribution ? 'CONTRIBUTION RECEIPT' : 'DONATION RECEIPT';
   const titleSize = 25;
   const tW = bebas.widthOfTextAtSize(docTitle, titleSize);
-  text(ctx, docTitle, (PAGE_W - tW) / 2, y, { font: bebas, size: titleSize, color: MAROON });
+  text(s, docTitle, (PAGE_W - tW) / 2, y, { font: bebas, size: titleSize, color: MAROON });
 
-  // ── Receipt no. / date strip ───────────────────────────────────────────────
   y -= 30;
   const stripH = 46;
   const stripW = PAGE_W - MARGIN * 2;
@@ -353,43 +364,36 @@ export async function generateReceiptPdf(input: ReceiptPdfInput): Promise<Uint8A
     x: MARGIN, y: y - stripH, width: stripW, height: stripH,
     color: CREAM, borderColor: CREAM_LINE, borderWidth: 1,
   });
-  text(ctx, 'RECEIPT NO.', MARGIN + 14, y - 17, { font: body, size: 7.6, color: LABEL_GOLD });
-  text(ctx, input.receiptNumber, MARGIN + 14, y - 33, {
+  text(s, refLabel, MARGIN + 14, y - 17, { font: body, size: 7.6, color: LABEL_GOLD });
+  text(s, refValue, MARGIN + 14, y - 33, {
     font: bodyBold, size: 11, color: INK, maxWidth: stripW / 2 - 24,
   });
 
   const dateLabelW = body.widthOfTextAtSize('DATE', 7.6);
   const dateRight = MARGIN + stripW - 14;
-  text(ctx, 'DATE', dateRight - dateLabelW, y - 17, { font: body, size: 7.6, color: LABEL_GOLD });
+  text(s, 'DATE', dateRight - dateLabelW, y - 17, { font: body, size: 7.6, color: LABEL_GOLD });
   const dateFitted = fit(dateStr, bodyBold, 11, stripW / 2 - 24);
-  text(ctx, dateFitted, dateRight - bodyBold.widthOfTextAtSize(dateFitted, 11), y - 33, {
+  text(s, dateFitted, dateRight - bodyBold.widthOfTextAtSize(dateFitted, 11), y - 33, {
     font: bodyBold, size: 11, color: INK,
   });
 
-  // ── Detail rows ────────────────────────────────────────────────────────────
-  y -= stripH + 26;
-  const rows: Array<[string, string, RGB?]> = [
-    [isContribution ? 'Member Name' : 'Donor Name', input.donorName || '—'],
-    ['Email', input.donorEmail || '—'],
-    [isContribution ? 'Contribution For' : 'Purpose of Donation', input.purpose || '—'],
-    ['Payment Method', input.paymentMethod || '—'],
-  ];
-  if (input.transactionId) rows.push(['Transaction ID', input.transactionId]);
-  rows.push(['Payment Status', 'Paid · Successful', GREEN]);
+  return y - stripH;
+}
 
+/** Label/value rows. `y` is the first row's baseline; returns the y below the last. */
+function drawRows(s: Sheet, rows: Array<[string, string, RGB?]>, y: number, rowH = 27): number {
   const labelX = MARGIN + 4;
   const valueX = MARGIN + 172;
   const valueMaxW = PAGE_W - MARGIN - valueX - 4;
-  const rowH = 27;
 
   rows.forEach(([label, value, color], i) => {
     const rowY = y - i * rowH;
-    text(ctx, label, labelX, rowY, { font: body, size: 10, color: MUTED });
-    text(ctx, value, valueX, rowY, {
-      font: bodyBold, size: 11, color: color ?? INK, maxWidth: valueMaxW,
+    text(s, label, labelX, rowY, { font: s.body, size: 10, color: MUTED });
+    text(s, value, valueX, rowY, {
+      font: s.bodyBold, size: 11, color: color ?? INK, maxWidth: valueMaxW,
     });
     if (i < rows.length - 1) {
-      page.drawLine({
+      s.page.drawLine({
         start: { x: MARGIN, y: rowY - 9 },
         end: { x: PAGE_W - MARGIN, y: rowY - 9 },
         thickness: 0.5,
@@ -397,27 +401,33 @@ export async function generateReceiptPdf(input: ReceiptPdfInput): Promise<Uint8A
       });
     }
   });
-  y -= rows.length * rowH + 12;
+  return y - rows.length * rowH;
+}
 
-  // ── Amount band ────────────────────────────────────────────────────────────
+/** The maroon amount band, its top edge at `y`. Returns the y below it. */
+function drawBand(s: Sheet, amount: number, y: number): number {
   const bandH = 66;
-  page.drawRectangle({
+  const stripW = PAGE_W - MARGIN * 2;
+  s.page.drawRectangle({
     x: MARGIN, y: y - bandH, width: stripW, height: bandH, color: MAROON,
   });
-  text(ctx, 'AMOUNT RECEIVED', MARGIN + 22, y - 26, { font: body, size: 10, color: AMBER });
-  text(ctx, amountInWords(input.amount), MARGIN + 22, y - 45, {
-    font: body, size: 10, color: GOLD_PALE, maxWidth: stripW - 200,
+  text(s, 'AMOUNT RECEIVED', MARGIN + 22, y - 26, { font: s.body, size: 10, color: AMBER });
+  text(s, amountInWords(amount), MARGIN + 22, y - 45, {
+    font: s.body, size: 10, color: GOLD_PALE, maxWidth: stripW - 200,
   });
-  drawAmount(ctx, input.amount, MARGIN + stripW - 22, y - 46, 30);
-  y -= bandH;
+  drawAmount(s, amount, MARGIN + stripW - 22, y - 46, 30);
+  return y - bandH;
+}
 
-  // ── Signature block ────────────────────────────────────────────────────────
+/** Signature block and the computer-generated note below it. */
+function drawSignatureAndNote(s: Sheet, y: number, note: string) {
+  const { page, body, bodyBold } = s;
   const sigW = 132;
   const sigH = 48;
   const sigRight = PAGE_W - MARGIN - 8;
   const sigX = sigRight - sigW;
   const sigY = y - 84;
-  page.drawImage(signature, { x: sigX, y: sigY, width: sigW, height: sigH });
+  page.drawImage(s.signature, { x: sigX, y: sigY, width: sigW, height: sigH });
   page.drawLine({
     start: { x: sigX - 14, y: sigY - 4 },
     end: { x: sigRight + 6, y: sigY - 4 },
@@ -427,14 +437,13 @@ export async function generateReceiptPdf(input: ReceiptPdfInput): Promise<Uint8A
   const namePos = sigX + sigW / 2;
   const sigName = 'Sayan Samanta';
   const sigRole = 'Secretary, CSWO';
-  text(ctx, sigName, namePos - bodyBold.widthOfTextAtSize(sigName, 10.5) / 2, sigY - 18, {
+  text(s, sigName, namePos - bodyBold.widthOfTextAtSize(sigName, 10.5) / 2, sigY - 18, {
     font: bodyBold, size: 10.5, color: INK,
   });
-  text(ctx, sigRole, namePos - body.widthOfTextAtSize(sigRole, 9.5) / 2, sigY - 32, {
+  text(s, sigRole, namePos - body.widthOfTextAtSize(sigRole, 9.5) / 2, sigY - 32, {
     font: body, size: 9.5, color: MUTED,
   });
 
-  // ── Computer-generated note ────────────────────────────────────────────────
   const noteY = sigY - 62;
   for (let x = MARGIN; x < PAGE_W - MARGIN; x += 6) {
     page.drawLine({
@@ -444,17 +453,19 @@ export async function generateReceiptPdf(input: ReceiptPdfInput): Promise<Uint8A
       color: DASH,
     });
   }
-  const note = 'This is a computer-generated receipt and does not require a physical signature.';
-  text(ctx, note, (PAGE_W - body.widthOfTextAtSize(note, 9)) / 2, noteY, {
+  text(s, note, (PAGE_W - body.widthOfTextAtSize(note, 9)) / 2, noteY, {
     font: body, size: 9, color: FAINT,
   });
+}
 
-  // ── Contact footer ─────────────────────────────────────────────────────────
+function drawFooter(s: Sheet) {
+  const { page, body, bodyBold } = s;
   const footerH = 58;
   page.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: footerH, color: MAROON_DARK });
   page.drawRectangle({ x: 0, y: footerH, width: PAGE_W, height: 6, color: GOLD });
 
-  const cells: Array<[typeof iconPhone, string, string]> = [
+  const [iconPhone, iconMail, iconWeb] = s.icons;
+  const cells: Array<[PDFImage, string, string]> = [
     [iconPhone, 'Contact No.', '7811073412 / 7074074110'],
     [iconMail, 'Email', 'info@chhatradol.org'],
     [iconWeb, 'Website', 'www.chhatradol.org'],
@@ -470,8 +481,8 @@ export async function generateReceiptPdf(input: ReceiptPdfInput): Promise<Uint8A
     const groupW = iconSize + 9 + labelW;
     const gx = cx + (cellW - groupW) / 2;
     page.drawImage(icon, { x: gx, y: footerH / 2 - iconSize / 2, width: iconSize, height: iconSize });
-    text(ctx, label, gx + iconSize + 9, footerH / 2 + 3, { font: bodyBold, size: 9, color: WHITE });
-    text(ctx, value, gx + iconSize + 9, footerH / 2 - 10, { font: body, size: 9, color: WHITE });
+    text(s, label, gx + iconSize + 9, footerH / 2 + 3, { font: bodyBold, size: 9, color: WHITE });
+    text(s, value, gx + iconSize + 9, footerH / 2 - 10, { font: body, size: 9, color: WHITE });
     if (i > 0) {
       page.drawLine({
         start: { x: cx, y: 12 },
@@ -481,8 +492,160 @@ export async function generateReceiptPdf(input: ReceiptPdfInput): Promise<Uint8A
       });
     }
   });
+}
 
-  return pdf.save();
+/** Greedy word wrap to `maxWidth`. */
+function wrap(str: string, font: PDFFont, size: number, maxWidth: number): string[] {
+  const words = sanitize(str, font).split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = '';
+  for (const w of words) {
+    const next = line ? `${line} ${w}` : w;
+    if (line && font.widthOfTextAtSize(next, size) > maxWidth) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = next;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function nowIst(): string {
+  return new Date().toLocaleString('en-IN', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+    timeZone: 'Asia/Kolkata',
+  });
+}
+
+// ── Receipt ──────────────────────────────────────────────────────────────────
+
+export async function generateReceiptPdf(input: ReceiptPdfInput): Promise<Uint8Array> {
+  const s = await openSheet({
+    title: `Donation Receipt ${input.receiptNumber}`,
+    subject: 'Official payment receipt',
+  });
+
+  const isContribution = input.type === 'contribution';
+  let y = drawTitleAndStrip(
+    s,
+    isContribution ? 'CONTRIBUTION RECEIPT' : 'DONATION RECEIPT',
+    'RECEIPT NO.',
+    input.receiptNumber,
+    input.date || nowIst(),
+  );
+
+  y -= 26;
+  const rows: Array<[string, string, RGB?]> = [
+    [isContribution ? 'Member Name' : 'Donor Name', input.donorName || '—'],
+    ['Email', input.donorEmail || '—'],
+    [isContribution ? 'Contribution For' : 'Purpose of Donation', input.purpose || '—'],
+    ['Payment Method', input.paymentMethod || '—'],
+  ];
+  if (input.transactionId) rows.push(['Transaction ID', input.transactionId]);
+  rows.push(['Payment Status', 'Paid · Successful', GREEN]);
+  y = drawRows(s, rows, y) - 12;
+
+  y = drawBand(s, input.amount, y);
+  drawSignatureAndNote(s, y, 'This is a computer-generated receipt and does not require a physical signature.');
+
+  return s.pdf.save();
+}
+
+// ── 80G certificate ──────────────────────────────────────────────────────────
+
+export interface CertificatePdfInput {
+  receiptNumber: string;
+  donorName: string;
+  amount: number;
+  /** Financial year, e.g. "2026-27". */
+  fy: string;
+  date: string;
+  purpose?: string;
+  paymentRef?: string;
+  reg80g?: string;
+  reg12a?: string;
+  orgPan?: string;
+}
+
+/**
+ * The tax-exemption certificate, mirroring printCertificate() in
+ * src/lib/receipt.ts so the emailed copy and the downloaded one agree.
+ * The registration numbers get their own strip rather than a footnote: an
+ * assessing officer looks for 80G, 12A and the trust PAN first.
+ */
+export async function generateCertificatePdf(input: CertificatePdfInput): Promise<Uint8Array> {
+  const s = await openSheet({
+    title: `80G Certificate ${input.receiptNumber}`,
+    subject: 'Donation certificate under Section 80G',
+  });
+
+  let y = drawTitleAndStrip(
+    s,
+    'DONATION CERTIFICATE U/S 80G',
+    'CERTIFICATE NO.',
+    input.receiptNumber,
+    input.date || nowIst(),
+  );
+
+  y -= 22;
+  const para =
+    'This is to certify that the donation detailed below has been received with thanks by ' +
+    'Chhatradol Social Welfare Organization. Donations to this organisation are eligible for ' +
+    'deduction under Section 80G of the Income Tax Act, 1961.';
+  for (const line of wrap(para, s.body, 10, PAGE_W - MARGIN * 2)) {
+    text(s, line, MARGIN, y, { font: s.body, size: 10, color: INK });
+    y -= 15;
+  }
+
+  y -= 14;
+  const rows: Array<[string, string, RGB?]> = [
+    ['Financial Year', input.fy],
+    ['Donor Name', input.donorName || '—'],
+  ];
+  if (input.purpose) rows.push(['Purpose', input.purpose]);
+  if (input.paymentRef) rows.push(['Payment Ref.', input.paymentRef]);
+  y = drawRows(s, rows, y, 25) - 10;
+
+  y = drawBand(s, input.amount, y);
+
+  // Registration particulars: one cream strip with a cell per number.
+  const regs: Array<[string, string]> = [];
+  if (input.reg80g) regs.push(['80G REGISTRATION', input.reg80g]);
+  if (input.reg12a) regs.push(['12A REGISTRATION', input.reg12a]);
+  if (input.orgPan) regs.push(['TRUST PAN', input.orgPan]);
+  if (regs.length) {
+    y -= 16;
+    const stripH = 44;
+    const stripW = PAGE_W - MARGIN * 2;
+    s.page.drawRectangle({
+      x: MARGIN, y: y - stripH, width: stripW, height: stripH,
+      color: CREAM, borderColor: CREAM_LINE, borderWidth: 1,
+    });
+    const cellW = stripW / regs.length;
+    regs.forEach(([label, value], i) => {
+      const cx = MARGIN + i * cellW + 14;
+      text(s, label, cx, y - 16, { font: s.body, size: 7.6, color: LABEL_GOLD });
+      text(s, value, cx, y - 32, { font: s.bodyBold, size: 10.5, color: INK, maxWidth: cellW - 24 });
+    });
+    y -= stripH;
+  }
+
+  y -= 20;
+  text(s, 'Place: Narajole, Daspur, Paschim Medinipur - 721211', MARGIN, y, {
+    font: s.body, size: 10, color: MUTED,
+  });
+
+  drawSignatureAndNote(s, y + 10, 'Computer-generated certificate · www.chhatradol.org');
+
+  return s.pdf.save();
+}
+
+export async function generateCertificatePdfBase64(input: CertificatePdfInput): Promise<string> {
+  const bytes = await generateCertificatePdf(input);
+  return Buffer.from(bytes).toString('base64');
 }
 
 /** Convenience wrapper: the PDF as a base64 string, for email attachments. */

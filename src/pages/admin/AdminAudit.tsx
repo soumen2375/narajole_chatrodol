@@ -1,1355 +1,1443 @@
-import { useCallback, useEffect, useMemo, useState, Fragment } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { memberDisplayId } from '@/types';
 import type { CswoAuditLog } from '@/types';
-import { useFmt } from '@/lib/format';
+import { useFmt, formatCurrency, monthNames } from '@/lib/format';
 import { useT } from '@/i18n';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import {
-  Shield,
   AlertTriangle,
-  Users,
-  Server,
-  Search,
-  SlidersHorizontal,
-  Download,
+  Bot,
+  CalendarDays,
   ChevronDown,
-  ChevronUp,
-  History,
-  Fingerprint,
+  Download,
+  Droplet,
+  Info,
+  Globe,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Trash2,
+  Users,
+  Wallet,
   X,
-  CheckCircle2
+  type LucideIcon,
 } from 'lucide-react';
+
+/**
+ * Audit log, written for the people who read it: committee members checking
+ * who did what, usually on a phone.
+ *
+ * Every entry is turned into a sentence ("Sayan Samanta removed the donation
+ * from Subhadip Jana of ₹500") with the changed fields listed underneath as
+ * "Status: registered → donated". Table names, UUIDs and JSON are still one
+ * tap away under "Technical details" for whoever needs to trace a record.
+ *
+ * The log is fetched in 1,000-row pages until the chosen period is complete.
+ * A single select stops at Supabase's row cap, which used to hide everything
+ * older than the thousandth entry without saying so.
+ */
+
+// ── Palette (AA contrast on white) ───────────────────────────────────────────
 
 const INK = '#1c1917';
 const INK2 = '#44403c';
-const MUTED = '#78716c';
+const MUTED = '#57534e';
 const RULE = '#e7e5e4';
-const BRAND = '#0c756f'; // Premium Deep Teal
-const GREEN = '#4d7c0f';
+const BRAND = '#0c756f';
 const PAPER = '#ffffff';
 const CREAM = '#faf6ef';
 
-interface AuditRow extends CswoAuditLog {
-  actor?: {
-    full_name: string;
-    member_serial: number;
-    email: string;
-    role: string;
-  } | null;
-  category: 'Finance' | 'Members' | 'Content' | 'Events' | 'Governance';
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  summary: string;
-  role: 'Admin' | 'Finance' | 'Member' | 'System';
+const FOCUS = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0c756f]';
+
+// ── Vocabulary ───────────────────────────────────────────────────────────────
+
+type Area = 'money' | 'people' | 'events' | 'blood' | 'website';
+type Kind = 'added' | 'changed' | 'removed';
+
+const AREAS: Record<Area, { en: string; bn: string; icon: LucideIcon; fg: string; bg: string }> = {
+  money: { en: 'Money', bn: 'অর্থ', icon: Wallet, fg: '#0e6f4a', bg: '#e8f6ee' },
+  people: { en: 'Members', bn: 'সদস্য', icon: Users, fg: '#1a5fd0', bg: '#eef4ff' },
+  events: { en: 'Events', bn: 'অনুষ্ঠান', icon: CalendarDays, fg: '#7c3aed', bg: '#f3eefe' },
+  blood: { en: 'Blood camp', bn: 'রক্তদান', icon: Droplet, fg: '#b91c1c', bg: '#fdecec' },
+  website: { en: 'Website', bn: 'ওয়েবসাইট', icon: Globe, fg: '#b45309', bg: '#fdf3e3' },
+};
+
+/** What each table holds, in words. `area` decides the filter it falls under. */
+const ENTITIES: Record<string, { en: string; bn: string; area: Area }> = {
+  cswo_donations: { en: 'donation', bn: 'অনুদান', area: 'money' },
+  cswo_monthly_contributions: { en: 'monthly dues payment', bn: 'মাসিক চাঁদা', area: 'money' },
+  cswo_expenses: { en: 'expense', bn: 'খরচ', area: 'money' },
+  cswo_bank_transactions: { en: 'bank / cash entry', bn: 'ব্যাংক / নগদ এন্ট্রি', area: 'money' },
+  cswo_bank_accounts: { en: 'bank account', bn: 'ব্যাংক অ্যাকাউন্ট', area: 'money' },
+  cswo_refunds: { en: 'refund', bn: 'ফেরত', area: 'money' },
+  cswo_funds: { en: 'fund', bn: 'ফান্ড', area: 'money' },
+  cswo_grants: { en: 'grant', bn: 'অনুদান প্রকল্প', area: 'money' },
+  cswo_payroll: { en: 'payroll entry', bn: 'বেতন এন্ট্রি', area: 'money' },
+  cswo_campaigns: { en: 'campaign', bn: 'প্রচারাভিযান', area: 'money' },
+  cswo_budgets: { en: 'budget', bn: 'বাজেট', area: 'money' },
+  cswo_members: { en: 'member', bn: 'সদস্য', area: 'people' },
+  cswo_events: { en: 'event', bn: 'অনুষ্ঠান', area: 'events' },
+  cswo_attendance: { en: 'attendance', bn: 'উপস্থিতি', area: 'events' },
+  attendance: { en: 'attendance', bn: 'উপস্থিতি', area: 'events' },
+  cswo_event_certificates: { en: 'event certificate', bn: 'অনুষ্ঠানের সার্টিফিকেট', area: 'events' },
+  cswo_event_documents: { en: 'event document', bn: 'অনুষ্ঠানের নথি', area: 'events' },
+  cswo_blood_donors: { en: 'blood donor', bn: 'রক্তদাতা', area: 'blood' },
+  cswo_blood_banks: { en: 'blood bank', bn: 'ব্লাড ব্যাংক', area: 'blood' },
+  cswo_posts: { en: 'post', bn: 'পোস্ট', area: 'website' },
+  cswo_gallery: { en: 'gallery photo', bn: 'গ্যালারির ছবি', area: 'website' },
+  cswo_categories: { en: 'category', bn: 'ক্যাটাগরি', area: 'website' },
+};
+
+const entityOf = (e: string) =>
+  ENTITIES[e] ?? { en: e.replace(/^cswo_/, '').replace(/_/g, ' '), bn: e.replace(/^cswo_/, '').replace(/_/g, ' '), area: 'website' as Area };
+
+const FIELD_LABELS: Record<string, [string, string]> = {
+  amount: ['Amount', 'পরিমাণ'],
+  status: ['Status', 'অবস্থা'],
+  purpose: ['Purpose', 'উদ্দেশ্য'],
+  donor_name: ['Donor name', 'দাতার নাম'],
+  donor_email: ['Donor email', 'দাতার ইমেল'],
+  donor_phone: ['Donor mobile', 'দাতার মোবাইল'],
+  is_anonymous: ['Anonymous', 'নাম গোপন'],
+  is_recurring: ['Monthly donor', 'মাসিক দাতা'],
+  payment_method: ['Payment method', 'পেমেন্ট পদ্ধতি'],
+  payment_gateway: ['Payment gateway', 'পেমেন্ট গেটওয়ে'],
+  cashfree_payment_id: ['Cashfree payment ID', 'Cashfree পেমেন্ট আইডি'],
+  razorpay_payment_id: ['Razorpay payment ID', 'Razorpay পেমেন্ট আইডি'],
+  receipt_number: ['Receipt no.', 'রসিদ নং'],
+  receipt_email_status: ['Receipt email', 'রসিদ ইমেল'],
+  receipt_email_sent_at: ['Receipt emailed at', 'রসিদ পাঠানোর সময়'],
+  receipt_email_error: ['Receipt email error', 'রসিদ ইমেল ত্রুটি'],
+  paid_at: ['Paid at', 'পরিশোধের সময়'],
+  month: ['Month', 'মাস'],
+  year: ['Year', 'বছর'],
+  title: ['Title', 'শিরোনাম'],
+  name: ['Name', 'নাম'],
+  full_name: ['Name', 'নাম'],
+  email: ['Email', 'ইমেল'],
+  phone: ['Mobile', 'মোবাইল'],
+  role: ['Role', 'ভূমিকা'],
+  designation: ['Designation', 'পদ'],
+  member_serial: ['Member serial', 'সদস্য ক্রমিক'],
+  joined_at: ['Joined on', 'যোগদানের তারিখ'],
+  can_manage_posts: ['Can manage posts', 'পোস্ট পরিচালনা'],
+  can_manage_events: ['Can manage events', 'অনুষ্ঠান পরিচালনা'],
+  can_manage_finance: ['Can manage finance', 'অর্থ পরিচালনা'],
+  description: ['Description', 'বিবরণ'],
+  vendor: ['Paid to', 'প্রাপক'],
+  spent_on: ['Spent on', 'খরচের তারিখ'],
+  txn_date: ['Date', 'তারিখ'],
+  direction: ['In / out', 'জমা / খরচ'],
+  reference: ['Reference', 'রেফারেন্স'],
+  reconciled: ['Reconciled', 'মিলানো হয়েছে'],
+  account_id: ['Account', 'অ্যাকাউন্ট'],
+  bank_account_id: ['Account', 'অ্যাকাউন্ট'],
+  label: ['Label', 'লেবেল'],
+  is_default: ['Default account', 'ডিফল্ট অ্যাকাউন্ট'],
+  is_active: ['Active', 'সক্রিয়'],
+  event_id: ['Event', 'অনুষ্ঠান'],
+  member_id: ['Member', 'সদস্য'],
+  admin_id: ['Marked by', 'চিহ্নিত করেছেন'],
+  recorded_by: ['Recorded by', 'নথিভুক্ত করেছেন'],
+  approved_by: ['Approved by', 'অনুমোদন করেছেন'],
+  created_by: ['Created by', 'তৈরি করেছেন'],
+  marked_by: ['Marked by', 'চিহ্নিত করেছেন'],
+  marked_type: ['Marked via', 'চিহ্নিত মাধ্যম'],
+  attendance_method: ['Marked via', 'চিহ্নিত মাধ্যম'],
+  attendance_time: ['Time', 'সময়'],
+  check_in_time: ['Check-in time', 'চেক-ইন সময়'],
+  device_info: ['Device', 'ডিভাইস'],
+  units: ['Units', 'ইউনিট'],
+  blood_group: ['Blood group', 'রক্তের গ্রুপ'],
+  age: ['Age', 'বয়স'],
+  gender: ['Gender', 'লিঙ্গ'],
+  address: ['Address', 'ঠিকানা'],
+  aadhar: ['Aadhaar', 'আধার'],
+  donor_code: ['Donor code', 'দাতা কোড'],
+  hemoglobin: ['Hemoglobin', 'হিমোগ্লোবিন'],
+  weight: ['Weight', 'ওজন'],
+  note: ['Note', 'নোট'],
+  category: ['Category', 'বিভাগ'],
+  category_en: ['Category (English)', 'বিভাগ (ইংরেজি)'],
+  category_bn: ['Category (Bengali)', 'বিভাগ (বাংলা)'],
+  alt_en: ['Caption (English)', 'ক্যাপশন (ইংরেজি)'],
+  alt_bn: ['Caption (Bengali)', 'ক্যাপশন (বাংলা)'],
+  schedule_at: ['Scheduled for', 'নির্ধারিত সময়'],
+  start_date: ['Start date', 'শুরুর তারিখ'],
+  end_date: ['End date', 'শেষের তারিখ'],
+  recipient_name: ['Recipient', 'প্রাপক'],
+  recipient_type: ['Recipient type', 'প্রাপকের ধরন'],
+  cert_code: ['Certificate code', 'সার্টিফিকেট কোড'],
+  is_restricted: ['Restricted', 'সীমাবদ্ধ'],
+  avatar_url: ['Profile photo', 'প্রোফাইল ছবি'],
+  src: ['Image', 'ছবি'],
+  file_url: ['File', 'ফাইল'],
+};
+
+/** Plumbing fields that mean nothing to a reader. */
+const HIDDEN_FIELDS = new Set([
+  'id', 'created_at', 'updated_at', 'deleted_at', 'currency', 'donor_key',
+  'receipt_email_message_id', 'receipt_email_attempts',
+  'cashfree_order_id', 'razorpay_order_id', 'razorpay_signature',
+  'latitude', 'longitude', 'distance_m', 'sort_order', 'content', 'slug',
+]);
+
+/** Changes to these on a member are permission changes — worth a second look. */
+const PERMISSION_FIELDS = ['role', 'status', 'can_manage_posts', 'can_manage_events', 'can_manage_finance'];
+
+/**
+ * Where to look up a record's name when its log entry is an update (which only
+ * stores the changed fields) and the period loaded has no insert to borrow it
+ * from — e.g. a camp's donors, registered weeks before being marked donated.
+ */
+const NAME_SOURCES: Record<string, string> = {
+  cswo_blood_donors: 'name',
+  cswo_blood_banks: 'name',
+  cswo_posts: 'title',
+  cswo_gallery: 'alt_en',
+  cswo_expenses: 'description',
+  cswo_donations: 'donor_name',
+  cswo_bank_transactions: 'description',
+  cswo_event_certificates: 'recipient_name',
+  cswo_event_documents: 'title',
+};
+
+/**
+ * Stored codes shown as words. "created → pending" means nothing to a
+ * committee member; "Awaiting payment → Processing" does.
+ */
+const VALUE_WORDS: Record<string, [string, string]> = {
+  created: ['Awaiting payment', 'পেমেন্টের অপেক্ষায়'],
+  pending: ['Processing', 'প্রক্রিয়াধীন'],
+  paid: ['Paid', 'পরিশোধিত'],
+  failed: ['Failed', 'ব্যর্থ'],
+  refunded: ['Refunded', 'ফেরত দেওয়া'],
+  cancelled: ['Cancelled', 'বাতিল'],
+  sending: ['Sending', 'পাঠানো হচ্ছে'],
+  sent: ['Sent', 'পাঠানো হয়েছে'],
+  registered: ['Registered', 'নিবন্ধিত'],
+  donated: ['Donated', 'রক্তদান করেছেন'],
+  deferred: ['Deferred', 'স্থগিত'],
+  approved: ['Approved', 'অনুমোদিত'],
+  rejected: ['Rejected', 'প্রত্যাখ্যাত'],
+  draft: ['Draft', 'খসড়া'],
+  published: ['Published', 'প্রকাশিত'],
+  present: ['Present', 'উপস্থিত'],
+  online: ['Online', 'অনলাইন'],
+  cash: ['Cash', 'নগদ'],
+  upi: ['UPI', 'UPI'],
+  qr: ['QR scan', 'QR স্ক্যান'],
+  admin: ['Admin', 'অ্যাডমিন'],
+  super_admin: ['Super admin', 'সুপার অ্যাডমিন'],
+  executive_admin: ['Executive admin', 'এক্সিকিউটিভ অ্যাডমিন'],
+  member: ['Member', 'সদস্য'],
+  cashfree: ['Cashfree', 'Cashfree'],
+  razorpay: ['Razorpay', 'Razorpay'],
+  offline: ['Offline', 'অফলাইন'],
+};
+
+/** Fields whose values are codes rather than free text. */
+const CODE_FIELDS = new Set([
+  'status', 'payment_method', 'payment_gateway', 'receipt_email_status', 'role', 'marked_type',
+  'attendance_method', 'recipient_type', 'gender', 'type', 'kind', 'account_type',
+]);
+
+const NAME_KEYS = ['title', 'full_name', 'name', 'donor_name', 'recipient_name', 'label', 'vendor', 'description'];
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ISO_RE = /^\d{4}-\d{2}-\d{2}(T|\s|$)/;
+
+type Changes = Record<string, { from: unknown; to: unknown }>;
+type Snapshot = Record<string, unknown>;
+
+interface Lookups {
+  members: Record<string, { full_name: string; member_serial: number; email: string; role: string; blood_group: string | null }>;
+  events: Record<string, string>;
+  accounts: Record<string, string>;
+  /** entity_id → the record's name, for updates that do not carry one. */
+  records: Record<string, string>;
 }
+
+interface Entry {
+  row: CswoAuditLog;
+  area: Area;
+  kind: Kind;
+  attention: boolean;
+  actorName: string | null;
+  sentence: string;
+  /** Name of the record acted on, when one is known. */
+  name: string;
+  ent: { en: string; bn: string; area: Area };
+  /**
+   * A finer label for what happened (e.g. 'payment_paid'), used to give the
+   * line a specific sentence and to keep unlike changes out of one group.
+   */
+  tag: string;
+  /** Members this change is about: the member edited, the payer, the attendee. */
+  subjects: string[];
+  changes: Changes | null;
+  snapshot: Snapshot | null;
+  searchText: string;
+}
+
+/** A feed line: one entry, or a run of near-identical ones collapsed together. */
+type Item =
+  | { type: 'one'; key: string; entry: Entry }
+  | { type: 'group'; key: string; entries: Entry[] };
+
+type Period = 'today' | '7d' | '30d' | '90d' | 'all';
+
+const PAGE = 30;
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminAudit() {
   const { lang } = useT();
   const fmt = useFmt();
-  const tr = (en: string, bn: string) => (lang === 'en' ? en : bn);
+  const bn = lang === 'bn';
+  const tr = useCallback((en: string, bnText: string) => (bn ? bnText : en), [bn]);
 
-  const [dbRows, setDbRows] = useState<CswoAuditLog[]>([]);
-  const [actors, setActors] = useState<Record<string, { full_name: string; member_serial: number; email: string; role: string; blood_group: string | null }>>({});
+  const [rows, setRows] = useState<CswoAuditLog[]>([]);
+  const [lookups, setLookups] = useState<Lookups>({ members: {}, events: {}, accounts: {}, records: {} });
   const [loading, setLoading] = useState(true);
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [diffModalRow, setDiffModalRow] = useState<AuditRow | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Filters State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedEntity, setSelectedEntity] = useState('');
-  const [selectedAction, setSelectedAction] = useState('');
-  const [selectedSeverity, setSelectedSeverity] = useState('');
-  const [dateRange, setDateRange] = useState<'all' | 'today' | '7days' | '30days' | 'month'>('all');
-  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [period, setPeriod] = useState<Period>('30d');
+  const [query, setQuery] = useState('');
+  const [area, setArea] = useState<Area | 'all'>('all');
+  const [kind, setKind] = useState<Kind | 'all'>('all');
+  // 'all' | 'people' | 'system' | a member id.
+  const [who, setWho] = useState<string>('all');
+  // For a chosen member: changes they made, or changes made about them.
+  const [scope, setScope] = useState<'by' | 'about'>('by');
+  const selectedMember = who !== 'all' && who !== 'people' && who !== 'system' ? who : null;
+  const [attentionOnly, setAttentionOnly] = useState(false);
+  const [visible, setVisible] = useState(PAGE);
+  const [open, setOpen] = useState<string | null>(null);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
-  // Quick Filters
-  const [activeCategoryTab, setActiveCategoryTab] = useState<string>('All');
-  const [activeSeverityTab, setActiveSeverityTab] = useState<string>('All');
-  const [activeTypeTab, setActiveTypeTab] = useState<string>('All');
-
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-
-  // Toast notifications
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  const ENTITIES: Record<string, string> = {
-    cswo_donations: tr('Donations', 'অনুদান'),
-    cswo_monthly_contributions: tr('Contributions', 'চাঁদা'),
-    cswo_expenses: tr('Expenses', 'ব্যয়'),
-    cswo_members: tr('Members', 'সদস্য'),
-    cswo_posts: tr('Posts', 'পোস্ট'),
-    cswo_events: tr('Events', 'অনুষ্ঠান'),
-    cswo_attendance: tr('Attendance', 'উপস্থিতি'),
-    cswo_gallery: tr('Gallery', 'গ্যালারি'),
-  };
-
-  const entityLabel = (e: string) => ENTITIES[e] ?? e.replace(/^cswo_/, '').replace(/_/g, ' ');
-
-  // Fetch actual audit logs and complete actor information
+  // ── Load ───────────────────────────────────────────────────────────────────
   const load = useCallback(async () => {
     setLoading(true);
-    const { data: logsData } = await supabase
-      .from('cswo_audit_log')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    const logs = (logsData ?? []) as CswoAuditLog[];
-    setDbRows(logs);
+    setLoadError(null);
 
-    // Fetch actor details
-    const actorIds = Array.from(new Set(logs.map((r) => r.actor_id).filter(Boolean)));
-    if (actorIds.length) {
-      const { data: membersData } = await supabase
-        .from('cswo_members')
-        .select('id, full_name, member_serial, email, role, blood_group')
-        .in('id', actorIds);
-      
-      const actorMap: Record<string, { full_name: string; member_serial: number; email: string; role: string; blood_group: string | null }> = {};
-      for (const m of membersData ?? []) {
-        actorMap[m.id] = {
-          full_name: m.full_name,
-          member_serial: m.member_serial,
-          email: m.email,
-          role: m.role,
-          blood_group: m.blood_group
-        };
-      }
-      setActors(actorMap);
+    let since: string | null = null;
+    if (period !== 'all') {
+      const d = new Date();
+      if (period === 'today') d.setHours(0, 0, 0, 0);
+      else d.setDate(d.getDate() - (period === '7d' ? 7 : period === '30d' ? 30 : 90));
+      since = d.toISOString();
     }
-    setLoading(false);
-  }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+    const all: CswoAuditLog[] = [];
+    for (let from = 0; ; from += 1000) {
+      let q = supabase.from('cswo_audit_log').select('*').order('created_at', { ascending: false }).range(from, from + 999);
+      if (since) q = q.gte('created_at', since);
+      const { data, error } = await q;
+      if (error) { setLoadError(error.message); break; }
+      all.push(...((data ?? []) as CswoAuditLog[]));
+      if (!data || data.length < 1000) break;
+    }
 
-  // Enrich rows strictly with accurate severity, category, summary, and role attributes derived from Supabase
-  const enrichedRows = useMemo<AuditRow[]>(() => {
-    return dbRows.map((row) => {
-      const actor = row.actor_id ? actors[row.actor_id] : null;
-      
-      let category: 'Finance' | 'Members' | 'Content' | 'Events' | 'Governance' = 'Governance';
-      let severity: 'low' | 'medium' | 'high' | 'critical' = 'low';
-      let summary = '';
+    const [m, e, a] = await Promise.all([
+      supabase.from('cswo_members').select('id, full_name, member_serial, email, role, blood_group'),
+      supabase.from('cswo_events').select('id, title'),
+      supabase.from('cswo_bank_accounts').select('id, label'),
+    ]);
 
-      const detail = row.detail || {};
-      const ch = detail.changes as Record<string, { from: unknown; to: unknown }> | undefined;
-      const nw = detail.new as Record<string, unknown> | undefined;
-      const dl = detail.deleted as Record<string, unknown> | undefined;
-      const dataObj = (nw || dl || detail) as any;
-
-      // Map actor role strictly based on their real role
-      let role: 'Admin' | 'Finance' | 'Member' | 'System' = 'Member';
-      if (actor) {
-        if (actor.role === 'admin') {
-          role = 'Admin';
-        } else if (actor.role === 'treasurer' || actor.role === 'finance') {
-          role = 'Finance';
-        } else {
-          role = 'Member';
-        }
-      } else if (!row.actor_id) {
-        role = 'System';
+    // Names for updated records, fetched per table in chunks the URL can carry.
+    const wanted: Record<string, Set<string>> = {};
+    for (const r of all) {
+      if (r.action === 'update' && r.entity_id && NAME_SOURCES[r.entity]) {
+        (wanted[r.entity] ??= new Set()).add(r.entity_id);
       }
+    }
+    const records: Record<string, string> = {};
+    await Promise.all(Object.entries(wanted).flatMap(([table, ids]) => {
+      const list = [...ids];
+      const col = NAME_SOURCES[table];
+      const chunks: string[][] = [];
+      for (let i = 0; i < list.length; i += 150) chunks.push(list.slice(i, i + 150));
+      return chunks.map(async (chunk) => {
+        const { data } = await supabase.from(table).select(`id, ${col}`).in('id', chunk);
+        for (const rec of (data ?? []) as unknown as Array<Record<string, unknown>>) {
+          const v = rec[col];
+          if (typeof v === 'string' && v.trim()) records[String(rec.id)] = v.trim();
+        }
+      });
+    }));
 
-      // Assign authentic categories, severity grades, and Summaries based on the entity
-      if (row.entity === 'cswo_posts') {
-        category = 'Content';
-        severity = 'low';
-        const title = dataObj.title || 'post';
-        if (row.action === 'insert') {
-          summary = tr(`Created post "${title}"`, `"${title}" পোস্ট তৈরি করেছেন`);
-        } else if (row.action === 'update') {
-          summary = tr(`Updated post "${title}"`, `"${title}" পোস্ট সম্পাদন করেছেন`);
-        } else {
-          summary = tr(`Deleted post "${title}"`, `"${title}" পোস্ট মুছে ফেলেছেন`);
-          severity = 'high';
-        }
-      } else if (row.entity === 'cswo_categories') {
-        category = 'Content';
-        severity = 'low';
-        const name = dataObj.name || 'category';
-        summary = tr(
-          `${row.action === 'insert' ? 'Created' : row.action === 'update' ? 'Updated' : 'Deleted'} category "${name}"`,
-          `"${name}" ক্যাটাগরি ${row.action === 'insert' ? 'তৈরি' : row.action === 'update' ? 'আপডেট' : 'মুছে'} করেছেন`
-        );
-      } else if (row.entity === 'cswo_gallery') {
-        category = 'Content';
-        severity = 'low';
-        summary = tr(
-          `${row.action === 'insert' ? 'Uploaded photo to' : row.action === 'update' ? 'Updated photo in' : 'Deleted photo from'} gallery`,
-          `গ্যালারি ${row.action === 'insert' ? 'ফটো আপলোড' : row.action === 'update' ? 'ফটো সম্পাদন' : 'ফটো ডিলিট'} করেছেন`
-        );
-      } else if (row.entity === 'cswo_events') {
-        category = 'Events';
-        severity = 'medium';
-        const title = dataObj.title || 'event';
-        if (row.action === 'insert') {
-          summary = tr(`Created event "${title}"`, `"${title}" অনুষ্ঠানটি তৈরি করেছেন`);
-        } else if (row.action === 'update') {
-          summary = tr(`Updated event "${title}"`, `"${title}" অনুষ্ঠান সম্পাদন করেছেন`);
-        } else {
-          summary = tr(`Deleted event "${title}"`, `"${title}" অনুষ্ঠান মুছে ফেলেছেন`);
-          severity = 'high';
-        }
-      } else if (row.entity === 'cswo_attendance') {
-        category = 'Events';
-        severity = 'low';
-        const status = dataObj.status || 'present';
-        summary = tr(`Marked attendance as ${status}`, `উপস্থিতি ${status} হিসেবে চিহ্নিত করেছেন`);
-      } else if (row.entity === 'cswo_donations') {
-        category = 'Finance';
-        severity = 'medium';
-        const amt = dataObj.amount ? `৳${dataObj.amount.toLocaleString()}` : '';
-        const donor = dataObj.donor_name || tr('Anonymous', 'বেনামী');
-        if (row.action === 'insert') {
-          summary = tr(`Recorded donation of ${amt} from ${donor}`, `${donor} থেকে ${amt} অনুদান নথিভুক্ত করেছেন`);
-        } else if (row.action === 'update') {
-          summary = tr(`Updated donation details for ${donor}`, `${donor} এর অনুদানের তথ্য সম্পাদন করেছেন`);
-        } else {
-          summary = tr(`Deleted donation record from ${donor}`, `${donor} এর অনুদান রেকর্ড মুছে ফেলেছেন`);
-          severity = 'high';
-        }
-      } else if (row.entity === 'cswo_monthly_contributions') {
-        category = 'Finance';
-        severity = 'medium';
-        const amt = dataObj.amount ? `৳${dataObj.amount.toLocaleString()}` : '';
-        summary = tr(
-          `${row.action === 'insert' ? 'Recorded' : row.action === 'update' ? 'Updated' : 'Deleted'} monthly contribution of ${amt}`,
-          `${amt} চাঁদা রেকর্ড ${row.action === 'insert' ? 'যুক্ত' : row.action === 'update' ? 'আপডেট' : 'মুছে'} করেছেন`
-        );
-      } else if (row.entity === 'cswo_expenses') {
-        category = 'Finance';
-        severity = 'medium';
-        const amt = dataObj.amount ? `৳${dataObj.amount.toLocaleString()}` : '';
-        const desc = dataObj.description || 'expense';
-        if (row.action === 'insert') {
-          summary = tr(`Added new expense ${amt} for ${desc}`, `${desc} এর জন্য ${amt} ব্যয় যুক্ত করেছেন`);
-        } else if (row.action === 'update') {
-          const status = dataObj.status;
-          if (status === 'approved') {
-            summary = tr(`Approved expense ${amt} for ${desc}`, `${desc} এর জন্য ${amt} ব্যয় অনুমোদন করেছেন`);
-            severity = 'high';
-          } else {
-            summary = tr(`Updated expense details for ${desc}`, `${desc} এর ব্যয়ের তথ্য সম্পাদন করেছেন`);
-          }
-        } else {
-          summary = tr(`Deleted expense record for ${desc}`, `${desc} এর ব্যয় রেকর্ড মুছে ফেলেছেন`);
-          severity = 'high';
-        }
-      } else if (row.entity === 'cswo_budgets') {
-        category = 'Finance';
-        severity = 'medium';
-        const amt = dataObj.amount ? `৳${dataObj.amount.toLocaleString()}` : '';
-        const yr = dataObj.fiscal_year || 'this year';
-        summary = tr(
-          `${row.action === 'insert' ? 'Created' : row.action === 'update' ? 'Updated' : 'Deleted'} budget of ${amt} for ${yr}`,
-          `${yr} এর জন্য ${amt} বাজেট ${row.action === 'insert' ? 'তৈরি' : row.action === 'update' ? 'আপডেট' : 'মুছে'} করেছেন`
-        );
-      } else if (row.entity === 'cswo_funds') {
-        category = 'Finance';
-        severity = 'medium';
-        const name = dataObj.name || 'fund';
-        if (row.action === 'fund.is_frozen') {
-          summary = tr(`Froze fund "${name}"`, `"${name}" ফান্ডটি স্থগিত করেছেন`);
-          severity = 'critical';
-        } else if (row.action === 'fund.is_restricted') {
-          summary = tr(`Changed restriction flag on fund "${name}"`, `"${name}" ফান্ডের বিধি পরিবর্তন করেছেন`);
-          severity = 'high';
-        } else {
-          summary = tr(
-            `${row.action === 'insert' ? 'Created' : row.action === 'update' ? 'Updated' : 'Deleted'} fund "${name}"`,
-            `"${name}" ফান্ড ${row.action === 'insert' ? 'তৈরি' : row.action === 'update' ? 'আপডেট' : 'মুছে'} করেছেন`
-          );
-        }
-      } else if (row.entity === 'cswo_members') {
-        category = 'Members';
-        severity = 'low';
-        const name = dataObj.full_name || 'member';
-        if (ch && ('can_manage_posts' in ch || 'can_manage_events' in ch || 'can_manage_finance' in ch || 'role' in ch)) {
-          summary = tr(`Updated member permissions for ${name}`, `${name} এর অধিকার পরিবর্তন করেছেন`);
-          severity = 'critical';
-        } else if (row.action === 'insert') {
-          summary = tr(`Approved member profile for ${name}`, `${name} এর প্রোফাইল অনুমোদন করেছেন`);
-        } else {
-          summary = tr(`Updated profile settings for ${name}`, `${name} এর প্রোফাইল সম্পাদন করেছেন`);
-        }
-      }
-
-      if (!summary) {
-        summary = tr(`${row.action} action on ${row.entity}`, `${row.entity} এ ${row.action} সম্পন্ন`);
-      }
-
-      return {
-        ...row,
-        actor,
-        category,
-        severity,
-        summary,
-        role,
-      };
+    setLookups({
+      members: Object.fromEntries((m.data ?? []).map((r) => [r.id, r])),
+      events: Object.fromEntries((e.data ?? []).map((r) => [r.id, r.title])),
+      accounts: Object.fromEntries((a.data ?? []).map((r) => [r.id, r.label])),
+      records,
     });
-  }, [dbRows, actors, tr]);
+    setRows(all);
+    setVisible(PAGE);
+    setLoading(false);
+  }, [period]);
 
-  // Compute metrics from actual dataset
-  const stats = useMemo(() => {
-    const total = enrichedRows.length;
-    const critical = enrichedRows.filter((r) => r.severity === 'critical').length;
-    const uniqueActors = new Set(enrichedRows.map((r) => r.actor_id).filter(Boolean));
-    const uniqueCount = uniqueActors.size + (enrichedRows.some((r) => r.role === 'System') ? 1 : 0);
-    const systemCount = enrichedRows.filter((r) => r.role === 'System').length;
+  useEffect(() => { load(); }, [load]);
 
-    return {
-      total,
-      critical,
-      unique: uniqueCount,
-      system: systemCount,
-    };
-  }, [enrichedRows]);
+  // ── Formatting ─────────────────────────────────────────────────────────────
+  // Built from `lang`, not the `fmt` object, which is new on every render and
+  // would rebuild every entry on each keystroke in the search box.
+  const money = useCallback((v: unknown) => formatCurrency(Number(v), lang), [lang]);
 
-  // Apply filters
-  const filteredRows = useMemo(() => {
-    return enrichedRows.filter((row) => {
-      // 1. Global Search
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const actorName = row.actor?.full_name?.toLowerCase() || 'system';
-        const serialStr = row.actor ? memberDisplayId(row.actor).toLowerCase() : 'sys';
-        const actionStr = row.action.toLowerCase();
-        const entityStr = row.entity.toLowerCase();
-        const summaryStr = row.summary.toLowerCase();
-        const detailStr = JSON.stringify(row.detail).toLowerCase();
-        const idStr = row.id.toLowerCase();
+  const fieldLabel = useCallback((k: string) => {
+    const l = FIELD_LABELS[k];
+    if (l) return bn ? l[1] : l[0];
+    const s = k.replace(/_/g, ' ');
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }, [bn]);
 
-        const match =
-          actorName.includes(query) ||
-          serialStr.includes(query) ||
-          actionStr.includes(query) ||
-          entityStr.includes(query) ||
-          summaryStr.includes(query) ||
-          detailStr.includes(query) ||
-          idStr.includes(query);
+  const formatValue = useCallback((key: string, v: unknown): string => {
+    if (v === null || v === undefined || v === '') return tr('(empty)', '(খালি)');
+    if (typeof v === 'boolean') return v ? tr('Yes', 'হ্যাঁ') : tr('No', 'না');
+    if (Array.isArray(v)) return v.length ? v.map(String).join(', ') : tr('(none)', '(নেই)');
+    if (typeof v === 'object') return JSON.stringify(v);
+    if (key === 'amount' || key.endsWith('_amount') || key.endsWith('_balance')) return money(v);
+    if (key === 'aadhar') { const s = String(v); return s.length > 4 ? `XXXX XXXX ${s.slice(-4)}` : s; }
+    if (key === 'month' && Number(v) >= 1 && Number(v) <= 12) return monthNames(lang)[Number(v) - 1];
+    if (key === 'direction') return v === 'credit' ? tr('Money in', 'জমা') : v === 'debit' ? tr('Money out', 'খরচ') : String(v);
 
-        if (!match) return false;
+    const s = String(v);
+    if (UUID_RE.test(s)) {
+      const m = lookups.members[s];
+      if (m) return m.full_name;
+      if (lookups.events[s]) return lookups.events[s];
+      if (lookups.accounts[s]) return lookups.accounts[s];
+      return `#${s.slice(0, 8)}`;
+    }
+    if (ISO_RE.test(s)) {
+      const d = new Date(s);
+      if (!Number.isNaN(d.getTime())) {
+        const dateOnly = s.length <= 10;
+        return d.toLocaleString(bn ? 'bn-IN' : 'en-IN', dateOnly
+          ? { day: 'numeric', month: 'short', year: 'numeric' }
+          : { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
       }
+    }
+    if (CODE_FIELDS.has(key)) {
+      const w = VALUE_WORDS[s.toLowerCase()];
+      if (w) return bn ? w[1] : w[0];
+      const t = s.toLowerCase().replace(/_/g, ' ');
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    }
+    const plain = s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    return plain.length > 140 ? `${plain.slice(0, 137)}…` : plain;
+  }, [tr, money, lang, lookups, bn]);
 
-      // 2. Entity Dropdown
-      if (selectedEntity && row.entity !== selectedEntity) return false;
+  // ── Turn raw rows into readable entries ──────────────────────────────────────
+  const entries = useMemo<Entry[]>(() => {
+    // Updates only record what changed, so the record's name is usually not
+    // in them. Borrow it from any insert/delete of the same record we loaded.
+    const knownName: Record<string, string> = {};
+    for (const r of rows) {
+      const snap = (r.detail?.new ?? r.detail?.deleted) as Snapshot | undefined;
+      if (!snap || !r.entity_id || knownName[r.entity_id]) continue;
+      for (const k of NAME_KEYS) {
+        if (typeof snap[k] === 'string' && (snap[k] as string).trim()) { knownName[r.entity_id] = (snap[k] as string).trim(); break; }
+      }
+    }
+    // Which member a record belongs to (dues, attendance), for updates that
+    // only carry the changed fields.
+    const memberOf: Record<string, string> = {};
+    for (const r of rows) {
+      const snap = (r.detail?.new ?? r.detail?.deleted ?? r.detail) as Snapshot | undefined;
+      if (r.entity_id && typeof snap?.member_id === 'string') memberOf[r.entity_id] = snap.member_id;
+    }
 
-      // 3. Action Dropdown
-      if (selectedAction && row.action !== selectedAction) return false;
+    return rows.map((row) => {
+      const ent = entityOf(row.entity);
+      const detail = row.detail ?? {};
+      const changes = (detail.changes as Changes | undefined) ?? null;
+      const snapshot = ((detail.new ?? detail.deleted) as Snapshot | undefined)
+        ?? (changes ? null : (Object.keys(detail).length ? (detail as Snapshot) : null));
 
-      // 4. Severity Dropdown
-      if (selectedSeverity && row.severity !== selectedSeverity) return false;
+      const kind: Kind = row.action === 'delete' ? 'removed'
+        : row.action === 'update' || row.action.includes('.') ? 'changed'
+          : 'added';
 
-      // 5. Category Tab
-      if (activeCategoryTab !== 'All' && row.category !== activeCategoryTab) return false;
+      const actor = row.actor_id ? lookups.members[row.actor_id] : null;
+      const actorName = actor?.full_name ?? (row.actor_id ? tr('A former member', 'প্রাক্তন সদস্য') : null);
 
-      // 6. Severity Tab
-      if (activeSeverityTab !== 'All' && row.severity !== activeSeverityTab.toLowerCase()) return false;
+      // Name of the record the action was on.
+      let name = '';
+      if (snapshot) {
+        for (const k of NAME_KEYS) {
+          if (typeof snapshot[k] === 'string' && (snapshot[k] as string).trim()) { name = (snapshot[k] as string).trim(); break; }
+        }
+      }
+      if (!name && row.entity_id) {
+        name = knownName[row.entity_id]
+          ?? lookups.records[row.entity_id]
+          ?? lookups.members[row.entity_id]?.full_name
+          ?? lookups.events[row.entity_id]
+          ?? lookups.accounts[row.entity_id]
+          ?? '';
+      }
+      const ownerId = (typeof snapshot?.member_id === 'string' ? snapshot.member_id : null)
+        ?? (row.entity_id ? memberOf[row.entity_id] : undefined) ?? null;
+      // Dues and similar records have no name of their own; the member's is the useful one.
+      if (!name && ownerId) name = lookups.members[ownerId]?.full_name ?? '';
+      if (name.length > 70) name = `${name.slice(0, 67)}…`;
 
-      // 7. Type Tab
-      if (activeTypeTab === 'User Actions' && row.role === 'System') return false;
-      if (activeTypeTab === 'System Actions' && row.role !== 'System') return false;
+      const subjects = [
+        ...(row.entity === 'cswo_members' && row.entity_id ? [row.entity_id] : []),
+        ...(ownerId ? [ownerId] : []),
+      ];
 
-      // 8. Date Range
-      if (dateRange !== 'all') {
-        const rowTime = new Date(row.created_at).getTime();
-        const now = Date.now();
-        if (dateRange === 'today') {
-          const startOfToday = new Date().setHours(0, 0, 0, 0);
-          if (rowTime < startOfToday) return false;
-        } else if (dateRange === '7days') {
-          const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-          if (rowTime < sevenDaysAgo) return false;
-        } else if (dateRange === '30days') {
-          const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
-          if (rowTime < thirtyDaysAgo) return false;
-        } else if (dateRange === 'month') {
-          const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
-          if (rowTime < startOfMonth) return false;
+      const amount = snapshot?.amount != null ? money(snapshot.amount) : '';
+      const who = actorName ?? tr('The website', 'ওয়েবসাইট');
+      const quotedName = name ? `“${name}”` : '';
+
+      let sentence: string;
+      let tag = `${row.entity}:${row.action}`;
+      const to = (f: string) => (changes && f in changes ? String(changes[f].to ?? '') : null);
+      const isPayment = row.entity === 'cswo_donations' || row.entity === 'cswo_monthly_contributions';
+      const onlyReceiptFields = !!changes && Object.keys(changes).every((k) => k.startsWith('receipt_email'));
+      const isAttendance = row.entity === 'attendance' || (row.entity === 'cswo_attendance' && kind === 'added');
+      if (isPayment && kind === 'changed' && to('status') === 'paid') {
+        tag = 'payment_paid';
+        sentence = row.actor_id
+          ? tr(`${who} marked the payment from ${quotedName || 'a donor'} as paid`, `${who} ${quotedName || 'একজন দাতার'} পেমেন্ট পরিশোধিত হিসেবে চিহ্নিত করেছেন`)
+          : tr(`Online payment from ${quotedName || 'a donor'} was confirmed`, `${quotedName || 'একজন দাতার'} অনলাইন পেমেন্ট নিশ্চিত হয়েছে`);
+      } else if (isPayment && kind === 'changed' && to('status') === 'failed') {
+        tag = 'payment_failed';
+        sentence = tr(`Payment from ${quotedName || 'a donor'} failed`, `${quotedName || 'একজন দাতার'} পেমেন্ট ব্যর্থ হয়েছে`);
+      } else if (isPayment && kind === 'changed' && to('status') === 'pending') {
+        tag = 'payment_pending';
+        sentence = tr(`Payment from ${quotedName || 'a donor'} is being processed`, `${quotedName || 'একজন দাতার'} পেমেন্ট প্রক্রিয়াধীন`);
+      } else if (isPayment && kind === 'changed' && onlyReceiptFields) {
+        const st = to('receipt_email_status');
+        tag = `receipt_${st ?? 'other'}`;
+        sentence = st === 'sent'
+          ? tr(`Receipt emailed to ${quotedName || 'the donor'}`, `${quotedName || 'দাতাকে'} রসিদ ইমেল করা হয়েছে`)
+          : st === 'failed'
+            ? tr(`Receipt email to ${quotedName || 'the donor'} failed`, `${quotedName || 'দাতাকে'} রসিদ ইমেল ব্যর্থ হয়েছে`)
+            : tr(`Sending the receipt to ${quotedName || 'the donor'}`, `${quotedName || 'দাতাকে'} রসিদ পাঠানো হচ্ছে`);
+      } else if (row.entity === 'cswo_monthly_contributions' && kind === 'added' && snapshot) {
+        // Dues are always someone's own; say whose and for which month.
+        tag = 'dues_added';
+        const m = Number(snapshot.month);
+        const period = m >= 1 && m <= 12 ? ` ${monthNames(lang)[m - 1]} ${snapshot.year ?? ''}`.trimEnd() : '';
+        const amt = amount ? ` ${amount}` : '';
+        sentence = row.actor_id && row.actor_id === ownerId
+          ? tr(`${who} started paying monthly dues of${amt}${period ? ` for${period}` : ''}`, `${who}${period ? `${period}-এর` : ''}${amt} মাসিক চাঁদা দেওয়া শুরু করেছেন`)
+          : tr(`${who} recorded monthly dues of${amt} from ${quotedName || 'a member'}${period ? ` for${period}` : ''}`, `${who} ${quotedName || 'একজন সদস্যের'}${period ? `${period}-এর` : ''}${amt} মাসিক চাঁদা নথিভুক্ত করেছেন`);
+      } else if (isPayment && kind === 'added' && !row.actor_id) {
+        tag = 'payment_started';
+        sentence = tr(
+          `${quotedName || 'Someone'} started an online payment${amount ? ` of ${amount}` : ''}`,
+          `${quotedName || 'একজন'} ${amount ? `${amount} ` : ''}অনলাইন পেমেন্ট শুরু করেছেন`,
+        );
+      } else if (row.entity === 'cswo_blood_donors' && kind === 'changed' && to('status') === 'donated') {
+        tag = 'blood_donated';
+        sentence = tr(`${who} recorded that ${quotedName || 'a donor'} donated blood`, `${who} নথিভুক্ত করেছেন যে ${quotedName || 'একজন দাতা'} রক্তদান করেছেন`);
+      } else if (isAttendance && snapshot) {
+        const person = lookups.members[String(snapshot.member_id)]?.full_name ?? tr('a member', 'একজন সদস্য');
+        const event = lookups.events[String(snapshot.event_id)] ?? tr('an event', 'একটি অনুষ্ঠান');
+        const via = row.action === 'attendance_qr_scan' || snapshot.attendance_method === 'qr' || snapshot.marked_type === 'QR'
+          ? tr(' by QR scan', ' QR স্ক্যানে') : '';
+        sentence = tr(`${who} marked ${person} present at ${event}${via}`, `${who} ${event}-এ ${person}-কে${via} উপস্থিত চিহ্নিত করেছেন`);
+      } else {
+        const verbEn = kind === 'added' ? 'added' : kind === 'removed' ? 'removed' : 'updated';
+        const verbBn = kind === 'added' ? 'যোগ করেছেন' : kind === 'removed' ? 'মুছে ফেলেছেন' : 'পরিবর্তন করেছেন';
+        const quoted = name ? ` “${name}”` : '';
+        const ofAmt = amount ? tr(` of ${amount}`, ` (${amount})`) : '';
+        sentence = tr(`${who} ${verbEn} the ${ent.en}${quoted}${ofAmt}`, `${who} ${ent.bn}${quoted}${ofAmt} ${verbBn}`);
+        if (row.entity === 'cswo_members' && changes && PERMISSION_FIELDS.some((f) => f in changes)) {
+          sentence = tr(`${who} changed the access of${quoted || ' a member'}`, `${who}${quoted || ' একজন সদস্যের'} অনুমতি পরিবর্তন করেছেন`);
         }
       }
 
+      const attention = kind === 'removed'
+        || row.entity === 'cswo_bank_accounts'
+        || (row.entity === 'cswo_members' && !!changes && PERMISSION_FIELDS.some((f) => f in changes))
+        || row.action.includes('.');
+
+      const searchText = [
+        sentence, actorName ?? '', actor ? memberDisplayId(actor) : '', ent.en, ent.bn, row.entity, row.entity_id ?? '', row.id,
+        JSON.stringify(detail),
+      ].join(' ').toLowerCase();
+
+      return { row, area: ent.area, kind, attention, actorName, sentence, name, ent, tag, subjects, changes, snapshot, searchText };
+    });
+  }, [rows, lookups, tr, money, lang]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return entries.filter((e) => {
+      if (area !== 'all' && e.area !== area) return false;
+      if (kind !== 'all' && e.kind !== kind) return false;
+      if (who === 'people' && !e.row.actor_id) return false;
+      if (who === 'system' && e.row.actor_id) return false;
+      if (who !== 'all' && who !== 'people' && who !== 'system') {
+        if (scope === 'by' ? e.row.actor_id !== who : !e.subjects.includes(who)) return false;
+      }
+      if (attentionOnly && !e.attention) return false;
+      if (q && !e.searchText.includes(q)) return false;
       return true;
     });
-  }, [
-    enrichedRows,
-    searchQuery,
-    selectedEntity,
-    selectedAction,
-    selectedSeverity,
-    activeCategoryTab,
-    activeSeverityTab,
-    activeTypeTab,
-    dateRange,
-  ]);
+  }, [entries, query, area, kind, who, scope, attentionOnly]);
 
-  // Reset all filters
-  const handleClearAll = () => {
-    setSearchQuery('');
-    setSelectedEntity('');
-    setSelectedAction('');
-    setSelectedSeverity('');
-    setDateRange('all');
-    setActiveCategoryTab('All');
-    setActiveSeverityTab('All');
-    setActiveTypeTab('All');
-    setCurrentPage(1);
-    showToast(tr('Filters cleared successfully.', 'সব ফিল্টার সফলভাবে বাতিল করা হয়েছে।'));
-  };
+  // Filters change what "more" means, so start from the top again.
+  useEffect(() => { setVisible(PAGE); }, [query, area, kind, who, scope, attentionOnly, period]);
 
-  // Pagination Slicing
-  const paginatedRows = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredRows.slice(start, start + pageSize);
-  }, [filteredRows, currentPage, pageSize]);
-
-  const totalPages = Math.ceil(filteredRows.length / pageSize);
-
-  // Export filtered logs to CSV
-  const handleExportCSV = () => {
-    try {
-      const headers = ['Date & Time', 'Actor ID/Serial', 'Actor Name', 'Role', 'Category', 'Severity', 'Action', 'Entity', 'Summary'];
-      const rowsData = filteredRows.map((r) => {
-        const serial = r.actor ? memberDisplayId(r.actor) : 'SYS';
-        return [
-          new Date(r.created_at).toLocaleString('en-US'),
-          serial,
-          r.actor?.full_name || 'System',
-          r.role,
-          r.category,
-          r.severity.toUpperCase(),
-          r.action,
-          r.entity,
-          r.summary.replace(/"/g, '""'),
-        ];
-      });
-
-      const csvContent =
-        'data:text/csv;charset=utf-8,' +
-        [headers.join(','), ...rowsData.map((e) => e.map((x) => `"${x}"`).join(','))].join('\n');
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute('download', `ngo_governance_audit_logs_${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      showToast(tr('CSV Audit Log downloaded successfully.', 'অডিট লগ CSV ফাইল সফলভাবে ডাউনলোড করা হয়েছে।'));
-    } catch {
-      showToast(tr('Export failed.', 'এক্সপোর্ট ব্যর্থ হয়েছে।'));
+  // Bulk work (a camp's donors marked "donated" one after another, a payment
+  // run, an import) lands as dozens of near-identical entries. Consecutive
+  // entries by the same person, on the same kind of record, doing the same
+  // thing within 15 minutes of each other collapse into one expandable line.
+  const items = useMemo<Item[]>(() => {
+    const out: Item[] = [];
+    let run: Entry[] = [];
+    const flush = () => {
+      if (run.length >= 3) out.push({ type: 'group', key: `g-${run[0].row.id}`, entries: run });
+      else for (const e of run) out.push({ type: 'one', key: e.row.id, entry: e });
+      run = [];
+    };
+    for (const e of filtered) {
+      const prev = run[run.length - 1];
+      const same = !!prev
+        && prev.row.actor_id === e.row.actor_id
+        && prev.row.entity === e.row.entity
+        && prev.row.action === e.row.action
+        && prev.tag === e.tag
+        && dayKey(prev.row.created_at) === dayKey(e.row.created_at)
+        && Math.abs(Date.parse(prev.row.created_at) - Date.parse(e.row.created_at)) <= 15 * 60e3;
+      if (!same) flush();
+      run.push(e);
     }
-  };
+    flush();
+    return out;
+  }, [filtered]);
 
-  // Format cell data
-  const formatFieldVal = (key: string, v: unknown) => {
-    if (v === null || v === undefined || v === '') return '—';
-    if (typeof v === 'boolean') return v ? tr('Yes', 'হ্যাঁ') : tr('No', 'না');
-    
-    if (key.includes('at') || key.includes('date')) {
-      const str = String(v);
-      if (str.match(/^\d{4}-\d{2}-\d{2}/)) {
-        return new Date(str).toLocaleString(lang === 'bn' ? 'bn-IN' : 'en-IN', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
+  const shown = items.slice(0, visible);
+
+  const days = useMemo(() => {
+    const out: Array<{ key: string; label: string; count: number; items: Item[] }> = [];
+    const today = dayKey(new Date().toISOString());
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    const yesterday = dayKey(y.toISOString());
+    for (const it of shown) {
+      const at = it.type === 'one' ? it.entry.row.created_at : it.entries[0].row.created_at;
+      const key = dayKey(at);
+      let d = out[out.length - 1];
+      if (!d || d.key !== key) {
+        const label = key === today ? tr('Today', 'আজ')
+          : key === yesterday ? tr('Yesterday', 'গতকাল')
+            : new Date(at).toLocaleDateString(bn ? 'bn-IN' : 'en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+        d = { key, label, count: 0, items: [] };
+        out.push(d);
       }
+      d.items.push(it);
+      d.count += it.type === 'one' ? 1 : it.entries.length;
     }
+    return out;
+  }, [shown, tr, bn]);
 
-    const strVal = String(v);
-    if (strVal.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-      return `${strVal.slice(0, 8)}...${strVal.slice(-4)}`;
+  const stats = useMemo(() => ({
+    total: entries.length,
+    people: new Set(entries.map((e) => e.row.actor_id).filter(Boolean)).size,
+    attention: entries.filter((e) => e.attention).length,
+    system: entries.filter((e) => !e.row.actor_id).length,
+  }), [entries]);
+
+  // Everyone who appears in the period, busiest first, then the rest A–Z.
+  const people = useMemo(() => {
+    const made: Record<string, number> = {};
+    const about: Record<string, number> = {};
+    for (const e of entries) {
+      if (e.row.actor_id) made[e.row.actor_id] = (made[e.row.actor_id] ?? 0) + 1;
+      for (const id of e.subjects) about[id] = (about[id] ?? 0) + 1;
     }
+    return Object.entries(lookups.members)
+      .map(([id, m]) => ({ id, name: m.full_name, made: made[id] ?? 0, about: about[id] ?? 0 }))
+      .sort((a, b) => b.made - a.made || a.name.localeCompare(b.name));
+  }, [entries, lookups]);
 
-    return strVal;
+  // What the chosen member did (or had done to them) in the period, ignoring
+  // the other filters, so the summary does not shrink as you narrow the list.
+  const personStats = useMemo(() => {
+    if (!selectedMember) return null;
+    const list = entries.filter((e) => (scope === 'by' ? e.row.actor_id === selectedMember : e.subjects.includes(selectedMember)));
+    const byArea: Partial<Record<Area, number>> = {};
+    for (const e of list) byArea[e.area] = (byArea[e.area] ?? 0) + 1;
+    return {
+      total: list.length,
+      added: list.filter((e) => e.kind === 'added').length,
+      changed: list.filter((e) => e.kind === 'changed').length,
+      removed: list.filter((e) => e.kind === 'removed').length,
+      attention: list.filter((e) => e.attention).length,
+      last: list[0]?.row.created_at ?? null,
+      areas: (Object.entries(byArea) as Array<[Area, number]>).sort((a, b) => b[1] - a[1]),
+    };
+  }, [entries, selectedMember, scope]);
+
+  const filtersActive = !!query || area !== 'all' || kind !== 'all' || who !== 'all' || attentionOnly;
+  const clearFilters = () => { setQuery(''); setArea('all'); setKind('all'); setWho('all'); setAttentionOnly(false); };
+
+  // ── CSV ────────────────────────────────────────────────────────────────────
+  const exportCsv = () => {
+    const cell = (s: string) => `"${s.replace(/"/g, '""')}"`;
+    const head = ['Date & time', 'Who', 'Member ID', 'Area', 'What happened', 'Changes', 'Needs attention', 'Table', 'Record ID', 'Log ID'];
+    const lines = filtered.map((e) => {
+      const actor = e.row.actor_id ? lookups.members[e.row.actor_id] : null;
+      const changes = e.changes
+        ? Object.entries(e.changes).filter(([k]) => !HIDDEN_FIELDS.has(k))
+          .map(([k, v]) => `${fieldLabel(k)}: ${formatValue(k, v.from)} -> ${formatValue(k, v.to)}`).join('; ')
+        : '';
+      return [
+        new Date(e.row.created_at).toLocaleString('en-IN'),
+        e.actorName ?? 'System (automatic)',
+        actor ? memberDisplayId(actor) : '',
+        AREAS[e.area].en,
+        e.sentence,
+        changes,
+        e.attention ? 'Yes' : 'No',
+        e.row.entity,
+        e.row.entity_id ?? '',
+        e.row.id,
+      ].map((x) => cell(String(x))).join(',');
+    });
+    // BOM so Excel reads ₹ and Bengali text as UTF-8.
+    const blob = new Blob(['﻿' + [head.map(cell).join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  // Avatar Initials Hash Color generator
-  const avatarColor = (name: string) => {
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const colors = ['#0c756f', '#4d7c0f', '#0f766e', '#7c3aed', '#b45309', '#9a3412'];
-    return colors[Math.abs(hash) % colors.length];
+  // ── Render ─────────────────────────────────────────────────────────────────
+  const periodLabel: Record<Period, string> = {
+    today: tr('Today', 'আজ'),
+    '7d': tr('Last 7 days', 'গত ৭ দিন'),
+    '30d': tr('Last 30 days', 'গত ৩০ দিন'),
+    '90d': tr('Last 3 months', 'গত ৩ মাস'),
+    all: tr('All time', 'সব সময়'),
   };
+  const kindLabel: Record<Kind, string> = {
+    added: tr('Added', 'যোগ'), changed: tr('Changed', 'পরিবর্তন'), removed: tr('Removed', 'মুছে ফেলা'),
+  };
+  const personName = (id: string) => lookups.members[id]?.full_name ?? tr('A former member', 'প্রাক্তন সদস্য');
+  const whoText = (w: string) => w === 'people' ? tr('Done by people', 'ব্যক্তি দ্বারা')
+    : w === 'system' ? tr('Automatic', 'স্বয়ংক্রিয়')
+      : scope === 'by' ? tr(`By ${personName(w)}`, `${personName(w)} করেছেন`) : tr(`About ${personName(w)}`, `${personName(w)} সম্পর্কে`);
+  const n = (v: number) => (bn ? fmt.num(v) : v.toLocaleString('en-IN'));
+  const countIn = (pred: (e: Entry) => boolean) => n(entries.filter(pred).length);
+
+  // What is currently narrowing the list, each removable on its own.
+  const activeTags: Array<{ key: string; label: string; clear: () => void }> = [
+    ...(query ? [{ key: 'q', label: `“${query}”`, clear: () => setQuery('') }] : []),
+    ...(area !== 'all' ? [{ key: 'a', label: bn ? AREAS[area].bn : AREAS[area].en, clear: () => setArea('all') }] : []),
+    ...(kind !== 'all' ? [{ key: 'k', label: kindLabel[kind], clear: () => setKind('all') }] : []),
+    ...(who !== 'all' ? [{ key: 'w', label: whoText(who), clear: () => setWho('all') }] : []),
+    ...(attentionOnly ? [{ key: 't', label: tr('Needs attention', 'মনোযোগ প্রয়োজন'), clear: () => setAttentionOnly(false) }] : []),
+  ];
+
+  const toggleWho = (w: 'people' | 'system') => setWho(who === w ? 'all' : w);
 
   return (
-    <div className="space-y-6">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-xl flex items-center gap-2 border border-teal-500/10 animate-in slide-in-from-bottom-5 duration-200" style={{ background: BRAND }}>
-          <Shield className="h-4 w-4" />
-          {toastMessage}
-        </div>
-      )}
-
-      {/* BEFORE / AFTER JSON DIFF VISUAL MODAL */}
-      {diffModalRow && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 border flex flex-col max-h-[85vh]" style={{ borderColor: RULE }}>
-            <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: RULE }}>
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5" style={{ color: BRAND }} />
-                <h3 className="text-base font-bold" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>
-                  {tr('Before & After Visual Change Comparison', 'পরিবর্তনের পূর্ববর্তী ও পরবর্তী তুলনা')}
-                </h3>
-              </div>
-              <button
-                onClick={() => setDiffModalRow(null)}
-                className="rounded-full p-1.5 transition-colors hover:bg-black/5"
-                style={{ color: MUTED }}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-y-auto font-mono text-xs">
-              {/* BEFORE */}
-              <div className="rounded-xl border p-4 bg-[#faf6ef]/50" style={{ borderColor: `${RULE}90` }}>
-                <h4 className="mb-2 border-b pb-1 font-bold text-red-700" style={{ borderColor: `${RULE}80` }}>
-                  ◀ BEFORE (OLD VALUES)
-                </h4>
-                <pre className="whitespace-pre-wrap overflow-x-auto leading-relaxed text-stone-700">
-                  {(() => {
-                    const detail = diffModalRow.detail || {};
-                    if (detail.changes) {
-                      const beforeObj: Record<string, unknown> = {};
-                      for (const [k, v] of Object.entries(detail.changes as Record<string, { from: unknown; to: unknown }>)) {
-                        beforeObj[k] = v.from;
-                      }
-                      return JSON.stringify(beforeObj, null, 2);
-                    }
-                    if (detail.deleted) return JSON.stringify(detail.deleted, null, 2);
-                    return JSON.stringify(detail, null, 2);
-                  })()}
-                </pre>
-              </div>
-
-              {/* AFTER */}
-              <div className="rounded-xl border p-4 bg-[#faf6ef]/50" style={{ borderColor: `${RULE}90` }}>
-                <h4 className="mb-2 border-b pb-1 font-bold text-green-700" style={{ borderColor: `${RULE}80` }}>
-                  ▶ AFTER (NEW VALUES)
-                </h4>
-                <pre className="whitespace-pre-wrap overflow-x-auto leading-relaxed text-stone-800 font-bold">
-                  {(() => {
-                    const detail = diffModalRow.detail || {};
-                    if (detail.changes) {
-                      const afterObj: Record<string, unknown> = {};
-                      for (const [k, v] of Object.entries(detail.changes as Record<string, { from: unknown; to: unknown }>)) {
-                        afterObj[k] = v.to;
-                      }
-                      return JSON.stringify(afterObj, null, 2);
-                    }
-                    if (detail.new) return JSON.stringify(detail.new, null, 2);
-                    return JSON.stringify(detail, null, 2);
-                  })()}
-                </pre>
-              </div>
-            </div>
-
-            <div className="mt-5 border-t pt-4 text-right" style={{ borderColor: RULE }}>
-              <button
-                onClick={() => setDiffModalRow(null)}
-                className="rounded-full px-5 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 shadow-sm"
-                style={{ background: INK }}
-              >
-                {tr('Close View', 'বন্ধ করুন')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* HEADER SECTION */}
-      <div className="flex flex-wrap justify-between items-end gap-4">
-        <div>
-          <div className="font-mono text-[10px] uppercase tracking-[0.2em]" style={{ color: MUTED }}>
-            {tr('Governance', 'সুশাসন')} · {tr('Audit Logs', 'অডিট লগ')}
-          </div>
-          <h1 className="mt-1.5 text-[28px] leading-tight flex items-center gap-2 font-bold" style={{ color: INK, fontFamily: '"Noto Serif Bengali", serif' }}>
-            {tr('Audit Logs Center', 'প্রমাণীকৃত অডিট লগ')} <Shield className="h-6 w-6" style={{ color: BRAND }} />
+    // `relative` keeps the screen-reader-only labels inside this page. Without
+    // a positioned ancestor they are placed against the whole document, escape
+    // the admin panel's scroll area, and make the browser window scroll too.
+    <div className="relative space-y-4" style={{ color: INK }}>
+      {/* Header */}
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-2 text-[22px] font-bold leading-tight sm:text-[24px]" style={{ fontFamily: '"Noto Serif Bengali", serif' }}>
+            <ShieldCheck className="h-5 w-5 shrink-0" style={{ color: BRAND }} aria-hidden />
+            {tr('Audit log', 'অডিট লগ')}
           </h1>
-          <p className="mt-1 max-w-2xl text-[13.5px]" style={{ color: INK2 }}>
-            {tr(
-              'A tamper-proof record of who changed what across finance, budgets, members, posts and configurations.',
-              'অর্থ সংক্রান্ত কে কী পরিবর্তন করেছে তার সম্পূর্ণ ও প্রমাণীকৃত বিবরণ।'
-            )}
+          <p className="mt-0.5 text-[13.5px]" style={{ color: INK2 }}>
+            {tr('Who changed what, and when. Entries cannot be edited or deleted.', 'কে কী বদলেছেন এবং কখন। এন্ট্রি সম্পাদনা বা মোছা যায় না।')}
           </p>
+          <details className="group mt-1 text-[13px]">
+            <summary className={`inline-flex min-h-[28px] cursor-pointer select-none items-center gap-1 rounded font-semibold underline decoration-dotted underline-offset-2 ${FOCUS}`} style={{ color: BRAND }}>
+              <Info className="h-3.5 w-3.5" aria-hidden /> {tr('How to read this log', 'কীভাবে পড়বেন')}
+            </summary>
+            <ul className="mt-2 max-w-2xl space-y-1.5 rounded-xl p-3 leading-relaxed" style={{ background: PAPER, border: `1px solid ${RULE}`, color: INK2 }}>
+              <li>{tr('Each line says who did what. Tap it to see exactly what changed, old value → new value.', 'প্রতিটি লাইনে কে কী করেছেন লেখা আছে। কী বদলেছে (পুরনো → নতুন) দেখতে ট্যাপ করুন।')}</li>
+              <li className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <LegendIcon kind="added" /> {tr('added', 'যোগ')}
+                <LegendIcon kind="changed" /> {tr('changed', 'পরিবর্তন')}
+                <LegendIcon kind="removed" /> {tr('removed', 'মুছে ফেলা')}
+              </li>
+              <li>{tr('A number on the icon means several similar changes made together, like a whole blood camp. Tap to see each one.', 'আইকনে সংখ্যা মানে একসাথে করা একই ধরনের একাধিক পরিবর্তন। প্রতিটি দেখতে ট্যাপ করুন।')}</li>
+              <li><b>{tr('Automatic', 'স্বয়ংক্রিয়')}</b>{tr(': done by the website itself, e.g. confirming online payments and emailing receipts.', ': ওয়েবসাইট নিজে করেছে, যেমন অনলাইন পেমেন্ট নিশ্চিত করা ও রসিদ পাঠানো।')}</li>
+              <li><b>{tr('Attention', 'মনোযোগ')}</b>{tr(': something was deleted, someone’s access changed, or a bank account was edited. Worth a second look.', ': কিছু মুছে ফেলা হয়েছে, কারো অনুমতি বদলেছে, বা ব্যাংক অ্যাকাউন্ট সম্পাদিত হয়েছে। একবার যাচাই করে নিন।')}</li>
+              <li>{tr('Pick a member under “Person” to see everything they changed, or everything changed about them.', '“ব্যক্তি” থেকে একজন সদস্য বেছে নিন: তিনি কী বদলেছেন, বা তাঁর সম্পর্কে কী বদলেছে দেখতে।')}</li>
+            </ul>
+          </details>
         </div>
-
-        {/* EXPORT DIRECT BUTTON */}
-        <button
-          onClick={handleExportCSV}
-          className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12.5px] font-semibold transition-colors hover:bg-black/[0.03]"
-          style={{ border: `1px solid ${RULE}`, color: INK2 }}
-        >
-          <Download className="h-3.5 w-3.5" /> {tr('Export CSV', 'CSV এক্সপোর্ট')}
-        </button>
-      </div>
-
-      {/* METRICS / STATS CARDS */}
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        {/* TOTAL ACTIONS */}
-        <div className="rounded-xl p-5 flex items-center justify-between" style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 4px 12px rgba(0,2,1,0.02)' }}>
-          <div className="space-y-1">
-            <p className="font-mono text-[9px] font-extrabold uppercase tracking-widest" style={{ color: MUTED }}>{tr('Total Actions', 'সর্বমোট অ্যাকশন')}</p>
-            <p className="text-2xl font-black leading-none tracking-tight" style={{ color: INK }}>{stats.total.toLocaleString()}</p>
-            <p className="text-[11px] font-semibold mt-1" style={{ color: GREEN }}>
-              {tr('Authentic logs in DB', 'ডাটাবেস রেকর্ড')}
-            </p>
-          </div>
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(77,124,15,0.08)', color: GREEN }}>
-            <Shield className="h-5 w-5" />
-          </div>
+        <div className="flex gap-2">
+          <IconButton onClick={load} disabled={loading} label={tr('Refresh', 'রিফ্রেশ')}>
+            <RefreshCw className={`h-4 w-4 ${loading ? 'motion-safe:animate-spin' : ''}`} aria-hidden />
+          </IconButton>
+          <IconButton onClick={exportCsv} disabled={!filtered.length} label={tr('Download CSV', 'CSV ডাউনলোড')}>
+            <Download className="h-4 w-4" aria-hidden />
+          </IconButton>
         </div>
+      </header>
 
-        {/* CRITICAL ACTIONS */}
-        <div className="rounded-xl p-5 flex items-center justify-between" style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 4px 12px rgba(0,2,1,0.02)' }}>
-          <div className="space-y-1">
-            <p className="font-mono text-[9px] font-extrabold uppercase tracking-widest" style={{ color: MUTED }}>{tr('Critical Actions', 'গুরুত্বপূর্ণ অ্যাকশন')}</p>
-            <p className="text-2xl font-black leading-none tracking-tight" style={{ color: INK }}>{stats.critical}</p>
-            <p className="text-[11px] font-semibold mt-1 animate-pulse" style={{ color: BRAND }}>
-              {tr('Security / RLS checks', 'নিরাপত্তা সংক্রান্ত')}
-            </p>
-          </div>
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(12,117,111,0.08)', color: BRAND }}>
-            <AlertTriangle className="h-5 w-5" />
-          </div>
-        </div>
+      {/* Summary: each tile is also a one-tap filter */}
+      <section aria-label={tr('Summary', 'সারসংক্ষেপ')} className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        <Stat value={n(stats.total)} label={tr(`changes · ${periodLabel[period].toLowerCase()}`, `পরিবর্তন · ${periodLabel[period]}`)}
+          pressed={!filtersActive} onClick={clearFilters} />
+        <Stat value={n(stats.people)} label={tr('people made changes', 'জন পরিবর্তন করেছেন')}
+          pressed={who === 'people'} onClick={() => toggleWho('people')} />
+        <Stat value={n(stats.attention)} label={tr('need attention', 'মনোযোগ প্রয়োজন')} tone="warn"
+          pressed={attentionOnly} onClick={() => setAttentionOnly(!attentionOnly)} />
+        <Stat value={n(stats.system)} label={tr('automatic', 'স্বয়ংক্রিয়')}
+          pressed={who === 'system'} onClick={() => toggleWho('system')} />
+      </section>
 
-        {/* UNIQUE USERS */}
-        <div className="rounded-xl p-5 flex items-center justify-between" style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 4px 12px rgba(0,2,1,0.02)' }}>
-          <div className="space-y-1">
-            <p className="font-mono text-[9px] font-extrabold uppercase tracking-widest" style={{ color: MUTED }}>{tr('Unique Users', 'ইউনিক ব্যবহারকারী')}</p>
-            <p className="text-2xl font-black leading-none tracking-tight" style={{ color: INK }}>{stats.unique}</p>
-            <p className="text-[11px] font-semibold mt-1" style={{ color: '#6d28d9' }}>
-              {tr('Active audit actors', 'সক্রিয় ব্যবহারকারী')}
-            </p>
-          </div>
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.08)', color: '#6d28d9' }}>
-            <Users className="h-5 w-5" />
-          </div>
-        </div>
-
-        {/* SYSTEM ACTIONS */}
-        <div className="rounded-xl p-5 flex items-center justify-between" style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 4px 12px rgba(0,2,1,0.02)' }}>
-          <div className="space-y-1">
-            <p className="font-mono text-[9px] font-extrabold uppercase tracking-widest" style={{ color: MUTED }}>{tr('System Actions', 'সিস্টেম অ্যাকশন')}</p>
-            <p className="text-2xl font-black leading-none tracking-tight" style={{ color: INK }}>{stats.system}</p>
-            <p className="text-[11px] font-semibold mt-1" style={{ color: '#b45309' }}>
-              {tr('Triggered automatically', 'স্বয়ংক্রিয় ব্যাকগ্রাউন্ড')}
-            </p>
-          </div>
-          <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(180,83,9,0.08)', color: '#b45309' }}>
-            <Server className="h-5 w-5" />
-          </div>
-        </div>
-      </div>
-
-      {/* ───────── Filters ───────── */}
-      <div className="rounded-xl p-5 space-y-4" style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 4px 14px rgba(0,2,1,0.02)' }}>
-        {/* Search & Advanced Filters Trigger */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Smart Search */}
-          <div className="relative min-w-[280px] flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: MUTED }} />
+      {/* Filter bar: pinned while scrolling on tablets and up */}
+      <section
+        aria-label={tr('Filters', 'ফিল্টার')}
+        className="z-10 space-y-2.5 rounded-2xl p-3 md:sticky md:top-0"
+        style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 6px 18px -12px rgba(0,0,0,.25)' }}
+      >
+        <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
+          <label className="relative block xl:min-w-[260px] xl:flex-1">
+            <span className="sr-only">{tr('Search the log', 'লগে খুঁজুন')}</span>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: MUTED }} aria-hidden />
             <input
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder={tr('Search name, serial, action, entity, summary or UUID...', 'নাম, সিরিয়াল, অ্যাকশন, এন্টিটি বা আইডি খুঁজুন...')}
-              className="w-full rounded-md py-2 pl-9 pr-3 text-[13px] outline-none transition-colors"
-              style={{ border: `1px solid ${RULE}`, color: INK, background: `${CREAM}30` }}
+              type="search" value={query} onChange={(e) => setQuery(e.target.value)}
+              placeholder={tr('Search name, amount, receipt no…', 'নাম, পরিমাণ, রসিদ নং খুঁজুন…')}
+              className={`min-h-[40px] w-full rounded-xl pl-9 pr-3 text-[14px] ${FOCUS}`}
+              style={{ border: `1px solid ${RULE}`, background: CREAM, color: INK }}
             />
-          </div>
-
-          {/* Filters Toggle Button */}
-          <button
-            onClick={() => setShowFiltersPanel(!showFiltersPanel)}
-            className="flex items-center gap-1.5 rounded-md px-4 py-2.5 text-[12.5px] font-bold transition-all focus:outline-none"
-            style={{
-              border: `1px solid ${showFiltersPanel ? INK : RULE}`,
-              background: showFiltersPanel ? INK : PAPER,
-              color: showFiltersPanel ? CREAM : INK2
-            }}
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            {tr('Advanced Selectors', 'উন্নত ফিল্টার')}
-          </button>
-        </div>
-
-        {/* DETAILED DROPDOWNS FILTERS PANEL */}
-        {showFiltersPanel && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 border-t pt-4 animate-in fade-in slide-in-from-top-2 duration-200" style={{ borderColor: RULE }}>
-            {/* Entity Filter */}
-            <div>
-              <label className="mb-1.5 block font-mono text-[9px] font-extrabold uppercase tracking-wider" style={{ color: MUTED }}>
-                {tr('Database Table', 'ডাটাবেস টেবিল')}
-              </label>
-              <select
-                value={selectedEntity}
-                onChange={(e) => {
-                  setSelectedEntity(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full rounded-md px-3 py-2 text-[12.5px] font-semibold outline-none"
-                style={{ border: `1px solid ${RULE}`, color: INK2, background: PAPER }}
-              >
-                <option value="">{tr('All Entities', 'সব এন্টিটি')}</option>
-                {Object.keys(ENTITIES).map((k) => (
-                  <option key={k} value={k}>
-                    {ENTITIES[k]}
+          </label>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 xl:flex">
+            <FilterSelect label={tr('Area', 'বিভাগ')} value={area} onChange={(v) => setArea(v as Area | 'all')}>
+              <option value="all">{tr('All areas', 'সব বিভাগ')} ({n(entries.length)})</option>
+              {(Object.keys(AREAS) as Area[]).map((a) => (
+                <option key={a} value={a}>{bn ? AREAS[a].bn : AREAS[a].en} ({countIn((e) => e.area === a)})</option>
+              ))}
+            </FilterSelect>
+            <FilterSelect label={tr('Type of change', 'পরিবর্তনের ধরন')} value={kind} onChange={(v) => setKind(v as Kind | 'all')}>
+              <option value="all">{tr('All types', 'সব ধরন')}</option>
+              {(Object.keys(kindLabel) as Kind[]).map((k) => (
+                <option key={k} value={k}>{kindLabel[k]} ({countIn((e) => e.kind === k)})</option>
+              ))}
+            </FilterSelect>
+            <FilterSelect label={tr('Person', 'ব্যক্তি')} value={who} onChange={setWho}>
+              <option value="all">{tr('Everyone', 'সবাই')}</option>
+              <option value="people">{tr('People only', 'শুধু ব্যক্তি')} ({countIn((e) => !!e.row.actor_id)})</option>
+              <option value="system">{tr('Automatic (website)', 'স্বয়ংক্রিয় (ওয়েবসাইট)')} ({countIn((e) => !e.row.actor_id)})</option>
+              <optgroup label={tr('A member', 'একজন সদস্য')}>
+                {people.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}{p.made ? ` (${n(p.made)})` : ''}
                   </option>
                 ))}
-              </select>
-            </div>
-
-            {/* Action Filter */}
-            <div>
-              <label className="mb-1.5 block font-mono text-[9px] font-extrabold uppercase tracking-wider" style={{ color: MUTED }}>
-                {tr('Operation / Action', 'অপারেশন / অ্যাকশন')}
-              </label>
-              <select
-                value={selectedAction}
-                onChange={(e) => {
-                  setSelectedAction(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full rounded-md px-3 py-2 text-[12.5px] font-semibold outline-none"
-                style={{ border: `1px solid ${RULE}`, color: INK2, background: PAPER }}
-              >
-                <option value="">{tr('All Actions', 'সব অ্যাকশন')}</option>
-                <option value="insert">{tr('Insert', 'যোগ')}</option>
-                <option value="update">{tr('Update', 'সম্পাদনা')}</option>
-                <option value="delete">{tr('Delete', 'মুছে ফেলা')}</option>
-                <option value="fund.is_frozen">{tr('Fund Frozen', 'ফান্ড স্থগিত')}</option>
-                <option value="fund.is_restricted">{tr('Restriction Modified', 'সীমাবদ্ধতা সম্পাদন')}</option>
-              </select>
-            </div>
-
-            {/* Severity Filter */}
-            <div>
-              <label className="mb-1.5 block font-mono text-[9px] font-extrabold uppercase tracking-wider" style={{ color: MUTED }}>
-                {tr('Severity Grade', 'গুরুত্ব স্তর')}
-              </label>
-              <select
-                value={selectedSeverity}
-                onChange={(e) => {
-                  setSelectedSeverity(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full rounded-md px-3 py-2 text-[12.5px] font-semibold outline-none"
-                style={{ border: `1px solid ${RULE}`, color: INK2, background: PAPER }}
-              >
-                <option value="">{tr('All Severity', 'সব গুরুত্ব')}</option>
-                <option value="low">🟢 {tr('Low', 'কম')}</option>
-                <option value="medium">🟡 {tr('Medium', 'মাঝারি')}</option>
-                <option value="high">🟠 {tr('High', 'উচ্চ')}</option>
-                <option value="critical">🔴 {tr('Critical', 'ক্রিটিক্যাল')}</option>
-              </select>
-            </div>
-
-            {/* Date Range Picker */}
-            <div>
-              <label className="mb-1.5 block font-mono text-[9px] font-extrabold uppercase tracking-wider" style={{ color: MUTED }}>
-                {tr('Timeframe', 'সময়কাল')}
-              </label>
-              <select
-                value={dateRange}
-                onChange={(e) => {
-                  setDateRange(e.target.value as 'all' | 'today' | '7days' | '30days' | 'month');
-                  setCurrentPage(1);
-                }}
-                className="w-full rounded-md px-3 py-2 text-[12.5px] font-semibold outline-none"
-                style={{ border: `1px solid ${RULE}`, color: INK2, background: PAPER }}
-              >
-                <option value="all">{tr('All Time', 'সব সময়')}</option>
-                <option value="today">{tr('Today', 'আজ')}</option>
-                <option value="7days">{tr('Last 7 Days', 'গত ৭ দিন')}</option>
-                <option value="30days">{tr('Last 30 Days', 'গত ৩০ দিন')}</option>
-                <option value="month">{tr('This Month', 'চলতি মাস')}</option>
-              </select>
-            </div>
-          </div>
-        )}
-
-        {/* QUICK TABS CONTROLLER PANEL */}
-        <div className="border-t pt-4 space-y-3.5" style={{ borderColor: RULE }}>
-          {/* Category Tabs */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-2 items-center">
-              <span className="font-mono text-[9px] font-extrabold uppercase tracking-widest mr-2" style={{ color: MUTED }}>
-                {tr('Category:', 'বিভাগ:')}
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {['All', 'Finance', 'Members', 'Content', 'Events', 'Governance'].map((tab) => {
-                  const active = activeCategoryTab === tab;
-                  const count = tab === 'All' ? enrichedRows.length : enrichedRows.filter(r => r.category === tab).length;
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => {
-                        setActiveCategoryTab(tab);
-                        setCurrentPage(1);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12.5px] font-medium transition-colors"
-                      style={{
-                        background: active ? INK : CREAM,
-                        color: active ? CREAM : INK2,
-                        border: `1px solid ${active ? INK : RULE}`
-                      }}
-                    >
-                      {tr(tab, tab === 'All' ? 'সব' : tab === 'Finance' ? 'অর্থ' : tab === 'Members' ? 'সদস্য' : tab === 'Content' ? 'কন্টেন্ট' : tab === 'Events' ? 'অনুষ্ঠান' : 'সুশাসন')}
-                      <span className="font-mono text-[10px]" style={{ opacity: 0.6 }}>{count}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
+              </optgroup>
+            </FilterSelect>
+            <FilterSelect label={tr('Period', 'সময়কাল')} value={period} onChange={(v) => setPeriod(v as Period)} neutral>
+              {(Object.keys(periodLabel) as Period[]).map((p) => <option key={p} value={p}>{periodLabel[p]}</option>)}
+            </FilterSelect>
             <button
-              onClick={handleClearAll}
-              className="text-[12px] font-bold hover:underline transition-colors"
-              style={{ color: BRAND }}
+              type="button" onClick={() => setAttentionOnly(!attentionOnly)} aria-pressed={attentionOnly}
+              className={`col-span-2 inline-flex min-h-[40px] items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[13.5px] font-semibold sm:col-span-1 ${FOCUS}`}
+              style={attentionOnly
+                ? { background: '#fef3c7', color: '#92400e', border: '1px solid #f59e0b' }
+                : { background: PAPER, color: INK2, border: `1px solid ${RULE}` }}
             >
-              {tr('Clear all filters', 'সব ফিল্টার মুছুন')}
+              <AlertTriangle className="h-4 w-4" aria-hidden />
+              {tr('Needs attention', 'মনোযোগ প্রয়োজন')}
             </button>
           </div>
+        </div>
 
-          {/* Severity & Actor Type Tabs */}
-          <div className="flex flex-wrap gap-x-8 gap-y-3 pt-3 border-t" style={{ borderColor: `${RULE}80` }}>
-            {/* Severity Tabs */}
-            <div className="flex flex-wrap gap-2 items-center">
-              <span className="font-mono text-[9px] font-extrabold uppercase tracking-widest mr-2" style={{ color: MUTED }}>
-                {tr('Severity:', 'গুরুত্ব:')}
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {['All', 'Critical', 'High', 'Medium', 'Low'].map((tab) => {
-                  const active = activeSeverityTab === tab;
-                  const severityKey = tab.toLowerCase();
-                  const count = tab === 'All' ? enrichedRows.length : enrichedRows.filter(r => r.severity === severityKey).length;
-                  
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => {
-                        setActiveSeverityTab(tab);
-                        setCurrentPage(1);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors"
-                      style={{
-                        background: active ? INK : CREAM,
-                        color: active ? CREAM : INK2,
-                        border: `1px solid ${active ? INK : RULE}`
-                      }}
-                    >
-                      {tab === 'Critical' && <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-pulse" />}
-                      {tab === 'High' && <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />}
-                      {tab === 'Medium' && <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />}
-                      {tab === 'Low' && <span className="h-1.5 w-1.5 rounded-full bg-green-500" />}
-                      {tr(tab, tab === 'All' ? 'সব' : tab === 'Critical' ? 'ক্রিটিক্যাল' : tab === 'High' ? 'উচ্চ' : tab === 'Medium' ? 'মাঝারি' : 'কম')}
-                      <span className="font-mono text-[10px]" style={{ opacity: 0.6 }}>{count}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px]">
+          <span role="status" aria-live="polite" className="font-semibold" style={{ color: MUTED }}>
+            {loading
+              ? tr('Loading…', 'লোড হচ্ছে…')
+              : filtersActive
+                ? tr(`${n(filtered.length)} of ${n(entries.length)} changes`, `${n(entries.length)}টির মধ্যে ${n(filtered.length)}টি`)
+                : tr(`${n(entries.length)} changes · ${periodLabel[period]}`, `${n(entries.length)}টি পরিবর্তন · ${periodLabel[period]}`)}
+          </span>
+          {activeTags.map((t) => (
+            <button
+              key={t.key} type="button" onClick={t.clear}
+              aria-label={tr(`Remove filter: ${t.label}`, `ফিল্টার সরান: ${t.label}`)}
+              className={`inline-flex min-h-[30px] items-center gap-1 rounded-full py-0.5 pl-2.5 pr-1.5 font-semibold ${FOCUS}`}
+              style={{ background: '#e6f2f1', color: BRAND }}
+            >
+              {t.label} <X className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          ))}
+          {activeTags.length > 1 && (
+            <button type="button" onClick={clearFilters} className={`min-h-[30px] rounded-full px-2 font-bold underline ${FOCUS}`} style={{ color: BRAND }}>
+              {tr('Clear all', 'সব মুছুন')}
+            </button>
+          )}
+        </div>
+      </section>
 
-            {/* Actor Type Tabs */}
-            <div className="flex flex-wrap gap-2 items-center">
-              <span className="font-mono text-[9px] font-extrabold uppercase tracking-widest mr-2" style={{ color: MUTED }}>
-                {tr('Trigger:', 'ট্রিগার:')}
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {['All', 'User Actions', 'System Actions'].map((tab) => {
-                  const active = activeTypeTab === tab;
-                  const count = tab === 'All' 
-                    ? enrichedRows.length 
-                    : tab === 'User Actions' 
-                      ? enrichedRows.filter(r => r.role !== 'System').length 
-                      : enrichedRows.filter(r => r.role === 'System').length;
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => {
-                        setActiveTypeTab(tab);
-                        setCurrentPage(1);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors"
-                      style={{
-                        background: active ? INK : CREAM,
-                        color: active ? CREAM : INK2,
-                        border: `1px solid ${active ? INK : RULE}`
-                      }}
-                    >
-                      {tr(tab, tab === 'All' ? 'সব অ্যাকশন' : tab === 'User Actions' ? 'ব্যবহারকারী' : 'স্বয়ংক্রিয়')}
-                      <span className="font-mono text-[10px]" style={{ opacity: 0.6 }}>{count}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+      {selectedMember && personStats && (
+        <PersonPanel
+          name={personName(selectedMember)}
+          memberId={lookups.members[selectedMember] ? memberDisplayId(lookups.members[selectedMember]) : null}
+          role={lookups.members[selectedMember]?.role ?? null}
+          scope={scope} setScope={setScope}
+          counts={{ by: people.find((p) => p.id === selectedMember)?.made ?? 0, about: people.find((p) => p.id === selectedMember)?.about ?? 0 }}
+          stats={personStats} area={area} setArea={setArea} period={periodLabel[period]}
+          onClose={() => setWho('all')}
+          tr={tr} bn={bn} n={n}
+        />
+      )}
+
+      {loadError && (
+        <div role="alert" className="flex items-start gap-2 rounded-xl p-3 text-[14px]" style={{ background: '#fdecec', color: '#991b1b' }}>
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
+          {tr('Some entries could not be loaded: ', 'কিছু এন্ট্রি লোড করা যায়নি: ')}{loadError}
+        </div>
+      )}
+
+      {/* Feed */}
+      {loading ? (
+        <TableSkeleton rows={8} />
+      ) : filtered.length === 0 ? (
+        <div className="rounded-2xl px-5 py-10 text-center" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
+          <Search className="mx-auto h-7 w-7" style={{ color: MUTED }} aria-hidden />
+          <p className="mt-2 text-[15px] font-semibold">{tr('Nothing matches these filters.', 'এই ফিল্টারে কিছু পাওয়া যায়নি।')}</p>
+          <div className="mt-2 flex flex-wrap justify-center gap-2">
+            {filtersActive && (
+              <button type="button" onClick={clearFilters} className={`min-h-[38px] rounded-full px-4 text-[14px] font-bold ${FOCUS}`} style={{ color: BRAND, border: `1px solid ${RULE}` }}>
+                {tr('Clear filters', 'ফিল্টার মুছুন')}
+              </button>
+            )}
+            {period !== 'all' && (
+              <button type="button" onClick={() => setPeriod('all')} className={`min-h-[38px] rounded-full px-4 text-[14px] font-semibold ${FOCUS}`} style={{ color: INK2, border: `1px solid ${RULE}` }}>
+                {tr('Search all time', 'সব সময়ের মধ্যে খুঁজুন')}
+              </button>
+            )}
           </div>
         </div>
-      </div>
-
-      {/* AUDIT LOG TABLE GRID */}
-      {loading ? (
-        <TableSkeleton rows={10} />
       ) : (
-        <div className="overflow-visible rounded-xl" style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 4px 14px rgba(0,2,1,0.02)' }}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13.5px] border-collapse">
-              <thead>
-                <tr style={{ borderBottom: `1px solid ${RULE}` }}>
-                  {[
-                    tr('Date & Time', 'তারিখ ও সময়'),
-                    tr('Actor / User', 'ব্যবহারকারী'),
-                    tr('Role', 'ভূমিকা'),
-                    tr('Action', 'অ্যাকশন'),
-                    tr('Entity', 'এন্টিটি'),
-                    tr('Summary', 'বিবরণ'),
-                    tr('Severity', 'গুরুত্ব'),
-                    ''
-                  ].map((h, i) => (
-                    <th
-                      key={i}
-                      className="px-4 py-3 text-left font-mono text-[10px] font-semibold uppercase tracking-[0.16em]"
-                      style={{ color: MUTED }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedRows.map((r) => {
-                  const isExpanded = expandedRow === r.id;
-                  
-                  // Severity badges
-                  const SEV_META = {
-                    low: { label: tr('Low', 'কম'), color: 'text-green-600 bg-green-50/70 border border-green-100', dot: 'bg-green-600' },
-                    medium: { label: tr('Medium', 'মাঝারি'), color: 'text-yellow-600 bg-yellow-50/70 border border-yellow-100', dot: 'bg-yellow-500' },
-                    high: { label: tr('High', 'উচ্চ'), color: 'text-orange-600 bg-orange-50/70 border border-orange-100', dot: 'bg-orange-600' },
-                    critical: { label: tr('Critical', 'ক্রিটিক্যাল'), color: 'text-red-700 bg-red-50/90 border border-red-200 font-bold shadow-sm', dot: 'bg-red-600 animate-ping' }
-                  }[r.severity];
+        <div className="space-y-4">
+          {days.map((d) => (
+            <section key={d.key} aria-labelledby={`day-${d.key}`}>
+              <h2 id={`day-${d.key}`} className="mb-1.5 flex items-baseline justify-between px-1 text-[12.5px] font-bold uppercase tracking-[0.05em]" style={{ color: MUTED }}>
+                <span>{d.label}</span>
+                <span className="font-semibold normal-case tracking-normal">{tr(`${n(d.count)} ${d.count === 1 ? 'change' : 'changes'}`, `${n(d.count)}টি পরিবর্তন`)}</span>
+              </h2>
+              <ul className="overflow-hidden rounded-2xl" style={{ background: PAPER, border: `1px solid ${RULE}` }}>
+                {d.items.map((it, i) => (
+                  <li key={it.key} style={{ borderTop: i === 0 ? undefined : `1px solid ${RULE}` }}>
+                    {it.type === 'one' ? (
+                      <EntryRow
+                        entry={it.entry} open={open === it.entry.row.id}
+                        onToggle={() => setOpen(open === it.entry.row.id ? null : it.entry.row.id)}
+                        tr={tr} bn={bn} fieldLabel={fieldLabel} formatValue={formatValue} lookups={lookups}
+                      />
+                    ) : (
+                      <GroupRow
+                        entries={it.entries} open={openGroup === it.key}
+                        onToggle={() => setOpenGroup(openGroup === it.key ? null : it.key)}
+                        openEntry={open} setOpenEntry={setOpen}
+                        tr={tr} bn={bn} n={n} fieldLabel={fieldLabel} formatValue={formatValue} lookups={lookups}
+                      />
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
 
-                  // Action badges
-                  const ACT_META = {
-                    insert: { label: tr('Added', 'যুক্ত'), color: 'text-green-700 bg-green-50 border border-green-150' },
-                    update: { label: tr('Updated', 'সম্পাদনা'), color: 'text-amber-700 bg-amber-50 border border-amber-150' },
-                    delete: { label: tr('Deleted', 'মুছে ফেলা'), color: 'text-red-700 bg-red-50 border border-red-150 font-bold' }
-                  }[r.action] || { label: r.action.replace(/[._]/g, ' '), color: 'text-stone-700 bg-stone-50 border border-stone-150' };
-
-                  // Role badges
-                  const ROLE_META = {
-                    Admin: 'bg-stone-900 text-stone-100 font-bold',
-                    Finance: 'bg-teal-50 text-teal-700 border border-teal-100 font-bold',
-                    Member: 'bg-stone-50 text-stone-600 border border-stone-150',
-                    System: 'bg-purple-50 text-purple-700 border border-purple-100 font-bold'
-                  }[r.role];
-
-                  // Actor Initials & Serial Number
-                  const actorInitials = r.actor?.full_name
-                    ? r.actor.full_name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-                    : 'SYS';
-
-                  const serialStr = r.actor
-                    ? memberDisplayId(r.actor)
-                    : r.actor_id
-                      ? `ID: ${r.actor_id.slice(0, 8)}`
-                      : r.role === 'System' ? 'SYSTEM' : 'SYS';
-
-                  return (
-                    <Fragment key={r.id}>
-                      <tr
-                        onClick={() => setExpandedRow(isExpanded ? null : r.id)}
-                        className="transition-colors cursor-pointer hover:bg-black/[0.015]"
-                        style={{
-                          borderBottom: `1px solid ${RULE}`,
-                          background: isExpanded ? `${CREAM}50` : undefined,
-                        }}
-                      >
-                        {/* Time */}
-                        <td className="px-4 py-3 whitespace-nowrap text-xs font-medium" style={{ color: INK2 }}>
-                          <div>
-                            {new Date(r.created_at).toLocaleDateString(lang === 'bn' ? 'bn-IN' : 'en-IN', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric'
-                            })}
-                          </div>
-                          <div className="font-mono text-[10px] font-bold mt-0.5" style={{ color: MUTED }}>
-                            {new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        </td>
-
-                        {/* Actor Circle Avatar + Name + Unique Serial ID + Email */}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <span
-                              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-bold text-white shadow-sm"
-                              style={{ background: avatarColor(r.actor?.full_name || 'System') }}
-                            >
-                              {actorInitials}
-                            </span>
-                            <div className="min-w-0">
-                              <span className="block truncate font-semibold" style={{ color: INK }}>
-                                {r.actor?.full_name || tr('System Automated', 'সিস্টেম অটোমেটেড')}
-                              </span>
-                              <div className="font-mono text-[10.5px] flex items-center gap-1.5" style={{ color: MUTED }}>
-                                <span className="font-bold text-[#0c756f]">{serialStr}</span>
-                                {r.actor?.email && (
-                                  <>
-                                    <span>•</span>
-                                    <span className="truncate max-w-[120px]">{r.actor.email}</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Role */}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`rounded-full px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] ${ROLE_META}`}>
-                            {tr(r.role, r.role === 'Admin' ? 'অ্যাডমিন' : r.role === 'Finance' ? 'কোষাধ্যক্ষ' : r.role === 'System' ? 'সিস্টেম' : 'সদস্য')}
-                          </span>
-                        </td>
-
-                        {/* Action */}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`rounded-full px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider ${ACT_META.color}`}>
-                            {ACT_META.label}
-                          </span>
-                        </td>
-
-                        {/* Entity */}
-                        <td className="px-4 py-3 whitespace-nowrap font-mono text-[10.5px] font-bold uppercase tracking-wider" style={{ color: MUTED }}>
-                          {entityLabel(r.entity)}
-                        </td>
-
-                        {/* Summary */}
-                        <td className="px-4 py-3 text-xs font-semibold max-w-[240px] truncate" style={{ color: INK2 }}>
-                          {r.summary}
-                        </td>
-
-                        {/* Severity */}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 w-fit ${SEV_META.color}`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${SEV_META.dot}`} />
-                            {SEV_META.label}
-                          </span>
-                        </td>
-
-                        {/* Details Trigger */}
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-xs">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setExpandedRow(isExpanded ? null : r.id);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-full px-3 py-1 font-bold transition-all"
-                            style={{
-                              border: `1px solid ${RULE}`,
-                              background: PAPER,
-                              color: INK2,
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                            }}
-                          >
-                            {tr('View', 'দেখুন')}
-                            {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                          </button>
-                        </td>
-                      </tr>
-
-                      {/* EXPANDED DETAILS CARD PANEL */}
-                      {isExpanded && (
-                        <tr>
-                          <td colSpan={8} className="p-0" style={{ background: CREAM }}>
-                            <div className="p-6 animate-in slide-in-from-top-3 duration-200" style={{ borderBottom: `1px solid ${RULE}` }}>
-                              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                                
-                                {/* COLUMN 1 (8 Cols): CHANGE DETAILS / DATA FIELDS */}
-                                <div className="lg:col-span-8 p-5 rounded-xl flex flex-col justify-between" style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 2px 8px rgba(0,2,1,0.01)' }}>
-                                  <div>
-                                    <div className="flex items-center gap-2 border-b pb-2 mb-3" style={{ borderColor: RULE }}>
-                                      <History className="h-4 w-4" style={{ color: BRAND }} />
-                                      <h4 className="font-mono text-[10px] font-bold uppercase tracking-wider" style={{ color: MUTED }}>
-                                        {tr('Change Details / Logged Fields', 'পরিবর্তন ও ডাটা ফিল্ডসমূহ')}
-                                      </h4>
-                                    </div>
-                                    
-                                    {/* Data Table */}
-                                    <div className="overflow-x-auto">
-                                      <table className="w-full text-left text-xs border-collapse">
-                                        <thead>
-                                          <tr className="border-b text-[10px] font-bold" style={{ borderColor: RULE, color: MUTED }}>
-                                            <th className="py-2 pr-4 text-left uppercase tracking-wider">{tr('Field Name', 'ফিল্ডের নাম')}</th>
-                                            {r.detail?.changes ? (
-                                              <>
-                                                <th className="py-2 px-2 text-left uppercase tracking-wider text-red-700">{tr('Old Value', 'পূর্ববর্তী মান')}</th>
-                                                <th className="py-2 pl-2 text-left uppercase tracking-wider text-green-700">{tr('New Value', 'পরবর্তী মান')}</th>
-                                              </>
-                                            ) : (
-                                              <th className="py-2 pl-4 text-left uppercase tracking-wider">{tr('Recorded Value', 'নথিভুক্ত মান')}</th>
-                                            )}
-                                          </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-stone-100 font-semibold" style={{ color: INK2 }}>
-                                          {r.detail && Object.keys(r.detail).length ? (
-                                            (() => {
-                                              const changes = r.detail.changes as Record<string, { from: unknown; to: unknown }> | undefined;
-                                              if (changes) {
-                                                return Object.entries(changes)
-                                                  .filter(([k]) => k !== 'id')
-                                                  .map(([field, diff]) => (
-                                                    <tr key={field} className="hover:bg-stone-50/50">
-                                                      <td className="py-2 pr-4 font-bold text-stone-500 capitalize">{field.replace(/_/g, ' ')}</td>
-                                                      <td className="py-2 px-2 text-red-700 font-mono text-[11px] line-through bg-red-50/20">
-                                                        {formatFieldVal(field, diff.from)}
-                                                      </td>
-                                                      <td className="py-2 pl-2 text-green-700 font-mono text-[11px] font-bold bg-green-50/20">
-                                                        {formatFieldVal(field, diff.to)}
-                                                      </td>
-                                                    </tr>
-                                                  ));
-                                              }
-                                              
-                                              const dataObj = (r.detail.new || r.detail.deleted || r.detail) as any;
-                                              return Object.entries(dataObj)
-                                                .filter(([k]) => k !== 'id' && typeof dataObj[k] !== 'object')
-                                                .map(([k, v]) => (
-                                                  <tr key={k} className="hover:bg-stone-50/50">
-                                                    <td className="py-2 pr-4 font-bold text-stone-500 capitalize">{k.replace(/_/g, ' ')}</td>
-                                                    <td className="py-2 pl-4 font-mono text-[11px]" style={{ color: INK }}>
-                                                      {formatFieldVal(k, v)}
-                                                    </td>
-                                                  </tr>
-                                                ));
-                                            })()
-                                          ) : (
-                                            <tr>
-                                              <td colSpan={3} className="italic py-4 text-center" style={{ color: MUTED }}>
-                                                {tr('No detailed fields logged for this action.', 'এই অ্যাকশনের জন্য কোনো বিস্তারিত ডাটা নেই।')}
-                                              </td>
-                                            </tr>
-                                          )}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </div>
-
-                                  <div className="mt-4 pt-3 border-t" style={{ borderColor: RULE }}>
-                                    <button
-                                      onClick={() => setDiffModalRow(r)}
-                                      className="rounded-full px-4 py-2 text-xs font-bold transition-all hover:bg-stone-100"
-                                      style={{
-                                        border: `1px solid ${RULE}`,
-                                        background: CREAM,
-                                        color: INK
-                                      }}
-                                    >
-                                      {tr('Compare Full Visual Diff', 'ভিস্যুয়াল ডিফ তুলনা করুন')}
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* COLUMN 2 (4 Cols): AUTHENTIC AUDIT METADATA */}
-                                <div className="lg:col-span-4 p-5 rounded-xl flex flex-col justify-between" style={{ background: PAPER, border: `1px solid ${RULE}`, boxShadow: '0 2px 8px rgba(0,2,1,0.01)' }}>
-                                  <div>
-                                    <div className="flex items-center gap-2 border-b pb-2 mb-3" style={{ borderColor: RULE }}>
-                                      <Fingerprint className="h-4 w-4" style={{ color: BRAND }} />
-                                      <h4 className="font-mono text-[10px] font-bold uppercase tracking-wider" style={{ color: MUTED }}>
-                                        {tr('Audit Metadata', 'অডিট মেটাডাটা')}
-                                      </h4>
-                                    </div>
-                                    <div className="space-y-3 text-xs font-semibold">
-                                      {/* Log ID */}
-                                      <div className="flex flex-col gap-0.5 border-b pb-2" style={{ borderColor: `${RULE}80` }}>
-                                        <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color: MUTED }}>{tr('Log Entry UUID', 'লগ এন্ট্রি আইডি')}</span>
-                                        <span className="font-mono text-[10.5px]" style={{ color: INK }}>{r.id}</span>
-                                      </div>
-                                      
-                                      {/* Record ID */}
-                                      {r.entity_id && (
-                                        <div className="flex flex-col gap-0.5 border-b pb-2" style={{ borderColor: `${RULE}80` }}>
-                                          <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color: MUTED }}>{tr('Target Record ID', 'টার্গেট রেকর্ড আইডি')}</span>
-                                          <span className="font-mono text-[10.5px]" style={{ color: INK }}>{r.entity_id}</span>
-                                        </div>
-                                      )}
-
-                                      {/* Action Details */}
-                                      <div className="flex justify-between border-b pb-2" style={{ borderColor: `${RULE}80` }}>
-                                        <span style={{ color: MUTED }}>{tr('Action Call', 'অ্যাকশন')}</span>
-                                        <span className="font-mono" style={{ color: INK }}>{r.action}</span>
-                                      </div>
-                                      
-                                      {/* Entity Table */}
-                                      <div className="flex justify-between border-b pb-2" style={{ borderColor: `${RULE}80` }}>
-                                        <span style={{ color: MUTED }}>{tr('Database Table', 'ডাটাবেস টেবিল')}</span>
-                                        <span className="font-mono" style={{ color: INK }}>{r.entity}</span>
-                                      </div>
-
-                                      {/* Actor Serial */}
-                                      <div className="flex justify-between border-b pb-2" style={{ borderColor: `${RULE}80` }}>
-                                        <span style={{ color: MUTED }}>{tr('Actor Serial', 'সদস্য সিরিয়াল')}</span>
-                                        <span className="font-mono font-bold uppercase" style={{ color: BRAND }}>{serialStr}</span>
-                                      </div>
-
-                                      {/* Actor Email */}
-                                      {r.actor?.email && (
-                                        <div className="flex justify-between border-b pb-2" style={{ borderColor: `${RULE}80` }}>
-                                          <span style={{ color: MUTED }}>{tr('Actor Email', 'ইমেল')}</span>
-                                          <span className="font-semibold" style={{ color: INK }}>{r.actor.email}</span>
-                                        </div>
-                                      )}
-
-                                      {/* Actor ID UUID */}
-                                      {r.actor_id && (
-                                        <div className="flex flex-col gap-0.5 pt-1">
-                                          <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color: MUTED }}>{tr('Actor Member ID', 'সদস্য আইডি')}</span>
-                                          <span className="font-mono text-[10px]" style={{ color: INK }}>{r.actor_id}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  <div className="text-[10px] font-bold italic pt-3 border-t mt-4 flex items-center gap-1" style={{ borderColor: RULE, color: GREEN }}>
-                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                    {tr('100% authentic database log entry', '১০০% সঠিক ডাটাবেস রেকর্ড')}
-                                  </div>
-                                </div>
-
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-
-                {filteredRows.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="px-5 py-16 text-center font-medium" style={{ color: MUTED }}>
-                      <AlertTriangle className="h-8 w-8 mx-auto mb-2" style={{ color: BRAND }} />
-                      {tr('No matching audit entries found.', 'কোনো ম্যাচিং অডিট এন্ট্রি খুঁজে পাওয়া যায়নি।')}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* TABLE FOOTER PAGINATION */}
-          {filteredRows.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-4 border-t px-5 py-4" style={{ borderColor: RULE }}>
-              <div className="text-xs font-semibold" style={{ color: MUTED }}>
-                {tr(
-                  `Showing ${(currentPage - 1) * pageSize + 1} to ${Math.min(
-                    currentPage * pageSize,
-                    filteredRows.length
-                  )} of ${filteredRows.length} results`,
-                  `${filteredRows.length}টি ফলাফলের মধ্যে ${(currentPage - 1) * pageSize + 1} থেকে ${Math.min(
-                    currentPage * pageSize,
-                    filteredRows.length
-                  )} দেখানো হচ্ছে`
-                )}
-              </div>
-
-              <div className="flex items-center gap-4">
-                {/* Pagination Controls */}
-                <div className="flex items-center gap-1.5">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    className="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-stone-50 disabled:opacity-40"
-                    style={{ borderColor: RULE, color: INK2 }}
-                  >
-                    {tr('Previous', 'পূর্ববর্তী')}
-                  </button>
-
-                  {/* Render page numbers */}
-                  {Array.from({ length: Math.min(totalPages, 5) }).map((_, idx) => {
-                    const pageNum = idx + 1;
-                    const isPageActive = currentPage === pageNum;
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className="rounded-lg px-3 py-1.5 text-xs font-bold transition-all"
-                        style={{
-                          background: isPageActive ? INK : PAPER,
-                          color: isPageActive ? CREAM : INK2,
-                          border: `1px solid ${isPageActive ? INK : RULE}`
-                        }}
-                      >
-                        {fmt.num(pageNum)}
-                      </button>
-                    );
-                  })}
-
-                  {totalPages > 5 && <span className="px-1 text-stone-400 font-bold">...</span>}
-                  
-                  {totalPages > 5 && (
-                    <button
-                      onClick={() => setCurrentPage(totalPages)}
-                      className="rounded-lg px-3 py-1.5 text-xs font-bold transition-all"
-                      style={{
-                        background: currentPage === totalPages ? INK : PAPER,
-                        color: currentPage === totalPages ? CREAM : INK2,
-                        border: `1px solid ${currentPage === totalPages ? INK : RULE}`
-                      }}
-                    >
-                      {fmt.num(totalPages)}
-                    </button>
-                  )}
-
-                  <button
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    className="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-stone-50 disabled:opacity-40"
-                    style={{ borderColor: RULE, color: INK2 }}
-                  >
-                    {tr('Next', 'পরবর্তী')}
-                  </button>
-                </div>
-
-                {/* Page Size selector */}
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="rounded-lg border bg-white px-2 py-1.5 text-xs font-semibold outline-none cursor-pointer"
-                  style={{ borderColor: RULE, color: INK2 }}
-                >
-                  <option value={10}>10 / {tr('page', 'পৃষ্ঠা')}</option>
-                  <option value={25}>25 / {tr('page', 'পৃষ্ঠা')}</option>
-                  <option value={50}>50 / {tr('page', 'পৃষ্ঠা')}</option>
-                </select>
-              </div>
+          {visible < items.length && (
+            <div className="flex flex-col items-center gap-1.5">
+              <button
+                type="button" onClick={() => setVisible((v) => v + PAGE)}
+                className={`min-h-[42px] w-full rounded-full px-6 text-[14px] font-bold sm:w-auto ${FOCUS}`}
+                style={{ background: INK, color: CREAM }}
+              >
+                {tr('Show older changes', 'আগের পরিবর্তন দেখুন')}
+              </button>
+              <span className="text-[12.5px]" style={{ color: MUTED }}>
+                {tr(`${n(items.length - visible)} more lines`, `আরও ${n(items.length - visible)}টি লাইন`)}
+              </span>
             </div>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Pieces ───────────────────────────────────────────────────────────────────
+
+function dayKey(iso: string): string {
+  return new Date(iso).toDateString();
+}
+
+function pluralEn(noun: string): string {
+  if (noun === 'attendance') return 'attendance records';
+  if (noun === 'bank / cash entry') return 'bank / cash entries';
+  if (/[^aeiou]y$/.test(noun)) return `${noun.slice(0, -1)}ies`;
+  return `${noun}s`;
+}
+
+function IconButton({ onClick, disabled, label, children }: {
+  onClick: () => void; disabled?: boolean; label: string; children: ReactNode;
+}) {
+  return (
+    <button
+      type="button" onClick={onClick} disabled={disabled}
+      className={`inline-flex min-h-[38px] items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold disabled:opacity-50 ${FOCUS}`}
+      style={{ border: `1px solid ${RULE}`, color: INK2, background: PAPER }}
+    >
+      {children}
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function Stat({ value, label, tone, onClick, pressed }: {
+  value: string; label: string; tone?: 'warn'; onClick: () => void; pressed: boolean;
+}) {
+  const warn = tone === 'warn';
+  const fg = warn ? '#92400e' : INK;
+  return (
+    <button
+      type="button" onClick={onClick} aria-pressed={pressed}
+      className={`flex items-baseline gap-2 rounded-xl px-3 py-2.5 text-left transition-colors ${FOCUS}`}
+      style={{
+        background: pressed ? (warn ? '#fef3c7' : '#e6f2f1') : (warn ? '#fffbeb' : PAPER),
+        border: `1px solid ${pressed ? (warn ? '#f59e0b' : BRAND) : (warn ? '#fde68a' : RULE)}`,
+      }}
+    >
+      <span className="shrink-0 whitespace-nowrap text-[20px] font-extrabold leading-none tabular-nums" style={{ color: fg }}>{value}</span>
+      <span className="min-w-0 text-[12.5px] font-semibold leading-tight" style={{ color: warn ? '#92400e' : MUTED }}>{label}</span>
+    </button>
+  );
+}
+
+function FilterSelect({ label, value, onChange, children, neutral }: {
+  label: string; value: string; onChange: (v: string) => void; children: ReactNode; neutral?: boolean;
+}) {
+  const id = useId();
+  const active = !neutral && value !== 'all';
+  return (
+    <div className="min-w-0 xl:w-[150px]">
+      <label htmlFor={id} className="sr-only">{label}</label>
+      <select
+        id={id} value={value} onChange={(e) => onChange(e.target.value)} title={label}
+        className={`min-h-[40px] w-full cursor-pointer truncate rounded-xl px-2.5 text-[13.5px] font-semibold ${FOCUS}`}
+        style={{
+          background: active ? '#e6f2f1' : PAPER,
+          color: active ? BRAND : INK,
+          border: `1px solid ${active ? BRAND : RULE}`,
+        }}
+      >
+        {children}
+      </select>
+    </div>
+  );
+}
+
+const KIND_STYLE: Record<Kind, { icon: LucideIcon; fg: string; bg: string }> = {
+  added: { icon: Plus, fg: '#0e6f4a', bg: '#e3f6ec' },
+  changed: { icon: Pencil, fg: '#92610a', bg: '#fdf3e0' },
+  removed: { icon: Trash2, fg: '#b91c1c', bg: '#fdecec' },
+};
+
+function LegendIcon({ kind }: { kind: Kind }) {
+  const k = KIND_STYLE[kind];
+  return (
+    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full" style={{ background: k.bg, color: k.fg }} aria-hidden>
+      <k.icon className="h-3.5 w-3.5" />
+    </span>
+  );
+}
+
+const ROLE_WORDS: Record<string, [string, string]> = {
+  super_admin: ['Super admin', 'সুপার অ্যাডমিন'],
+  executive_admin: ['Executive admin', 'এক্সিকিউটিভ অ্যাডমিন'],
+  admin: ['Admin', 'অ্যাডমিন'],
+  member: ['Member', 'সদস্য'],
+};
+
+/**
+ * Shown when one member is picked: who they are, the two ways to look at
+ * them (what they changed / what was changed about them), and a breakdown
+ * whose area buttons narrow the list below.
+ */
+function PersonPanel({ name, memberId, role, scope, setScope, counts, stats, area, setArea, period, onClose, tr, bn, n }: {
+  name: string; memberId: string | null; role: string | null;
+  scope: 'by' | 'about'; setScope: (s: 'by' | 'about') => void;
+  counts: { by: number; about: number };
+  stats: { total: number; added: number; changed: number; removed: number; attention: number; last: string | null; areas: Array<[Area, number]> };
+  area: Area | 'all'; setArea: (a: Area | 'all') => void; period: string;
+  onClose: () => void; tr: RowProps['tr']; bn: boolean; n: (v: number) => string;
+}) {
+  const initials = name.split(/\s+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+  const roleWord = role ? (ROLE_WORDS[role] ? (bn ? ROLE_WORDS[role][1] : ROLE_WORDS[role][0]) : role) : null;
+  const tabs: Array<{ key: 'by' | 'about'; label: string }> = [
+    { key: 'by', label: tr(`Changes made by ${name.split(' ')[0]} (${n(counts.by)})`, `${name.split(' ')[0]} যা বদলেছেন (${n(counts.by)})`) },
+    { key: 'about', label: tr(`Changes about ${name.split(' ')[0]} (${n(counts.about)})`, `${name.split(' ')[0]} সম্পর্কে (${n(counts.about)})`) },
+  ];
+  return (
+    <section aria-label={tr(`Activity of ${name}`, `${name}-এর কার্যকলাপ`)} className="rounded-2xl p-3 sm:p-4" style={{ background: PAPER, border: `1px solid ${BRAND}40` }}>
+      <div className="flex items-start gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[15px] font-bold text-white" style={{ background: BRAND }} aria-hidden>{initials}</span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[16px] font-bold leading-tight">{name}</div>
+          <div className="mt-0.5 text-[12.5px]" style={{ color: MUTED }}>
+            {[memberId, roleWord].filter(Boolean).join(' · ')}
+          </div>
+        </div>
+        <button type="button" onClick={onClose} aria-label={tr('Show everyone again', 'আবার সবাইকে দেখান')}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${FOCUS}`} style={{ border: `1px solid ${RULE}`, color: MUTED }}>
+          <X className="h-4 w-4" aria-hidden />
+        </button>
+      </div>
+
+      <div role="group" aria-label={tr('What to show', 'কী দেখাবেন')} className="mt-3 grid grid-cols-1 gap-1 rounded-xl p-1 sm:inline-grid sm:grid-cols-2" style={{ background: CREAM }}>
+        {tabs.map((t) => (
+          <button key={t.key} type="button" onClick={() => setScope(t.key)} aria-pressed={scope === t.key}
+            className={`min-h-[36px] rounded-lg px-3 text-[13.5px] font-semibold ${FOCUS}`}
+            style={scope === t.key ? { background: PAPER, color: INK, boxShadow: '0 1px 3px rgba(0,0,0,.12)' } : { color: MUTED }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {stats.total === 0 ? (
+        <p className="mt-3 text-[14px]" style={{ color: INK2 }}>
+          {scope === 'by'
+            ? tr(`${name} made no changes in this period (${period.toLowerCase()}). Try a longer period.`, `এই সময়ে (${period}) ${name} কোনো পরিবর্তন করেননি। আরও বড় সময়কাল বেছে নিন।`)
+            : tr(`Nothing about ${name} was changed in this period (${period.toLowerCase()}).`, `এই সময়ে (${period}) ${name} সম্পর্কে কিছু বদলায়নি।`)}
+        </p>
+      ) : (
+        <>
+          <p className="mt-3 text-[14px] leading-relaxed" style={{ color: INK2 }}>
+            {scope === 'by'
+              ? tr(`In ${period.toLowerCase()}, ${name} made `, `${period}-এ ${name} `)
+              : tr(`In ${period.toLowerCase()}, there were `, `${period}-এ ${name} সম্পর্কে `)}
+            <b style={{ color: INK }}>{tr(`${n(stats.total)} ${stats.total === 1 ? 'change' : 'changes'}`, `${n(stats.total)}টি পরিবর্তন`)}</b>
+            {scope === 'about' ? tr(` about ${name}`, '') : ''}
+            {tr(': ', ': ')}
+            {tr(`${n(stats.added)} added, ${n(stats.changed)} changed, ${n(stats.removed)} removed.`, `${n(stats.added)}টি যোগ, ${n(stats.changed)}টি পরিবর্তন, ${n(stats.removed)}টি মুছে ফেলা।`)}
+            {stats.attention > 0 && (
+              <span style={{ color: '#92400e' }}> {tr(`${n(stats.attention)} need attention.`, `${n(stats.attention)}টি মনোযোগ প্রয়োজন।`)}</span>
+            )}
+            {stats.last && (
+              <> {tr('Last: ', 'সর্বশেষ: ')}{new Date(stats.last).toLocaleString(bn ? 'bn-IN' : 'en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}.</>
+            )}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label={tr('Filter by area', 'বিভাগ অনুযায়ী ফিল্টার')}>
+            {stats.areas.map(([a, count]) => {
+              const A = AREAS[a];
+              const on = area === a;
+              return (
+                <button key={a} type="button" onClick={() => setArea(on ? 'all' : a)} aria-pressed={on}
+                  className={`inline-flex min-h-[32px] items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold ${FOCUS}`}
+                  style={{ background: on ? A.fg : A.bg, color: on ? '#fff' : A.fg }}>
+                  <A.icon className="h-3.5 w-3.5" aria-hidden /> {bn ? A.bn : A.en} <span className="opacity-80">{n(count)}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+interface RowProps {
+  tr: (en: string, bn: string) => string;
+  bn: boolean;
+  fieldLabel: (k: string) => string;
+  formatValue: (k: string, v: unknown) => string;
+  lookups: Lookups;
+}
+
+const timeOf = (iso: string, bn: boolean) =>
+  new Date(iso).toLocaleTimeString(bn ? 'bn-IN' : 'en-IN', { hour: 'numeric', minute: '2-digit' });
+
+/** Area, automatic and attention badges. */
+function Badges({ area, automatic, attention, tr, bn }: {
+  area: Area; automatic: boolean; attention: boolean; tr: RowProps['tr']; bn: boolean;
+}) {
+  const a = AREAS[area];
+  return (
+    <>
+      <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold" style={{ background: a.bg, color: a.fg }}>
+        <a.icon className="h-3 w-3" aria-hidden /> {bn ? a.bn : a.en}
+      </span>
+      {automatic && (
+        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold" style={{ background: '#f3eefe', color: '#6d28d9' }}>
+          <Bot className="h-3 w-3" aria-hidden /> {tr('Automatic', 'স্বয়ংক্রিয়')}
+        </span>
+      )}
+      {attention && (
+        <span
+          title={tr('Something was deleted, someone’s access changed, or a bank account was edited', 'কিছু মুছে ফেলা, অনুমতি পরিবর্তন বা ব্যাংক অ্যাকাউন্ট সম্পাদনা')}
+          className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-bold" style={{ background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a' }}
+        >
+          <AlertTriangle className="h-3 w-3" aria-hidden /> {tr('Attention', 'মনোযোগ')}
+        </span>
+      )}
+    </>
+  );
+}
+
+/**
+ * One line of the feed. On phones: icon, sentence, then time and badges
+ * underneath. From `sm` up: a fixed time column, the sentence, and the badges
+ * at the right, so a row is a single scan.
+ */
+function RowButton({ open, onToggle, controls, kind, time, dateTime, sentence, sub, badges, count, tr }: {
+  open: boolean; onToggle: () => void; controls: string; kind: Kind; time: string; dateTime: string;
+  sentence: string; sub: string | null; badges: ReactNode; count?: number; tr: RowProps['tr'];
+}) {
+  // A group's sub-line already carries its time range, so phones skip the repeat.
+  const mobileTime = count === undefined;
+  const k = KIND_STYLE[kind];
+  const KindIcon = k.icon;
+  return (
+    <button
+      type="button" onClick={onToggle} aria-expanded={open} aria-controls={controls}
+      className={`grid w-full grid-cols-[32px_minmax(0,1fr)_20px] items-start gap-x-3 px-3 py-2.5 text-left transition-colors hover:bg-stone-50 sm:grid-cols-[64px_32px_minmax(0,1fr)_auto_20px] sm:items-center sm:px-4 ${FOCUS} focus-visible:-outline-offset-2`}
+    >
+      <time dateTime={dateTime} className="hidden text-[13px] tabular-nums sm:block" style={{ color: MUTED }}>{time}</time>
+      <span className="relative flex h-8 w-8 items-center justify-center rounded-full" style={{ background: k.bg, color: k.fg }} aria-hidden>
+        <KindIcon className="h-4 w-4" />
+        {count !== undefined && (
+          <span className="absolute -bottom-1 -right-1.5 min-w-[18px] rounded-full px-1 text-center text-[10.5px] font-bold leading-[18px] text-white" style={{ background: k.fg }}>
+            {count}
+          </span>
+        )}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[14.5px] font-semibold leading-snug" style={{ color: INK }}>{sentence}</span>
+        {sub && <span className="mt-0.5 block text-[13px] leading-snug" style={{ color: INK2 }}>{sub}</span>}
+        <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[12.5px] sm:hidden" style={{ color: MUTED }}>
+          {mobileTime && <time dateTime={dateTime}>{time}</time>}
+          {badges}
+        </span>
+      </span>
+      <span className="hidden flex-wrap justify-end gap-1.5 sm:flex">{badges}</span>
+      <ChevronDown className={`mt-1.5 h-5 w-5 transition-transform motion-reduce:transition-none sm:mt-0 ${open ? 'rotate-180' : ''}`} style={{ color: MUTED }} aria-hidden />
+      <span className="sr-only">{open ? tr('Hide details', 'বিস্তারিত লুকান') : tr('Show details', 'বিস্তারিত দেখুন')}</span>
+    </button>
+  );
+}
+
+function changedSummary(names: string[], tr: RowProps['tr']): string | null {
+  if (!names.length) return null;
+  const head = names.slice(0, 4).join(', ');
+  return tr('Changed: ', 'পরিবর্তিত: ') + head + (names.length > 4 ? tr(` and ${names.length - 4} more`, ` ও আরও ${names.length - 4}টি`) : '');
+}
+
+function EntryRow({ entry: e, open, onToggle, tr, bn, fieldLabel, formatValue, lookups }: RowProps & {
+  entry: Entry; open: boolean; onToggle: () => void;
+}) {
+  const panelId = useId();
+  const changeRows = e.changes ? Object.entries(e.changes).filter(([key]) => !HIDDEN_FIELDS.has(key)) : [];
+  const actor = e.row.actor_id ? lookups.members[e.row.actor_id] : null;
+  return (
+    <>
+      <RowButton
+        open={open} onToggle={onToggle} controls={panelId} kind={e.kind}
+        time={timeOf(e.row.created_at, bn)} dateTime={e.row.created_at}
+        sentence={e.sentence}
+        sub={e.kind === 'changed' ? changedSummary(changeRows.map(([k]) => fieldLabel(k)), tr) : null}
+        badges={<Badges area={e.area} automatic={!e.row.actor_id} attention={e.attention} tr={tr} bn={bn} />}
+        tr={tr}
+      />
+      {open && (
+        <div id={panelId} className="px-3 pb-3 pl-[56px] sm:pl-[128px] sm:pr-4">
+          <EntryDetails entry={e} tr={tr} bn={bn} fieldLabel={fieldLabel} formatValue={formatValue}
+            actorId={actor ? memberDisplayId(actor) : null} />
+        </div>
+      )}
+    </>
+  );
+}
+
+function GroupRow({ entries, open, onToggle, openEntry, setOpenEntry, tr, bn, n, fieldLabel, formatValue, lookups }: RowProps & {
+  entries: Entry[]; open: boolean; onToggle: () => void;
+  openEntry: string | null; setOpenEntry: (id: string | null) => void; n: (v: number) => string;
+}) {
+  const panelId = useId();
+  const first = entries[0];
+  const count = entries.length;
+  const who = first.actorName ?? tr('The website', 'ওয়েবসাইট');
+  const isAttendance = first.row.entity === 'attendance' || (first.row.entity === 'cswo_attendance' && first.kind === 'added');
+  const c = n(count);
+
+  // Runs of a specific event read as that event, not as "updated N records".
+  const byTag: Record<string, string> = {
+    blood_donated: tr(`${who} recorded ${count} blood donations`, `${who} ${c}টি রক্তদান নথিভুক্ত করেছেন`),
+    payment_paid: first.row.actor_id
+      ? tr(`${who} marked ${count} payments as paid`, `${who} ${c}টি পেমেন্ট পরিশোধিত চিহ্নিত করেছেন`)
+      : tr(`${count} online payments were confirmed`, `${c}টি অনলাইন পেমেন্ট নিশ্চিত হয়েছে`),
+    payment_pending: tr(`${count} payments started processing`, `${c}টি পেমেন্ট প্রক্রিয়াধীন`),
+    payment_failed: tr(`${count} payments failed`, `${c}টি পেমেন্ট ব্যর্থ হয়েছে`),
+    payment_started: tr(`${count} online payments were started`, `${c}টি অনলাইন পেমেন্ট শুরু হয়েছে`),
+    receipt_sent: tr(`${count} receipts were emailed`, `${c}টি রসিদ ইমেল করা হয়েছে`),
+    receipt_sending: tr(`Sending ${count} receipts`, `${c}টি রসিদ পাঠানো হচ্ছে`),
+    receipt_failed: tr(`${count} receipt emails failed`, `${c}টি রসিদ ইমেল ব্যর্থ হয়েছে`),
+  };
+
+  const sentence = byTag[first.tag] ?? (isAttendance
+    ? tr(`${who} marked ${count} members present`, `${who} ${c} জন সদস্যকে উপস্থিত চিহ্নিত করেছেন`)
+    : tr(
+      `${who} ${first.kind === 'added' ? 'added' : first.kind === 'removed' ? 'removed' : 'updated'} ${count} ${pluralEn(first.ent.en)}`,
+      `${who} ${c}টি ${first.ent.bn} ${first.kind === 'added' ? 'যোগ করেছেন' : first.kind === 'removed' ? 'মুছে ফেলেছেন' : 'পরিবর্তন করেছেন'}`,
+    ));
+
+  const fields = new Set<string>();
+  for (const e of entries) for (const k of Object.keys(e.changes ?? {})) if (!HIDDEN_FIELDS.has(k)) fields.add(k);
+
+  // Newest first, so the run reads earliest–latest from the last entry.
+  const range = `${timeOf(entries[count - 1].row.created_at, bn)}–${timeOf(first.row.created_at, bn)}`;
+
+  return (
+    <>
+      <RowButton
+        open={open} onToggle={onToggle} controls={panelId} kind={first.kind} count={count}
+        time={timeOf(first.row.created_at, bn)} dateTime={first.row.created_at}
+        sentence={sentence}
+        sub={[range, changedSummary([...fields].map(fieldLabel), tr)].filter(Boolean).join(' · ')}
+        badges={<Badges area={first.area} automatic={!first.row.actor_id} attention={entries.some((e) => e.attention)} tr={tr} bn={bn} />}
+        tr={tr}
+      />
+      {open && (
+        <ul id={panelId} aria-label={sentence} className="mx-3 mb-3 overflow-hidden rounded-xl sm:ml-[128px] sm:mr-4" style={{ border: `1px solid ${RULE}`, background: '#fcfbf9' }}>
+          {entries.map((e, i) => (
+            <li key={e.row.id} style={{ borderTop: i === 0 ? undefined : `1px solid ${RULE}` }}>
+              <SubRow entry={e} open={openEntry === e.row.id}
+                onToggle={() => setOpenEntry(openEntry === e.row.id ? null : e.row.id)}
+                tr={tr} bn={bn} fieldLabel={fieldLabel} formatValue={formatValue} lookups={lookups} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+/**
+ * A single entry inside an expanded group. The group line already says who
+ * did what to which kind of record, so this line only names the record and,
+ * for an update, what changed on it.
+ */
+function SubRow({ entry: e, open, onToggle, tr, bn, fieldLabel, formatValue, lookups }: RowProps & {
+  entry: Entry; open: boolean; onToggle: () => void;
+}) {
+  const panelId = useId();
+  const actor = e.row.actor_id ? lookups.members[e.row.actor_id] : null;
+  const changes = e.changes ? Object.entries(e.changes).filter(([k]) => !HIDDEN_FIELDS.has(k)) : [];
+  const isAttendance = e.row.entity === 'attendance' || e.row.entity === 'cswo_attendance';
+  const label = isAttendance ? e.sentence : (e.name || tr('(unnamed record)', '(নামহীন রেকর্ড)'));
+  const detail = changes.slice(0, 2)
+    .map(([k, v]) => `${fieldLabel(k)}: ${formatValue(k, v.from)} → ${formatValue(k, v.to)}`).join(' · ')
+    + (changes.length > 2 ? ' …' : '');
+  return (
+    <>
+      <button
+        type="button" onClick={onToggle} aria-expanded={open} aria-controls={panelId}
+        className={`flex w-full items-center gap-3 px-3 py-1.5 text-left text-[13.5px] hover:bg-stone-50 ${FOCUS} focus-visible:-outline-offset-2`}
+      >
+        <time dateTime={e.row.created_at} className="w-[64px] shrink-0 whitespace-nowrap tabular-nums" style={{ color: MUTED }}>{timeOf(e.row.created_at, bn)}</time>
+        <span className="flex min-w-0 flex-1 flex-col sm:flex-row sm:items-baseline sm:gap-3">
+          <span className="font-semibold" style={{ color: INK }}>{label}</span>
+          {detail && <span className="min-w-0 text-[13px]" style={{ color: INK2 }}>{detail}</span>}
+        </span>
+        <ChevronDown className={`h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ${open ? 'rotate-180' : ''}`} style={{ color: MUTED }} aria-hidden />
+      </button>
+      {open && (
+        <div id={panelId} className="px-3 pb-3">
+          <EntryDetails entry={e} tr={tr} bn={bn} fieldLabel={fieldLabel} formatValue={formatValue}
+            actorId={actor ? memberDisplayId(actor) : null} />
+        </div>
+      )}
+    </>
+  );
+}
+
+function EntryDetails({ entry: e, tr, bn, fieldLabel, formatValue, actorId }: Omit<RowProps, 'lookups'> & {
+  entry: Entry; actorId: string | null;
+}) {
+  const changeRows = e.changes ? Object.entries(e.changes).filter(([key]) => !HIDDEN_FIELDS.has(key)) : [];
+  const snapRows = !e.changes && e.snapshot
+    ? Object.entries(e.snapshot).filter(([key, v]) => !HIDDEN_FIELDS.has(key) && v !== null && v !== '' && typeof v !== 'object')
+    : [];
+  const rowCls = 'grid grid-cols-1 gap-0.5 px-3 py-2 sm:grid-cols-[170px_minmax(0,1fr)] sm:gap-3';
+
+  return (
+    <div className="space-y-2">
+      {changeRows.length > 0 && (
+        <dl aria-label={tr('What changed', 'কী বদলেছে')} className="divide-y overflow-hidden rounded-xl" style={{ border: `1px solid ${RULE}`, background: PAPER }}>
+          {changeRows.map(([key, v]) => (
+            <div key={key} className={rowCls} style={{ borderColor: RULE }}>
+              <dt className="text-[13px] font-semibold" style={{ color: MUTED }}>{fieldLabel(key)}</dt>
+              <dd className="flex flex-wrap items-center gap-x-2 gap-y-1 break-words text-[14px]">
+                <span className="rounded px-1.5 py-0.5 line-through decoration-1" style={{ background: '#fdecec', color: '#991b1b' }}>
+                  <span className="sr-only">{tr('from ', 'আগে ')}</span>{formatValue(key, v.from)}
+                </span>
+                <span aria-hidden style={{ color: MUTED }}>→</span>
+                <span className="rounded px-1.5 py-0.5 font-semibold" style={{ background: '#e3f6ec', color: '#14532d' }}>
+                  <span className="sr-only">{tr('to ', 'পরে ')}</span>{formatValue(key, v.to)}
+                </span>
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {snapRows.length > 0 && (
+        <dl
+          aria-label={e.kind === 'removed' ? tr('What was removed', 'কী মুছে ফেলা হয়েছে') : tr('Details recorded', 'নথিভুক্ত বিবরণ')}
+          className="grid overflow-hidden rounded-xl md:grid-cols-2"
+          style={{ border: `1px solid ${RULE}`, background: PAPER }}
+        >
+          {snapRows.map(([key, v]) => (
+            <div key={key} className={`${rowCls} border-t md:[&:nth-child(-n+2)]:border-t-0 [&:first-child]:border-t-0`} style={{ borderColor: RULE }}>
+              <dt className="text-[13px] font-semibold" style={{ color: MUTED }}>{fieldLabel(key)}</dt>
+              <dd className="break-words text-[14px]" style={{ color: INK }}>{formatValue(key, v)}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {changeRows.length === 0 && snapRows.length === 0 && (
+        <p className="text-[13.5px]" style={{ color: MUTED }}>{tr('No further details were recorded for this change.', 'এই পরিবর্তনের আর কোনো বিবরণ নথিভুক্ত হয়নি।')}</p>
+      )}
+
+      <details className="rounded-xl text-[13px]" style={{ background: CREAM, border: `1px solid ${RULE}` }}>
+        <summary className={`min-h-[36px] cursor-pointer select-none px-3 py-2 font-semibold ${FOCUS}`} style={{ color: INK2 }}>
+          {tr('Technical details', 'কারিগরি বিবরণ')}
+        </summary>
+        <dl className="grid grid-cols-1 gap-x-3 gap-y-1 px-3 pb-3 sm:grid-cols-[140px_minmax(0,1fr)]" style={{ color: INK2 }}>
+          <dt style={{ color: MUTED }}>{tr('Exact time', 'সঠিক সময়')}</dt>
+          <dd>{new Date(e.row.created_at).toLocaleString(bn ? 'bn-IN' : 'en-IN', { dateStyle: 'full', timeStyle: 'medium' })}</dd>
+          <dt style={{ color: MUTED }}>{tr('Done by', 'কে করেছেন')}</dt>
+          <dd>{e.actorName ?? tr('System (automatic)', 'সিস্টেম (স্বয়ংক্রিয়)')}{actorId ? ` · ${actorId}` : ''}</dd>
+          <dt style={{ color: MUTED }}>{tr('Table · action', 'টেবিল · অ্যাকশন')}</dt>
+          <dd className="break-all font-mono text-[12px]">{e.row.entity} · {e.row.action}</dd>
+          {e.row.entity_id && (
+            <>
+              <dt style={{ color: MUTED }}>{tr('Record ID', 'রেকর্ড আইডি')}</dt>
+              <dd className="break-all font-mono text-[12px]">{e.row.entity_id}</dd>
+            </>
+          )}
+          <dt style={{ color: MUTED }}>{tr('Log ID', 'লগ আইডি')}</dt>
+          <dd className="break-all font-mono text-[12px]">{e.row.id}</dd>
+        </dl>
+      </details>
     </div>
   );
 }

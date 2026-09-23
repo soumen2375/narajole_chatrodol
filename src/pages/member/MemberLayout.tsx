@@ -23,7 +23,9 @@ import {
   Layers,
   CheckCircle2,
   Tag,
-  HardDrive
+  HardDrive,
+  Newspaper,
+  Handshake
 } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -69,6 +71,7 @@ export default function MemberLayout() {
       { to: '/member/media',         label: tr('Media Library', 'মিডিয়া লাইব্রেরি'), icon: HardDrive } as NavItem,
       { to: '/member/categories',    label: t('a.categories'),                  icon: FolderOpen } as NavItem,
       { to: '/member/gallery-manage',label: t('a.gallery'),                     icon: Images } as NavItem,
+      { to: '/member/newsletter-manage', label: tr('Newsletter', 'নিউজলেটার'), icon: Newspaper } as NavItem,
     ] : []),
 
     // ── Secretary / Events Capability (Dynamic) ────────────────────────
@@ -78,6 +81,7 @@ export default function MemberLayout() {
       { to: '/member/events',            label: t('a.events'),          icon: CalendarDays } as NavItem,
       { to: '/member/attendance-manage', label: t('a.attendance'),      icon: ClipboardList } as NavItem,
       { to: '/member/blood-donors-manage', label: tr('Blood Donors', 'রক্তদাতা তালিকা'), icon: Droplet } as NavItem,
+      { to: '/member/partnerships-manage', label: tr('Partnerships', 'অংশীদারিত্ব'), icon: Handshake } as NavItem,
     ] : []),
 
     // ── Treasurer / Finance Capability (Dynamic) ───────────────────────

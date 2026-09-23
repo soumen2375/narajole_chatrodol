@@ -11,7 +11,12 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
 import path from 'node:path';
-import { generateReceiptPdfBase64, receiptFileName } from './_lib/receipt-pdf.js';
+import {
+  generateReceiptPdfBase64,
+  generateCertificatePdfBase64,
+  receiptFileName,
+  type CertificatePdfInput,
+} from './_lib/receipt-pdf.js';
 
 // ── Optional Supabase client (for in-app notification logging) ────────────────
 function getSupabaseClient() {
@@ -902,6 +907,75 @@ export async function dispatchReceiptEmail(
   );
 
   return { success: true, messageId: emailResult.messageId };
+}
+
+// ── 80G certificate email ─────────────────────────────────────────────────────
+
+export interface CertificateEmailPayload extends CertificatePdfInput {
+  recipientEmail: string;
+}
+
+function escHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function buildCertificateHtml(data: CertificateEmailPayload): string {
+  const amount = `₹${Number(data.amount).toLocaleString('en-IN')}`;
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>80G Donation Certificate</title></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+  <div style="padding:24px 10px;">
+    <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #d9dde3;border-radius:10px;overflow:hidden;">
+      <div style="background:#7B1E24;text-align:center;padding:24px 20px;">
+        <img src="https://www.chhatradol.org/logo.png" alt="Chhatradol Social Welfare Organization" width="72" height="72"
+          style="width:72px;height:72px;object-fit:contain;display:block;margin:0 auto 12px;border-radius:50%;background-color:#ffffff;padding:6px;box-sizing:border-box;">
+        <div style="color:#ffffff;font-size:20px;font-weight:700;text-transform:uppercase;">Chhatradol Social Welfare Organization</div>
+        <div style="color:#DFB658;font-size:13px;margin-top:6px;letter-spacing:.08em;text-transform:uppercase;">Donation Certificate u/s 80G</div>
+      </div>
+      <div style="padding:24px 26px;font-size:14px;line-height:1.6;">
+        <p style="margin:0 0 14px;">Dear ${escHtml(data.donorName || 'Supporter')},</p>
+        <p style="margin:0 0 14px;">Please find attached your 80G donation certificate for your donation of
+          <b>${amount}</b> (certificate no. <b>${escHtml(data.receiptNumber)}</b>, financial year <b>${escHtml(data.fy)}</b>).
+          Keep it with your records to claim the deduction under Section 80G of the Income Tax Act, 1961.</p>
+        <p style="margin:0;">Thank you for supporting our work.</p>
+      </div>
+      <div style="background:#eef0f3;text-align:center;padding:16px 20px;border-top:1px solid #d9dde3;font-size:11px;color:#6b7280;">
+        Registration No: IV-100200047/2026 &middot; info@chhatradol.org &middot; www.chhatradol.org
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+/** Emails the donor their 80G certificate as a PDF attachment. */
+export async function dispatchCertificateEmail(
+  body: CertificateEmailPayload,
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const resendApiKey = getResendApiKey();
+  if (!resendApiKey) {
+    return { success: false, error: 'RESEND_API_KEY not configured. Email was not sent.' };
+  }
+
+  // Unlike the receipt, the PDF is the whole point of this email — if it
+  // cannot be rendered, send nothing rather than an empty "see attached".
+  const content = await generateCertificatePdfBase64(body);
+  const safe = String(body.receiptNumber || 'certificate').replace(/[^A-Za-z0-9._-]/g, '-');
+
+  return sendViaResend(
+    resendApiKey,
+    body.recipientEmail,
+    body.donorName || 'Valued Supporter',
+    'Chhatradol Social Welfare Organization - 80G Donation Certificate',
+    buildCertificateHtml(body),
+    { filename: `80G-${safe}.pdf`, content },
+  );
 }
 
 // ── Main Handler ──────────────────────────────────────────────────────────────

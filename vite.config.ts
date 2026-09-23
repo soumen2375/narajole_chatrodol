@@ -19,7 +19,10 @@ function apiDevServerPlugin(): Plugin {
           url === '/api/send-receipt-email' ||
           url === '/api/resend-payment-receipt' ||
           url === '/api/letter-pdf' ||
-          url === '/api/send-letter-email'
+          url === '/api/send-letter-email' ||
+          url === '/api/send-newsletter' ||
+          url === '/api/send-partnership' ||
+          url === '/api/partnership-letter-pdf'
         ) {
           // Always reload latest .env variables in dev
           const env = loadEnv('development', process.cwd(), '');
@@ -304,6 +307,51 @@ function apiDevServerPlugin(): Plugin {
           }
 
           // POST A SECRETARY LETTER TO ITS ADDRESSEE
+          if (url === '/api/send-partnership') {
+            try {
+              const { default: handler } =
+                await import('./api/send-partnership');
+
+              await handler(req, res);
+            } catch (e: unknown) {
+              console.error('Error in /api/send-partnership dev middleware:', e);
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: e instanceof Error ? e.message : 'Internal Server Error' }));
+            }
+            return;
+          }
+
+          if (url === '/api/partnership-letter-pdf') {
+            try {
+              const { default: handler } =
+                await import('./api/partnership-letter-pdf');
+
+              await handler(req, res);
+            } catch (e: unknown) {
+              console.error('Error in /api/partnership-letter-pdf dev middleware:', e);
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: e instanceof Error ? e.message : 'Internal Server Error' }));
+            }
+            return;
+          }
+
+          if (url === '/api/send-newsletter') {
+            try {
+              const { default: handler } =
+                await import('./api/send-newsletter');
+
+              await handler(req, res);
+            } catch (e: unknown) {
+              console.error('Error in /api/send-newsletter dev middleware:', e);
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: e instanceof Error ? e.message : 'Internal Server Error' }));
+            }
+            return;
+          }
+
           if (url === '/api/send-letter-email') {
             try {
               const { default: handler } =

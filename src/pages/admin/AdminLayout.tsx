@@ -22,6 +22,8 @@ import {
   CheckCircle2,
   Tag,
   QrCode,
+  Newspaper,
+  Handshake,
 } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
@@ -53,6 +55,7 @@ export default function AdminLayout() {
       { to: '/admin/media',         label: 'Media Library',  icon: HardDrive } as NavItem,
       { to: '/admin/categories',    label: t('a.categories'), icon: FolderOpen } as NavItem,
       { to: '/admin/gallery',       label: t('a.gallery'),    icon: Images } as NavItem,
+      { to: '/admin/newsletter',    label: tr('Newsletter', 'নিউজলেটার'), icon: Newspaper } as NavItem,
     ] : []),
 
     // ── Secretary / Events ────────────────────────────────────────────
@@ -62,6 +65,7 @@ export default function AdminLayout() {
       { to: '/admin/events',       label: t('a.events'),       icon: CalendarDays } as NavItem,
       { to: '/admin/attendance',   label: t('a.attendance'),   icon: ClipboardList } as NavItem,
       { to: '/admin/blood-donors', label: tr('Blood Donors', 'রক্তদাতা তালিকা'), icon: Droplet } as NavItem,
+      { to: '/admin/partnerships', label: tr('Partnerships', 'অংশীদারিত্ব'), icon: Handshake } as NavItem,
     ] : []),
 
     // ── Treasurer / Finance ───────────────────────────────────────────

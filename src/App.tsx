@@ -71,6 +71,8 @@ const AdminCompliance = lazy(() => import('@/pages/admin/AdminCompliance'));
 const AdminBankAccounts = lazy(() => import('@/pages/admin/AdminBankAccounts'));
 const AdminReports = lazy(() => import('@/pages/admin/AdminReports'));
 const AdminMessages = lazy(() => import('@/pages/admin/AdminMessages'));
+const AdminNewsletter = lazy(() => import('@/pages/admin/AdminNewsletter'));
+const AdminPartnerships = lazy(() => import('@/pages/admin/AdminPartnerships'));
 const AdminBloodDonors = lazy(() => import('@/pages/admin/AdminBloodDonors'));
 const AdminMediaLibrary = lazy(() => import('@/pages/admin/AdminMediaLibrary'));
 
@@ -150,6 +152,7 @@ export default function App() {
             <Route path="media" element={<ProtectedRoute require="canManagePosts"><AdminMediaLibrary /></ProtectedRoute>} />
             <Route path="categories" element={<ProtectedRoute require="canManagePosts"><AdminCategories /></ProtectedRoute>} />
             <Route path="gallery-manage" element={<ProtectedRoute require="canManagePosts"><AdminGallery /></ProtectedRoute>} />
+            <Route path="newsletter-manage" element={<ProtectedRoute require="canManagePosts"><AdminNewsletter /></ProtectedRoute>} />
             
             <Route path="event-dashboard" element={<ProtectedRoute require="canManageEvents"><AdminEventsDashboard /></ProtectedRoute>} />
             <Route path="events" element={<ProtectedRoute require="canManageEvents"><AdminEvents /></ProtectedRoute>} />
@@ -162,6 +165,7 @@ export default function App() {
             <Route path="events/:id/report" element={<ProtectedRoute require="canManageEvents"><AdminEventReport /></ProtectedRoute>} />
             <Route path="attendance-manage" element={<ProtectedRoute require="canManageEvents"><AdminQRAttendance /></ProtectedRoute>} />
             <Route path="blood-donors-manage" element={<ProtectedRoute require="canManageEvents"><AdminBloodDonors /></ProtectedRoute>} />
+            <Route path="partnerships-manage" element={<ProtectedRoute require="canManageEvents"><AdminPartnerships /></ProtectedRoute>} />
 
             <Route path="finance" element={<ProtectedRoute require="canManageFinance"><AdminFinance /></ProtectedRoute>} />
             <Route path="contributions-manage" element={<ProtectedRoute require="canManageFinance"><AdminContributions /></ProtectedRoute>} />
@@ -219,6 +223,8 @@ export default function App() {
             <Route path="reports" element={<AdminReports />} />
             <Route path="audit" element={<AdminAudit />} />
             <Route path="messages" element={<AdminMessages />} />
+            <Route path="newsletter" element={<AdminNewsletter />} />
+            <Route path="partnerships" element={<AdminPartnerships />} />
             <Route path="blood-donors" element={<AdminBloodDonors />} />
           </Route>
 

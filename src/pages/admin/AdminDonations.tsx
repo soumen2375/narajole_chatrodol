@@ -339,6 +339,8 @@ export default function AdminDonations() {
 
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  // The Email action asks which document to send before sending anything.
+  const [emailChoiceFor, setEmailChoiceFor] = useState<string | null>(null);
 
   const syncCashfreeStatus = async (d: DonationRow) => {
     setSyncingId(d.id);
@@ -374,7 +376,7 @@ export default function AdminDonations() {
     }
   };
 
-  const resendReceipt = async (d: DonationRow) => {
+  const resendReceipt = async (d: DonationRow, docKind: 'receipt' | 'certificate' = 'receipt') => {
     if (!d.donor_email) {
       alert(tr('No email address on this record.', 'এই রেকর্ডে কোনো ইমেল নেই।'));
       return;
@@ -390,7 +392,12 @@ export default function AdminDonations() {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ id: d.id, type: 'donation' }),
+        // Dues rows carry a monthly-contribution id, not a donation id.
+        body: JSON.stringify({
+          id: d.id,
+          type: d.source === 'dues' ? 'contribution' : 'donation',
+          document: docKind,
+        }),
       });
       // A missing/failed endpoint answers with HTML, not JSON — report that
       // plainly instead of a misleading "network error".
@@ -406,7 +413,10 @@ export default function AdminDonations() {
         return;
       }
       if (data.success) {
-        alert(tr('Receipt sent successfully!', 'রসিদ সফলভাবে পাঠানো হয়েছে!'));
+        alert(docKind === 'certificate'
+          ? tr('80G certificate sent successfully!', '৮০জি সার্টিফিকেট সফলভাবে পাঠানো হয়েছে!')
+          : tr('Receipt sent successfully!', 'রসিদ সফলভাবে পাঠানো হয়েছে!'));
+        setEmailChoiceFor(null);
         loadDonations();
       } else {
         alert(data.error || tr('Unable to resend receipt.', 'রসিদ পাঠাতে সমস্যা হয়েছে।'));
@@ -898,7 +908,7 @@ export default function AdminDonations() {
         const canSync = !!d.cashfree_order_id && d.status !== 'paid';
         const manual = isManual(d);
         const online = d.payment_method !== 'cash';
-        const close = () => setDetail(null);
+        const close = () => { setDetail(null); setEmailChoiceFor(null); };
         const paid = d.status === 'paid';
 
         return (
@@ -979,9 +989,29 @@ export default function AdminDonations() {
                     )}
                     {paid && d.donor_email && (
                       <BigAction icon={Mail}
-                        title={resendingId === d.id ? tr('Sending…', 'পাঠানো হচ্ছে…') : tr('Email receipt', 'ইমেল রসিদ')}
-                        sub={tr('Send receipt to email', 'ইমেলে রসিদ পাঠান')}
-                        tone="plain" disabled={resendingId === d.id} onClick={() => resendReceipt(d)} />
+                        title={resendingId === d.id ? tr('Sending…', 'পাঠানো হচ্ছে…') : tr('Email', 'ইমেল')}
+                        sub={d.source === 'dues'
+                          ? tr('Send receipt to email', 'ইমেলে রসিদ পাঠান')
+                          : tr('Send receipt or 80G certificate', 'রসিদ বা ৮০জি সার্টিফিকেট পাঠান')}
+                        tone={emailChoiceFor === d.id ? 'blue' : 'plain'} disabled={resendingId === d.id}
+                        onClick={() => {
+                          // Dues have no 80G certificate, so there is nothing to choose.
+                          if (d.source === 'dues') resendReceipt(d, 'receipt');
+                          else setEmailChoiceFor(emailChoiceFor === d.id ? null : d.id);
+                        }} />
+                    )}
+                    {paid && d.donor_email && d.source !== 'dues' && emailChoiceFor === d.id && (
+                      <div className="rounded-[13px] p-3 sm:col-span-2" style={{ background: '#f5f8ff', border: '1px solid #d3e0fa' }}>
+                        <div className="mb-2 text-[12.5px] font-semibold" style={{ color: '#1a5fd0' }}>
+                          {tr('Which document should be emailed to', 'কোন নথি পাঠানো হবে')} <span className="font-bold">{d.donor_email}</span>?
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <BigAction icon={FileText} title={tr('Receipt', 'রসিদ')} sub={tr('Email the payment receipt', 'পেমেন্ট রসিদ ইমেল করুন')}
+                            tone="green" disabled={resendingId === d.id} onClick={() => resendReceipt(d, 'receipt')} />
+                          <BigAction icon={Award} title={tr('80G certificate', '৮০জি সার্টিফিকেট')} sub={tr('Email the 80G certificate', '৮০জি সার্টিফিকেট ইমেল করুন')}
+                            tone="green" disabled={resendingId === d.id} onClick={() => resendReceipt(d, 'certificate')} />
+                        </div>
+                      </div>
                     )}
                     {canSync && (
                       <BigAction icon={RefreshCw} title={tr('Sync status', 'স্ট্যাটাস সিঙ্ক')} sub={tr('Check with the gateway', 'গেটওয়ে থেকে যাচাই')}

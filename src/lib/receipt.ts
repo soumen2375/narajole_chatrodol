@@ -144,5 +144,6 @@ export function printCertificate(data: CertData, _langInput: Lang) {
       `<p class="para">Place: Narajole, Daspur, Paschim Medinipur — 721211</p>`,
     ].join(''),
     note: 'Computer-generated certificate · www.chhatradol.org',
+    compact: true,
   });
 }

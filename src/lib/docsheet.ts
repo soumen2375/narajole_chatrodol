@@ -161,6 +161,12 @@ export interface DocSheet {
   signature?: DocSheetSignature | null;
   /** Small print under the dashed rule. */
   note?: string | null;
+  /**
+   * Tighter spacing, for a document that must stay on one A4 page but carries
+   * more than a receipt does — the 80G certificate's certification paragraph
+   * and registration block push the receipt's spacing onto a second page.
+   */
+  compact?: boolean;
 }
 
 /** The print window is written into about:blank, so URLs must be absolute. */
@@ -267,9 +273,25 @@ function styles(): string {
   .footer .ct span { font-size: 11.5px; }
   .footer .div { width: 1px; align-self: stretch; background: rgba(223,182,88,.55); flex: none; }
 
+  /* One-page documents that carry more than a receipt. */
+  .compact .main { padding-top: 22px; }
+  .compact .doctitle { font-size: 27px; }
+  .compact .strip { margin-top: 16px; padding: 10px 16px; }
+  .compact table.detail { margin-top: 10px; }
+  .compact .detail .k, .compact .detail .v { padding: 8px 4px; }
+  .compact .band { margin-top: 14px; padding: 14px 20px; }
+  .compact .band .amt { font-size: 36px; }
+  .compact .section { margin-top: 18px; }
+  .compact .para { margin-top: 12px; line-height: 1.55; }
+  .compact .sign { margin-top: 16px; }
+  .compact .note { margin-top: 12px; padding-top: 10px; padding-bottom: 14px; }
+
   @page { size: A4; margin: 0; }
+  /* A hair under 297mm: at exactly one page, rounding in the print engine
+     can spill the footer's last pixel onto a blank second page. vh is not
+     used because some engines resolve it against the window, not the page. */
   @media print {
-    .sheet { width: auto; min-height: 100vh; }
+    .sheet { width: auto; min-height: 296mm; }
   }
   `;
 }
@@ -288,7 +310,7 @@ export function docSheetHtml(doc: DocSheet): string {
 <style>${styles()}</style>
 </head>
 <body>
-  <div class="sheet">
+  <div class="sheet${doc.compact ? ' compact' : ''}">
     <div class="masthead">
       <img src="${docAsset(DOC_ASSETS.logo)}" alt="">
       <div>
