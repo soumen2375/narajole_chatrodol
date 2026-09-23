@@ -86,7 +86,7 @@ function apiDevServerPlugin(): Plugin {
           if (url === '/api/create-order') {
             try {
               const { default: handler } =
-                await import('./api/create-order');
+                await import('./api/_handlers/create-order');
 
               await handler(req, res);
             } catch (e: unknown) {
@@ -118,7 +118,7 @@ function apiDevServerPlugin(): Plugin {
           if (url === '/api/verify-payment') {
             try {
               const { default: handler } =
-                await import('./api/verify-payment');
+                await import('./api/_handlers/verify-payment');
 
               await handler(req, res);
             } catch (e: unknown) {
@@ -150,7 +150,7 @@ function apiDevServerPlugin(): Plugin {
           if (url === '/api/cashfree-order') {
             try {
               const { default: handler } =
-                await import('./api/cashfree-order');
+                await import('./api/_handlers/cashfree-order');
 
               await handler(req, res);
             } catch (e: unknown) {
@@ -182,7 +182,7 @@ function apiDevServerPlugin(): Plugin {
           if (url === '/api/cashfree-verify') {
             try {
               const { default: handler } =
-                await import('./api/cashfree-verify');
+                await import('./api/_handlers/cashfree-verify');
 
               await handler(req, res);
             } catch (e: unknown) {
@@ -214,7 +214,7 @@ function apiDevServerPlugin(): Plugin {
           if (url === '/api/cashfree-webhook') {
             try {
               const { default: handler } =
-                await import('./api/cashfree-webhook');
+                await import('./api/_handlers/cashfree-webhook');
 
               await handler(req, res);
             } catch (e: unknown) {
@@ -246,7 +246,7 @@ function apiDevServerPlugin(): Plugin {
           if (url === '/api/resend-payment-receipt') {
             try {
               const { default: handler } =
-                await import('./api/resend-payment-receipt');
+                await import('./api/_handlers/resend-payment-receipt');
 
               await handler(req, res);
             } catch (e: unknown) {
@@ -278,7 +278,7 @@ function apiDevServerPlugin(): Plugin {
           if (url === '/api/letter-pdf') {
             try {
               const { default: handler } =
-                await import('./api/letter-pdf');
+                await import('./api/_handlers/letter-pdf');
 
               await handler(req, res);
             } catch (e: unknown) {
@@ -310,7 +310,7 @@ function apiDevServerPlugin(): Plugin {
           if (url === '/api/send-partnership') {
             try {
               const { default: handler } =
-                await import('./api/send-partnership');
+                await import('./api/_handlers/send-partnership');
 
               await handler(req, res);
             } catch (e: unknown) {
@@ -325,7 +325,7 @@ function apiDevServerPlugin(): Plugin {
           if (url === '/api/partnership-letter-pdf') {
             try {
               const { default: handler } =
-                await import('./api/partnership-letter-pdf');
+                await import('./api/_handlers/partnership-letter-pdf');
 
               await handler(req, res);
             } catch (e: unknown) {
@@ -340,7 +340,7 @@ function apiDevServerPlugin(): Plugin {
           if (url === '/api/send-newsletter') {
             try {
               const { default: handler } =
-                await import('./api/send-newsletter');
+                await import('./api/_handlers/send-newsletter');
 
               await handler(req, res);
             } catch (e: unknown) {
@@ -355,7 +355,7 @@ function apiDevServerPlugin(): Plugin {
           if (url === '/api/send-letter-email') {
             try {
               const { default: handler } =
-                await import('./api/send-letter-email');
+                await import('./api/_handlers/send-letter-email');
 
               await handler(req, res);
             } catch (e: unknown) {
@@ -387,7 +387,7 @@ function apiDevServerPlugin(): Plugin {
           if (url === '/api/send-receipt-email') {
             try {
               const { default: handler } =
-                await import('./api/send-receipt-email');
+                await import('./api/_handlers/send-receipt-email');
 
               await handler(req, res);
             } catch (e: unknown) {
