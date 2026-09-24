@@ -7,14 +7,6 @@
  *
  * POST /api/send-partnership  Authorization: Bearer <token>
  *   { subject, html, recipients: [{ company, name, email }], attachProposal, test, allowRepeat }
- *
- * Unlike the newsletter, the addressees here are typed in by the secretary —
- * companies are not on any list of ours — so the guard is who may send and
- * how much: an approved admin or secretary only, at most MAX_RECIPIENTS per
- * send, every send logged against the sender, a blind copy to the office,
- * and a company already invited is skipped unless the sender asks otherwise.
- * The proposal PDF is fetched from our own storage only, never from a URL in
- * the request.
  */
 
 import type { IncomingMessage, ServerResponse } from 'http';
@@ -30,15 +22,29 @@ import {
 import { generateLetterPdf } from './_lib/letter-pdf.js';
 
 const OFFICE_MAILBOX = 'info@chhatradol.org';
+const ORG_NAME = 'Chhatradol Social Welfare Organization';
 const CAMPAIGN = 'anandadhara-2026';
 const MAX_RECIPIENTS = 50;
 const PROPOSAL_PDF_URL =
   'https://wzquszbmbpkbhyythdrj.supabase.co/storage/v1/object/public/cswo-media/partnership/anandadhara-2026-invitation-letter.pdf';
 const PROPOSAL_FILENAME = 'Anandadhara_2026_Invitation_Letter.pdf';
 
+/** Generates a unique reference number for each send batch. e.g. "3A/266847" */
+function generateRefNo(): string {
+  const start = new Date('2026-01-01').getTime();
+  const days = Math.floor((Date.now() - start) / (1000 * 60 * 60 * 24));
+  const rand = Math.floor(Math.random() * 900) + 100;
+  return '3A/' + days + rand;
+}
+
+/** Returns today as dd/mm/yyyy for the PDF letter date. */
+function todayDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 const ANANDADHARA_BODY_HTML = [
   '<p>Greetings from CHHATRADOL SOCIAL WELFARE ORGANIZATION.</p>',
-  '<p>We are reaching out with a humble request for your support for our 7th-year initiative, “Anandadhara – 2026,” through which we aim to bring the joy of the festive season to underprivileged children in <strong>Paschim Medinipur</strong> and <strong>Jhargram</strong> by providing new clothes, educational materials and food.</p>',
+  '<p>We are reaching out with a humble request for your support for our 7th-year initiative, \u201cAnandadhara \u2013 2026,\u201d through which we aim to bring the joy of the festive season to underprivileged children in <strong>Paschim Medinipur</strong> and <strong>Jhargram</strong> by providing new clothes, educational materials and food.</p>',
   '<p>Your support whether through a donation, sponsoring a few children\'s clothes, or simply sharing our campaign can help us reach more children and make their celebrations brighter.</p>',
   '<p><strong><span data-size="12">HOW YOU CAN HELP</span></strong></p>',
   '<ul>',
@@ -55,11 +61,6 @@ const ANANDADHARA_BODY_HTML = [
 
 interface Recipient { company: string; name: string; email: string }
 
-function fromAddress(): string {
-  // Use a personal name — org-name senders are flagged as promotional by Gmail.
-  return readEnv('PARTNERSHIP_FROM_EMAIL', `Sayan Samanta <${OFFICE_MAILBOX}>`);
-}
-
 function bearerToken(req: IncomingMessage): string {
   const header = req.headers.authorization as string | undefined;
   const [scheme, token] = (header ?? '').split(' ');
@@ -75,13 +76,18 @@ function esc(value: string): string {
 }
 
 /** Mirrors personalisePartnership() in src/lib/partnership.ts. */
-function personalise(text: string, r: Recipient): string {
-  const name = r.name.trim() || (r.company.trim() ? `${r.company.trim()} Team` : 'Sir / Madam');
+function personalise(text: string, r: Recipient, pdfUrl?: string): string {
+  const name = r.name.trim() || (r.company.trim() ? r.company.trim() + ' Team' : 'Sir / Madam');
   const company = r.company.trim() || 'your organisation';
+  const finalPdfUrl = pdfUrl || PROPOSAL_PDF_URL;
   return text
     .replace(/\{\{name\}\}/g, esc(name))
+    .replace(/\{\{company\}\}/g, esc(company))
+    .replace(/\{\{pdfUrl\}\}/g, finalPdfUrl)
+    .replace(/%7B%7Bname%7D%7D/g, encodeURIComponent(name))
     .replace(/%7B%7Bcompany%7D%7D/g, encodeURIComponent(company))
-    .replace(/\{\{company\}\}/g, esc(company));
+    .replace(/%7B%7Bemail%7D%7D/g, encodeURIComponent(r.email.trim()))
+    .replace(/https:\/\/[^"'\s]*\/api\/partnership-letter-pdf[^"'\s]*/g, finalPdfUrl);
 }
 
 /** Plain-text header values must not carry markup entities. */
@@ -97,30 +103,31 @@ function personaliseSubject(subject: string, r: Recipient): string {
  * a strong signal that the message is personal correspondence, not bulk mail.
  */
 function buildPlainText(r: Recipient): string {
-  const name = r.name.trim() || (r.company.trim() ? `${r.company.trim()} Team` : 'Sir / Madam');
+  const name = r.name.trim() || (r.company.trim() ? r.company.trim() + ' Team' : 'Sir / Madam');
   const company = r.company.trim() || 'your organisation';
   return [
-    `Dear ${name},`,
+    'Dear ' + name + ',',
     '',
-    `Greetings from Chhatradol Social Welfare Organization.`,
+    'An Invitation to Be Part of Anandadhara 2026',
     '',
-    `I am writing to invite ${company} to partner with Anandadhara 2026, the 7th year of our Durga Puja initiative for children from financially vulnerable families in Medinipur and Jhargram, West Bengal.`,
+    'Greetings from Chhatradol Social Welfare Organization.',
     '',
-    `From 10 to 16 October 2026, we aim to reach 1,000+ children with new Puja clothing, books, and food — so that every child can feel part of the celebration. A partnership with ${company} would let us reach more children; every ₹1,000 supports one child completely.`,
+    'We are writing to invite ' + company + ' to partner with Anandadhara 2026, the 7th year of our Durga Puja initiative for children from financially vulnerable families in Medinipur and Jhargram, West Bengal.',
+    '',
+    'From 10 to 16 October 2026, we aim to reach 1,000+ children with new Puja clothing, books, and food so that every child can feel part of the celebration. A partnership with ' + company + ' would let us reach more children; every Rs.1,000 supports one child completely.',
     '',
     'We would be glad to share our full invitation letter (attached) and answer any questions you may have.',
     '',
     'With warm regards,',
-    'Sayan Samanta',
-    'Secretary, Chhatradol Social Welfare Organization',
+    ORG_NAME,
     'Phone / WhatsApp: +91 78110 73412',
     'Email: info@chhatradol.org',
     'Website: https://www.chhatradol.org',
     '',
     '---',
-    'Chhatradol Social Welfare Organization',
+    ORG_NAME,
     'Vill. & P.O.: Nij Narajole, Paschim Medinipur, West Bengal 721211',
-    `This message was sent to ${r.email}. Reply "Unsubscribe" and we will not write again.`,
+    'This message was sent to ' + r.email + '. Reply "Unsubscribe" and we will not write again.',
   ].join('\n');
 }
 
@@ -172,11 +179,11 @@ async function sendOne(
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
   const result = (await response.json().catch(() => ({}))) as { id?: string; message?: string; name?: string };
-  if (!response.ok) return { ok: false, error: result.message || result.name || `Resend API error (${response.status})` };
+  if (!response.ok) return { ok: false, error: result.message || result.name || 'Resend API error (' + response.status + ')' };
   return { ok: true, id: result.id ?? '' };
 }
 
@@ -196,7 +203,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const html = typeof body.html === 'string' ? body.html : '';
     const test = body.test === true;
     const allowRepeat = body.allowRepeat === true;
-    const attach = body.attachProposal === true;
+    const attach = body.attachProposal !== false;
 
     if (!subject) return sendJson(res, 400, { error: 'A subject is required' });
     if (!html.includes('<html')) return sendJson(res, 400, { error: 'The invitation body is empty' });
@@ -209,7 +216,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
     if (!recipients.length) return sendJson(res, 400, { error: 'Add at least one company with a valid email' });
     if (recipients.length > MAX_RECIPIENTS) {
-      return sendJson(res, 400, { error: `Send to at most ${MAX_RECIPIENTS} companies at a time` });
+      return sendJson(res, 400, { error: 'Send to at most ' + MAX_RECIPIENTS + ' companies at a time' });
     }
 
     const resendApiKey = readEnv('RESEND_API_KEY');
@@ -231,7 +238,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       }
     }
 
-    // Pre-fetch fallback base letter in case dynamic rendering encounters issues
+    // Pre-fetch fallback base letter in case dynamic rendering fails.
     let baseLetterBuffer: Buffer | null = null;
     if (attach) {
       try {
@@ -242,65 +249,99 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       }
     }
 
-    const getRecipientAttachment = async (r: Recipient) => {
+    /** Build a personalised PDF for each recipient, upload to storage, and prepare attachments. */
+    const getRecipientPdf = async (r: Recipient) => {
       try {
+        // "To" block on the letter: name on line 1, company + email on lines 2-3
+        const toName = r.name.trim() || r.company.trim() || r.email.trim();
+        const toAddressParts: string[] = [];
+        if (r.company.trim() && r.company.trim() !== toName) toAddressParts.push(r.company.trim());
+        if (r.email.trim()) toAddressParts.push(r.email.trim());
+        const toAddress = toAddressParts.join('\n');
+
         const bytes = await generateLetterPdf({
-          refNo: '3A/125',
-          letterDate: '2026-09-23',
-          toName: r.name,
-          toAddress: r.company,
+          refNo: generateRefNo(),
+          letterDate: todayDate(),
+          toName: toName,
+          toAddress: toAddress,
           salutation: 'Respected Sir,',
-          subject: 'An Invitation to Support Anandadhara – 2026',
-          body: 'Greetings from CHHATRADOL SOCIAL WELFARE ORGANIZATION.\n\nWe are reaching out with a humble request for your support for our 7th-year initiative, “Anandadhara – 2026”.',
+          subject: 'An Invitation to Be Part of Anandadhara 2026',
+          body: 'Greetings from CHHATRADOL SOCIAL WELFARE ORGANIZATION.\n\nWe are reaching out with a humble request for your support for our 7th-year initiative, Anandadhara 2026.',
           bodyHtml: ANANDADHARA_BODY_HTML,
           fetchImage: fetchLetterImage,
           closing: 'Yours faithfully,',
           signatoryName: 'Sayan Samanta',
-          signatoryRole: 'Secretary of CSWO',
+          signatoryRole: 'Secretary, Chhatradol Social Welfare Organization',
           signatoryPhone: '7811073412',
         });
-        const safeCompany = r.company ? `_${r.company.replace(/[^a-zA-Z0-9_-]/g, '_')}` : '';
-        return [{
-          filename: `Anandadhara_2026_Invitation_Letter${safeCompany}.pdf`,
-          content: Buffer.from(bytes).toString('base64'),
-          content_type: 'application/pdf',
-        }];
-      } catch (err) {
-        console.warn(`[Partnership] Dynamic letter generation failed for ${r.company || r.email}:`, err);
-        if (baseLetterBuffer) {
-          return [{
-            filename: PROPOSAL_FILENAME,
-            content: baseLetterBuffer.toString('base64'),
-            content_type: 'application/pdf',
-          }];
+        const safeCompany = r.company ? '_' + r.company.replace(/[^a-zA-Z0-9_-]/g, '_') : '';
+        const filename = 'Anandadhara_2026_Invitation_Letter' + safeCompany + '.pdf';
+
+        // Upload to Supabase public storage so the "Download the letter (PDF)" button in the email links directly to it!
+        let publicUrl = PROPOSAL_PDF_URL;
+        try {
+          const storagePath = `partnership/letters/${filename.replace('.pdf', '')}_${Date.now()}.pdf`;
+          const { error: upErr } = await supabase.storage.from('cswo-media').upload(storagePath, bytes, {
+            contentType: 'application/pdf',
+            upsert: true,
+          });
+          if (!upErr) {
+            const { data: pubData } = supabase.storage.from('cswo-media').getPublicUrl(storagePath);
+            if (pubData?.publicUrl) publicUrl = pubData.publicUrl;
+          }
+        } catch (upEx) {
+          console.warn('[Partnership] Storage upload fallback to PROPOSAL_PDF_URL:', upEx);
         }
-        return undefined;
+
+        return {
+          publicUrl,
+          attachments: [
+            {
+              filename,
+              content: Buffer.from(bytes).toString('base64'),
+              content_type: 'application/pdf',
+            },
+          ],
+        };
+      } catch (err) {
+        console.warn('[Partnership] Dynamic letter generation failed for ' + (r.company || r.email) + ':', err);
+        return {
+          publicUrl: PROPOSAL_PDF_URL,
+          attachments: baseLetterBuffer
+            ? [
+                {
+                  filename: PROPOSAL_FILENAME,
+                  content: baseLetterBuffer.toString('base64'),
+                  content_type: 'application/pdf',
+                },
+              ]
+            : undefined,
+        };
       }
     };
 
     const results: { email: string; company: string; ok: boolean; error?: string }[] = [];
-    // A few at a time: fast enough for 50, gentle on Resend's rate limit.
     const queue = [...recipients];
     const worker = async () => {
       for (let r = queue.shift(); r; r = queue.shift()) {
-        const recipientAttachments = attach ? await getRecipientAttachment(r) : undefined;
+        const pdfData = await getRecipientPdf(r);
         const outcome = await sendOne(resendApiKey, {
-          from: fromAddress(),
-          to: [r.name ? `${r.name.replace(/[<>",]/g, '')} <${r.email}>` : r.email],
+          // Send from the org name — avoids "Sayan Samanta" hardcoded in the sender address header
+          from: readEnv('PARTNERSHIP_FROM_EMAIL', ORG_NAME + ' <' + OFFICE_MAILBOX + '>'),
+          to: [r.name ? r.name.replace(/[<>",]/g, '') + ' <' + r.email + '>' : r.email],
           bcc: test ? undefined : [OFFICE_MAILBOX],
-          // Named reply-to — personal reply address, not a mailing-list address.
-          reply_to: `Sayan Samanta <${OFFICE_MAILBOX}>`,
-          subject: test ? `[TEST] ${personaliseSubject(subject, r)}` : personaliseSubject(subject, r),
-          html: personalise(html, r),
-          // Plain-text body: Gmail uses multipart/alternative as a strong
-          // signal that this is personal correspondence, not bulk mail.
+          reply_to: ORG_NAME + ' <' + OFFICE_MAILBOX + '>',
+          subject: test ? '[TEST] ' + personaliseSubject(subject, r) : personaliseSubject(subject, r),
+          html: personalise(html, r, pdfData.publicUrl),
+          // Plain-text alternative — signals personal mail to Gmail, not bulk
           text: buildPlainText(r),
-          attachments: recipientAttachments,
-          // No List-Unsubscribe / no tags — both flag messages as bulk to Gmail.
+          attachments: attach ? pdfData.attachments : undefined,
+          // Personal correspondence headers — do NOT add List-Unsubscribe or Precedence:bulk
           headers: {
-            'X-Mailer': 'Chhatradol Outreach v1',
+            'X-Mailer': 'Chhatradol-Outreach/1.0',
             'Importance': 'high',
             'X-Priority': '1',
+            'X-Entity-Ref-ID': 'cswo-' + Date.now() + '-' + Math.random().toString(36).slice(2),
           },
         });
         results.push({ email: r.email, company: r.company, ok: outcome.ok, error: outcome.ok ? undefined : outcome.error });
@@ -322,7 +363,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
     const sent = results.filter((r) => r.ok).length;
     const failed = results.filter((r) => !r.ok);
-    console.log(`[Partnership] ${test ? 'TEST ' : ''}${sent}/${results.length} sent by ${auth.member.email}; ${skipped.length} skipped`);
+    console.log('[Partnership] ' + (test ? 'TEST ' : '') + sent + '/' + results.length + ' sent by ' + auth.member.email + '; ' + skipped.length + ' skipped');
 
     if (!sent) return sendJson(res, 502, { error: failed[0]?.error || 'Nothing was sent', failed, skipped });
     return sendJson(res, 200, { success: true, sent, failed, skipped });

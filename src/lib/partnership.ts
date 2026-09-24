@@ -57,13 +57,13 @@ export interface PartnerRecipient {
 }
 
 export const DEFAULT_PITCH: PartnershipPitch = {
-  subject: 'Partnership invitation: Anandadhara 2026 — help 1,000+ children celebrate Durga Puja',
+  subject: 'An Invitation to Be Part of Anandadhara 2026',
   poster: '/assets/images/anandadhara-2026-poster-en.jpg',
   opening:
-    'On behalf of Chhatradol Social Welfare Organization, I am writing to invite {{company}} to partner with Anandadhara 2026, the 7th year of our Durga Puja initiative for children from financially vulnerable families in Medinipur and Jhargram, West Bengal.\n\n' +
+    'On behalf of Chhatradol Social Welfare Organization, we are writing to invite {{company}} to partner with Anandadhara 2026, the 7th year of our Durga Puja initiative for children from financially vulnerable families in Medinipur and Jhargram, West Bengal.\n\n' +
     'From 10 to 16 October 2026 we aim to reach 1,000+ children with new Puja clothing, books and reading materials, and food and festive treats, so that every child can feel part of the celebration. A partnership with {{company}} would let us reach more children, and every contribution is tied to a clear, countable outcome: ₹1,000 supports one child completely.',
   senderName: 'Sayan Samanta',
-  senderRole: 'Secretary of CSWO',
+  senderRole: 'Secretary',
   senderPhone: '+91 7811073412',
   senderEmail: 'info@chhatradol.org',
   attachProposal: true,
@@ -229,9 +229,8 @@ function videoBlock(): string {
 }
 
 function ctaBand(replyHref: string, _assetBase: string): string {
-  // Link to the static PDF in Supabase storage — always reachable in production.
-  // (The /api/partnership-letter-pdf route is dev-only middleware and 404s when deployed.)
-  const letterPdfLink = PROPOSAL_PDF_URL;
+  // Use {{pdfUrl}} which is dynamically filled with the uploaded personalized PDF URL (or fallback)
+  const letterPdfLink = '{{pdfUrl}}';
   return pad(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
     <td bgcolor="${P.band}" class="pp-cta-pad" style="background:${P.band};background-image:linear-gradient(165deg,${P.bandHi} 0%,${P.band} 55%,#5e2a0c 100%);border-radius:20px;padding:26px 26px 24px;text-align:center;">
       <div style="font-family:${FONT};font-size:11px;line-height:1.4;font-weight:bold;letter-spacing:3px;color:${P.gold};margin:0 0 10px;">&#10022;&nbsp; PARTNER WITH ANANDADHARA 2026 &nbsp;&#10022;</div>
@@ -248,10 +247,18 @@ function ctaBand(replyHref: string, _assetBase: string): string {
 
 function signOff(pitch: PartnershipPitch): string {
   const phone = pitch.senderPhone.replace(/[^\d+]/g, '');
+  const secretaryName = esc(pitch.senderName.trim() || 'Sayan Samanta');
+  const orgName = 'Chhatradol Social Welfare Organization';
+  let role = pitch.senderRole.trim();
+  // Prevent repeating the organization name if designation was set to or contains orgName
+  if (!role || role.toLowerCase() === orgName.toLowerCase() || role.toLowerCase().includes('social welfare')) {
+    role = 'Secretary';
+  }
   return pad(`<p class="pp-p" style="margin:0 0 4px;font-family:${FONT};font-size:14px;line-height:1.7;color:${C.ink};">With warm regards,</p>
   <p style="margin:0;font-family:${FONT};font-size:14px;line-height:1.6;color:${C.ink};">
-    <b>${esc(pitch.senderName)}</b><br>
-    ${esc(pitch.senderRole)}<br>
+    <b>${secretaryName}</b><br>
+    ${esc(role)}<br>
+    ${esc(orgName)}<br>
     ${pitch.senderPhone ? `<a href="tel:${esc(phone)}" style="color:${P.band};font-weight:bold;text-decoration:none;">${esc(pitch.senderPhone)}</a>` : ''}${pitch.senderPhone && pitch.senderEmail ? '&nbsp; | ' : ''}${pitch.senderEmail ? `<a href="mailto:${esc(pitch.senderEmail)}" style="color:${P.band};font-weight:bold;text-decoration:none;">${esc(pitch.senderEmail)}</a>` : ''}
   </p>`, 24);
 }
@@ -379,15 +386,22 @@ ${footer()}
 </html>`;
 }
 
-/** Fills {{name}} / {{company}} the way the server does, for the preview and tests. */
-export function personalisePartnership(html: string, r: Pick<PartnerRecipient, 'name' | 'company'>): string {
+/** Fills {{name}} / {{company}} / {{email}} the way the server does, for the preview and tests. */
+export function personalisePartnership(
+  html: string,
+  r: Pick<PartnerRecipient, 'name' | 'company' | 'email'>,
+): string {
   const name = r.name.trim() || (r.company.trim() ? `${r.company.trim()} Team` : 'Sir / Madam');
   const company = r.company.trim() || 'your organisation';
+  const email = (r as PartnerRecipient).email?.trim() ?? '';
   const safe = (s: string) => esc(s);
   return html
     .replace(/\{\{name\}\}/g, safe(name))
+    .replace(/\{\{company\}\}/g, safe(company))
+    .replace(/\{\{pdfUrl\}\}/g, PROPOSAL_PDF_URL)
+    .replace(/%7B%7Bname%7D%7D/g, encodeURIComponent(name))
     .replace(/%7B%7Bcompany%7D%7D/g, encodeURIComponent(company))
-    .replace(/\{\{company\}\}/g, safe(company));
+    .replace(/%7B%7Bemail%7D%7D/g, encodeURIComponent(email));
 }
 
 /**

@@ -1,10 +1,10 @@
-/**
+﻿/**
  * api/partnership-letter-pdf.ts
  *
- * Generates and serves the Anandadhara 2026 official invitation letter (Ref: 3A/125)
+ * Generates and serves the Anandadhara 2026 official invitation letter
  * rendered on the CSWO letterhead as an A4 PDF, personalized for each company.
  *
- * GET /api/partnership-letter-pdf?company=Tata%20Steel&name=Mr.%20Sharma
+ * GET /api/partnership-letter-pdf?company=Tata%20Steel&name=Mr.%20Sharma&email=csr@tatasteel.com
  */
 
 import type { IncomingMessage, ServerResponse } from 'http';
@@ -18,8 +18,8 @@ const ANANDADHARA_POSTER_STORAGE_URL =
 
 const ANANDADHARA_BODY_HTML = [
   '<p>Greetings from CHHATRADOL SOCIAL WELFARE ORGANIZATION.</p>',
-  '<p>We are reaching out with a humble request for your support for our 7th-year initiative, “Anandadhara – 2026,” through which we aim to bring the joy of the festive season to underprivileged children in <strong>Paschim Medinipur</strong> and <strong>Jhargram</strong> by providing new clothes, educational materials and food.</p>',
-  '<p>Your support whether through a donation, sponsoring a few children\'s clothes, or simply sharing our campaign can help us reach more children and make their celebrations brighter.</p>',
+  '<p>We are reaching out with a humble request for your support for our 7th-year initiative, \u201cAnandadhara \u2013 2026,\u201d through which we aim to bring the joy of the festive season to underprivileged children in <strong>Paschim Medinipur</strong> and <strong>Jhargram</strong> by providing new clothes, educational materials and food.</p>',
+  "<p>Your support whether through a donation, sponsoring a few children\\'s clothes, or simply sharing our campaign can help us reach more children and make their celebrations brighter.</p>",
   '<p><strong><span data-size="12">HOW YOU CAN HELP</span></strong></p>',
   '<ul>',
   '<li><p><strong><span data-size="10"><span data-highlight="yellow">Glimpse of last year\'s Anandadhara: </span></span></strong>',
@@ -33,6 +33,14 @@ const ANANDADHARA_BODY_HTML = [
   `<img src="${ANANDADHARA_POSTER_STORAGE_URL}" alt="Anandadhara 2026 poster" data-page="full" data-fit="fit">`,
 ].join('');
 
+/** Generates a unique reference number for each request. */
+function makeRefNo(): string {
+  const start = new Date('2026-01-01').getTime();
+  const days = Math.floor((Date.now() - start) / (1000 * 60 * 60 * 24));
+  const rand = Math.floor(Math.random() * 900) + 100;
+  return `3A/${days}${rand}`;
+}
+
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   if (handledPreflight(req, res)) return;
 
@@ -41,22 +49,28 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const parsedUrl = new URL(rawUrl, 'https://localhost');
     const company = (parsedUrl.searchParams.get('company') ?? '').trim();
     const name = (parsedUrl.searchParams.get('name') ?? '').trim();
+    const email = (parsedUrl.searchParams.get('email') ?? '').trim();
+
+    // Build the "To" block: name on first line, then company + email
+    const toNameLine = name || company || 'Respected Sir';
+    const toAddressParts = [company, email].filter(Boolean);
+    const toAddressBlock = toAddressParts.join('\n');
 
     let pdfBytes: Uint8Array;
     try {
       pdfBytes = await generateLetterPdf({
-        refNo: '3A/125',
-        letterDate: '2026-09-23',
-        toName: name,
-        toAddress: company,
+        refNo: makeRefNo(),
+        letterDate: new Date().toISOString().slice(0, 10),
+        toName: toNameLine,
+        toAddress: toAddressBlock,
         salutation: 'Respected Sir,',
-        subject: 'An Invitation to Support Anandadhara – 2026',
-        body: 'Greetings from CHHATRADOL SOCIAL WELFARE ORGANIZATION.\n\nWe are reaching out with a humble request for your support for our 7th-year initiative, “Anandadhara – 2026”.',
+        subject: 'An Invitation to Be Part of Anandadhara 2026',
+        body: 'Greetings from CHHATRADOL SOCIAL WELFARE ORGANIZATION.\n\nWe are reaching out with a humble request for your support for our 7th-year initiative, \u201cAnandadhara \u2013 2026\u201d.',
         bodyHtml: ANANDADHARA_BODY_HTML,
         fetchImage: fetchLetterImage,
         closing: 'Yours faithfully,',
         signatoryName: 'Sayan Samanta',
-        signatoryRole: 'Secretary of CSWO',
+        signatoryRole: 'Chhatradol Social Welfare Organization',
         signatoryPhone: '7811073412',
       });
     } catch (genError) {
@@ -76,7 +90,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Content-Length', String(pdfBytes.length));
-    res.setHeader('Cache-Control', 'public, max-age=60');
+    res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.end(Buffer.from(pdfBytes));
   } catch (err: unknown) {

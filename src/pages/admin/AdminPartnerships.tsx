@@ -54,7 +54,15 @@ const STATUS_STYLE: Record<OutreachRow['status'], string> = {
 
 export default function AdminPartnerships() {
   const saved = useMemo(loadDraft, []);
-  const [pitch, setPitch] = useState<PartnershipPitch>(() => ({ ...DEFAULT_PITCH, ...(saved?.pitch ?? {}) }));
+  const [pitch, setPitch] = useState<PartnershipPitch>(() => {
+    const base = { ...DEFAULT_PITCH, ...(saved?.pitch ?? {}) };
+    // Always override with new DEFAULT values — old drafts may carry stale subject/senderName
+    base.subject = DEFAULT_PITCH.subject;
+    base.senderName = DEFAULT_PITCH.senderName;
+    base.senderRole = DEFAULT_PITCH.senderRole;
+    base.attachProposal = true;
+    return base;
+  });
   const [list, setList] = useState(saved?.list ?? '');
   const [history, setHistory] = useState<OutreachRow[]>([]);
   const [allowRepeat, setAllowRepeat] = useState(false);
@@ -142,8 +150,18 @@ export default function AdminPartnerships() {
           allowRepeat,
         }),
       });
-      const out = await res.json().catch(() => ({ error: 'Could not read the server response' }));
-      if (!res.ok) throw new Error(out.error || `Send failed (${res.status})`);
+      // Read raw text first — the server may return a non-JSON error page on timeout/crash
+      const rawText = await res.text().catch(() => '');
+      let out: Record<string, unknown> = {};
+      try {
+        out = rawText ? (JSON.parse(rawText) as Record<string, unknown>) : {};
+      } catch {
+        // Non-JSON body (e.g. HTML 504 from the dev proxy)
+        if (!res.ok) {
+          throw new Error(`Server error (${res.status}): ${rawText.slice(0, 120) || 'No response body'}`);
+        }
+      }
+      if (!res.ok) throw new Error((out.error as string) || `Send failed (${res.status})`);
       const failed = (out.failed ?? []) as { email: string; error?: string }[];
       const skipped = (out.skipped ?? []) as string[];
       setNotice({
