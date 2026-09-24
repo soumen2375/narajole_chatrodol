@@ -5,6 +5,10 @@
   "framework": "vite",
   "rewrites": [
     {
+      "source": "/api/:match*",
+      "destination": "/api/[...route]"
+    },
+    {
       "source": "/events/:slug",
       "has": [
         {
@@ -13,7 +17,7 @@
           "value": ".*(facebook|WhatsApp|whatsapp|Twitter|LinkedIn|Telegram|Discord|Slack|Google|bingbot|applebot|SkypeUriPreview|meta|bot|crawler|spider|facebookexternalhit).*"
         }
       ],
-      "destination": "/api/share?slug=:slug"
+      "destination": "/api/[...route]?match=share&slug=:slug"
     },
     {
       "source": "/posts/:slug",
@@ -24,13 +28,16 @@
           "value": ".*(facebook|WhatsApp|whatsapp|Twitter|LinkedIn|Telegram|Discord|Slack|Google|bingbot|applebot|SkypeUriPreview|meta|bot|crawler|spider|facebookexternalhit).*"
         }
       ],
-      "destination": "/api/share?slug=:slug"
+      "destination": "/api/[...route]?match=share&slug=:slug"
     },
     {
       "source": "/sitemap.xml",
-      "destination": "/api/sitemap"
+      "destination": "/api/[...route]?match=sitemap"
     },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/((?!api/|assets/|favicon\\.ico).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
