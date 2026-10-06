@@ -54,6 +54,8 @@ export default function AdminBloodDonors() {
   const [urgentGroup, setUrgentGroup] = useState('');
   const [filterGroup, setFilterGroup] = useState('');
   const [eligFilter, setEligFilter]   = useState<EligibilityFilter>('all');
+  const [memberFilter, setMemberFilter] = useState<'all' | 'member' | 'non-member'>('all');
+  const [minDonations, setMinDonations] = useState(0);
   const [search, setSearch]   = useState('');
   const [page, setPage]       = useState(0);
   const PER_PAGE = 25;
@@ -61,11 +63,35 @@ export default function AdminBloodDonors() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from('cswo_blood_donors')
-        .select(DONOR_SELECT)
-        .order('created_at', { ascending: false });
-      setDonors(buildDonorProfiles(normalizeDonorRows(data)));
+      const [{ data: donorsData }, { data: membersData }] = await Promise.all([
+        supabase
+          .from('cswo_blood_donors')
+          .select(DONOR_SELECT)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('cswo_members')
+          .select('id, phone')
+          .eq('status', 'approved'),
+      ]);
+
+      const rows = normalizeDonorRows(donorsData);
+      if (membersData && membersData.length > 0) {
+        const phoneToMemberId = new Map<string, string>();
+        for (const m of membersData) {
+          const p = (m.phone ?? '').replace(/\D/g, '');
+          if (p.length >= 8) phoneToMemberId.set(p.slice(-10), m.id);
+        }
+        for (const r of rows) {
+          if (!r.member_id && r.phone) {
+            const p = r.phone.replace(/\D/g, '').slice(-10);
+            if (p && phoneToMemberId.has(p)) {
+              r.member_id = phoneToMemberId.get(p)!;
+            }
+          }
+        }
+      }
+
+      setDonors(buildDonorProfiles(rows));
       setLoading(false);
     })();
   }, []);
@@ -77,10 +103,13 @@ export default function AdminBloodDonors() {
       if (grp && d.blood_group !== grp) return false;
       if (eligFilter === 'eligible' && !d.eligible) return false;
       if (eligFilter === 'waiting' && d.eligible) return false;
+      if (memberFilter === 'member' && !d.member_id) return false;
+      if (memberFilter === 'non-member' && d.member_id) return false;
+      if (minDonations > 0 && d.donationCount < minDonations) return false;
       if (q && !`${d.name} ${d.phone} ${d.address} ${d.donor_code ?? ''} ${d.aadhar}`.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [donors, urgentGroup, filterGroup, eligFilter, search]);
+  }, [donors, urgentGroup, filterGroup, eligFilter, memberFilter, minDonations, search]);
 
   const pages  = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const shown  = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
@@ -98,6 +127,7 @@ export default function AdminBloodDonors() {
   }, [donors]);
 
   const eligibleCount = useMemo(() => donors.filter((d) => d.eligible).length, [donors]);
+  const memberCount   = useMemo(() => donors.filter((d) => d.member_id).length, [donors]);
   const urgentEligible = urgentGroup ? filtered.filter((d) => d.eligible).length : 0;
 
   return (
@@ -184,8 +214,26 @@ export default function AdminBloodDonors() {
           <option value="eligible">{tr('Eligible now', 'এখন যোগ্য')}</option>
           <option value="waiting">{tr('Waiting period', 'অপেক্ষমাণ')}</option>
         </select>
+        {/* Member filter */}
+        <select value={memberFilter} onChange={(e) => { setMemberFilter(e.target.value as any); setPage(0); }}
+          className="rounded-[8px] px-3 py-2 text-[13px] font-semibold outline-none"
+          style={{ border: `1px solid ${RULE}`, background: PAPER, color: memberFilter === 'member' ? TEAL : INK2 }}>
+          <option value="all">{tr('All (Members & Non-members)', 'সবাই (সদস্য ও অ-সদস্য)')}</option>
+          <option value="member">{tr('Members only', 'শুধু সদস্য')}</option>
+          <option value="non-member">{tr('Non-members only', 'শুধু অ-সদস্য')}</option>
+        </select>
+        {/* Minimum donations filter */}
+        <select value={minDonations} onChange={(e) => { setMinDonations(Number(e.target.value)); setPage(0); }}
+          className="rounded-[8px] px-3 py-2 text-[13px] font-semibold outline-none"
+          style={{ border: `1px solid ${RULE}`, background: PAPER, color: minDonations > 0 ? RED : INK2 }}>
+          <option value={0}>{tr('All donations', 'যেকোনো দান')}</option>
+          <option value={1}>{tr('Donated 1+ times', 'দান ১+ বার')}</option>
+          <option value={2}>{tr('Donated 2+ times', 'দান ২+ বার')}</option>
+          <option value={3}>{tr('Donated 3+ times', 'দান ৩+ বার')}</option>
+          <option value={5}>{tr('Donated 5+ times', 'দান ৫+ বার')}</option>
+        </select>
         <span className="font-mono text-[11px] ml-auto" style={{ color: MUTED }}>
-          {fmt.num(filtered.length)} {tr('donors', 'দাতা')} · <span style={{ color: GREEN }}>{fmt.num(eligibleCount)} {tr('eligible', 'যোগ্য')}</span>
+          {fmt.num(filtered.length)} {tr('donors', 'দাতা')} · <span style={{ color: GREEN }}>{fmt.num(eligibleCount)} {tr('eligible', 'যোগ্য')}</span> · <span style={{ color: TEAL }}>{fmt.num(memberCount)} {tr('members', 'সদস্য')}</span>
         </span>
       </div>
 
@@ -210,7 +258,19 @@ export default function AdminBloodDonors() {
                   <tr key={d.key} onClick={() => setSelected(d)}
                     className="cursor-pointer hover:bg-stone-50 transition-colors" style={{ borderTop: `1px solid ${RULE}` }}>
                     <td className="px-3 py-2.5 font-mono text-[11px]" style={{ color: MUTED }}>{d.donor_code || '—'}</td>
-                    <td className="px-3 py-2.5 font-semibold" style={{ color: INK }}>{d.name}</td>
+                    <td className="px-3 py-2.5 font-semibold" style={{ color: INK }}>
+                      <div className="flex items-center gap-1.5">
+                        <span>{d.name.toUpperCase()}</span>
+                        {d.member_id && (
+                          <span
+                            className="rounded-full px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-wider shrink-0"
+                            style={{ background: 'rgba(12,117,111,0.1)', color: TEAL, border: `1px solid rgba(12,117,111,0.25)` }}
+                          >
+                            {tr('Member', 'সদস্য')}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-3 py-2.5"><BgBadge g={d.blood_group} /></td>
                     <td className="px-3 py-2.5" style={{ color: INK2 }}>
                       {d.age != null ? fmt.num(d.age) : '—'}{d.gender ? ` / ${d.gender[0].toUpperCase()}` : ''}

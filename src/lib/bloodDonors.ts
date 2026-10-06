@@ -22,6 +22,7 @@ export interface DonorRow {
   address: string;
   aadhar: string;
   donor_key: string;
+  member_id: string | null;
   status: string;
   units: number;
   created_at: string;
@@ -51,6 +52,8 @@ export interface DonorProfile {
   phone: string;
   address: string;
   aadhar: string;
+  /** Set when this donor is also a registered member. */
+  member_id: string | null;
   /** Every camp they were registered at, newest first. */
   visits: DonorVisit[];
   /** Only the camps where they actually gave blood, newest first. */
@@ -126,13 +129,50 @@ export function formatAadhar(aadhar: string): string {
 }
 
 /**
+ * Compute a stable, unique identity key for one donor row.
+ *
+ * Priority — strictly in this order:
+ *   1. Aadhar No  — must be exactly 12 digits (partial Aadhar is ignored
+ *                   to avoid accidentally merging two different people).
+ *   2. Mobile No + Name  — phone alone is NOT enough because family members
+ *                   (e.g. husband and wife) often share one mobile number.
+ *                   Combining phone+name means two people with the same
+ *                   mobile but different names stay as separate profiles,
+ *                   while the SAME person re-registering at a future camp
+ *                   (same phone + same name) still merges correctly.
+ *   3. Full name  — lowercase + trimmed (last resort; used only when the
+ *                   donor has neither Aadhar nor a mobile number).
+ */
+export function donorUniqueKey(r: Pick<DonorRow, 'aadhar' | 'phone' | 'name' | 'id'>): string {
+  // 1. Aadhar No (most reliable — government-issued, globally unique)
+  const aadharDigits = (r.aadhar ?? '').replace(/\D/g, '');
+  if (aadharDigits.length === 12) return `aadhar:${aadharDigits}`;
+
+  // 2. Mobile No + Name  (phone acts as namespace; name disambiguates family members)
+  const phoneDigits = (r.phone ?? '').replace(/\D/g, '');
+  const nameLower   = (r.name  ?? '').trim().toLowerCase();
+  if (phoneDigits.length >= 8 && nameLower) return `phone:${phoneDigits}:${nameLower}`;
+  if (phoneDigits.length >= 8)              return `phone:${phoneDigits}`;
+
+  // 3. Name alone
+  if (nameLower) return `name:${nameLower}`;
+
+  return `id:${r.id}`;
+}
+
+/**
  * Fold per-camp donor rows into one profile per person. Identity details
  * (name, phone, group…) come from the most recent row that has them.
+ *
+ * Unique identity is determined by `donorUniqueKey()`:
+ *   • 12-digit Aadhar  (primary — most reliable)
+ *   • Mobile number    (fallback when no Aadhar)
+ *   • Lowercase name   (last resort)
  */
 export function buildDonorProfiles(rows: DonorRow[], asOf: string = today()): DonorProfile[] {
   const byKey = new Map<string, DonorRow[]>();
   for (const r of rows) {
-    const key = r.donor_key || r.phone || r.name.trim().toLowerCase() || r.id;
+    const key = donorUniqueKey(r);
     const list = byKey.get(key);
     if (list) list.push(r); else byKey.set(key, [r]);
   }
@@ -175,7 +215,14 @@ export function buildDonorProfiles(rows: DonorRow[], asOf: string = today()): Do
       blood_group: pick('blood_group'),
       phone: pick('phone'),
       address: pick('address'),
-      aadhar: pick('aadhar') ?? '',
+      // For Aadhar: prefer the row that has a valid full 12-digit Aadhar
+      aadhar: (
+        ordered.find((r) => (r.aadhar ?? '').replace(/\D/g, '').length === 12)?.aadhar
+        ?? pick('aadhar')
+        ?? ''
+      ),
+      // For member_id: any row carrying a non-null member_id wins.
+      member_id: ordered.find((r) => r.member_id != null)?.member_id ?? null,
       visits,
       donations,
       donationCount: donations.length,
@@ -192,7 +239,7 @@ export function buildDonorProfiles(rows: DonorRow[], asOf: string = today()): Do
 
 /** The columns every donor view needs, plus the camp it belongs to. */
 export const DONOR_SELECT =
-  'id, event_id, donor_code, name, age, gender, blood_group, phone, address, aadhar, donor_key, status, units, created_at, event:cswo_events!event_id(title, event_date)';
+  'id, event_id, donor_code, name, age, gender, blood_group, phone, address, aadhar, donor_key, member_id, status, units, created_at, event:cswo_events!event_id(title, event_date)';
 
 /** Supabase returns the embedded event as an array on some queries. */
 export function normalizeDonorRows(data: unknown): DonorRow[] {

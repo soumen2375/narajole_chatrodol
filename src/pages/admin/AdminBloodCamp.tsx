@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaPlus, FaFilePdf, FaDroplet } from 'react-icons/fa6';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Search, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { CswoEvent, CswoBloodDonor, CswoBloodBank, DonorStatus, BloodGroup } from '@/types';
 import { useFmt } from '@/lib/format';
@@ -45,6 +45,11 @@ export default function AdminBloodCamp() {
   const [donors, setDonors] = useState<CswoBloodDonor[]>([]);
   const [banks, setBanks] = useState<CswoBloodBank[]>([]);
   const [loading, setLoading] = useState(true);
+
+  /* ── Donor search / filter state ── */
+  const [donorSearch, setDonorSearch] = useState('');
+  const [filterGroup, setFilterGroup] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   const [dForm, setDForm] = useState(emptyDonor);
   const [dEditId, setDEditId] = useState<string | null>(null);
@@ -169,6 +174,24 @@ export default function AdminBloodCamp() {
     });
   };
 
+  /* ── Filtered donors (search + group + status) ──
+     NOTE: useMemo must be called BEFORE any conditional return to satisfy
+     React’s Rules of Hooks. Plain const derivations (registered, rejected…)
+     can safely live after the early returns because they are not hooks.
+  */
+  const filteredDonors = useMemo(() => {
+    const q = donorSearch.trim().toLowerCase();
+    return donors.filter((d) => {
+      if (filterGroup && d.blood_group !== filterGroup) return false;
+      if (filterStatus && d.status !== filterStatus) return false;
+      if (q && !`${d.name} ${d.phone} ${d.aadhar ?? ''} ${d.donor_code ?? ''}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [donors, donorSearch, filterGroup, filterStatus]);
+
+  const hasFilters = donorSearch.trim() || filterGroup || filterStatus;
+  const clearFilters = () => { setDonorSearch(''); setFilterGroup(''); setFilterStatus(''); };
+
   if (loading) return <TableSkeleton rows={6} />;
   if (!event) return (
     <div className="py-16 text-center">
@@ -188,6 +211,7 @@ export default function AdminBloodCamp() {
   const donated = donors.filter((d) => d.status === 'donated').length;
   const totalUnits = donors.reduce((s, d) => s + Number(d.units), 0);
   const groupUnits = GROUPS.map((g) => ({ g, n: donors.filter((d) => d.blood_group === g).reduce((s, d) => s + Number(d.units), 0) })).filter((x) => x.n > 0);
+
 
   return (
     <div className="space-y-6">
@@ -226,11 +250,74 @@ export default function AdminBloodCamp() {
 
       {/* Donor registry */}
       <Card title={tr('Donor Registry', 'রক্তদাতা নিবন্ধন')} action={<button onClick={() => { setDForm(emptyDonor); setDEditId(null); setShowDonor(true); }} className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-semibold text-white" style={{ background: TEAL }}><FaPlus className="h-3 w-3" /> {tr('Add donor', 'দাতা যোগ')}</button>}>
+
+        {/* ── Search & filter bar ── */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {/* Text search */}
+          <div className="relative flex-1" style={{ minWidth: 180, maxWidth: 280 }}>
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" style={{ color: MUTED }} />
+            <input
+              value={donorSearch}
+              onChange={(e) => setDonorSearch(e.target.value)}
+              placeholder={tr('Search name, phone, Aadhar…', 'নাম, ফোন, আধার…')}
+              className="w-full rounded-[8px] py-2 pl-8 pr-3 text-[12.5px] outline-none"
+              style={{ border: `1px solid ${RULE}`, background: PAPER, color: INK }}
+            />
+          </div>
+
+          {/* Blood group filter */}
+          <select
+            value={filterGroup}
+            onChange={(e) => setFilterGroup(e.target.value)}
+            className="rounded-[8px] px-3 py-2 text-[12.5px] outline-none"
+            style={{ border: `1px solid ${RULE}`, background: PAPER, color: filterGroup ? RED : INK2, fontWeight: filterGroup ? 700 : 400 }}
+          >
+            <option value="">{tr('All groups', 'সব গ্রুপ')}</option>
+            {GROUPS.map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+
+          {/* Status filter */}
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="rounded-[8px] px-3 py-2 text-[12.5px] font-semibold outline-none"
+            style={{
+              border: `1px solid ${RULE}`, background: PAPER,
+              color: filterStatus === 'donated' ? GREEN : filterStatus === 'rejected' ? RED : filterStatus === 'registered' ? '#1d4ed8' : INK2,
+            }}
+          >
+            <option value="">{tr('All statuses', 'সব অবস্থা')}</option>
+            {DSTATUS.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+          </select>
+
+          {/* Result count + clear */}
+          <span className="ml-auto flex items-center gap-2 font-mono text-[11px]" style={{ color: MUTED }}>
+            {hasFilters ? (
+              <>
+                <span style={{ color: filteredDonors.length === 0 ? RED : TEAL, fontWeight: 600 }}>
+                  {fmt.num(filteredDonors.length)}
+                </span>
+                {tr('/ ', '/ ')}{fmt.num(donors.length)} {tr('donor(s)', 'দাতা')}
+                <button
+                  onClick={clearFilters}
+                  title={tr('Clear filters', 'ফিল্টার মুছুন')}
+                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  style={{ background: '#fee2e2', color: RED }}
+                >
+                  <X className="h-3 w-3" /> {tr('Clear', 'মুছুন')}
+                </button>
+              </>
+            ) : (
+              <span>{fmt.num(donors.length)} {tr('donor(s)', 'দাতা')}</span>
+            )}
+          </span>
+        </div>
+
         <Table head={[tr('Code', 'কোড'), tr('Name', 'নাম'), tr('Age/Sex', 'বয়স/লিঙ্গ'), tr('Group', 'গ্রুপ'), tr('Phone', 'ফোন'), tr('Status', 'অবস্থা'), tr('Units', 'ইউনিট'), '']}>
-          {donors.map((d) => (
+          {filteredDonors.map((d) => (
             <tr key={d.id} style={{ borderTop: `1px solid ${RULE}` }}>
               <td className="px-3 py-2.5 font-mono text-[11px]" style={{ color: MUTED }}>{d.donor_code}</td>
-              <td className="px-3 py-2.5 font-medium" style={{ color: INK }}>{d.name}</td>
+              <td className="px-3 py-2.5 font-medium" style={{ color: INK }}>{d.name.toUpperCase()}</td>
               <td className="px-3 py-2.5" style={{ color: INK2 }}>{d.age ?? '—'}{d.gender ? ` / ${d.gender[0].toUpperCase()}` : ''}</td>
               <td className="px-3 py-2.5"><span className="font-semibold" style={{ color: d.blood_group ? RED : MUTED }}>{d.blood_group || '—'}</span></td>
               <td className="px-3 py-2.5" style={{ color: INK2 }}>{d.phone || '—'}</td>
@@ -246,7 +333,15 @@ export default function AdminBloodCamp() {
               </td>
             </tr>
           ))}
-          {donors.length === 0 && <tr><td colSpan={8} className="px-3 py-6 text-center text-[13px]" style={{ color: MUTED }}>{tr('No donors registered yet.', 'এখনো কোনো দাতা নিবন্ধিত নেই।')}</td></tr>}
+          {filteredDonors.length === 0 && (
+            <tr>
+              <td colSpan={8} className="px-3 py-8 text-center text-[13px]" style={{ color: MUTED }}>
+                {donors.length === 0
+                  ? tr('No donors registered yet.', 'এখনো কোনো দাতা নিবন্ধিত নেই।')
+                  : tr('No donors match your search.', 'অনুসন্ধানে কোনো দাতা পাওয়া যায়নি।')}
+              </td>
+            </tr>
+          )}
         </Table>
       </Card>
 

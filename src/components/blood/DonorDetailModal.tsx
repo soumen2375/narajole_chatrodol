@@ -60,7 +60,17 @@ export default function DonorDetailModal({
             {donor.blood_group || '?'}
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[19px] font-bold" style={{ color: INK, ...SERIF }}>{donor.name}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="truncate text-[19px] font-bold" style={{ color: INK, ...SERIF }}>{donor.name.toUpperCase()}</h2>
+              {donor.member_id && (
+                <span
+                  className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0"
+                  style={{ background: 'rgba(12,117,111,0.1)', color: TEAL, border: `1px solid rgba(12,117,111,0.25)` }}
+                >
+                  {tr('Member', 'সদস্য')}
+                </span>
+              )}
+            </div>
             <div className="mt-0.5 font-mono text-[11px]" style={{ color: MUTED }}>
               {donor.donor_code || '—'}
             </div>
@@ -102,7 +112,7 @@ export default function DonorDetailModal({
 
         {/* Details */}
         <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 p-5">
-          <Field label={tr('Full name', 'পুরো নাম')} value={donor.name} span />
+          <Field label={tr('Full name', 'পুরো নাম')} value={donor.name.toUpperCase()} span />
           <Field label={tr('Age', 'বয়স')} value={donor.age != null ? fmt.num(donor.age) : '—'} />
           <Field label={tr('Gender', 'লিঙ্গ')} value={genderLabel[donor.gender] ?? '—'} />
           <Field

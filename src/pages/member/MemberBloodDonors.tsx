@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Droplet, Search, Phone, MapPin, Calendar, CheckCircle2, Clock } from 'lucide-react';
+import { Droplet, Search, Phone, MapPin, Calendar, CheckCircle2, Clock, Users, Repeat2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useT } from '@/i18n';
 import { useFmt } from '@/lib/format';
@@ -41,16 +41,42 @@ export default function MemberBloodDonors() {
   const [search, setSearch] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
   const [eligFilter, setEligFilter] = useState<EligibilityFilter>('all');
+  const [memberFilter, setMemberFilter] = useState<'all' | 'member' | 'non-member'>('all');
+  const [minDonations, setMinDonations] = useState(0);
   const [selected, setSelected] = useState<DonorProfile | null>(null);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from('cswo_blood_donors')
-        .select(DONOR_SELECT)
-        .order('created_at', { ascending: false });
-      setDonors(buildDonorProfiles(normalizeDonorRows(data)));
+      const [{ data: donorsData }, { data: membersData }] = await Promise.all([
+        supabase
+          .from('cswo_blood_donors')
+          .select(DONOR_SELECT)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('cswo_members')
+          .select('id, phone')
+          .eq('status', 'approved'),
+      ]);
+
+      const rows = normalizeDonorRows(donorsData);
+      if (membersData && membersData.length > 0) {
+        const phoneToMemberId = new Map<string, string>();
+        for (const m of membersData) {
+          const p = (m.phone ?? '').replace(/\D/g, '');
+          if (p.length >= 8) phoneToMemberId.set(p.slice(-10), m.id);
+        }
+        for (const r of rows) {
+          if (!r.member_id && r.phone) {
+            const p = r.phone.replace(/\D/g, '').slice(-10);
+            if (p && phoneToMemberId.has(p)) {
+              r.member_id = phoneToMemberId.get(p)!;
+            }
+          }
+        }
+      }
+
+      setDonors(buildDonorProfiles(rows));
       setLoading(false);
     })();
   }, []);
@@ -61,12 +87,17 @@ export default function MemberBloodDonors() {
       if (groupFilter && d.blood_group !== groupFilter) return false;
       if (eligFilter === 'eligible' && !d.eligible) return false;
       if (eligFilter === 'waiting' && d.eligible) return false;
+      if (memberFilter === 'member' && !d.member_id) return false;
+      if (memberFilter === 'non-member' && d.member_id) return false;
+      if (minDonations > 0 && d.donationCount < minDonations) return false;
       if (q && !`${d.name} ${d.phone} ${d.address}`.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [donors, search, groupFilter, eligFilter]);
+  }, [donors, search, groupFilter, eligFilter, memberFilter, minDonations]);
 
   const eligibleCount = useMemo(() => donors.filter((d) => d.eligible).length, [donors]);
+  const memberCount   = useMemo(() => donors.filter((d) => d.member_id).length, [donors]);
+  const repeatCount   = useMemo(() => donors.filter((d) => d.donationCount >= 2).length, [donors]);
 
   // Blood group distribution — eligible vs. waiting, per group.
   const groupCounts = useMemo(() => {
@@ -194,12 +225,74 @@ export default function MemberBloodDonors() {
         })}
       </div>
 
+      {/* ── Member filter + Donation count filter ── */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Member toggle */}
+        <div className="flex items-center gap-1.5">
+          <Users className="h-3.5 w-3.5 shrink-0" style={{ color: BRAND }} />
+          <span className="text-[12px] font-semibold" style={{ color: INK2 }}>
+            {tr('Member:', 'সদস্য:')}
+          </span>
+        </div>
+        {([
+          { k: 'all',        label: tr('All', 'সব') },
+          { k: 'member',     label: tr('Members only', 'শুধু সদস্য') },
+          { k: 'non-member', label: tr('Non-members', 'সদস্য নন') },
+        ] as const).map((o) => {
+          const active = memberFilter === o.k;
+          return (
+            <button
+              key={o.k}
+              onClick={() => setMemberFilter(o.k)}
+              className="rounded-full px-3 py-1 text-[12px] font-semibold transition-all"
+              style={{
+                background: active ? BRAND : '#fff',
+                color: active ? '#fff' : BRAND,
+                border: `1.5px solid ${BRAND}`,
+              }}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+
+        <span className="mx-1 text-[11px]" style={{ color: RULE }}>|</span>
+
+        {/* Donation count filter */}
+        <div className="flex items-center gap-1.5">
+          <Repeat2 className="h-3.5 w-3.5 shrink-0" style={{ color: RED }} />
+          <span className="text-[12px] font-semibold" style={{ color: INK2 }}>
+            {tr('Donated:', 'দান:')}
+          </span>
+        </div>
+        {([0, 1, 2, 3, 5] as const).map((n) => {
+          const active = minDonations === n;
+          const label  = n === 0 ? tr('Any', 'যেকোনো') : `${n}+`;
+          return (
+            <button
+              key={n}
+              onClick={() => setMinDonations(n)}
+              className="rounded-full px-3 py-1 text-[12px] font-semibold transition-all"
+              style={{
+                background: active ? RED : '#fff',
+                color: active ? '#fff' : RED,
+                border: `1.5px solid ${RED}`,
+              }}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Stats row */}
       <div className="flex flex-wrap gap-4">
         {[
-          { label: tr('Total donors', 'মোট দাতা'), value: donors.length, color: RED },
-          { label: tr('Eligible now', 'এখন যোগ্য'), value: eligibleCount, color: GREEN },
-          { label: tr('Showing', 'দেখাচ্ছে'), value: filtered.length, color: BRAND },
+          { label: tr('Total donors', 'মোট দাতা'),   value: donors.length,  color: RED   },
+          { label: tr('Eligible now', 'এখন যোগ্য'), value: eligibleCount,  color: GREEN },
+          { label: tr('Members',      'সদস্য'),        value: memberCount,    color: BRAND },
+          { label: tr('Repeat (2⁺)', 'পুনরায় (2+)'), value: repeatCount, color: '#7c3aed' },
+          { label: tr('Showing',      'দেখাচ্ছে'),   value: filtered.length, color: INK2  },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border px-5 py-3" style={{ background: '#fff', borderColor: RULE }}>
             <div className="font-mono text-[10px] uppercase tracking-widest" style={{ color: MUTED }}>{s.label}</div>
@@ -237,15 +330,25 @@ export default function MemberBloodDonors() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="truncate font-bold" style={{ color: INK }}>{d.name}</p>
-                    {d.donationCount > 1 && (
-                      <span
-                        className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                        style={{ background: 'rgba(185,28,28,0.08)', color: RED }}
-                      >
-                        {fmt.num(d.donationCount)}×
-                      </span>
-                    )}
+                    <p className="truncate font-bold" style={{ color: INK }}>{d.name.toUpperCase()}</p>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {d.member_id && (
+                        <span
+                          className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+                          style={{ background: 'rgba(12,117,111,0.1)', color: BRAND, border: `1px solid rgba(12,117,111,0.25)` }}
+                        >
+                          {tr('Member', 'সদস্য')}
+                        </span>
+                      )}
+                      {d.donationCount > 1 && (
+                        <span
+                          className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                          style={{ background: 'rgba(185,28,28,0.08)', color: RED }}
+                        >
+                          {fmt.num(d.donationCount)}×
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Eligibility line */}
